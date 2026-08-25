@@ -1437,6 +1437,206 @@ const TOPO=[
 }}
 ];
 
+/* ===================== fit-out =====================
+   Everything above decides what the ship IS: which masses, which chain of
+   sections, which variant fills each socket. This runs once all of that has
+   settled and decides what has been BOLTED TO it — cable runs, receptacles,
+   access plates, inspection ports. It reads the finished parts list back and
+   works in each surface's own parameter space, the same trick the hatch uses,
+   so a run follows the form instead of swimming across it.
+
+   Nothing here is mirrored. Plumbing is the one thing on a ship with no reason
+   to be symmetrical, and that asymmetry is most of what makes two hulls off the
+   same slot recipe read as different ships. It is also why the pass runs after
+   the registry: a cable is not displacement, so the length, beam and tonnage on
+   the plate must not move when the detail slider does. */
+const inPoly=(poly,X,Y)=>{
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    if((poly[i][1]>Y)!==(poly[j][1]>Y)&&
+       X<(poly[j][0]-poly[i][0])*(Y-poly[i][1])/((poly[j][1]-poly[i][1])||1e-9)+poly[i][0])
+      inside=!inside;
+  }
+  return inside;
+};
+/* one host surface, parameterised on the unit square. u wraps where the form
+   wraps, so a run that leaves one edge comes back on the other by itself. */
+function surfaceOf(p,R){
+  if(p.k==="sphere")
+    return {span:p.r*2.2,curv:p.r,at:(u,v)=>{
+      const th=u*Math.PI*2, ph=Math.acos(Math.max(-1,Math.min(1,1-2*v)));
+      const n=[Math.cos(ph),Math.sin(ph)*Math.cos(th),Math.sin(ph)*Math.sin(th)];
+      return {q:V.add(p.c,V.mul(n,p.r)),n};
+    }};
+  if(p.k==="capsule"||p.k==="tube"){
+    const d=V.sub(p.b,p.a), L=V.len(d);
+    if(L<1e-6)return null;
+    const ax=V.mul(d,1/L), [bu,bv]=basis(ax);
+    const r1=p.k==="capsule"?p.r:p.r1, r2=p.k==="capsule"?p.r:p.r2;
+    const dr=(r2-r1)/L;
+    return {span:Math.min(L,Math.max(r1,r2)*3),curv:Math.min(r1,r2),at:(u,v)=>{
+      const th=u*Math.PI*2;
+      const rad=V.add(V.mul(bu,Math.cos(th)),V.mul(bv,Math.sin(th)));
+      const r=r1+(r2-r1)*v;
+      return {q:V.add(V.add(p.a,V.mul(ax,L*v)),V.mul(rad,r)),
+              n:V.norm(V.sub(rad,V.mul(ax,dr)))};
+    }};
+  }
+  if(p.k==="box"){
+    const f=Math.floor(R()*6), s=(f&1)?1:-1;
+    const [e1,e2,e3]=f<2?[p.v,p.w,p.u]:f<4?[p.u,p.w,p.v]:[p.u,p.v,p.w];
+    const n=V.norm(V.mul(e3,s)), o=V.add(p.c,V.mul(e3,s));
+    return {span:Math.max(V.len(e1),V.len(e2))*2,flat:true,at:(u,v)=>
+      ({q:V.add(o,V.add(V.mul(e1,u*2-1),V.mul(e2,v*2-1))),n})};
+  }
+  if(p.k==="panel"){
+    const s=R()<0.5?1:-1, n=V.norm(V.mul(p.n,s));
+    const [bu,bv]=basis(p.n), o=V.add(p.pts[0],V.mul(n,p.th*0.5));
+    const poly=p.pts.map(q=>[V.dot(V.sub(q,p.pts[0]),bu),V.dot(V.sub(q,p.pts[0]),bv)]);
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+    for(const q of poly){x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);
+                         y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);}
+    return {span:Math.max(x1-x0,y1-y0),flat:true,
+      ok:(u,v)=>inPoly(poly,x0+(x1-x0)*u,y0+(y1-y0)*v),
+      at:(u,v)=>({q:V.add(o,V.add(V.mul(bu,x0+(x1-x0)*u),V.mul(bv,y0+(y1-y0)*v))),n})};
+  }
+  return null;
+}
+function fitOut(parts,R,rr,P,sr){
+  if(P.detail<0.18)return;
+  const hosts=[];
+  for(const p of parts){
+    if(p.k==="disc"||p.k==="lathe")continue;
+    const s=p.k==="sphere"?p.r
+           :p.k==="box"?Math.max(V.len(p.u),V.len(p.v),V.len(p.w))
+           :p.k==="panel"?p.th*8
+           :V.len(V.sub(p.b,p.a));
+    if(s>sr*0.7)hosts.push(p);
+  }
+  if(!hosts.length)return;
+  const solids=parts.slice();
+  const clear=q=>{for(const c of solids)if(inSolid(q,c))return false;return true;};
+  const out=[];
+  /* the budget is the detail slider's, and it is spent per feature rather than
+     per part: a cable run is one feature however many segments it takes */
+  const N=Math.round(7+P.detail*26);
+  /* a hard ceiling on the whole pass. The sheet is redrawn every frame of the
+     spin, so fit-out has to be affordable at 60 Hz on a phone, not merely
+     affordable once. */
+  const CAP=Math.round(34+P.detail*76);
+  const used=new Map();
+  for(let i=0;i<N;i++){
+    if(out.length>=CAP)break;
+    const host=hosts[Math.floor(R()*hosts.length)];
+    /* three features is a fitted-out part; six is a rash */
+    const nu=used.get(host)||0;
+    if(nu>=4)continue;
+    const S2=surfaceOf(host,R);
+    if(!S2)continue;
+    used.set(host,nu+1);
+    const g=sr*rr(0.11,0.19);                        /* gauge of the fit-out */
+    const u0=R(), v0=rr(0.12,0.88);
+    if(S2.ok&&!S2.ok(u0,v0))continue;
+    const a=S2.at(u0,v0);
+    if(!a||!clear(V.add(a.q,V.mul(a.n,g*1.6))))continue;
+    /* A cable run wants curvature to read against. On a flat host it comes out
+       as a straight bar lying on a straight face — indistinguishable from
+       structure, and on a vane it reads as a spoke that has slipped. So flat
+       surfaces take plates and receptacles only, and the runs live on the
+       fuselages, bells and spheres where they look like plumbing. */
+    const roll=S2.flat?0.42+R()*0.58:R();
+    if(roll<0.42){
+      /* a cable run: stepped along the surface, clamped at both ends */
+      /* runs go along the form rather than round it: a cable that wraps out
+         of sight is a cable nobody sees */
+      const du=rr(-0.10,0.10), dv=rr(-0.52,0.52);
+      const u1=u0+du, v1=Math.max(0.06,Math.min(0.94,v0+dv));
+      const seg=Math.max(3,Math.round(4+P.detail*4));
+      const pts=[],nrm=[];
+      for(let k2=0;k2<=seg;k2++){
+        const t2=k2/seg, s3=S2.at(u0+(u1-u0)*t2,v0+(v1-v0)*t2);
+        if(!s3){pts.length=0;break;}
+        /* half proud, half bedded in: a run that merely touches the surface
+           is a run that reads as floating the moment the hull curves away
+           under it, and a cable is laid in a trough anyway */
+        pts.push(V.add(s3.q,V.mul(s3.n,g*0.5)));nrm.push(s3.n);
+      }
+      if(pts.length<3)continue;
+      /* the offset for a parallel pair is taken against the LOCAL normal at
+         each station, not the one where the run started: on a sphere a fixed
+         sideways vector walks the second cable off the hull within a few steps */
+      const sideAt=k2=>{
+        const t1=V.norm(V.sub(pts[Math.min(k2+1,pts.length-1)],pts[Math.max(k2-1,0)]));
+        return V.norm(V.cross(t1,nrm[k2]));
+      };
+      const nw=1+Math.floor(R()*2);                  /* one cable or a pair */
+      for(let w2=0;w2<nw;w2++){
+        const off=(w2-(nw-1)*0.5)*g*2.3;
+        for(let k2=0;k2<pts.length-1;k2++)
+          out.push(TUB(V.add(pts[k2],V.mul(sideAt(k2),off)),
+                       V.add(pts[k2+1],V.mul(sideAt(k2+1),off)),
+                       g,g,{hideA:true,hideB:true,bare:true}));
+      }
+      for(const k2 of [0,pts.length-1]){
+        const t1=V.norm(V.sub(pts[Math.min(k2+1,pts.length-1)],pts[Math.max(k2-1,0)]));
+        out.push(BOX(V.add(pts[k2],V.mul(nrm[k2],g*0.1)),V.mul(t1,g*0.8),
+                     V.mul(nrm[k2],g*0.9),V.mul(sideAt(k2),g*(1.1+nw*0.8)),{bare:true}));
+      }
+    }else if(roll<0.72){
+      /* receptacles: a stub and its face, in a little cluster */
+      const nk=1+Math.floor(R()*3);
+      for(let k2=0;k2<nk;k2++){
+        const s3=S2.at(u0+k2*g/(S2.span||1)*rr(1.4,2.6),v0+k2*rr(-0.05,0.05));
+        if(!s3)continue;
+        if(S2.ok&&!S2.ok(u0+k2*0.04,v0))continue;
+        const r=Math.min(g*rr(1.7,2.8),(S2.curv||1e9)*0.5), h=g*rr(0.9,1.7);
+        if(r<g*0.8)continue;
+        out.push(TUB(V.sub(s3.q,V.mul(s3.n,g*0.4)),V.add(s3.q,V.mul(s3.n,h)),r,r*0.86,
+                     {hideA:true,bare:true}));
+        out.push(DSC(V.add(s3.q,V.mul(s3.n,h)),s3.n,r*0.86,r*rr(0.30,0.46),{bare:true}));
+      }
+    }else{
+      /* an access plate, lying flush and lipped */
+      const t1=V.norm(V.cross(a.n,Math.abs(a.n[1])>0.9?[1,0,0]:[0,1,0]));
+      const t2=V.cross(a.n,t1);
+      /* a plate is flat and the hull under it is often not. Sized off the
+         gauge alone it hangs off a slim pylon like a shelf, so it is clamped
+         to the host's own radius of curvature and to the room on that face. */
+      const lim=Math.min((S2.curv||1e9)*0.62,(S2.span||1e9)*0.34);
+      const w2=Math.min(g*rr(3.6,8.0),lim), h2=Math.min(g*rr(2.6,6.0),lim),
+            th=g*rr(0.34,0.62);
+      if(w2<g*1.4||h2<g*1.1)continue;
+      const c=V.add(a.q,V.mul(a.n,th*0.34));   /* bedded, not balanced on top */
+      if(!clear(V.add(c,V.mul(t1,w2*0.98))))continue;
+      /* a plate is the one feature with real corners, so it is the one that can
+         hang off the edge of a cut face. Test them in the host's own parameter
+         space before committing it. */
+      if(S2.ok){
+        const du2=w2/(S2.span||1), dv2=h2/(S2.span||1);
+        let off=false;
+        for(const [su,sv] of [[1,1],[1,-1],[-1,1],[-1,-1]])
+          if(!S2.ok(u0+su*du2,v0+sv*dv2))off=true;
+        if(off)continue;
+      }
+      out.push(BOX(c,V.mul(t1,w2),V.mul(t2,h2),V.mul(a.n,th),
+                   {bare:true,det:{ribs:2+Math.floor(R()*3)}}));
+      if(R()<0.5)
+        out.push(DSC(V.add(c,V.mul(a.n,th*0.6)),a.n,Math.min(w2,h2)*0.28,0,{bare:true}));
+    }
+  }
+  /* inspection ports cost no geometry at all: they are circles cut on a surface
+     the drawing is already stroking, so they are free where a plate is not */
+  const rings=parts.filter(p=>(p.k==="tube"||p.k==="capsule")&&p.det&&!p.bare);
+  for(let i=0;i<Math.round(P.detail*10);i++){
+    if(!rings.length)break;
+    const p=rings[Math.floor(R()*rings.length)], d=p.det;
+    p.det={rings:d.rings,longs:d.longs,
+           ports:(d.ports||[]).concat([{t:rr(0.15,0.85),th:R()*Math.PI*2,
+                                        r:sr*rr(0.10,0.22)}])};
+  }
+  for(const q of out)parts.push(q);
+}
+
 function buildShip(seed,P,lock){
   const R=mulberry32(seed|0), rr=(a,b)=>a+(b-a)*R(), pick=a=>a[Math.floor(R()*a.length)|0];
   const parts=[], envs=[], chosen={};
@@ -1665,6 +1865,7 @@ function buildShip(seed,P,lock){
   for(const [q,r] of pts)for(let i=0;i<3;i++){
     bb[0][i]=Math.min(bb[0][i],q[i]-r);bb[1][i]=Math.max(bb[1][i],q[i]+r);}
 
+
   /* No two ships may carry the same designation, and luck is not a good enough
      guarantee. The seed is a 32-bit word; read it as a mixed-radix number whose
      digits ARE the designation — one digit names the ship, two are the yard
@@ -1680,6 +1881,14 @@ function buildShip(seed,P,lock){
   const block=String.fromCharCode(65+b1,65+b2), pennant=u;
   const klass=pick(BIRDS);
   const role = chosen.gear.i===0&&topo.n==="KEEL" ? ["OSV","ORBITAL SERVICE VEHICLE"] : topo.role;
+
+  /* Dead last: the layout is settled, weighed and named. Running the fit-out
+     here rather than a few lines earlier is what keeps it decoration — it draws
+     from the same stream, so it cannot shift the class name or the pennant, and
+     it lands after the registry, so it cannot shift the tonnage or the
+     dimensions either. The same hull with the detail slider at either end is
+     the same ship on the plate, wearing more or less plumbing. */
+  fitOut(parts,R,rr,P,chassis.sr);
   return {parts,envs,chosen,bb,meta:{
     desig:`${role[0]}-${block}${String(pennant).padStart(5,"0")} ${name}`,
     klass:`${klass}-CLASS ${role[1]}`,
@@ -2143,7 +2352,7 @@ function drawView(t,ship,proj,scale,ox,oy,pal,lw,reveal,showEnv,slot,sig,hatch){
   const shown=Math.max(0,Math.min(items.length,Math.round(items.length*reveal)));
 
   /* walk a tagged hull, stroking every edge except the ones on a buried cap */
-  function outline(H,drawA,drawB){
+  function outline(H,drawA,drawB,w){
     const n=H.length;
     const keep=i=>{
       const p=H[i],q=H[(i+1)%n];
@@ -2151,7 +2360,7 @@ function drawView(t,ship,proj,scale,ox,oy,pal,lw,reveal,showEnv,slot,sig,hatch){
       return p[2]===0?drawA:drawB;
     };
     let run=[];
-    const flush=()=>{if(run.length>1)stroke(run,false);run=[];};
+    const flush=()=>{if(run.length>1)stroke(run,false,w);run=[];};
     for(let i=0;i<n;i++){
       if(!keep(i)){flush();continue;}
       const A=H[i][3],B=H[(i+1)%n][3],a=S(A),b=S(B);
@@ -2301,7 +2510,7 @@ function drawView(t,ship,proj,scale,ox,oy,pal,lw,reveal,showEnv,slot,sig,hatch){
           for(let j=1;j<=m0;j++)idx.push(off+((sk+j)%m0));
           stroke(dens(idx.map(j=>cor[j]),false),false);
         }else stroke(dens(f.map(j=>cor[j]),true),true);
-        if(HATCH)hatchFace(f.map(j=>cor[j]),V.norm(N[fi]),null);
+        if(HATCH&&!p.bare)hatchFace(f.map(j=>cor[j]),V.norm(N[fi]),null);
         const d=p.det;
         if(d&&d.ribs&&fi<2&&f.length===4){
           const q=f.map(j=>cor[j]);
@@ -2322,7 +2531,7 @@ function drawView(t,ship,proj,scale,ox,oy,pal,lw,reveal,showEnv,slot,sig,hatch){
       const near=faces(p.c,n)?b:a;
       stroke(ringPts(near,p.r,n,sg),true);
       if(p.ri>1e-6)stroke(ringPts(near,p.ri,n,sg),true);
-      if(HATCH)hatchFace(ringPts(near,p.r,n,Math.min(sg,48)),faces(p.c,n)?n:V.mul(n,-1),
+      if(HATCH&&!p.bare)hatchFace(ringPts(near,p.r,n,Math.min(sg,48)),faces(p.c,n)?n:V.mul(n,-1),
                          p.ri>1e-6?{c:near,r:p.ri}:null);
       continue;
     }
@@ -2336,13 +2545,13 @@ function drawView(t,ship,proj,scale,ox,oy,pal,lw,reveal,showEnv,slot,sig,hatch){
        square to the eye, so the capsule's caps get real 3D silhouettes */
     const pA=isCap?ringPts(p.a,p.r,EYE,n):ringPts(p.a,ra,axis,n);
     const pB=isCap?ringPts(p.b,p.r,EYE,n):ringPts(p.b,rb,axis,n);
-    outline(hull(tag(pA,0).concat(tag(pB,1))),!p.hideA,!p.hideB);
+    outline(hull(tag(pA,0).concat(tag(pB,1))),!p.hideA,!p.hideB,p.bare?dw:undefined);
     if(!isCap){
       if(!p.hideA&&faces(p.a,V.mul(axis,-1)))stroke(ringPts(p.a,p.r1,axis,n),true);
       if(!p.hideB&&faces(p.b,axis))stroke(ringPts(p.b,p.r2,axis,n),true);
     }
     surfDet(p,axis,p.a,p.b,ra,rb,n);
-    if(HATCH){
+    if(HATCH&&!p.bare){
       hatchAxial(p.a,p.b,ra,rb,axis);
       if(isCap){hatchSphere(p.a,p.r);hatchSphere(p.b,p.r);}
     }
