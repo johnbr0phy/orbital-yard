@@ -120,10 +120,35 @@ button[aria-pressed="false"].tog{color:var(--dim)}
   display:grid;grid-template-columns:auto 1fr;gap:0 12px}
 .readout b{font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right;overflow-wrap:anywhere}
 .readout .desig{grid-column:1/-1;color:var(--ink);font-size:12px;letter-spacing:.1em}
+.readout .line{grid-column:1/-1;font-variant-numeric:tabular-nums}
 
 .note{font-family:"IBM Plex Mono",monospace;font-size:10px;line-height:1.7;letter-spacing:.06em;
   color:var(--dim);text-transform:uppercase;margin-top:auto;border-top:1px solid var(--rule);padding-top:12px}
 .note kbd{font-family:inherit;border:1px solid var(--rule);padding:1px 4px}
+
+/* the two links people actually came for, pinned in the sticky head so no
+   amount of scrolling through the controls can bury them */
+.social{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.social a{display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;text-decoration:none;padding:10px 6px;line-height:1;
+  color:var(--ink);border:1px solid var(--rule);
+  transition:border-color .12s ease,filter .12s ease}
+.social a:hover{border-color:var(--ink)}
+.social a.star{background:var(--plate);color:var(--plate-ink);border-color:var(--plate)}
+.social a.star:hover{filter:brightness(1.14)}
+
+/* everything that is a second thought lives behind one disclosure */
+.more{border-top:1px solid var(--rule);padding-top:14px;
+  display:flex;flex-direction:column;gap:16px}
+.more>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;
+  font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--dim)}
+.more>summary::-webkit-details-marker{display:none}
+.more>summary::after{content:"+"}
+.more[open]>summary::after{content:"\2212"}
+.more>summary:hover{color:var(--ink)}
+.more>summary{margin-bottom:2px}
 .colophon{display:flex;gap:16px;padding-top:11px;
   font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.14em;
   text-transform:uppercase}
@@ -164,16 +189,19 @@ canvas{display:block;width:100%;height:100%}
       <button class="cta" id="roll">New ship <kbd>N</kbd></button>
       <div class="seedrow"><label for="seed">Hull</label>
         <input id="seed" inputmode="numeric" aria-label="Hull number"></div>
+      <div class="social">
+        <a class="star" href="https://github.com/johnbr0phy/orbital-yard"
+           target="_blank" rel="noopener">Star on GitHub</a>
+        <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">Follow @JohnBr0</a>
+      </div>
     </div>
 
     <div class="brand">
       <h1>Orbital Yard</h1>
       <div class="sub">Slot assembler &middot; general arrangement</div>
-      <p>A hull topology publishes five sockets; every variant is cut to the same socket, so any combination mates.</p>
     </div>
 
     <div class="group">
-      <div class="ghead">Vessel</div>
       <div class="readout" id="readout"></div>
     </div>
 
@@ -183,25 +211,10 @@ canvas{display:block;width:100%;height:100%}
     </div>
 
     <div class="group">
-      <div class="ghead">Chassis</div>
-      <div class="ctl"><div class="row"><b>Fuselage</b><span id="vLen"></span></div><input type="range" id="len" min="0" max="100" step="1"></div>
-      <div class="ctl"><div class="row"><b>Fittings</b><span id="vDetail"></span></div><input type="range" id="detail" min="0" max="100" step="1"></div>
-      <div class="ctl"><div class="row"><b>Line weight</b><span id="vLine"></span></div><input type="range" id="line" min="40" max="200" step="5"></div>
-    </div>
-
-    <div class="group">
-      <div class="ghead">Sheet</div>
       <div class="swatches" id="swatches"></div>
       <div class="btnrow">
         <button class="tog" id="spin" aria-pressed="true">Spin</button>
         <button class="tog" id="tone" aria-pressed="true">Tone</button>
-      </div>
-      <div class="btnrow">
-        <button class="tog" id="env" aria-pressed="false">Envelopes</button>
-        <button class="tog" id="block" aria-pressed="true">Title block</button>
-      </div>
-      <div class="btnrow">
-        <button id="resetIso">Reset iso</button>
       </div>
       <div class="btnrow">
         <button id="expPng">Save PNG</button>
@@ -209,11 +222,26 @@ canvas{display:block;width:100%;height:100%}
       </div>
     </div>
 
+    <details class="more">
+      <summary>More controls</summary>
+      <div id="slotsMore"></div>
+      <div class="group">
+        <div class="ctl"><div class="row"><b>Fuselage</b><span id="vLen"></span></div><input type="range" id="len" min="0" max="100" step="1"></div>
+        <div class="ctl"><div class="row"><b>Fittings</b><span id="vDetail"></span></div><input type="range" id="detail" min="0" max="100" step="1"></div>
+        <div class="ctl"><div class="row"><b>Line weight</b><span id="vLine"></span></div><input type="range" id="line" min="40" max="200" step="5"></div>
+      </div>
+      <div class="group">
+        <div class="btnrow">
+          <button class="tog" id="env" aria-pressed="false">Envelopes</button>
+          <button class="tog" id="block" aria-pressed="true">Title block</button>
+        </div>
+        <div class="btnrow">
+          <button id="resetIso">Reset iso</button>
+        </div>
+      </div>
+    </details>
+
     <div class="note">Drag pictorial to orbit &middot; <kbd>N</kbd> roll &middot; <kbd>R</kbd> reset iso</div>
-    <div class="colophon">
-      <a href="https://github.com/johnbr0phy/orbital-yard" target="_blank" rel="noopener">Source</a>
-      <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">@JohnBr0</a>
-    </div>
   </aside>
 
   <main class="stage">
@@ -2313,12 +2341,14 @@ const PALETTES=[
 ];
 const SLOT_IDS=["cockpit","wing","tail","booster","gear"];
 const SECN=[{n:"2 SECTIONS"},{n:"3 SECTIONS"},{n:"4 SECTIONS"}];
+/* adv rows are the ones that describe how a hull is put together — real
+   controls, but not what anyone touches first, so they sit behind the fold */
 const ROWS=[{id:"topo",label:"Hull",list:TOPO},
-  {id:"sym",label:"Symmetry",list:SYM},
-  {id:"nsec",label:"Chain",list:SECN},
-  {id:"fore",label:"Fore",list:SECT},
-  {id:"joint",label:"Joint",list:JOINT},
-  {id:"aft",label:"Aft",list:SECT}]
+  {id:"sym",label:"Symmetry",list:SYM,adv:true},
+  {id:"nsec",label:"Chain",list:SECN,adv:true},
+  {id:"fore",label:"Fore",list:SECT,adv:true},
+  {id:"joint",label:"Joint",list:JOINT,adv:true},
+  {id:"aft",label:"Aft",list:SECT,adv:true}]
   .concat(SLOT_IDS.map(id=>({id,label:id,list:VAR[id]})));
 const S={seed:2200+Math.floor(Math.random()*7000),
   fuse:0.5,detail:0.6,line:1.0,pal:0,block:true,env:false,spin:true,tone:true,
@@ -2377,14 +2407,13 @@ function startSpin(){
 }
 function readout(){
   const M=ship.meta;
+  /* the sheet already carries the full breakdown in its title block; the rail
+     only needs to say which ship this is and how big it came out */
   document.getElementById("readout").innerHTML=
     `<div class="desig">${M.desig}</div>`+
-    (ship.chosen.recipe?`<div>Chain</div><b>${ship.chosen.recipe}</b>`:"")+
-    `<div>Length</div><b>${M.length.toFixed(1)} m</b>`+
-    `<div>Beam</div><b>${M.beam.toFixed(1)} m</b>`+
-    `<div>Height</div><b>${M.height.toFixed(1)} m</b>`+
-    `<div>Dry mass</div><b>${Math.round(M.mass)} t</b>`+
-    `<div>Crew</div><b>${M.crew||"nil"}</b>`;
+    `<div class="line">${M.length.toFixed(1)} &times; ${M.beam.toFixed(1)}`+
+    ` &times; ${M.height.toFixed(1)} m</div>`+
+    `<div class="line">${Math.round(M.mass)} t &middot; crew ${M.crew||"nil"}</div>`;
 }
 function regenerate(animate){
   ship=buildShip(S.seed,params(),S.lock);
@@ -2402,9 +2431,10 @@ function regenerate(animate){
 const el=id=>document.getElementById(id);
 /* slot steppers: AUTO rolls with the seed, or lock one and roll the rest */
 function renderSlots(){
-  const wrap=el("slots");
-  wrap.innerHTML="";
+  const wraps={main:el("slots"),adv:el("slotsMore")};
+  wraps.main.innerHTML="";wraps.adv.innerHTML="";
   for(const row of ROWS){
+    const wrap=row.adv?wraps.adv:wraps.main;
     const id=row.id,list=row.list,locked=S.lock[id]!=null;
     const cur=ship?ship.chosen[id]:{i:0,n:list[0].n};
     const el2=document.createElement("div");
