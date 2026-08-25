@@ -135,6 +135,9 @@ button[aria-pressed="false"].tog{color:var(--dim)}
   color:var(--dim);border:1px solid var(--rule);
   transition:border-color .12s ease,color .12s ease}
 .social a:hover{border-color:var(--ink);color:var(--ink)}
+/* the sister yard is a place, not an action, so it gets its own full-width
+   row and leaves the two social buttons paired the way they were */
+.social a.yard{grid-column:span 2}
 
 /* everything that is a second thought lives behind one disclosure */
 .more{border-top:1px solid var(--rule);padding-top:14px;
@@ -291,6 +294,8 @@ canvas{display:block;width:100%;height:100%}
     </div>
 
     <div class="social">
+      <a class="yard" href="https://johnbr0phy.github.io/mech-yard/"
+         target="_blank" rel="noopener">Visit the Mech Yard</a>
       <a href="https://github.com/johnbr0phy/orbital-yard"
          target="_blank" rel="noopener">Star on GitHub</a>
       <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">Follow @JohnBr0</a>
