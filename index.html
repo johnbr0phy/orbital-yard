@@ -154,6 +154,15 @@ button[aria-pressed="false"].tog{color:var(--dim)}
   border-bottom:1px solid var(--rule);padding-bottom:2px;transition:color .12s ease}
 .colophon a:hover{color:var(--ink);border-bottom-color:var(--ink)}
 
+/* every option lives in one container, so the same markup can be a column in
+   the rail on a desktop and a drawer over the drawing on a phone */
+/* grow into spare rail height so the hints still sit at the foot, but never
+   shrink below the controls' own height — a squeezed panel spilled its content
+   out from under the links below it */
+.panel{display:flex;flex-direction:column;gap:16px;flex:1 0 auto}
+.menu{display:none}
+.scrim{display:none}
+
 .stage{display:flex;align-items:center;justify-content:center;padding:22px;
   position:relative;overflow:hidden;min-width:0;min-height:0}
 .plate{position:relative;aspect-ratio:1.34/1;width:min(100%,calc(100% * 1.34));
@@ -187,11 +196,31 @@ canvas{display:block;width:100%;height:100%}
   .plate{aspect-ratio:auto;width:100%;height:100%;max-width:100%;max-height:100%}
   .rail{order:2;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));
     gap:11px;overflow:visible;flex:0 0 auto}
-  .rail>.brand,.rail>.group,.rail>.more,.rail>.note{display:none}
-  .head{position:static;margin:0;padding:0;border-bottom:none;gap:0;background:none}
-  .seedrow{display:none}
+  .head{position:static;margin:0;padding:0;border-bottom:none;background:none;
+    flex-direction:row;align-items:stretch;gap:10px}
+  .cta{flex:1 1 auto;font-size:23px;padding:17px}
   .social{padding-top:0}
-  .cta{font-size:23px;padding:17px}
+
+  /* the options slide over the drawing rather than pushing it around */
+  .menu{display:flex;align-items:center;justify-content:center;flex:0 0 58px;
+    background:transparent;border:1px solid var(--rule);color:var(--ink);
+    cursor:pointer;padding:0}
+  .menu i{display:block;width:20px;height:2px;background:currentColor;position:relative}
+  .menu i::before,.menu i::after{content:"";position:absolute;left:0;
+    width:20px;height:2px;background:currentColor}
+  .menu i::before{top:-6px}
+  .menu i::after{top:6px}
+  .menu[aria-expanded="true"]{background:var(--plate);border-color:var(--plate);
+    color:var(--plate-ink)}
+  .panel{position:fixed;top:0;left:0;bottom:0;width:min(86vw,340px);z-index:30;
+    background:var(--panel);border-right:1px solid var(--rule);
+    padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));
+    overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+    transform:translateX(-101%);transition:transform .22s ease}
+  body.navopen .panel{transform:none;box-shadow:0 0 40px rgba(0,0,0,.45)}
+  .scrim{display:block;position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.5);
+    opacity:0;pointer-events:none;transition:opacity .22s ease}
+  body.navopen .scrim{opacity:1;pointer-events:auto}
 }
 @media (max-width:520px){
   .cta{font-size:21px;padding:15px}
@@ -204,10 +233,14 @@ canvas{display:block;width:100%;height:100%}
 <div class="wrap">
   <aside class="rail">
     <div class="head">
+      <button class="menu" id="menu" aria-expanded="false" aria-controls="panel"
+              aria-label="Controls"><i></i></button>
       <button class="cta" id="roll">New ship <kbd>N</kbd></button>
-      <div class="seedrow"><label for="seed">Hull</label>
-        <input id="seed" inputmode="numeric" aria-label="Hull number"></div>
     </div>
+
+    <div class="panel" id="panel">
+    <div class="seedrow"><label for="seed">Hull</label>
+      <input id="seed" inputmode="numeric" aria-label="Hull number"></div>
 
     <div class="brand">
       <h1>Orbital Yard</h1>
@@ -255,6 +288,8 @@ canvas{display:block;width:100%;height:100%}
     </details>
 
     <div class="note">Drag pictorial to orbit &middot; <kbd>N</kbd> roll &middot; <kbd>R</kbd> reset iso</div>
+    </div>
+
     <div class="social">
       <a href="https://github.com/johnbr0phy/orbital-yard"
          target="_blank" rel="noopener">Star on GitHub</a>
@@ -266,6 +301,7 @@ canvas{display:block;width:100%;height:100%}
     <div class="plate"><canvas id="cv"></canvas><div class="toast" id="toast"></div></div>
   </main>
 </div>
+<div class="scrim" id="scrim" hidden></div>
 
 <script>
 "use strict";
@@ -2662,6 +2698,7 @@ const endDrag=()=>{drag=null;cv.style.cursor="default";startSpin();};
 cv.addEventListener("pointerup",endDrag);
 cv.addEventListener("pointercancel",endDrag);
 addEventListener("keydown",e=>{
+  if(e.key==="Escape"){setNav(false);return;}
   if(e.target.tagName==="INPUT")return;
   if(e.key==="n"||e.key==="N")el("roll").click();
   if(e.key==="r"||e.key==="R"){S.yaw=DEF.yaw;S.pitch=DEF.pitch;drawIso();}});
@@ -2713,7 +2750,17 @@ el("expSvg").addEventListener("click",()=>{
 tune();
 if(reduced){S.spin=false;el("spin").setAttribute("aria-pressed","false");}
 startSpin();
-MOBILE.addEventListener("change",()=>{tune();resize();});
+/* the drawer is a phone affordance; leaving a desktop window narrow and then
+   widening it must not strand the page behind an invisible scrim */
+const scrim=el("scrim"), menuBtn=el("menu");
+scrim.hidden=false;
+const setNav=o=>{
+  document.body.classList.toggle("navopen",o);
+  menuBtn.setAttribute("aria-expanded",o?"true":"false");
+};
+menuBtn.addEventListener("click",()=>setNav(!document.body.classList.contains("navopen")));
+scrim.addEventListener("click",()=>setNav(false));
+MOBILE.addEventListener("change",()=>{if(!solo())setNav(false);tune();resize();});
 let rzRaf=0;
 new ResizeObserver(()=>{if(rzRaf)return;
   rzRaf=requestAnimationFrame(()=>{rzRaf=0;resize();});}).observe(cv);
