@@ -2348,7 +2348,14 @@ const ROWS=[{id:"topo",label:"Hull",list:TOPO},
   {id:"joint",label:"Joint",list:JOINT,adv:true},
   {id:"aft",label:"Aft",list:SECT,adv:true}]
   .concat(SLOT_IDS.map(id=>({id,label:id,list:VAR[id]})));
-const S={seed:2200+Math.floor(Math.random()*7000),
+/* mulberry32 is seeded by a 32-bit word, so that whole word is the design
+   space — 4.29 billion hulls, not the five-digit slice the roll used to take.
+   The pennant number on the drawing stays four digits; the hull number is the
+   serial, and a serial is allowed to be long. */
+const SEED_MAX=4294967296;
+const newSeed=()=>Math.floor(Math.random()*SEED_MAX);
+const normSeed=v=>{v=Math.floor(Math.abs(v));return isFinite(v)?v%SEED_MAX:1;};
+const S={seed:newSeed(),
   fuse:0.5,detail:0.6,line:1.0,pal:0,block:true,env:false,spin:true,tone:true,
   lock:{topo:null,sym:null,nsec:null,fore:null,joint:null,aft:null,cockpit:null,wing:null,tail:null,booster:null,gear:null},
   yaw:-0.62,pitch:0.34};
@@ -2475,9 +2482,9 @@ const seedInput=el("seed");
 seedInput.value=S.seed;
 seedInput.addEventListener("change",()=>{
   const v=parseInt(seedInput.value.replace(/\D/g,""),10);
-  S.seed=isNaN(v)?1:v;seedInput.value=S.seed;regenerate(true);});
+  S.seed=isNaN(v)?1:normSeed(v);seedInput.value=S.seed;regenerate(true);});
 el("roll").addEventListener("click",()=>{
-  S.seed=1000+Math.floor(Math.random()*89000);
+  S.seed=newSeed();
   seedInput.value=S.seed;regenerate(true);});
 el("block").addEventListener("click",e=>{
   S.block=!S.block;e.currentTarget.setAttribute("aria-pressed",S.block?"true":"false");draw();});
