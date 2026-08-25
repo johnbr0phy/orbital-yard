@@ -1512,7 +1512,14 @@ function buildShip(seed,P,lock){
     const sock=chassis.sockets[id];
     if(!sock)continue;
     const list=VAR[id];
-    const idx=(lock&&lock[id]!=null)?Math.min(lock[id],list.length-1):Math.floor(R()*list.length);
+    let idx=(lock&&lock[id]!=null)?Math.min(lock[id],list.length-1):Math.floor(R()*list.length);
+    /* Gear is grounded for now. A deployed leg is sized to reach the ground
+       under the HULL, but on a vaned ship the lowest point is the bottom edge
+       of a vane, so the legs stopped short and the ship hung off them in mid
+       air. Until the probe measures to the whole ship's underside rather than
+       the hull's, nothing rolls gear down — the roll still happens so the seed
+       stream is unchanged, and locking the rail still deploys any of them. */
+    if(id==="gear"&&(!lock||lock.gear==null))idx=0;
     const v=list[idx];
     chosen[id]={i:idx,n:v.n,crew:v.crew||0};
     const out=[];
