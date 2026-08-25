@@ -1351,6 +1351,60 @@ const TOPO=[
     booster:FR([-L*0.5,0,0],[-1,0,0],[0,1,0],[0,0,1],{x:L*0.45,y:sr*2.0,z:sr*2.0}),
     gear:FR([L*0.1,-sr*0.9,0],[0,-1,0],[1,0,0],[0,0,1],{x:sr*2.0,y:L*0.4,z:sr*1.6})
   }};
+}},
+/* ---- 12. vane: the pressure hull is a single sphere and nothing else. Two
+   lateral pylons carry flat hexagonal vanes standing square to the beam —
+   radiator, collector and armour in one plate — so there is no fore-aft body
+   to hang anything on, and the ship's whole planform is the pair of vanes. ---- */
+{n:"VANE",role:["ICP","VANED INTERCEPTOR"],make(R,rr,P,out){
+  const Rb=(3.2+P.fuse*2.4)*rr(0.92,1.10);   /* the pressure sphere is the hull */
+  const sr=Rb*0.46;
+  const Rp=Rb*rr(1.9,2.6);                   /* vane half-height */
+  const hx=Rp*rr(0.50,0.64);                 /* vane half-chord  */
+  const h1=Rp*rr(0.56,0.74);                 /* shoulder height  */
+  const th=Rb*rr(0.15,0.22);                 /* vane thickness   */
+  const zp=Rb+Rp*rr(0.34,0.54)+th;           /* vane mid-plane   */
+
+  out.push(SPH([0,0,0],Rb,{det:hullDet([0.3,0.5,0.7],[],[])}));
+  /* the forward hatch ring stays visible around whatever cockpit plugs in */
+  out.push(DSC([Rb*0.80,0,0],[1,0,0],Rb*0.56,Rb*0.30));
+  if(P.detail>0.45)
+    out.push(BOX([-Rb*0.60,Rb*0.54,0],[Rb*0.20,0,0],[0,Rb*0.10,0],[0,0,Rb*0.34],
+                 {det:{ribs:3}}));
+
+  /* one pylon and one vane, authored to starboard: the mirror pass makes the
+     pair, and everything the vane carries comes back with it */
+  const hex=[[hx,h1],[0,Rp],[-hx,h1],[-hx,-h1],[0,-Rp],[hx,-h1]];
+  const at=(k,z)=>hex.map(q=>[q[0]*k,q[1]*k,z]);
+  out.push(TUB([0,0,Rb*0.55],[0,0,zp-th*0.5],Rb*0.42,Rb*0.28,{hideA:true}));
+  out.push(TUB([0,0,Rb*0.58],[0,0,Rb*0.92],Rb*0.56,Rb*0.46,{hideA:true}));
+  out.push(PNL(at(1,zp),null,[0,0,1],th,{}));
+  /* a frame plate stands proud of each face, spoked out to the corners: two
+     concentric outlines edge-on, and the vane is braced from both sides so the
+     inboard one is not a blank slab when the pictorial looks at its back */
+  const fk=rr(0.64,0.76), tt=th*rr(0.34,0.52), rt=th*0.18, rw=th*0.52;
+  for(const sg of [1,-1]){
+    const zf=zp+sg*(th*0.5+tt*0.5);
+    out.push(PNL(at(fk,zf),null,[0,0,1],tt,{}));
+    if(P.detail>0.4){
+      const zs=zf+sg*(tt*0.5+rt);
+      for(const q of hex){
+        const vx=q[0]*fk*0.94, vy=q[1]*fk*0.94, L2=Math.hypot(vx,vy)||1;
+        out.push(BOX([vx*0.5,vy*0.5,zs],[vx*0.5,vy*0.5,0],
+                     [-vy/L2*rw,vx/L2*rw,0],[0,0,rt]));
+      }
+    }
+  }
+  return {sr,sockets:{
+    cockpit:FR([Rb*0.92,0,0],[1,0,0],[0,1,0],[0,0,1],{x:Rb*1.25,y:Rb*1.1,z:Rb*1.1}),
+    /* the wing socket rides the pylon and is stopped short of the vane, so a
+       wing reads as the strake between hull and plate instead of piercing it */
+    wing:FR([0,0,Rb*0.74],[0,0,1],[0,1,0],[1,0,0],
+            {x:Math.max(sr*1.2,(zp-th*0.5-Rb*0.74)*0.80),y:Rb*0.62,z:Rb*1.15}),
+    tail:FR([0,Rb*0.90,0],[0,1,0],[1,0,0],[0,0,1],{x:Rb*0.85,y:Rb*0.95,z:Rb*0.75}),
+    booster:FR([-Rb*0.92,0,0],[-1,0,0],[0,1,0],[0,0,1],{x:Rb*1.15,y:Rb*1.0,z:Rb*1.0}),
+    gear:FR([0,-Rb*0.90,0],[0,-1,0],[1,0,0],[0,0,1],{x:Rb*1.5,y:Rb*1.0,z:Rb*1.4})
+  }};
 }}
 ];
 
