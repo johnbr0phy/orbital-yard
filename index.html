@@ -166,6 +166,7 @@ canvas{display:block;width:100%;height:100%}
   transition:opacity .2s ease;max-width:80%;text-align:center}
 .toast.on{opacity:1}
 
+/* a narrow window stacks the rail under the plate, as it always did */
 @media (max-width:1000px){
   .wrap{grid-template-columns:1fr;grid-template-rows:minmax(0,58dvh) minmax(0,1fr)}
   .rail{border-right:none;border-top:1px solid var(--rule);order:2;padding:0 16px 22px}
@@ -174,8 +175,27 @@ canvas{display:block;width:100%;height:100%}
   .plate{aspect-ratio:0.78/1;width:100%;height:auto;max-height:100%;max-width:100%}
   .cta{font-size:20px;padding:14px}
 }
+
+/* A phone gets the drawing and one button. The steppers, the sliders, the
+   palette and the exports are all for someone at a desk with a pointer; on a
+   handset they were a wall of chrome under a postage stamp. Everything left
+   after the button belongs to the plate. Kept below the stacked breakpoint so
+   that narrowing a desktop window loses the layout, not the controls. */
+@media (max-width:820px){
+  .wrap{grid-template-rows:minmax(0,1fr) auto}
+  .stage{order:1;padding:5px;min-height:0}
+  .plate{aspect-ratio:auto;width:100%;height:100%;max-width:100%;max-height:100%}
+  .rail{order:2;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));
+    gap:11px;overflow:visible;flex:0 0 auto}
+  .rail>.brand,.rail>.group,.rail>.more,.rail>.note{display:none}
+  .head{position:static;margin:0;padding:0;border-bottom:none;gap:0;background:none}
+  .seedrow{display:none}
+  .social{padding-top:0}
+  .cta{font-size:23px;padding:17px}
+}
 @media (max-width:520px){
-  .plate{aspect-ratio:0.74/1}
+  .cta{font-size:21px;padding:15px}
+  .social a{font-size:10px;padding:8px 4px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
@@ -1773,6 +1793,9 @@ function buildDepth(z,ship,proj,res){
 }
 /* one buffer per view slot: the pictorial rebuilds on every frame of a spin,
    the three elevations only when the ship or the sheet geometry changes */
+/* the depth pass is the frame's real cost, and it scales with area. A phone
+   holds the ceiling well below print resolution; the export lifts it. */
+let ZCAP=1500;
 const ZSLOT=Object.create(null);
 function depthBuffer(ship,proj,res,slot,sig){
   const cur=ZSLOT[slot];
@@ -1811,7 +1834,7 @@ function drawView(t,ship,proj,scale,ox,oy,pal,lw,reveal,showEnv,slot,sig,hatch){
   const EYE=V.norm([D([1,0,0]),D([0,1,0]),D([0,0,1])]);
 
   const bv=viewBBox(ship,proj);
-  const res=Math.max(200,Math.min(1500,Math.round(Math.max(bv.w,bv.h)*scale*1.2)));
+  const res=Math.max(200,Math.min(ZCAP,Math.round(Math.max(bv.w,bv.h)*scale*1.2)));
   const z=depthBuffer(ship,proj,res,slot||"iso",sig||"");
   const VIS=q=>zVis(z,q);
 
@@ -2252,6 +2275,35 @@ function renderSheet(t,W,H,ship,P,pal,opts){
   const projs={profile:PROJ.profile,plan:PROJ.plan,bow:PROJ.bow,iso:isoProj(opts.yaw,opts.pitch)};
   t.rect(0,0,W,H,pal.bg);
 
+  /* A general-arrangement sheet is four views because a draughtsman needs four.
+     On a phone that is four thumbnails, and the pictorial — the only one anybody
+     turns — comes out the size of a postage stamp. Solo throws the sheet away
+     and gives the whole plate to the pictorial. The corner marks sit outside the
+     cell the spin loop repaints, so a frame never wipes them. */
+  if(opts.solo){
+    const mk=U*0.016, mg=U*0.030, tk=U*0.020;
+    const c={x:mg,y:mg,w:W-mg*2,h:H-mg*2};
+    /* size from the hull box, not from this frame's silhouette: the spin only
+       redraws the pictorial, so a scale that tracked the current yaw would make
+       the ship breathe in and out and overrun the plate on its widest quarter */
+    const bbS=ship.bb;
+    const ctr=[(bbS[0][0]+bbS[1][0])/2,(bbS[0][1]+bbS[1][1])/2,(bbS[0][2]+bbS[1][2])/2];
+    const dg=Math.hypot(bbS[1][0]-bbS[0][0],bbS[1][2]-bbS[0][2]);
+    const hg=(bbS[1][1]-bbS[0][1])*Math.abs(Math.cos(opts.pitch))
+            +dg*Math.abs(Math.sin(opts.pitch));
+    const pj=projs.iso;
+    const sc1=Math.min(c.w/Math.max(dg,1e-6),c.h/Math.max(hg,1e-6));
+    const pc=pj(ctr);
+    const o={ox:c.x+c.w/2-pc[0]*sc1, oy:c.y+c.h/2+pc[1]*sc1};
+    drawView(t,ship,pj,sc1,o.ox,o.oy,pal,lw,reveal,false,"iso",
+             `${opts.yaw},${opts.pitch},${k}`,opts.tone!==false);
+    t.path([[mk,mk+tk],[mk,mk],[mk+tk,mk]],ink,lw);
+    t.path([[W-mk-tk,mk],[W-mk,mk],[W-mk,mk+tk]],ink,lw);
+    t.path([[mk,H-mk-tk],[mk,H-mk],[mk+tk,H-mk]],ink,lw);
+    t.path([[W-mk-tk,H-mk],[W-mk,H-mk],[W-mk,H-mk-tk]],ink,lw);
+    return {cells:{iso:c},sc:{iso:sc1},origin:{iso:o}};
+  }
+
   const bProf=viewBBox(ship,projs.profile), bPlan=viewBBox(ship,projs.plan);
   const bBow=viewBBox(ship,projs.bow);
   const shipL=Math.max(bProf.w,bPlan.w);
@@ -2425,8 +2477,17 @@ const S={seed:newSeed(),
   fuse:0.5,detail:0.6,line:1.0,pal:0,block:true,env:false,spin:true,tone:true,
   lock:{topo:null,hulls:null,sym:null,nsec:null,fore:null,joint:null,aft:null,cockpit:null,wing:null,tail:null,booster:null,gear:null},
   yaw:-0.62,pitch:0.34};
+/* A phone's plate is tall and narrow; a ship is long and flat. Held at the
+   desktop's shallow pitch it draws a thin band across the middle with half the
+   plate empty either side of it. Looking further down the hull turns length
+   into height and fills the frame. */
+if(matchMedia("(max-width:820px)").matches)S.pitch=0.62;
 const DEF={yaw:S.yaw,pitch:S.pitch};
 
+/* one breakpoint, shared by the stylesheet and the renderer, so the sheet the
+   canvas draws always matches the layout the page is in */
+const MOBILE=matchMedia("(max-width:820px)");
+const solo=()=>MOBILE.matches;
 const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
 const toastEl=document.getElementById("toast");
 let ship=null,W=0,H=0,reveal=1,raf=0,layout=null,spinRaf=0;
@@ -2445,7 +2506,7 @@ function draw(){
   if(!ship)return;
   ctx.clearRect(0,0,W,H);
   layout=renderSheet(CanvasTarget(ctx),W,H,ship,params(),pal(),
-    {reveal,k:1,block:S.block,env:S.env,tone:S.tone,yaw:S.yaw,pitch:S.pitch});
+    {reveal,k:1,block:S.block,env:S.env,tone:S.tone,solo:solo(),yaw:S.yaw,pitch:S.pitch});
 }
 function drawIso(){
   if(!ship||!layout)return;
@@ -2460,7 +2521,9 @@ function drawIso(){
 /* There is a real depth pass behind every frame now, so the pictorial is
    metered at 30fps and the loop parks itself outright when it is not turning —
    a drawing that spins in the corner should not cost the machine a core. */
-const SPIN_FPS=30, SPIN_STEP=0.0144;
+/* same angular rate either way; a phone just gets fewer, cheaper frames of it */
+let SPIN_FPS=30, SPIN_STEP=0.0144;
+const tune=()=>{ZCAP=solo()?760:1500;SPIN_FPS=solo()?24:30;SPIN_STEP=0.432/SPIN_FPS;};
 let lastSpin=0;
 function spinLoop(now){
   if(!S.spin||reduced){spinRaf=0;return;}
@@ -2630,21 +2693,27 @@ async function offer(filename,data){
     else toast("Couldn't save that sheet");}}
 const fileName=ext=>`${ship.meta.desig.replace(/[^A-Z0-9]+/gi,"-").toLowerCase()}.${ext}`;
 el("expPng").addEventListener("click",async()=>{
+  ZCAP=1900;
   const size=2800,sh=Math.round(size/1.34),off=document.createElement("canvas");
   off.width=size;off.height=sh;
   renderSheet(CanvasTarget(off.getContext("2d")),size,sh,ship,params(),pal(),
     {reveal:1,k:size/Math.max(W,1),block:S.block,env:S.env,tone:S.tone,yaw:S.yaw,pitch:S.pitch});
+  tune();
   const blob=await new Promise(r=>off.toBlob(r,"image/png"));
   if(!blob){toast("Couldn't render that sheet");return;}
   offer(fileName("png"),blob);});
 el("expSvg").addEventListener("click",()=>{
+  ZCAP=1900;
   const size=2400,sh=Math.round(size/1.34),t=SvgTarget(size,sh);
   renderSheet(t,size,sh,ship,params(),pal(),
     {reveal:1,k:size/Math.max(W,1),block:S.block,env:S.env,tone:S.tone,yaw:S.yaw,pitch:S.pitch});
+  tune();
   offer(fileName("svg"),t.serialize());});
 
+tune();
 if(reduced){S.spin=false;el("spin").setAttribute("aria-pressed","false");}
 startSpin();
+MOBILE.addEventListener("change",()=>{tune();resize();});
 let rzRaf=0;
 new ResizeObserver(()=>{if(rzRaf)return;
   rzRaf=requestAnimationFrame(()=>{rzRaf=0;resize();});}).observe(cv);
