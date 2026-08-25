@@ -583,10 +583,42 @@ function inSolid(q,p){
    learn which topology they are on, so the whole variant library survives
    every new skeleton. Paired outriggers cost nothing: put a socket off the
    centreline and the mirror pass duplicates it and everything plugged in. */
-const BIRDS=["HARRIER","KESTREL","TERN","SHRIKE","AVOCET","CURLEW","GANNET","PETREL","SKUA",
-"MERLIN","GODWIT","PLOVER","EIDER","BRANT","SORA","VEERY","JUNCO","SISKIN","REDPOLL","BITTERN",
-"NODDY","JAEGER","FULMAR","WHIMBREL","DUNLIN","KITTIWAKE","RAZORBILL","LAPWING","OSPREY",
-"PHALAROPE","WILLET","SANDERLING","TATTLER","OVENBIRD","NIGHTJAR","CHUKAR"];
+const BIRDS=[
+"HARRIER","KESTREL","TERN","SHRIKE","AVOCET","CURLEW","GANNET","PETREL","SKUA","MERLIN",
+"GODWIT","PLOVER","EIDER","BRANT","SORA","VEERY","JUNCO","SISKIN","REDPOLL","BITTERN","NODDY",
+"JAEGER","FULMAR","WHIMBREL","DUNLIN","KITTIWAKE","RAZORBILL","LAPWING","OSPREY","PHALAROPE",
+"WILLET","SANDERLING","TATTLER","OVENBIRD","NIGHTJAR","CHUKAR","ACCENTOR","ALBATROSS","ANHINGA",
+"ANTBIRD","ANTPITTA","ANTSHRIKE","ANTWREN","APAPANE","ARACARI","AUKLET","BABBLER","BARBET",
+"BATELEUR","BECARD","BELLBIRD","BLACKCAP","BLUETHROAT","BOBOLINK","BOBWHITE","BRAMBLING",
+"BROADBILL","BUFFLEHEAD","BULBUL","BUNTING","BUSHTIT","BUSTARD","BUZZARD","CACIQUE",
+"CANVASBACK","CARACARA","CARDINAL","CATBIRD","CHACHALACA","CHAFFINCH","CHICKADEE","CHIFFCHAFF",
+"CHOUGH","CISTICOLA","COOT","CORMORANT","CORNCRAKE","COTINGA","COWBIRD","CRAKE","CRANE",
+"CREEPER","CROSSBILL","CUCKOO","CURASSOW","DARTER","DICKCISSEL","DIPPER","DOTTEREL","DOVEKIE",
+"DOWITCHER","DRONGO","DUNNOCK","EAGLE","EGRET","ELAENIA","EUPHONIA","FAIRYWREN","FALCON",
+"FANTAIL","FIELDFARE","FIGBIRD","FINCH","FIRECREST","FLAMINGO","FLICKER","FLYCATCHER",
+"FRANCOLIN","FRIGATEBIRD","FROGMOUTH","GADWALL","GALLINULE","GARGANEY","GNATCATCHER",
+"GOLDCREST","GOLDENEYE","GOLDFINCH","GOSHAWK","GRACKLE","GREBE","GREENSHANK","GROSBEAK",
+"GROUSE","GUILLEMOT","GYRFALCON","HAMERKOP","HAWFINCH","HERMIT","HERON","HOATZIN","HOBBY",
+"HONEYEATER","HONEYGUIDE","HOOPOE","HORNBILL","IBIS","IIWI","JABIRU","JACAMAR","JACANA",
+"JACKDAW","JAY","KAGU","KAKAPO","KEA","KILLDEER","KINGBIRD","KINGFISHER","KINGLET","KISKADEE",
+"KITE","KIWI","KNOT","KOEL","KOKAKO","LAMMERGEIER","LANNER","LARK","LIMPKIN","LINNET",
+"LONGSPUR","LOON","LORIKEET","LYREBIRD","MAGPIE","MALLARD","MALLEEFOWL","MANAKIN","MARTIN",
+"MEADOWLARK","MERGANSER","MESITE","MINIVET","MOCKINGBIRD","MONAL","MOORHEN","MOTMOT",
+"MOUSEBIRD","MURRE","MURRELET","MYNA","NENE","NIGHTHAWK","NUTCRACKER","NUTHATCH","ORIOLE",
+"OROPENDOLA","OUZEL","OYSTERCATCHER","PARAKEET","PARDALOTE","PARROTBILL","PARTRIDGE","PEEWIT",
+"PELICAN","PENGUIN","PEWEE","PHOEBE","PICULET","PIHA","PINTAIL","PIPIT","PITTA","POCHARD",
+"POORWILL","POTOO","PRATINCOLE","PTARMIGAN","PUFFBIRD","PUFFIN","PYRRHULOXIA","QUELEA",
+"QUETZAL","RAIL","RAVEN","REDHEAD","REDSHANK","REDSTART","REDWING","ROADRUNNER","ROBIN",
+"ROLLER","ROOK","ROSEFINCH","RUBYTHROAT","RUFF","SANDPIPER","SAPSUCKER","SCAUP","SCOTER",
+"SCRUBWREN","SEEDEATER","SERIEMA","SERIN","SHEARWATER","SHELDUCK","SHOEBILL","SHOVELER",
+"SIRYSTES","SKIMMER","SKYLARK","SMEW","SNIPE","SOLITAIRE","SPARROW","SPINETAIL","SPOONBILL",
+"STANDARDWING","STARLING","STILT","STINT","STONECHAT","STORK","SUNBIRD","SUNBITTERN","SWALLOW",
+"SWIFT","TANAGER","TAPACULO","TATTLERBIRD","TEAL","THICKKNEE","THORNBILL","THRASHER","THRUSH",
+"TINAMOU","TITMOUSE","TODY","TOUCAN","TOWHEE","TRAGOPAN","TREECREEPER","TROGON","TROPICBIRD",
+"TURACO","TURNSTONE","TWITE","UMBRELLABIRD","VANGA","VEERYBIRD","VERDIN","VIREO","VULTURE",
+"WAGTAIL","WARBLER","WATERTHRUSH","WAXBILL","WAXWING","WEAVER","WHEATEAR","WHINCHAT",
+"WHITETHROAT","WIDGEON","WIGEON","WOODCOCK","WOODLARK","WREN","WRENTIT","WRYNECK","XENOPS",
+"YELLOWHAMMER","YELLOWLEGS","YELLOWTHROAT","ZOSTEROPS"];
 
 const CAP=(a,b,r,o)=>Object.assign({k:"capsule",a,b,r},o||{});
 const TUB=(a,b,r1,r2,o)=>Object.assign({k:"tube",a,b,r1,r2},o||{});
@@ -1467,10 +1499,23 @@ function buildShip(seed,P,lock){
   for(const [q,r] of pts)for(let i=0;i<3;i++){
     bb[0][i]=Math.min(bb[0][i],q[i]-r);bb[1][i]=Math.max(bb[1][i],q[i]+r);}
 
-  const name=pick(BIRDS), klass=pick(BIRDS);
+  /* No two ships may carry the same designation, and luck is not a good enough
+     guarantee. The seed is a 32-bit word; read it as a mixed-radix number whose
+     digits ARE the designation — one digit names the ship, two are the yard
+     block letters, and the remainder is the pennant. Digit extraction is a
+     bijection, so the seed can be reconstructed from the name on the plate and
+     all 4,294,967,296 hulls are distinct by construction, not by odds.
+       304 names x 26 x 26 letters x 20,900 pennants > 2^32. */
+  const NB=BIRDS.length, AZ=26;
+  let u=seed>>>0;
+  const name=BIRDS[u%NB];             u=(u-u%NB)/NB;
+  const b1=u%AZ;                      u=(u-b1)/AZ;
+  const b2=u%AZ;                      u=(u-b2)/AZ;
+  const block=String.fromCharCode(65+b1,65+b2), pennant=u;
+  const klass=pick(BIRDS);
   const role = chosen.gear.i===0&&topo.n==="KEEL" ? ["OSV","ORBITAL SERVICE VEHICLE"] : topo.role;
   return {parts,envs,chosen,bb,meta:{
-    desig:`${role[0]}-${1000+(seed%8999)} ${name}`,
+    desig:`${role[0]}-${block}${String(pennant).padStart(5,"0")} ${name}`,
     klass:`${klass}-CLASS ${role[1]}`,
     length:bb[1][0]-bb[0][0], beam:bb[1][2]-bb[0][2], height:bb[1][1]-bb[0][1],
     mass:vol*0.21, crew:chosen.cockpit.crew, note:topo.note||"",
