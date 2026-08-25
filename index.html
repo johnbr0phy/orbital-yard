@@ -476,7 +476,10 @@ booster:[
      B.tube([bl*0.44,0,z],[bl*0.52,0,z],w*0.09,w*0.12);}
  }}
 ],
-/* ---- gear: local x = down, y = fore, z = starboard ---- */
+/* ---- gear: local x = down, y = fore, z = starboard ----
+   A leg's gauge follows its own span. Scaling it from the socket radius alone
+   gave a needle whenever a spread-out foot had to reach a long way up to the
+   hull, which is exactly what an edge-on spade asks for. */
 gear:[
  {n:"STOWED",make(B,sr,rr,R,E,probe){
    for(const y of [E.y*0.55,-E.y*0.1]){
@@ -486,10 +489,13 @@ gear:[
  }},
  {n:"TRICYCLE",make(B,sr,rr,R,E,probe){
    const h=E.x*rr(0.6,0.85), wr=h*0.24;
+   /* rake the strut inboard at the top: a foot set wide of a thin hull has
+      nothing above it to root in, and a raked leg is what the real thing does */
    const leg=(y,z,scale)=>{
-     const d=probe(y,z)+sr*0.3;
-     B.tube([-d,y,z],[h*scale,y,z],sr*0.14,sr*0.10,{hideA:true});
-     B.tube([h*scale*0.55,y,z],[h*scale,y+h*0.12,z],sr*0.07,sr*0.06);
+     const zt=z*0.3;
+     const d=probe(y,zt)+sr*0.3, g=gauge(sr,d+h*scale);
+     B.tube([-d,y,zt],[h*scale,y,z],g,g*0.72,{hideA:true});
+     B.tube([h*scale*0.55,y,z],[h*scale,y+h*0.12,z],g*0.5,g*0.43);
      B.disc([h*scale,y,z+wr*0.42],[0,0,1],wr*scale,wr*0.34);
      B.disc([h*scale,y,z-wr*0.42],[0,0,1],wr*scale,wr*0.34);
    };
@@ -498,23 +504,26 @@ gear:[
  }},
  {n:"SKIDS",make(B,sr,rr,R,E,probe){
    const h=E.x*rr(0.45,0.65), z=E.z*rr(0.55,0.8);
+   let g=sr*0.13;
    for(const y of [E.y*0.5,-E.y*0.2]){
-     const d=probe(y,z)+sr*0.3;
-     B.tube([-d,y,z],[h,y,z],sr*0.13,sr*0.09,{hideA:true});
+     const d=probe(y,z*0.3)+sr*0.3;
+     g=Math.max(g,gauge(sr,d+h));
+     B.tube([-d,y,z*0.3],[h,y,z],g,g*0.7,{hideA:true});
    }
-   B.cap([h,E.y*0.72,z],[h,-E.y*0.5,z],sr*0.16);
-   B.tube([h,E.y*0.72,z],[h*0.78,E.y*0.95,z],sr*0.14,sr*0.10);
+   B.cap([h,E.y*0.72,z],[h,-E.y*0.5,z],g*1.2);
+   B.tube([h,E.y*0.72,z],[h*0.78,E.y*0.95,z],g*1.05,g*0.75);
  }},
  {n:"LEGS",make(B,sr,rr,R,E,probe){
    const h=E.x*rr(0.7,0.95), sp=E.z*rr(0.7,1.0);
    for(const y of [E.y*0.55,-E.y*0.35]){
-     const d=probe(y,sp*0.25)+sr*0.3;
-     B.tube([-d,y,sp*0.25],[h,y,sp],sr*0.13,sr*0.09,{hideA:true});
-     B.tube([h*0.42,y,sp*0.55],[h*0.95,y,sp*0.35],sr*0.07,sr*0.06);
+     const d=probe(y,sp*0.25)+sr*0.3, g=gauge(sr,d+h);
+     B.tube([-d,y,sp*0.25],[h,y,sp],g,g*0.7,{hideA:true});
+     B.tube([h*0.42,y,sp*0.55],[h*0.95,y,sp*0.35],g*0.54,g*0.46);
      B.disc([h,y,sp],[1,0,0],h*0.20,h*0.09);
    }
  }}
 ]};
+const gauge=(sr,len)=>Math.max(sr*0.13,Math.abs(len)*0.052);
 function ring(B,br,bl,sr,rr){
   for(let i=0;i<4;i++){const a=i/4*Math.PI*2+0.5;
     B.tube([bl*0.30,Math.cos(a)*sr*0.9,Math.sin(a)*sr*0.9],
@@ -1097,7 +1106,10 @@ const TOPO=[
     wing:FR([-Lx*0.06,-Hh*0.06,th*0.60],[0,0,1],[0,1,0],[1,0,0],{x:Hh*0.34,y:Hh*0.34,z:Lx*0.6}),
     tail:FR([-Lx*0.28,Hh*0.48,0],[0,1,0],[1,0,0],[0,0,1],{x:Hh*0.26,y:Lx*0.5,z:th*1.6}),
     booster:FR([-Lx*0.48,-Hh*0.02,0],[-1,0,0],[0,1,0],[0,0,1],{x:Lx*0.42,y:Hh*0.42,z:th*1.5}),
-    gear:FR([Lx*0.02,-Hh*0.48,0],[0,-1,0],[1,0,0],[0,0,1],{x:Hh*0.26,y:Lx*0.5,z:th*1.5})
+    /* the drop and the foot spread are the beam's business, not the height's:
+       scaling them off Hh put the feet out past the sloping bottom edge and
+       asked for stilts to reach back up to it */
+    gear:FR([-Lx*0.04,-Hh*0.48,0],[0,-1,0],[1,0,0],[0,0,1],{x:th*1.8,y:Lx*0.30,z:th*1.5})
   }};
 }},
 
@@ -1320,15 +1332,40 @@ function buildShip(seed,P,lock){
   /* The mount is a point, but a variant that spreads out — gear legs, twin
      fins — needs the hull surface at each of its feet, not at the socket. */
   const hullSoFar=parts.slice();
-  const probeFor=fr=>{
-    const back=V.mul(V.norm(fr.f),-1), M=chassis.sr*5;
-    return (u,v)=>{
+  /* The reach used to be chassis.sr*5, which is the beam — fine on a hull whose
+     feet spread about as far as it is wide, hopeless on an edge-on spade that
+     is six times taller than it is broad. A foot out past the old reach found
+     nothing, took the 0, and rooted its leg in mid-air with the buried cap
+     still flagged hidden: a strut open at the top, floating. The reach now
+     follows the socket's own envelope, and a miss falls back to the depth under
+     the socket origin — which is on the hull by construction — instead of 0. */
+  const probeFor=(fr,E)=>{
+    const back=V.mul(V.norm(fr.f),-1);
+    const M=Math.max(chassis.sr*5,E.x*1.7+E.y*0.9), N=48;
+    const hit=(u,v)=>{
       const base=V.add(fr.o,V.add(V.mul(fr.u,u),V.mul(fr.s,v)));
-      for(let i=0;i<=28;i++){
-        const d=M*i/28, q=V.add(base,V.mul(back,d));
+      for(let i=0;i<=N;i++){
+        const d=M*i/N, q=V.add(base,V.mul(back,d));
         for(const cp of hullSoFar) if(inSolid(q,cp)) return d;
       }
-      return 0;
+      return -1;
+    };
+    const home=Math.max(0,hit(0,0));
+    /* an open frame is mostly gaps, so a ray straight up can slip between two
+       members with solid metal either side of it. Nudge and retry before giving
+       up — the leg then roots on the member it was a hair away from. */
+    const du=E.y*0.11, dv=E.z*0.11;
+    return (u,v)=>{
+      let d=hit(u,v);
+      if(d<0)for(const [au,av] of [[du,0],[-du,0],[0,dv],[0,-dv],[du,dv],[-du,-dv]]){
+        d=hit(u+au,v+av);
+        if(d>=0)break;
+      }
+      /* no ceiling on the depth: clamping it was quietly guaranteeing the very
+         thing this is here to prevent, since a truncated root sits below the
+         surface it was meant to bury itself in. A long leg is handled by making
+         it thicker, not by cutting it short. */
+      return d<0?home:d;
     };
   };
 
@@ -1341,7 +1378,7 @@ function buildShip(seed,P,lock){
     chosen[id]={i:idx,n:v.n,crew:v.crew||0};
     const out=[];
     const mr=sock.sr||Math.min(chassis.sr,sock.E.y*0.8,sock.E.z*0.8);
-    v.make(builder(sock.fr,out),mr,rr,R,sock.E,probeFor(sock.fr));
+    v.make(builder(sock.fr,out),mr,rr,R,sock.E,probeFor(sock.fr,sock.E));
     for(const p of out){applyOps(p,sock.fr);p.slot=true;p.g=id;p.sd=V.norm(sock.fr.f);
       if(sock.solo)p.solo=true;}
     parts.push(...out);
