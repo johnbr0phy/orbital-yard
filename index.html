@@ -922,75 +922,56 @@ function linkHulls(A,B,rr,R,P,out,lock){
   for(const q of tmp)out.push(xform(q,pa,ex,ey,ez));
   return {i:ji,n:JOINT[ji].n};
 }
-function multiHull(nH,R,rr,P,out,lock,opts){
-  const sr=1.8+P.fuse*1.05, L0=(13+P.fuse*15)*rr(0.92,1.12);
-  /* A berth on the centreline is one mass; a berth off it comes back from the
-     mirror as two. The plans below are the only ones that add up: 1+1, 1+2,
-     1+1+2 — so the name on the drawing is always the number of masses on it. */
-  const side=R()<0.62?-1:1;
-  const berths=[{dx:0,dy:0,pair:false,k:1}];
-  if(nH===2)
-    berths.push({dx:rr(-0.34,0.10),dy:side,pair:false,k:rr(0.62,0.92)});
-  else if(nH===3)
-    berths.push({dx:rr(-0.30,0.24),dy:rr(-0.5,0.4),pair:true,k:rr(0.55,0.85)});
-  else{
-    berths.push({dx:rr(-0.34,0.04),dy:side,pair:false,k:rr(0.60,0.86)});
-    berths.push({dx:rr(-0.24,0.30),dy:rr(-0.4,0.5),pair:true,k:rr(0.50,0.76)});
+/* Hull count is its own axis, not a property of any one chassis. Whatever the
+   topology builds becomes the lead mass, and 1-3 further masses berth alongside
+   it — so a lattice rig, a saucer or a plain keel can each be the front half of
+   a two-, three- or four-hull ship. A berth on the centreline is one mass; a
+   berth off it comes back from the mirror as two, so the plans that add up are
+   1+1, 1+2 and 1+1+2. */
+function leadExtent(parts){
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,hz=0;
+  for(const p of parts)for(const [q,r] of partExtents(p)){
+    x0=Math.min(x0,q[0]-r);x1=Math.max(x1,q[0]+r);
+    y0=Math.min(y0,q[1]-r);y1=Math.max(y1,q[1]+r);
+    hz=Math.max(hz,Math.abs(q[2])+r);
   }
-  /* build every mass on the axis first: its own extents decide how far out it
-     berths, so the connector between two masses is always visible daylight */
-  const built=[];
-  for(const b of berths){
-    const r=sr*b.k, xN=L0*0.5+b.dx*L0, tmp=[];
-    const sp=composeSpine(xN-L0*(0.55+0.45*b.k),xN,r,rr,R,P,tmp,lock,opts);
+  return {x0,x1,y0,y1,hz};
+}
+function addHulls(nH,lead,sr,R,rr,P,out,lock,opts){
+  if(nH<2)return null;
+  const side=R()<0.6?-1:1;
+  const plan=nH===2?[{dy:side,pair:false}]
+            :nH===3?[{dy:rr(-0.4,0.4),pair:true}]
+                   :[{dy:side,pair:false},{dy:rr(-0.4,0.4),pair:true}];
+  const L=Math.max(lead.x1-lead.x0,sr*4);
+  let low=null;
+  for(const b of plan){
+    const r=sr*rr(0.55,0.85), tmp=[];
+    const xN=lead.x1-L*rr(0,0.28);
+    const sp=composeSpine(xN-L*rr(0.55,0.90),xN,r,rr,R,P,tmp,lock,opts);
     let hy=r,hz=r;
     for(const q of sp.secs){
       hy=Math.max(hy,Math.abs(q.off[1])+q.info.hy);
       hz=Math.max(hz,Math.abs(q.off[2])+q.info.hz);
     }
-    built.push({b,r,xN,tmp,sp,hy,hz});
-  }
-  const P0=built[0], hulls=[];
-  for(let i=0;i<built.length;i++){
-    const h=built[i], b=h.b;
+    /* berth off the lead's real extents, so every link is visible daylight */
+    const gap=sr*rr(0.7,1.8);
     let y=0,z=0;
-    if(i>0){
-      const gap=sr*rr(0.75,1.9);
-      if(b.pair){z=P0.hz+h.hz+gap; y=b.dy*sr*1.4;}
-      else y=b.dy*(P0.hy+h.hy+gap);
-    }
-    for(const q of h.tmp)out.push(xlate(q,[0,y,z]));
-    hulls.push({sp:h.sp,r:h.r,y,z,x0:h.sp.xTail,x1:h.xN});
+    if(b.pair){z=lead.hz+hz+gap;y=b.dy*sr*1.4;}
+    else y=b.dy>0?lead.y1+hy+gap:lead.y0-hy-gap;
+    for(const q of tmp)out.push(xlate(q,[0,y,z]));
+    const h={sp,r,y,z,hy,x0:sp.xTail,x1:xN};
+    linkHulls({x0:lead.x0,x1:lead.x1,y:(lead.y0+lead.y1)*0.5,z:0,r:sr},h,rr,R,P,out,lock);
+    if(!low||h.y-h.hy<low.y-low.hy)low=h;
   }
-  for(let i=1;i<hulls.length;i++)linkHulls(hulls[0],hulls[i],rr,R,P,out,lock);
-
-  const prim=hulls[0], sp=prim.sp, L=prim.x1-prim.x0;
-  let low=prim,wide=prim,aft=prim;
-  for(const h of hulls){
-    if(h.y-h.r<low.y-low.r)low=h;
-    if(h.z+h.r>wide.z+wide.r)wide=h;
-    if(h.x0<aft.x0)aft=h;
-  }
-  return {sr,spine:sp,
-    recipe:hulls.map(h=>h.sp.secs.map(q=>q.n).join(" + ")).join("  /  "),
-    /* the title block has one line: name each mass by the section it leads with,
-       the way a hull is named for its forward body, and leave the full chain
-       breakdown to the rail where it has room to wrap */
-    recipeShort:hulls.map(h=>h.sp.secs[0].n).join(" / "),
-    sockets:{
-      cockpit:FR([prim.x1,prim.y,prim.z],[1,0,0],[0,1,0],[0,0,1],
-                 {x:L*0.30,y:sr*2.3,z:sr*2.3}),
-      wing:FR([wide.sp.wingX,wide.y+wide.sp.wingY,wide.z+wide.sp.wingZ],
-              [0,0,1],[0,1,0],[1,0,0],{x:L*0.36,y:sr*1.6,z:L*0.26}),
-      tail:FR([sp.tailX,prim.y+sp.tailY,prim.z+sp.endOff[2]],[0,1,0],[1,0,0],[0,0,1],
-              {x:L*0.22,y:L*0.20,z:L*0.18}),
-      booster:FR([aft.x0,aft.y+aft.sp.endOff[1],aft.z+aft.sp.endOff[2]],
-                 [-1,0,0],[0,1,0],[0,0,1],{x:L*0.30,y:sr*2.1,z:sr*2.1}),
-      gear:FR([low.sp.gearX,low.y+low.sp.gearY,low.z],[0,-1,0],[1,0,0],[0,0,1],
-              {x:sr*2.0,y:L*0.28,z:low.sp.gearZ*1.1})
-    }};
+  /* if a mass now hangs below the lead, the gear belongs on it, not on thin air */
+  if(low&&low.y-low.hy<lead.y0)
+    return {gear:FR([low.sp.gearX,low.y+low.sp.gearY,low.z],[0,-1,0],[1,0,0],[0,0,1],
+                    {x:sr*2.0,y:L*0.28,z:low.sp.gearZ*1.1})};
+  return null;
 }
 
+const HULLN=[{n:"SINGLE"},{n:"TWIN"},{n:"TRIPLE"},{n:"QUAD"}];
 const SYM=[{n:"BILATERAL",k:2},{n:"RADIAL-3",k:3},{n:"RADIAL-4",k:4},{n:"RADIAL-6",k:6}];
 const TOPO=[
 /* ---------------- 1. keel: one tube, everything bolted to it ---------------- */
@@ -1012,14 +993,6 @@ const TOPO=[
             {x:sr*2.0,y:L*0.30,z:sp.gearZ*1.1})
   }};
 }},
-
-/* ------- 2-4. multi-hull: any chain in every mass, connectors between ------- */
-{n:"DUAL HULL",role:["EXP","LONG-RANGE EXPLORER"],spine:true,
-  make(R,rr,P,out,lock,opts){return multiHull(2,R,rr,P,out,lock,opts);}},
-{n:"TRIPLE HULL",role:["HFR","HEAVY FREIGHTER"],spine:true,
-  make(R,rr,P,out,lock,opts){return multiHull(3,R,rr,P,out,lock,opts);}},
-{n:"QUAD HULL",role:["FBS","FORWARD BASE SHIP"],spine:true,
-  make(R,rr,P,out,lock,opts){return multiHull(4,R,rr,P,out,lock,opts);}},
 
 /* ---- 3. saucer: one lifting disc, forward prongs, cockpit off to one side ---- */
 {n:"SAUCER",role:["LFR","LIGHT FREIGHTER"],make(R,rr,P,out){
@@ -1324,6 +1297,16 @@ function buildShip(seed,P,lock){
   chosen.fore=chosen.joint=chosen.aft=chosen.nsec=NA;chosen.recipe="";
   const chassis=topo.make(R,rr,P,parts,lock);
 
+  /* rolled on its own, so three ships in four carry more than one hull */
+  const hIdx=(lock&&lock.hulls!=null)?Math.min(lock.hulls,HULLN.length-1)
+                                     :Math.floor(R()*HULLN.length);
+  const nHull=hIdx+1;
+  chosen.hulls={i:hIdx,n:HULLN[hIdx].n};
+  if(nHull>1){
+    const extra=addHulls(nHull,leadExtent(parts),chassis.sr,R,rr,P,parts,lock,{});
+    if(extra&&extra.gear)chassis.sockets.gear=extra.gear;
+  }
+
   if(chassis.spine){
     const sp=chassis.spine;
     chosen.fore={i:sp.fore.i,n:sp.fore.n};
@@ -1397,7 +1380,7 @@ function buildShip(seed,P,lock){
   const radOf=p=>{const c=partCentroid(p);return Math.hypot(c[1],c[2]);};
 
   const forked=chassis.spine?Math.abs(chassis.spine.endOff[2])>1e-6:false;
-  const axialOK=!!topo.axial&&!forked;
+  const axialOK=!!topo.axial&&!forked&&nHull===1;
   const syI=axialOK?((lock&&lock.sym!=null)?Math.min(lock.sym,SYM.length-1):Math.floor(R()*SYM.length)):0;
   chosen.sym={i:syI,n:axialOK?SYM[syI].n:"BILATERAL"};
 
@@ -2387,6 +2370,7 @@ const SECN=[{n:"2 SECTIONS"},{n:"3 SECTIONS"},{n:"4 SECTIONS"}];
 /* adv rows are the ones that describe how a hull is put together — real
    controls, but not what anyone touches first, so they sit behind the fold */
 const ROWS=[{id:"topo",label:"Hull",list:TOPO},
+  {id:"hulls",label:"Hulls",list:HULLN},
   {id:"sym",label:"Symmetry",list:SYM,adv:true},
   {id:"nsec",label:"Chain",list:SECN,adv:true},
   {id:"fore",label:"Fore",list:SECT,adv:true},
@@ -2402,7 +2386,7 @@ const newSeed=()=>Math.floor(Math.random()*SEED_MAX);
 const normSeed=v=>{v=Math.floor(Math.abs(v));return isFinite(v)?v%SEED_MAX:1;};
 const S={seed:newSeed(),
   fuse:0.5,detail:0.6,line:1.0,pal:0,block:true,env:false,spin:true,tone:true,
-  lock:{topo:null,sym:null,nsec:null,fore:null,joint:null,aft:null,cockpit:null,wing:null,tail:null,booster:null,gear:null},
+  lock:{topo:null,hulls:null,sym:null,nsec:null,fore:null,joint:null,aft:null,cockpit:null,wing:null,tail:null,booster:null,gear:null},
   yaw:-0.62,pitch:0.34};
 const DEF={yaw:S.yaw,pitch:S.pitch};
 
@@ -2510,7 +2494,7 @@ function renderSlots(){
   for(let n=2;n<=4;n++) chains+=Math.pow(SECT.length,n)*Math.pow(JOINT.length,n-1);
   let chassis=0;
   for(const t of TOPO) chassis+=(t.spine?chains:1)*(t.axial?SYM.length:1);
-  const total=chassis*slots;
+  const total=chassis*slots*HULLN.length;
   el("combos").textContent="· "+(total>=1e9?(total/1e9).toFixed(1)+"B":total.toLocaleString())+" base";
 }
 function bind(id,valId,get,set,fmt,rebuild){
