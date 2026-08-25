@@ -126,17 +126,15 @@ button[aria-pressed="false"].tog{color:var(--dim)}
   color:var(--dim);text-transform:uppercase;margin-top:auto;border-top:1px solid var(--rule);padding-top:12px}
 .note kbd{font-family:inherit;border:1px solid var(--rule);padding:1px 4px}
 
-/* the two links people actually came for, pinned in the sticky head so no
-   amount of scrolling through the controls can bury them */
-.social{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* Footer, not a pitch: the links sit under the keyboard hints, weighted the
+   same as each other and lighter than anything that changes the drawing. */
+.social{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:12px}
 .social a{display:flex;align-items:center;justify-content:center;
-  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
-  text-transform:uppercase;text-decoration:none;padding:10px 6px;line-height:1;
-  color:var(--ink);border:1px solid var(--rule);
-  transition:border-color .12s ease,filter .12s ease}
-.social a:hover{border-color:var(--ink)}
-.social a.star{background:var(--plate);color:var(--plate-ink);border-color:var(--plate)}
-.social a.star:hover{filter:brightness(1.14)}
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;text-decoration:none;padding:9px 6px;line-height:1;
+  color:var(--dim);border:1px solid var(--rule);
+  transition:border-color .12s ease,color .12s ease}
+.social a:hover{border-color:var(--ink);color:var(--ink)}
 
 /* everything that is a second thought lives behind one disclosure */
 .more{border-top:1px solid var(--rule);padding-top:14px;
@@ -189,11 +187,6 @@ canvas{display:block;width:100%;height:100%}
       <button class="cta" id="roll">New ship <kbd>N</kbd></button>
       <div class="seedrow"><label for="seed">Hull</label>
         <input id="seed" inputmode="numeric" aria-label="Hull number"></div>
-      <div class="social">
-        <a class="star" href="https://github.com/johnbr0phy/orbital-yard"
-           target="_blank" rel="noopener">Star on GitHub</a>
-        <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">Follow @JohnBr0</a>
-      </div>
     </div>
 
     <div class="brand">
@@ -242,6 +235,11 @@ canvas{display:block;width:100%;height:100%}
     </details>
 
     <div class="note">Drag pictorial to orbit &middot; <kbd>N</kbd> roll &middot; <kbd>R</kbd> reset iso</div>
+    <div class="social">
+      <a href="https://github.com/johnbr0phy/orbital-yard"
+         target="_blank" rel="noopener">Star on GitHub</a>
+      <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">Follow @JohnBr0</a>
+    </div>
   </aside>
 
   <main class="stage">
