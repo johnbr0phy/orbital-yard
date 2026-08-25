@@ -351,7 +351,12 @@ function builder(fr,out){
         u:D(hx,0,0),v:D(0,hy,0),w:D(0,0,hz)},o||{})),
     /* pts are [span, chord] in the frame's x–z plane; pts[0]→pts[1] is the root edge */
     panel:(pts,th,o)=>push(Object.assign({k:"panel",pts:pts.map(p=>L(p[0],0,p[1])),
-        n:V.norm(D(0,1,0)),th,skipSide:0},o||{}))
+        n:V.norm(D(0,1,0)),th,skipSide:0},o||{})),
+    /* the other plate: standing square to the span instead of lying in the
+       planform, so pts are [chord, up] in the y–z plane at one station out the
+       boom. No edge of it is buried, so none is skipped. */
+    vane:(x,pts,th,o)=>push(Object.assign({k:"panel",pts:pts.map(p=>L(x,p[1],p[0])),
+        n:V.norm(D(1,0,0)),th,skipSide:-1},o||{}))
   };
 }
 
@@ -444,6 +449,30 @@ wing:[
    const sw=cr*rr(0.35,0.6);
    B.panel([[-sr*0.6,-cr*0.5],[-sr*0.6,cr*0.5],[sp,cr*0.5+sw],[sp,cr*0.5+sw-ct]],th,{det:{ribs:3,line:0.75}});
    B.box([sp*0.62,th*1.8,cr*0.1],cr*0.10,th*1.4,cr*0.22);
+ }},
+ /* the vane the VANE chassis carries, cut to the wing socket so any hull can
+    fly it: a hexagonal plate square to the span, framed and spoked on both
+    faces, hung off a boom instead of sprouting a planform */
+ {n:"HEX VANE",make(B,sr,rr,R,E){
+   const sp=E.x*rr(0.86,1.02);
+   const hy=Math.max(E.y*0.95,sp*rr(0.52,0.66));      /* half-height */
+   const hc=Math.min(E.z*rr(0.48,0.62),hy*0.74);      /* half-chord  */
+   const sh=hy*rr(0.58,0.74);                         /* shoulder    */
+   const th=Math.min(sr*rr(0.44,0.60),hc*0.22);
+   const hex=[[hc,sh],[0,hy],[-hc,sh],[-hc,-sh],[0,-hy],[hc,-sh]];
+   B.tube([-sr*0.6,0,0],[sp-th*0.5,0,0],sr*0.66,sr*0.40,{hideA:true});
+   B.vane(sp,hex,th,{});
+   const fk=rr(0.62,0.74), tt=th*rr(0.36,0.52), rw=Math.max(th*0.55,hc*0.055);
+   for(const s2 of [1,-1]){
+     const xf=sp+s2*(th*0.5+tt*0.5);
+     B.vane(xf,hex.map(q=>[q[0]*fk,q[1]*fk]),tt,{});
+     for(const q of hex){
+       const vz=q[0]*fk*0.94, vy=q[1]*fk*0.94, L2=Math.hypot(vz,vy)||1;
+       const pz=-vy/L2*rw, py=vz/L2*rw;
+       B.vane(xf+s2*(tt*0.5+tt*0.4),
+              [[pz,py],[vz+pz,vy+py],[vz-pz,vy-py],[-pz,-py]],tt*0.8,{});
+     }
+   }
  }},
  {n:"STUB + NACELLE",make(B,sr,rr,R,E){
    const sp=E.x*rr(0.34,0.5), cr=E.z*rr(0.42,0.6), th=sr*0.44;
