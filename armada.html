@@ -1894,11 +1894,16 @@ function compile(vs,fs){
 /* one vertex stream: xyz world-baked, w = the ship's bob phase (its tint too) */
 const shipProg=compile(`#version 300 es
 layout(location=0) in vec4 aV;
-uniform mat4 uVP;uniform float uT,uBob;
+uniform mat4 uVP;uniform float uT,uBob,uJump;
 out vec3 vW;out float vTint;
 void main(){
   vec3 p=aV.xyz;
   p.y+=sin(uT*0.55+aV.w)*uBob;
+  /* Out of the jump: she arrives running, along the fleet's axis, and sheds it
+     in about a second. An exponential is the honest curve — all the speed is
+     in the first moments and the tail is asymptotic, which is what a ship
+     shedding velocity looks like and what a linear ease-out never does. */
+  p.x-=uJump*exp(-max(0.0,uT-aV.w)*3.4);
   vW=p;vTint=fract(aV.w*0.618034);
   gl_Position=uVP*vec4(p,1.0);
 }`,`#version 300 es
@@ -1931,7 +1936,7 @@ void main(){
   o=vec4(uInk,0.30*(1.0-r*1.4));
 }`);
 const U=n=>gl.getUniformLocation(shipProg,n);
-const UN={vp:U("uVP"),t:U("uT"),bob:U("uBob"),eye:U("uEye"),ink:U("uInk"),bg:U("uBg"),fog:U("uFog")};
+const UN={vp:U("uVP"),t:U("uT"),bob:U("uBob"),jump:U("uJump"),eye:U("uEye"),ink:U("uInk"),bg:U("uBg"),fog:U("uFog")};
 
 /* ---- the dressed ship ----------------------------------------------------
    The fleet's shader is one lambert term and a fill, which is right for two
@@ -1943,31 +1948,33 @@ const UN={vp:U("uVP"),t:U("uT"),bob:U("uBob"),eye:U("uEye"),ink:U("uInk"),bg:U("
    channel — the fleet should not carry an attribute only one ship reads. */
 const luxProg=compile(`#version 300 es
 layout(location=0) in vec4 aV;
-uniform mat4 uVP;uniform float uT,uBob;
+uniform mat4 uVP;uniform float uT,uBob,uJump;
 out vec3 vW;out float vTint;
 void main(){
   vec3 p=aV.xyz;
   p.y+=sin(uT*0.55+aV.w)*uBob;
+  /* Out of the jump: she arrives running, along the fleet's axis, and sheds it
+     in about a second. An exponential is the honest curve — all the speed is
+     in the first moments and the tail is asymptotic, which is what a ship
+     shedding velocity looks like and what a linear ease-out never does. */
+  p.x-=uJump*exp(-max(0.0,uT-aV.w)*3.4);
   vW=p;vTint=fract(aV.w*0.618034);
   gl_Position=uVP*vec4(p,1.0);
 }`,`#version 300 es
 precision highp float;
 in vec3 vW;in float vTint;
-uniform vec3 uEye,uInk,uBg,uPaint;
+uniform vec3 uEye,uInk,uBg;
 uniform float uFog,uEmis,uPaintMix;
 out vec4 o;
 void main(){
   float fog=1.0-exp(-length(uEye-vW)*uFog);
-  /* A lit port is a light source, not a surface: no shading, and it keeps its
-     brightness through the fog that swallows the hull around it. It cannot be
-     brighter than the hull to read, either — the plating is already drawn at
-     very nearly the ink colour, so an emissive white port simply vanished into
-     it. Warm is the axis with room in it: every palette here is a cool ink on
-     a darker ground, so lamplight is the one colour nothing else on the ship
-     is using, and a row of them says crew aboard at a glance. */
+  /* A port reads as an opening, not as a lamp. The plating around it is
+     already drawn at very nearly the ink colour, so there is no headroom above
+     the hull to be bright in — the contrast has to go the other way. Dropped
+     almost to the ground colour it reads as a hole cut in the plating, which
+     is what a window is, and it does it in the palette rather than against it. */
   if(uEmis>0.5){
-    vec3 lit=vec3(1.00,0.80,0.42);
-    o=vec4(mix(lit,uBg,fog*0.34),1.0);
+    o=vec4(mix(mix(uBg,uInk,0.09),uBg,fog*0.55),1.0);
     return;
   }
   vec3 N=normalize(cross(dFdx(vW),dFdy(vW)));
@@ -1983,25 +1990,28 @@ void main(){
   float shade=0.15+0.60*d+0.15*fl+0.10*bo+0.09*(N.y*0.5+0.5);
   shade=shade*(0.92+0.16*vTint)+spec+rim;
   vec3 base=mix(uBg,uInk,clamp(shade,0.0,1.0));
-  base=mix(base,mix(uBg,uPaint,clamp(shade*1.15,0.10,1.0)),uPaintMix);
+  /* paint is a tone, not a hue: the same ink laid down darker, so a band or a
+     chevron reads as marking and never as a second colour on the sheet */
+  base=mix(base,mix(uBg,uInk,clamp(shade*0.38,0.0,1.0)),uPaintMix);
   o=vec4(mix(base,uBg,fog*0.88),1.0);
 }`);
 const LX={vp:gl.getUniformLocation(luxProg,"uVP"),t:gl.getUniformLocation(luxProg,"uT"),
-  bob:gl.getUniformLocation(luxProg,"uBob"),eye:gl.getUniformLocation(luxProg,"uEye"),
+  bob:gl.getUniformLocation(luxProg,"uBob"),jump:gl.getUniformLocation(luxProg,"uJump"),eye:gl.getUniformLocation(luxProg,"uEye"),
   ink:gl.getUniformLocation(luxProg,"uInk"),bg:gl.getUniformLocation(luxProg,"uBg"),
   fog:gl.getUniformLocation(luxProg,"uFog"),emis:gl.getUniformLocation(luxProg,"uEmis"),
-  paint:gl.getUniformLocation(luxProg,"uPaint"),mix:gl.getUniformLocation(luxProg,"uPaintMix")};
+  mix:gl.getUniformLocation(luxProg,"uPaintMix")};
 
 /* her name, painted on the flank. Discard rather than blend: the quad stands
    a hair proud of the plating, so the letters need no sorting and no blend
    state, and the hull shows through everywhere the glyphs are not. */
 const decalProg=compile(`#version 300 es
 layout(location=0) in vec3 aP;layout(location=1) in vec2 aUV;
-uniform mat4 uVP;uniform float uT,uBob,uPhase;
+uniform mat4 uVP;uniform float uT,uBob,uPhase,uJump;
 out vec2 vUV;out vec3 vW;
 void main(){
   vec3 p=aP;
   p.y+=sin(uT*0.55+uPhase)*uBob;
+  p.x-=uJump*exp(-max(0.0,uT-uPhase)*3.4);   /* she brings her name with her */
   vW=p;vUV=aUV;
   gl_Position=uVP*vec4(p,1.0);
 }`,`#version 300 es
@@ -2017,7 +2027,7 @@ void main(){
   o=vec4(mix(mix(uBg,uInk,0.14),uBg,fog*0.80),1.0);
 }`);
 const DC={vp:gl.getUniformLocation(decalProg,"uVP"),t:gl.getUniformLocation(decalProg,"uT"),
-  bob:gl.getUniformLocation(decalProg,"uBob"),phase:gl.getUniformLocation(decalProg,"uPhase"),
+  bob:gl.getUniformLocation(decalProg,"uBob"),jump:gl.getUniformLocation(decalProg,"uJump"),phase:gl.getUniformLocation(decalProg,"uPhase"),
   tex:gl.getUniformLocation(decalProg,"uTex"),eye:gl.getUniformLocation(decalProg,"uEye"),
   bg:gl.getUniformLocation(decalProg,"uBg"),ink:gl.getUniformLocation(decalProg,"uInk"),
   fog:gl.getUniformLocation(decalProg,"uFog")};
@@ -2117,7 +2127,11 @@ function admit(rec){
   sepPut(x,y,z,sep);
   const yaw=J(-0.4,0.4),cy=Math.cos(yaw),sy=Math.sin(yaw);
   const sc=rec.mul*J(0.96,1.04);
-  const phase=jr()*6.2832;
+  /* The one float each vertex already carries stops being a random phase and
+     becomes the second she arrived. Bob and tint are both hashed back out of
+     it, so the jump costs the fleet not one byte more: at two million vertices
+     a second attribute would have been eight megabytes to say the same thing. */
+  const phase=performance.now()/1000+jr()*0.4;
   const ch=chunkFor(x,y,z);
   const ranges=[];
   [rec.mid,rec.far].forEach((m,li)=>{
@@ -2291,30 +2305,55 @@ function dressOf(ship,seed){
           V.mul(e1,rad*0.10),V.mul(e2,rad*0.17),V.mul(A.n,rad*0.030)));
       }
     }
-    /* her name goes on the biggest clear panel she has — a flat face carries
-       lettering without distorting it, and only falls back to a flank if she
-       has no flat face big enough */
-    if(!decal){
-      /* Sized off the host's real extent, not off S.span: for a body of
-         revolution span is min(length, 3*radius), which on a long thin hull is
-         the radius — so her name came out three metres long on a forty metre
-         ship and the alpha test then minified it into nothing at all. It is
-         lettering; it wants the length. */
-      const ext=sizeOf(p);
-      const half=Math.min(ext*0.34,diag*0.26);
+  }
+  /* ---- her name ----------------------------------------------------------
+     It is worth nothing unless it can be read from outside, so it is not
+     placed and hoped for: a candidate is a quad whose EVERY sampled point
+     stands clear of every solid on the ship, and which is backed by hull
+     across most of its area so it lies on her rather than floating beside
+     her. Candidates are tried biggest first and shrunk until one passes; if
+     none does, she carries no name rather than a hidden one. */
+  const inAny=q=>{for(const c of solids)if(inSolid(q,c))return true;return false;};
+  const GX=9,GY=3;
+  const tryQuad=(o2,e1,e2,nrm)=>{
+    let backed=0;
+    const lift=Math.max(diag*0.004,V.len(e2)*0.30);
+    for(let i=0;i<GX;i++)for(let j=0;j<GY;j++){
+      const a2=(i/(GX-1))*2-1, b2=(j/(GY-1))*2-1;
+      const q=V.add(o2,V.add(V.mul(e1,a2),V.mul(e2,b2)));
+      if(inAny(V.add(q,V.mul(nrm,lift*0.5))))return null;   /* buried: reject */
+      if(inAny(V.sub(q,V.mul(nrm,lift*1.6))))backed++;      /* hull underneath */
+    }
+    if(backed<GX*GY*0.62)return null;                        /* floating: reject */
+    return {o:o2,t1:e1,t2:e2};
+  };
+  for(const p of use){
+    if(decal)break;
+    const S=surfaceOf(p,R); if(!S||!S.at)continue;
+    const ext=sizeOf(p);
+    for(let shrink=0;shrink<5&&!decal;shrink++){
+      const half=Math.min(ext*0.32,diag*0.24)*Math.pow(0.78,shrink);
       const h=half*0.17;
-      const cu=0.5,cv=0.5;
-      const A=S.at(cu,cv);
-      if(A&&clear(V.add(A.q,V.mul(A.n,h*0.6)))){
-        const B2=S.at(S.flat?Math.min(0.99,cu+0.02):cu,S.flat?cv:Math.min(0.99,cv+0.02));
-        if(B2){
-          const d=V.sub(B2.q,A.q),dl=V.len(d);
-          if(dl>1e-9){
-            const e1=V.mul(d,1/dl), e2=V.norm(V.cross(A.n,e1));
-            decal={o:V.add(A.q,V.mul(A.n,Math.max(diag*0.002,h*0.06))),
-                   t1:V.mul(e1,half), t2:V.mul(e2,h*0.5)};
-          }
-        }
+      if(half<diag*0.03)break;
+      for(const uv of [[0,0.5],[0.5,0.5],[0.25,0.5],[0.75,0.5],[0.5,0.35],[0.5,0.65]]){
+        const A=S.at(uv[0],uv[1]); if(!A)continue;
+        if(S.ok&&!S.ok(uv[0],uv[1]))continue;
+        const du=S.flat?0.02:0, dv=S.flat?0:0.02;
+        const B2=S.at(Math.min(0.99,uv[0]+du),Math.min(0.99,uv[1]+dv));
+        if(!B2)continue;
+        const d=V.sub(B2.q,A.q), dl=V.len(d); if(dl<1e-9)continue;
+        let e1=V.mul(d,1/dl);
+        let nrm=A.n;
+        /* face outward, so the lettering is on the side anyone can see */
+        const outw=V.sub(A.q,[(bb[0][0]+bb[1][0])/2,(bb[0][1]+bb[1][1])/2,(bb[0][2]+bb[1][2])/2]);
+        if(V.dot(nrm,outw)<0)nrm=V.mul(nrm,-1);
+        let e2=V.norm(V.cross(nrm,e1));
+        /* and read left to right rather than mirrored */
+        const hand=V.dot(V.cross(e1,e2),nrm);
+        if(hand<0)e2=V.mul(e2,-1);
+        const o3=V.add(A.q,V.mul(nrm,Math.max(diag*0.0025,h*0.10)));
+        const got=tryQuad(o3,V.mul(e1,half),V.mul(e2,h),nrm);
+        if(got){decal=got;break;}
       }
     }
   }
@@ -2641,6 +2680,10 @@ function applyPal(){
   document.documentElement.style.setProperty("--ink",p.ink);
 }
 let last=0,fpsA=60,triDrawn=0,idleT=0;
+/* how far back down her own wake a ship starts. Nothing at all if the viewer
+   asked for reduced motion — an arrival is the one thing here that moves on
+   its own and cannot be waited out. */
+const jumpLen=()=>reduced?0:sceneR*0.55;
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(0.1,(now-last)/1000||0.016);last=now;
@@ -2707,6 +2750,7 @@ function frame(now){
   gl.uniformMatrix4fv(UN.vp,false,m);
   gl.uniform1f(UN.t,now/1000);
   gl.uniform1f(UN.bob,reduced?0:0.45);
+  gl.uniform1f(UN.jump,jumpLen());
   gl.uniform3fv(UN.eye,eye);
   gl.uniform3fv(UN.ink,inkc);
   gl.uniform3fv(UN.bg,bgc);
@@ -2753,11 +2797,11 @@ function frame(now){
     gl.uniformMatrix4fv(LX.vp,false,m);
     gl.uniform1f(LX.t,now/1000);
     gl.uniform1f(LX.bob,reduced?0:0.45);
+    gl.uniform1f(LX.jump,jumpLen());
     gl.uniform3fv(LX.eye,eye);
     gl.uniform3fv(LX.ink,inkc);
     gl.uniform3fv(LX.bg,bgc);
     gl.uniform1f(LX.fog,0.22/sceneR);
-    gl.uniform3f(LX.paint,inkc[0]*0.55+0.22,inkc[1]*0.42+0.10,inkc[2]*0.34+0.06);
     for(const g of luxShip.groups){
       gl.uniform1f(LX.emis,g.emis);
       gl.uniform1f(LX.mix,g.paintMix);
@@ -2770,6 +2814,7 @@ function frame(now){
       gl.uniformMatrix4fv(DC.vp,false,m);
       gl.uniform1f(DC.t,now/1000);
       gl.uniform1f(DC.bob,reduced?0:0.45);
+      gl.uniform1f(DC.jump,jumpLen());
       gl.uniform1f(DC.phase,luxShip.dec.phase);
       gl.uniform3fv(DC.eye,eye);
       gl.uniform3fv(DC.bg,bgc);
