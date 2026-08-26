@@ -27,7 +27,10 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
 #roster .cnt{opacity:.55}
 #roster{pointer-events:auto;cursor:pointer}
 #roster [data-id]:hover{opacity:1;text-decoration:underline}
-#card{position:fixed;left:20px;bottom:56px;z-index:8;max-width:380px;
+/* border-box so a max-height ceiling means the height you can see: with the
+   default content box the padding and border stack on top of the cap, and a
+   sheet told to stop at 46% of the screen quietly took 53% of it */
+#card{box-sizing:border-box;position:fixed;left:20px;bottom:56px;z-index:8;max-width:380px;
   background:var(--bg);border:1px solid var(--ink);padding:14px 16px 12px;
   font-size:11px;line-height:1.7;letter-spacing:.03em;display:none}
 #card.on{display:block}
@@ -49,7 +52,61 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   font:600 13px "IBM Plex Mono",monospace;letter-spacing:.22em;opacity:0;
   transition:opacity .25s;pointer-events:none}
 #toast.on{opacity:.9}
-@media(max-width:820px){#roster{display:none}#brand .s{display:none}}
+#brand .s2{display:none}
+
+/* ---- compact chrome: any screen short of room on either axis -------------
+   Width alone was the wrong test. A phone on its side is 874 across and 402
+   tall: it sails straight past a width breakpoint while having less room to
+   give than the portrait case the breakpoint was written for, and the card
+   went back to growing unbounded and covered the whole screen. Both axes get
+   a say now.
+   Hiding the desktop hint line on a phone had also hidden the only link back
+   to the yard, so a touch-worded one keeps it — one line, clipped rather than
+   wrapped, so the readout underneath has a fixed place to be instead of being
+   overprinted the moment the hint runs to two lines. */
+@media(max-width:820px),(max-height:620px){
+  #roster{display:none}
+  #brand .s{display:none}
+  #brand .s2{display:block;font-size:10px;opacity:.62;margin-top:3px;
+    letter-spacing:.04em;line-height:1.4;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #brand .s2 a{color:inherit;text-decoration:none;border-bottom:1px solid;
+    opacity:.85;pointer-events:auto}
+  #stat{bottom:auto;top:52px;left:12px;right:12px;font-size:10px;opacity:.58;
+    line-height:1.4;white-space:nowrap;overflow:hidden}
+  /* the ceiling. The service record is the longest thing on the card and the
+     only one with no natural limit, so it gets a box of its own inside a
+     sheet that has one too — neither can crowd out the designation above it
+     or the crew below. */
+  #card{max-height:40vh;overflow-y:auto;overscroll-behavior:contain}
+  #card .story{max-height:4.6em;overflow-y:auto;overscroll-behavior:contain}
+  /* sticky, not absolute: the close control has to survive the sheet being
+     scrolled, or a long record traps you inside it */
+  #cardX{position:sticky;float:right;top:0;right:0;font-size:19px;line-height:1;
+    padding:1px 3px;opacity:.75}
+  #bar{left:0;right:0;bottom:0;justify-content:center;flex-wrap:wrap;gap:6px;
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
+    background:linear-gradient(to top,var(--bg) 58%,rgba(0,0,0,0))}
+  #bar button{padding:9px 11px;font-size:11px;opacity:.8}
+}
+/* ---- phone width: the card stops being a panel and becomes a sheet ---- */
+@media(max-width:820px){
+  #brand{top:10px;left:12px;right:12px}
+  #brand .t{font-size:16px;letter-spacing:.10em}
+  #card{left:8px;right:8px;max-width:none;
+    bottom:calc(54px + env(safe-area-inset-bottom,0px));
+    padding:11px 12px 10px;font-size:10.5px;line-height:1.55}
+  #card .d{font-size:16px;letter-spacing:.09em;padding-right:26px}
+  #card .k{font-size:10px}
+  #card .cr{gap:8px}
+  #card .role{min-width:72px}
+}
+/* ---- and where the short axis is really short, the readout goes ---- */
+@media(max-height:520px){
+  #stat{display:none}
+  #card{max-height:44vh}
+  #card .story{max-height:3.4em}
+}
 </style>
 </head>
 <body>
@@ -57,6 +114,7 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
 <div class="hud" id="brand">
   <div class="t">ORBITAL YARD — ARMADA</div>
   <div class="s"><a href="index.html">&larr; the yard</a> &nbsp;·&nbsp; every hull unique · click a ship to hold her · drag orbits, wheel closes in · click space to release · WASD QE fly · N new fleet · P palette</div>
+  <div class="s2"><a href="index.html">&larr; the yard</a> &nbsp;·&nbsp; tap a ship &middot; drag orbits &middot; pinch zooms</div>
 </div>
 <div class="hud" id="stat"></div>
 <div class="hud" id="roster"></div>
@@ -2428,18 +2486,56 @@ function pickShip(px,py){
                     f[1]+sv[1]*nx*t*asp+u[1]*ny*t,
                     f[2]+sv[2]*nx*t*asp+u[2]*ny*t]);
   const o=[cam.ex,cam.ey,cam.ez];
+  /* pass 1 — exact: the ray against each hull's own ellipsoid, oriented to
+     her yaw and sized to her real length, beam and height. A long thin ship
+     no longer owns a ball of empty space the size of her length, so the ship
+     you can SEE under the cursor is the ship you get. Nearest hit wins. */
   let best=null,bt=1e18;
   for(let i=0;i<ships.length;i++){
-    const sh=ships[i],r=Math.max(6,sh.slen*0.6);
+    const sh=ships[i];
+    const rs=Math.max(8,sh.slen*0.62);
     const ox=sh.x-o[0],oy=sh.y-o[1],oz=sh.z-o[2];
     const tc=ox*dir[0]+oy*dir[1]+oz*dir[2];
-    if(tc<0)continue;
-    const d2=ox*ox+oy*oy+oz*oz-tc*tc;
-    if(d2>r*r)continue;
-    const t0=tc-Math.sqrt(r*r-d2);
-    if(t0<bt){bt=t0;best=i;}
+    if(tc<-rs)continue;
+    if(ox*ox+oy*oy+oz*oz-tc*tc>rs*rs)continue;
+    const m2=sh.meta;
+    const ax=Math.max(3,m2.length*sh.sc*0.52),
+          ay=Math.max(2.5,m2.height*sh.sc*0.56),
+          az=Math.max(2.5,m2.beam*sh.sc*0.56);
+    const cy2=Math.cos(sh.yaw),sy2=Math.sin(sh.yaw);
+    const wx=o[0]-sh.x,wy=o[1]-sh.y,wz=o[2]-sh.z;
+    const lox=( cy2*wx+sy2*wz)/ax, loy=wy/ay, loz=(-sy2*wx+cy2*wz)/az;
+    const ldx=( cy2*dir[0]+sy2*dir[2])/ax, ldy=dir[1]/ay,
+          ldz=(-sy2*dir[0]+cy2*dir[2])/az;
+    const A=ldx*ldx+ldy*ldy+ldz*ldz,
+          Bq=2*(lox*ldx+loy*ldy+loz*ldz),
+          C=lox*lox+loy*loy+loz*loz-1;
+    const disc=Bq*Bq-4*A*C;
+    if(disc<0)continue;
+    let tl=(-Bq-Math.sqrt(disc))/(2*A);
+    if(tl<0)tl=(-Bq+Math.sqrt(disc))/(2*A);
+    if(tl<0)continue;
+    if(tl<bt){bt=tl;best=i;}
   }
-  return best;
+  if(best!=null)return best;
+  /* pass 2 — forgiving: nothing exactly under the cursor, so take a distant
+     ship whose few pixels sit within a small screen radius of the click */
+  const {m}=mat();
+  const cx0=px-rect.left, cy0=py-rect.top;
+  let bp=null,bd=1e9;
+  for(let i=0;i<ships.length;i++){
+    const sh=ships[i];
+    const cw= m[3]*sh.x+m[7]*sh.y+m[11]*sh.z+m[15];
+    if(cw<=0)continue;
+    const cxp=(m[0]*sh.x+m[4]*sh.y+m[8]*sh.z+m[12])/cw,
+          cyp=(m[1]*sh.x+m[5]*sh.y+m[9]*sh.z+m[13])/cw;
+    const sx=(cxp+1)/2*rect.width, sy=(1-cyp)/2*rect.height;
+    const d=Math.hypot(sx-cx0,sy-cy0);
+    const appR=(sh.slen*0.5/cw)*(rect.height/2)/t;
+    const tol=Math.max(12,appR+8);
+    if(d<tol&&d<bd){bd=d;bp=i;}
+  }
+  return bp;
 }
 /* every word of the record comes off the seed, so a ship tells the same
    story every time you ask her */
@@ -2655,9 +2751,15 @@ function cardHTML(id){
     ${L.crew.map(c=>`<div class="cr"><span class="role">${c[0]}</span>${c[1]}</div>`).join("")}`;
 }
 function select(id){
-  sel=id;
   const card=document.getElementById("card");
   if(id==null||!ships[id]){sel=null;orb=null;card.classList.remove("on");return;}
+  /* Re-selecting the ship already held must not fly the camera anywhere. It
+     used to fall through to the approach below, which recomputes a stand-off
+     of slen*2.3 and flies out to it — so a click meant for a neighbour that
+     landed back on this hull threw away however far the wheel had closed in,
+     and read as the camera jumping for no reason. Hold what is held. */
+  if(id===sel&&orb){card.classList.add("on");return;}
+  sel=id;
   card.innerHTML=cardHTML(id);
   card.classList.add("on");
   document.getElementById("cardX").onclick=()=>select(null);
@@ -2692,7 +2794,7 @@ cvs.addEventListener("pointermove",e=>{
   if(!drag)return;
   const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;
   drag.moved+=Math.abs(dx)+Math.abs(dy);
-  if(drag.moved>5)flyAnim=null;
+  if(drag.moved>8)flyAnim=null;
   if(sel!=null&&ships[sel]){
     if(!orb)orbFromCam();
     orb.yaw+=dx*0.005;
@@ -2709,7 +2811,7 @@ cvs.addEventListener("pointermove",e=>{
     cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch-dy*0.0036));
   }});
 const endDrag=e=>{
-  if(drag&&drag.moved<=5&&e.type==="pointerup"&&performance.now()-drag.t<500&&!drag.pan)
+  if(drag&&drag.moved<=8&&e.type==="pointerup"&&performance.now()-drag.t<600&&!drag.pan)
     select(pickShip(e.clientX,e.clientY));
   drag=null;cvs.classList.remove("dragging");};
 cvs.addEventListener("pointerup",endDrag);cvs.addEventListener("pointercancel",endDrag);
