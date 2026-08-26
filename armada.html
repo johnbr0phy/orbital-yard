@@ -1932,6 +1932,95 @@ void main(){
 }`);
 const U=n=>gl.getUniformLocation(shipProg,n);
 const UN={vp:U("uVP"),t:U("uT"),bob:U("uBob"),eye:U("uEye"),ink:U("uInk"),bg:U("uBg"),fog:U("uFog")};
+
+/* ---- the dressed ship ----------------------------------------------------
+   The fleet's shader is one lambert term and a fill, which is right for two
+   and a half thousand hulls a few pixels across and wrong for the one hull
+   you have flown up to. She gets her own programme: a three-light rig with a
+   bounce off the underside, a tight specular so the plating reads as metal,
+   and a Fresnel rim that lifts her silhouette off the fog instead of letting
+   it dissolve into it. Materials arrive as uniforms rather than as a vertex
+   channel — the fleet should not carry an attribute only one ship reads. */
+const luxProg=compile(`#version 300 es
+layout(location=0) in vec4 aV;
+uniform mat4 uVP;uniform float uT,uBob;
+out vec3 vW;out float vTint;
+void main(){
+  vec3 p=aV.xyz;
+  p.y+=sin(uT*0.55+aV.w)*uBob;
+  vW=p;vTint=fract(aV.w*0.618034);
+  gl_Position=uVP*vec4(p,1.0);
+}`,`#version 300 es
+precision highp float;
+in vec3 vW;in float vTint;
+uniform vec3 uEye,uInk,uBg,uPaint;
+uniform float uFog,uEmis,uPaintMix;
+out vec4 o;
+void main(){
+  float fog=1.0-exp(-length(uEye-vW)*uFog);
+  /* A lit port is a light source, not a surface: no shading, and it keeps its
+     brightness through the fog that swallows the hull around it. It cannot be
+     brighter than the hull to read, either — the plating is already drawn at
+     very nearly the ink colour, so an emissive white port simply vanished into
+     it. Warm is the axis with room in it: every palette here is a cool ink on
+     a darker ground, so lamplight is the one colour nothing else on the ship
+     is using, and a row of them says crew aboard at a glance. */
+  if(uEmis>0.5){
+    vec3 lit=vec3(1.00,0.80,0.42);
+    o=vec4(mix(lit,uBg,fog*0.34),1.0);
+    return;
+  }
+  vec3 N=normalize(cross(dFdx(vW),dFdy(vW)));
+  vec3 Vd=normalize(uEye-vW);
+  if(dot(N,Vd)<0.0)N=-N;
+  vec3 K=normalize(vec3(0.45,0.80,0.35));
+  vec3 F=normalize(vec3(-0.55,0.10,-0.65));
+  vec3 Bn=normalize(vec3(0.10,-0.70,0.25));
+  float d=max(dot(N,K),0.0), fl=max(dot(N,F),0.0), bo=max(dot(N,Bn),0.0);
+  vec3 H=normalize(K+Vd);
+  float spec=pow(max(dot(N,H),0.0),36.0)*0.42;
+  float rim=pow(1.0-max(dot(N,Vd),0.0),3.0)*0.40;
+  float shade=0.15+0.60*d+0.15*fl+0.10*bo+0.09*(N.y*0.5+0.5);
+  shade=shade*(0.92+0.16*vTint)+spec+rim;
+  vec3 base=mix(uBg,uInk,clamp(shade,0.0,1.0));
+  base=mix(base,mix(uBg,uPaint,clamp(shade*1.15,0.10,1.0)),uPaintMix);
+  o=vec4(mix(base,uBg,fog*0.88),1.0);
+}`);
+const LX={vp:gl.getUniformLocation(luxProg,"uVP"),t:gl.getUniformLocation(luxProg,"uT"),
+  bob:gl.getUniformLocation(luxProg,"uBob"),eye:gl.getUniformLocation(luxProg,"uEye"),
+  ink:gl.getUniformLocation(luxProg,"uInk"),bg:gl.getUniformLocation(luxProg,"uBg"),
+  fog:gl.getUniformLocation(luxProg,"uFog"),emis:gl.getUniformLocation(luxProg,"uEmis"),
+  paint:gl.getUniformLocation(luxProg,"uPaint"),mix:gl.getUniformLocation(luxProg,"uPaintMix")};
+
+/* her name, painted on the flank. Discard rather than blend: the quad stands
+   a hair proud of the plating, so the letters need no sorting and no blend
+   state, and the hull shows through everywhere the glyphs are not. */
+const decalProg=compile(`#version 300 es
+layout(location=0) in vec3 aP;layout(location=1) in vec2 aUV;
+uniform mat4 uVP;uniform float uT,uBob,uPhase;
+out vec2 vUV;out vec3 vW;
+void main(){
+  vec3 p=aP;
+  p.y+=sin(uT*0.55+uPhase)*uBob;
+  vW=p;vUV=aUV;
+  gl_Position=uVP*vec4(p,1.0);
+}`,`#version 300 es
+precision highp float;
+in vec2 vUV;in vec3 vW;
+uniform sampler2D uTex;uniform vec3 uEye,uBg,uInk;uniform float uFog;
+out vec4 o;
+void main(){
+  /* a lower cut than you would use for foliage: the glyph strokes are thin,
+     and minified through a mip chain their averaged coverage falls fast */
+  if(texture(uTex,vUV).a<0.30)discard;
+  float fog=1.0-exp(-length(uEye-vW)*uFog);
+  o=vec4(mix(mix(uBg,uInk,0.14),uBg,fog*0.80),1.0);
+}`);
+const DC={vp:gl.getUniformLocation(decalProg,"uVP"),t:gl.getUniformLocation(decalProg,"uT"),
+  bob:gl.getUniformLocation(decalProg,"uBob"),phase:gl.getUniformLocation(decalProg,"uPhase"),
+  tex:gl.getUniformLocation(decalProg,"uTex"),eye:gl.getUniformLocation(decalProg,"uEye"),
+  bg:gl.getUniformLocation(decalProg,"uBg"),ink:gl.getUniformLocation(decalProg,"uInk"),
+  fog:gl.getUniformLocation(decalProg,"uFog")};
 const USvp=gl.getUniformLocation(starProg,"uVP"),USink=gl.getUniformLocation(starProg,"uInk");
 gl.enable(gl.DEPTH_TEST);
 
@@ -2122,8 +2211,132 @@ function packMesh(ship,c,q){
   }
   return {v:new Float32Array(verts),i:inds,tris:m.tris};
 }
+/* ---- dress ---------------------------------------------------------------
+   What a hull wears when she is the one being looked at. Built from her
+   finished parts list in the same surface parameter space the fit-out uses,
+   and kept in separate groups rather than tagged per vertex: the fleet pays
+   nothing for a material channel it never reads, and the one ship being
+   looked at gets her materials from a uniform and an extra draw call. */
+function dressOf(ship,seed){
+  const R=mulberry32((seed^0x9e3779b9)>>>0), rr=(a,b)=>a+(b-a)*R();
+  const glass=[],paint=[];
+  const bb=ship.bb;
+  const diag=Math.hypot(bb[1][0]-bb[0][0],bb[1][1]-bb[0][1],bb[1][2]-bb[0][2])||1;
+  const solids=ship.parts;
+  /* A window has to be ON the ship, which is not the same as being on a part
+     of her: the first pass hung them off whatever tubes were longest, and on a
+     delta the longest tubes are internal spars buried inside the wing, so
+     ninety lit ports were forged inside the hull where nobody could see them.
+     Every port is now tested against the whole ship before it is kept. */
+  const clear=q=>{for(const c of solids)if(inSolid(q,c))return false;return true;};
+  const sizeOf=p=>p.k==="sphere"?p.r*2.2
+    :p.k==="box"?Math.max(V.len(p.u),V.len(p.v),V.len(p.w))*2
+    :p.k==="panel"?p.th*10
+    :p.k==="tube"||p.k==="capsule"?V.len(V.sub(p.b,p.a))
+    :0;
+  const hosts=ship.parts.filter(p=>!p.bare&&sizeOf(p)>diag*0.07&&
+    (p.k==="tube"||p.k==="capsule"||p.k==="sphere"||p.k==="box"||p.k==="panel"));
+  hosts.sort((a,b)=>sizeOf(b)-sizeOf(a));
+  const use=hosts.slice(0,7);
+  let decal=null,kept=0;
+  for(let bi=0;bi<use.length&&kept<120;bi++){
+    const p=use[bi];
+    const S=surfaceOf(p,R); if(!S||!S.at) continue;
+    const span=S.span||sizeOf(p);
+    const w=Math.max(diag*0.0045,Math.min(diag*0.016,span*0.035))*rr(0.85,1.12);
+    /* a run of ports: down both flanks of a round body, in rows across a flat
+       one. The step is taken in the surface's own parameters, so it follows
+       the form the same way the hatching in the yard does. */
+    const lines=S.flat?[[0.5,0],[0.5,1],[0.28,0],[0.72,0]]:[[0,0],[0.5,0],[0.26,0],[0.74,0]];
+    const nl=S.flat?2+Math.floor(R()*2):2;
+    for(let li=0;li<nl;li++){
+      const base=lines[li];
+      const n=Math.max(3,Math.min(12,Math.round(span/(w*5.5))));
+      for(let k=0;k<n;k++){
+        const t=0.14+0.72*(n===1?0.5:k/(n-1));
+        const u=S.flat?t:base[0]+rr(-0.02,0.02);
+        const v=S.flat?base[0]+(li>1?rr(-0.16,0.16):0):t;
+        const uu=S.flat?u:u, vv=S.flat?Math.max(0.08,Math.min(0.92,v)):v;
+        if(S.ok&&!S.ok(uu,vv))continue;
+        const A=S.at(uu,vv);
+        if(!A)continue;
+        const B2=S.at(S.flat?Math.min(0.99,uu+0.012):uu,S.flat?vv:Math.min(0.995,vv+0.012));
+        if(!B2)continue;
+        const d=V.sub(B2.q,A.q), dl=V.len(d);
+        if(dl<1e-6)continue;
+        const e1=V.mul(d,1/dl), e2=V.norm(V.cross(A.n,e1));
+        /* proud of the plating, and only if the plating is the outside */
+        if(!clear(V.add(A.q,V.mul(A.n,w*1.1))))continue;
+        glass.push(BOX(V.add(A.q,V.mul(A.n,w*0.24)),
+          V.mul(e1,w),V.mul(e2,w*rr(0.5,0.8)),V.mul(A.n,w*0.30)));
+        kept++;
+      }
+    }
+    /* a painted band round the two biggest round bodies */
+    if(paint.length<40&&(p.k==="tube"||p.k==="capsule")){
+      const c0=rr(0.16,0.58), cw=rr(0.05,0.12);
+      const rAt=t=>p.k==="capsule"?p.r:p.r1+(p.r2-p.r1)*t;
+      paint.push(TUB(V.lerp(p.a,p.b,c0),V.lerp(p.a,p.b,c0+cw),
+                     rAt(c0)*1.016,rAt(c0+cw)*1.016));
+      /* hazard chevrons ringing her thrust end */
+      const rad=p.k==="capsule"?p.r:Math.max(p.r1,p.r2);
+      const nch=6+Math.floor(R()*4);
+      for(let k2=0;k2<nch;k2++){
+        const A=S.at(k2/nch,0.93),B2=S.at(k2/nch,0.97);
+        if(!A||!B2)continue;
+        const d=V.sub(B2.q,A.q),dl=V.len(d); if(dl<1e-6)continue;
+        const e1=V.mul(d,1/dl), e2=V.norm(V.cross(A.n,e1));
+        if(!clear(V.add(A.q,V.mul(A.n,rad*0.05))))continue;
+        paint.push(BOX(V.add(A.q,V.mul(A.n,rad*0.012)),
+          V.mul(e1,rad*0.10),V.mul(e2,rad*0.17),V.mul(A.n,rad*0.030)));
+      }
+    }
+    /* her name goes on the biggest clear panel she has — a flat face carries
+       lettering without distorting it, and only falls back to a flank if she
+       has no flat face big enough */
+    if(!decal){
+      /* Sized off the host's real extent, not off S.span: for a body of
+         revolution span is min(length, 3*radius), which on a long thin hull is
+         the radius — so her name came out three metres long on a forty metre
+         ship and the alpha test then minified it into nothing at all. It is
+         lettering; it wants the length. */
+      const ext=sizeOf(p);
+      const half=Math.min(ext*0.34,diag*0.26);
+      const h=half*0.17;
+      const cu=0.5,cv=0.5;
+      const A=S.at(cu,cv);
+      if(A&&clear(V.add(A.q,V.mul(A.n,h*0.6)))){
+        const B2=S.at(S.flat?Math.min(0.99,cu+0.02):cu,S.flat?cv:Math.min(0.99,cv+0.02));
+        if(B2){
+          const d=V.sub(B2.q,A.q),dl=V.len(d);
+          if(dl>1e-9){
+            const e1=V.mul(d,1/dl), e2=V.norm(V.cross(A.n,e1));
+            decal={o:V.add(A.q,V.mul(A.n,Math.max(diag*0.002,h*0.06))),
+                   t1:V.mul(e1,half), t2:V.mul(e2,h*0.5)};
+          }
+        }
+      }
+    }
+  }
+  return {glass,paint,decal};
+}
 onmessage=e=>{
   const d=e.data;
+  if(d.kind==="lux"){
+    const ship=d.hulls?buildMegaShip(d.seed,d.hulls):buildShip(d.seed,{fuse:0.5,detail:1,line:1},NL);
+    const c=centre(ship);
+    const hull=packMesh(ship,c,1.15);
+    const D=dressOf(ship,d.seed);
+    const sub=a=>a.length?packMesh({parts:a,bb:ship.bb},c,1.0):null;
+    const glass=sub(D.glass), paint=sub(D.paint);
+    const dec=D.decal?{o:[D.decal.o[0]-c[0],D.decal.o[1]-c[1],D.decal.o[2]-c[2]],
+                       t1:D.decal.t1,t2:D.decal.t2}:null;
+    const tr=[hull.v.buffer,hull.i.buffer];
+    if(glass)tr.push(glass.v.buffer,glass.i.buffer);
+    if(paint)tr.push(paint.v.buffer,paint.i.buffer);
+    postMessage({kind:"lux",genId:d.genId,id:d.id,hull,glass,paint,decal:dec},tr);
+    return;
+  }
   if(d.kind==="batch"){
     const out=[],tr=[];
     for(const j of d.jobs){
@@ -2158,9 +2371,101 @@ function ensureWorkers(){
     workers.push(w);
   }
 }
+/* one ship at a time, freed the moment she is let go: at ~0.6 MB of mesh and
+   64 KB of lettering, the dressed hull is invisible against a fleet that bakes
+   two million triangles, and it stays that way because there is only ever one */
+let luxShip=null;
+function luxFree(){
+  if(!luxShip)return;
+  for(const g of luxShip.groups){
+    gl.deleteVertexArray(g.vao);gl.deleteBuffer(g.vbo);gl.deleteBuffer(g.ibo);}
+  if(luxShip.dec){
+    gl.deleteVertexArray(luxShip.dec.vao);gl.deleteBuffer(luxShip.dec.vbo);
+    gl.deleteTexture(luxShip.dec.tex);}
+  luxShip=null;
+}
+function luxRequest(id){
+  luxFree();
+  if(id==null||!ships[id])return;
+  workers[id%workers.length].postMessage(
+    {kind:"lux",genId,id,seed:ships[id].seed,hulls:ships[id].hulls});
+}
+/* the lettering is drawn once, at the size it will be read at, into an alpha
+   channel — the glyphs are the only thing the shader needs from it */
+function desigTexture(txt){
+  const c=document.createElement("canvas");
+  c.width=1024;c.height=128;
+  const x=c.getContext("2d");
+  x.clearRect(0,0,c.width,c.height);
+  x.fillStyle="#fff";
+  x.textAlign="center";x.textBaseline="middle";
+  let size=76;
+  x.font=`700 ${size}px "Saira Condensed",sans-serif`;
+  while(x.measureText(txt).width>c.width*0.92&&size>18){
+    size-=3;x.font=`700 ${size}px "Saira Condensed",sans-serif`;}
+  x.fillText(txt,c.width/2,c.height/2+2);
+  const t=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,gl.RGBA,gl.UNSIGNED_BYTE,c);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.bindTexture(gl.TEXTURE_2D,null);
+  return t;
+}
 function onWorkerMsg(e){
   const d=e.data;
   if(d.genId!==genId)return;
+  if(d.kind==="lux"){
+    if(d.id!==sel||!ships[d.id])return;      /* she was let go while forging */
+    luxFree();
+    const s=ships[d.id],cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
+    const place=(X,Y,Z)=>[cy*X*s.sc-sy*Z*s.sc+s.x, Y*s.sc+s.y, sy*X*s.sc+cy*Z*s.sc+s.z];
+    const mk=(m,emis,paintMix)=>{
+      if(!m)return null;
+      const nv=m.v.length/3,out=new Float32Array(nv*4);
+      for(let i=0,o2=0;i<m.v.length;i+=3){
+        const w=place(m.v[i],m.v[i+1],m.v[i+2]);
+        out[o2++]=w[0];out[o2++]=w[1];out[o2++]=w[2];out[o2++]=s.phase;
+      }
+      const vao=gl.createVertexArray(),vbo=gl.createBuffer(),ibo=gl.createBuffer();
+      gl.bindVertexArray(vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+      gl.bufferData(gl.ARRAY_BUFFER,out,gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(0);
+      gl.vertexAttribPointer(0,4,gl.FLOAT,false,16,0);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,m.i,gl.STATIC_DRAW);
+      gl.bindVertexArray(null);
+      return {vao,vbo,ibo,icount:m.i.length,emis,paintMix};
+    };
+    const groups=[mk(d.hull,0,0),mk(d.paint,0,1),mk(d.glass,1,0)].filter(Boolean);
+    let dec=null;
+    if(d.decal){
+      const D=d.decal;
+      const corner=(a,b)=>place(D.o[0]+D.t1[0]*a+D.t2[0]*b,
+                                D.o[1]+D.t1[1]*a+D.t2[1]*b,
+                                D.o[2]+D.t1[2]*a+D.t2[2]*b);
+      const c00=corner(-1,-1),c10=corner(1,-1),c11=corner(1,1),c01=corner(-1,1);
+      const buf=new Float32Array([
+        c00[0],c00[1],c00[2],0,0, c10[0],c10[1],c10[2],1,0, c11[0],c11[1],c11[2],1,1,
+        c00[0],c00[1],c00[2],0,0, c11[0],c11[1],c11[2],1,1, c01[0],c01[1],c01[2],0,1]);
+      const vao=gl.createVertexArray(),vbo=gl.createBuffer();
+      gl.bindVertexArray(vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+      gl.bufferData(gl.ARRAY_BUFFER,buf,gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,20,0);
+      gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,2,gl.FLOAT,false,20,12);
+      gl.bindVertexArray(null);
+      dec={vao,vbo,tex:desigTexture(s.meta.desig),phase:s.phase};
+    }
+    luxShip={id:d.id,groups,dec};
+    return;
+  }
   if(d.kind==="batch"){
     for(const rec of d.out){admit(rec);forged++;}
     uploadDirty();roster();
@@ -2196,6 +2501,7 @@ function onWorkerMsg(e){
 }
 
 function startFleet(fresh){
+  luxFree();
   if(fresh)fleetSeed=(Math.random()*4294967296)|0;
   genId++;
   disposeAll();
@@ -2417,7 +2723,8 @@ function frame(now){
     if(!l.icount)continue;
     let skips=null;
     for(const id of ch.ids)
-      if(activeHi.has(id)&&hiCache.has(id))(skips=skips||[]).push(li?ships[id].rf:ships[id].rm);
+      if((activeHi.has(id)&&hiCache.has(id))||(luxShip&&luxShip.id===id))
+        (skips=skips||[]).push(li?ships[id].rf:ships[id].rm);
     gl.bindVertexArray(l.vao);
     if(!skips){
       gl.drawElements(gl.TRIANGLES,l.icount,gl.UNSIGNED_INT,0);triDrawn+=l.icount/3;
@@ -2432,12 +2739,50 @@ function frame(now){
     }
   }
   for(const id of activeHi){
+    if(luxShip&&luxShip.id===id)continue;   /* dressed, and drawn below instead */
     const e=hiCache.get(id);if(!e)continue;
     gl.bindVertexArray(e.vao);
     gl.drawElements(gl.TRIANGLES,e.icount,gl.UNSIGNED_INT,0);
     triDrawn+=e.icount/3;
   }
   gl.bindVertexArray(null);
+
+  /* the ship being held: hull, then paint, then her lit ports, then her name */
+  if(luxShip&&ships[luxShip.id]){
+    gl.useProgram(luxProg);
+    gl.uniformMatrix4fv(LX.vp,false,m);
+    gl.uniform1f(LX.t,now/1000);
+    gl.uniform1f(LX.bob,reduced?0:0.45);
+    gl.uniform3fv(LX.eye,eye);
+    gl.uniform3fv(LX.ink,inkc);
+    gl.uniform3fv(LX.bg,bgc);
+    gl.uniform1f(LX.fog,0.22/sceneR);
+    gl.uniform3f(LX.paint,inkc[0]*0.55+0.22,inkc[1]*0.42+0.10,inkc[2]*0.34+0.06);
+    for(const g of luxShip.groups){
+      gl.uniform1f(LX.emis,g.emis);
+      gl.uniform1f(LX.mix,g.paintMix);
+      gl.bindVertexArray(g.vao);
+      gl.drawElements(gl.TRIANGLES,g.icount,gl.UNSIGNED_INT,0);
+      triDrawn+=g.icount/3;
+    }
+    if(luxShip.dec){
+      gl.useProgram(decalProg);
+      gl.uniformMatrix4fv(DC.vp,false,m);
+      gl.uniform1f(DC.t,now/1000);
+      gl.uniform1f(DC.bob,reduced?0:0.45);
+      gl.uniform1f(DC.phase,luxShip.dec.phase);
+      gl.uniform3fv(DC.eye,eye);
+      gl.uniform3fv(DC.bg,bgc);
+      gl.uniform3fv(DC.ink,inkc);
+      gl.uniform1f(DC.fog,0.22/sceneR);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D,luxShip.dec.tex);
+      gl.uniform1i(DC.tex,0);
+      gl.bindVertexArray(luxShip.dec.vao);
+      gl.drawArrays(gl.TRIANGLES,0,6);
+    }
+    gl.bindVertexArray(null);
+  }
 
   if(fpsA<42&&dpr>1){dpr=Math.max(1,dpr*0.85);resize();}
   stat();
@@ -2752,7 +3097,7 @@ function cardHTML(id){
 }
 function select(id){
   const card=document.getElementById("card");
-  if(id==null||!ships[id]){sel=null;orb=null;card.classList.remove("on");return;}
+  if(id==null||!ships[id]){sel=null;orb=null;card.classList.remove("on");luxFree();return;}
   /* Re-selecting the ship already held must not fly the camera anywhere. It
      used to fall through to the approach below, which recomputes a stand-off
      of slen*2.3 and flies out to it — so a click meant for a neighbour that
@@ -2760,6 +3105,7 @@ function select(id){
      and read as the camera jumping for no reason. Hold what is held. */
   if(id===sel&&orb){card.classList.add("on");return;}
   sel=id;
+  luxRequest(id);
   card.innerHTML=cardHTML(id);
   card.classList.add("on");
   document.getElementById("cardX").onclick=()=>select(null);
