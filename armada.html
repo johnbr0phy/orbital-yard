@@ -2623,8 +2623,19 @@ function camBasis(){
   const s=V.norm(V.cross(f,[0,1,0])),u=V.cross(s,f);
   return {f,s,u};
 }
+/* Face on to the run, so the fleet comes at you rather than past you.
+
+   The hulls all travel +x, so standing anywhere off that axis turns the
+   arrival into traffic crossing a junction; standing on it turns it into a
+   fleet bearing down. a=0 puts the camera dead ahead of them. The small pitch
+   is the one concession: the scatter is flattened in y, so a perfectly level
+   view down the axis reads as a bright horizontal streak with no depth in it,
+   and looking very slightly down gives the oncoming ranks somewhere to recede
+   to. Everything else stays: the nose of the fleet is the end nearest you, so
+   the first hulls out of the jump are the ones that arrive in your face, and
+   the muster fills in behind them. */
 function initCam(){
-  const a=-0.85,pp=0.38,d=sceneR*1.5;
+  const a=0,pp=0.14,d=sceneR*1.5;
   cam.ex=Math.cos(pp)*Math.cos(a)*d;cam.ey=Math.sin(pp)*d;cam.ez=Math.cos(pp)*Math.sin(a)*d;
   const f=V.norm([-cam.ex,-cam.ey,-cam.ez]);
   cam.yaw=Math.atan2(f[2],f[0]);cam.pitch=Math.asin(f[1]);
