@@ -32,3 +32,35 @@ Output is pure vector throughout — the PNG and SVG exports are the same drawin
 ## Running locally
 
 Open `index.html`. That is the whole thing.
+
+## Armada
+
+`armada.html` musters the yard's output by the thousand — and no two ships in
+the fleet are the same. Every hull is rolled from its own seed by the same
+`buildShip`, forged in a pool of workers off the main thread, and scattered
+at random through one flattened cloud, a hash grid keeping neighbours off
+each other's hulls. The fleet bakes into merged spatial chunks — static
+geometry, frustum-culled, two facet levels — so thousands of unique ships
+draw in a few dozen calls, and any ship you fly up to is re-forged at full
+facet count on the fly. 500 to 5,000 ships.
+
+Every fleet also musters eight great ships built on the same joint library:
+one 50-hull leviathan, two 25-hull dreadnoughts and five 10-hull ark
+carriers — a central keel with further hulls berthed in rings around it,
+each one its own section chain. The flag group rail names them.
+
+Click any ship and the camera flies to her and holds her: drag orbits
+around the hull, the wheel closes in. The card gives her designation,
+dimensions, complement, a service record and the crew who hold her — every
+word off the ship's own seed, so she tells the same story every time you
+ask, and no two ships have led the same life. Click open space to release
+her; the camera is free flight the rest of the time.
+
+| | |
+|---|---|
+| click a ship | hold her: drag orbits, wheel closes in |
+| click space | release |
+| drag | look (free flight) |
+| wheel / `W A S D Q E` | fly (`shift` boosts) |
+| `N` | new fleet |
+| `P` | palette |
