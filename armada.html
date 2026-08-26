@@ -1909,17 +1909,8 @@ void main(){
   /* Out of the jump: she arrives running, along the fleet's axis, and sheds it
      in about a second. An exponential is the honest curve — all the speed is
      in the first moments and the tail is asymptotic, which is what a ship
-     shedding velocity looks like and what a linear ease-out never does.
-
-     Not all at one speed, though. A second hash off the same float gives each
-     hull her own run and her own brakes, and the two are deliberately tied
-     together: a ship that drops out further back also hauls up harder, so the
-     fleet still settles together instead of the long runners straggling in
-     half a second behind everybody else. A small multiplier on the hash, not a
-     large one — the CPU has to agree with this shader about where her flash
-     goes, and w is a float32 by the time it gets here. */
-  float jf=0.55+0.90*fract(aV.w*7.3);
-  p.x-=uJump*jf*exp(-max(0.0,age)*(2.5+1.9*fract(aV.w*7.3)));
+     shedding velocity looks like and what a linear ease-out never does. */
+  p.x-=uJump*exp(-max(0.0,age)*3.4);
   vW=p;vTint=h;
   vIn=clamp(age/0.30,0.0,1.0);
   /* a per-vertex grain, interpolated across each face, so she comes in as
@@ -1986,17 +1977,8 @@ void main(){
   /* Out of the jump: she arrives running, along the fleet's axis, and sheds it
      in about a second. An exponential is the honest curve — all the speed is
      in the first moments and the tail is asymptotic, which is what a ship
-     shedding velocity looks like and what a linear ease-out never does.
-
-     Not all at one speed, though. A second hash off the same float gives each
-     hull her own run and her own brakes, and the two are deliberately tied
-     together: a ship that drops out further back also hauls up harder, so the
-     fleet still settles together instead of the long runners straggling in
-     half a second behind everybody else. A small multiplier on the hash, not a
-     large one — the CPU has to agree with this shader about where her flash
-     goes, and w is a float32 by the time it gets here. */
-  float jf=0.55+0.90*fract(aV.w*7.3);
-  p.x-=uJump*jf*exp(-max(0.0,age)*(2.5+1.9*fract(aV.w*7.3)));
+     shedding velocity looks like and what a linear ease-out never does. */
+  p.x-=uJump*exp(-max(0.0,age)*3.4);
   vW=p;vTint=h;
   vIn=clamp(age/0.30,0.0,1.0);
   /* a per-vertex grain, interpolated across each face, so she comes in as
@@ -2118,7 +2100,8 @@ let palI=0, sceneR=1000, RAD=800, chunkSize=300;
    passed arrived with her offset already decayed and her dissolve already
    finished, and simply appeared. Most of the fleet never came out of the jump
    at all. Nothing can start until everything can. */
-let jumpT0=0, forgeStart=0;
+const JUMP_SPREAD=1.9;
+let jumpT0=Infinity, forgeStart=0;
 let ships=[], chunks=new Map(), flagList=[];
 let sepGrid=new Map(); const SEPCELL=320;
 let jr=null; const J=(a,b)=>a+(b-a)*jr();
@@ -2173,25 +2156,16 @@ function uploadDirty(){
 function disposeAll(){
   for(const ch of chunks.values())
     for(const l of ch.lod){gl.deleteVertexArray(l.vao);gl.deleteBuffer(l.vbo);gl.deleteBuffer(l.ibo);}
-  chunks.clear();sepGrid.clear();sepMaxR=0;
+  chunks.clear();sepGrid.clear();
   for(const e of hiCache.values()){gl.deleteVertexArray(e.vao);gl.deleteBuffer(e.vbo);gl.deleteBuffer(e.ibo);}
   hiCache.clear();hiPending.clear();activeHi=new Set();
   ships=[];flagList=[];
 }
 
 /* ---- scatter: uniform in a flattened ellipsoid, hash grid keeps hulls apart ---- */
-/* The neighbourhood searched has to cover the exclusion radius being asked
-   about, and it did not. Cells are 320 across and the search was a fixed one
-   cell in each direction, but a leviathan carries a keep-out of well over a
-   thousand — so the largest hulls in the fleet, the ones it matters most for,
-   were only ever compared against neighbours that happened to fall in the
-   adjacent cells and were blind to everything past them. They berthed inside
-   one another and the test said yes. The span now follows the radii involved. */
-let sepMaxR=0;
 function sepFits(x,y,z,r){
-  const span=Math.max(1,Math.ceil(((r+sepMaxR)*0.45)/SEPCELL));
   const cx=Math.floor(x/SEPCELL),cy=Math.floor(y/SEPCELL),cz=Math.floor(z/SEPCELL);
-  for(let ix=-span;ix<=span;ix++)for(let iy=-span;iy<=span;iy++)for(let iz=-span;iz<=span;iz++){
+  for(let ix=-1;ix<=1;ix++)for(let iy=-1;iy<=1;iy++)for(let iz=-1;iz<=1;iz++){
     const b=sepGrid.get((cx+ix)+","+(cy+iy)+","+(cz+iz));
     if(!b)continue;
     for(const q2 of b){
@@ -2201,7 +2175,6 @@ function sepFits(x,y,z,r){
   return true;
 }
 function sepPut(x,y,z,r){
-  if(r>sepMaxR)sepMaxR=r;
   const k=Math.floor(x/SEPCELL)+","+Math.floor(y/SEPCELL)+","+Math.floor(z/SEPCELL);
   let b=sepGrid.get(k);if(!b)sepGrid.set(k,b=[]);b.push([x,y,z,r]);
 }
@@ -2209,65 +2182,32 @@ function sepPut(x,y,z,r){
 /* ---- a forged hull arrives: place it, bake it into its chunk ---- */
 function admit(rec){
   const slen=rec.meta.length*rec.mul, sep=slen*2.1, FLAT=0.34;
-  /* Berths are handed out front to back.
-
-     This is the whole arrival, and it took a wrong turn first. Holding every
-     hull until the last was forged did guarantee that all of them were seen to
-     arrive — but forging two and a half thousand hulls is seven workers doing
-     eighty-odd milliseconds of work apiece, half a minute of it, and half a
-     minute of empty stage is not a price worth paying for anything.
-
-     So the schedule stops fighting the forge and rides it. A hull's station on
-     the run is now her place in the queue: the first out of the workers takes
-     the nose, the last takes the tail. Forge order and station order become the
-     same order, which is what the no-passing argument actually needs — every
-     hull travels +x by the same decaying offset, so her path is the stretch of
-     axis just behind her berth, and the ships that berth there have not been
-     forged yet, let alone arrived. She sweeps through empty space by
-     construction, and she can start the moment she exists.
-
-     x is still uniform across the fleet, because the queue is; only the
-     correlation with arrival time is new. y and z are then scattered inside
-     the slice of the flattened ball at that x, so the muster keeps its shape. */
-  const frac=ships.length/Math.max(1,forgeTotal-1);
-  const xc=RAD*(1-2*Math.min(1,frac));
-  /* the slice through a ball goes to a point at either end, and the hulls at
-     the very nose and the very tail have to berth somewhere that is not on top
-     of each other, so it keeps a floor */
-  const rad=Math.max(0.11,Math.sqrt(Math.max(0,1-(xc/RAD)*(xc/RAD))));
-  let x=xc,y=0,z=0,placed=false;
-  for(let t=0;t<40&&!placed;t++){
-    let v,w2;
-    do{v=J(-1,1);w2=J(-1,1);}while(v*v+w2*w2>1);
-    y=v*RAD*FLAT*rad;z=w2*RAD*rad;
-    if(sepFits(x,y,z,sep))placed=true;
-  }
-  /* and if the slice is full, go outboard until it is not. Giving up after a
-     fixed number of tries and berthing her wherever the last one landed is how
-     hulls ended up sitting inside each other: the fleet has an edge, and there
-     is always room at it. */
-  if(!placed){
-    let k=1;
-    for(let t=0;t<500&&!placed;t++){
-      k*=1.04;
-      /* grown from her own keep-out, not from the slice: scaling a slice that
-         has collapsed to a point scales nothing, which is exactly where the
-         last overlapping pair in the fleet was coming from */
-      const rr0=Math.max(RAD*rad,sep*0.9)*k;
-      const a=J(0,6.2832);
-      y=Math.cos(a)*rr0*FLAT;z=Math.sin(a)*rr0;
-      if(sepFits(x,y,z,sep))placed=true;
-    }
+  let x=0,y=0,z=0;
+  for(let t=0;t<24;t++){
+    let u,v,w2;
+    do{u=J(-1,1);v=J(-1,1);w2=J(-1,1);}while(u*u+v*v+w2*w2>1);
+    x=u*RAD;y=v*RAD*FLAT;z=w2*RAD;
+    if(sepFits(x,y,z,sep))break;
   }
   sepPut(x,y,z,sep);
   const yaw=J(-0.4,0.4),cy=Math.cos(yaw),sy=Math.sin(yaw);
   const sc=rec.mul*J(0.96,1.04);
-  /* w is the second she is due out of the jump — which is now, because the
-     queue she came off is the queue she flies in. Bob and tint are hashed back
-     out of it, so the arrival costs the fleet not one byte more: at two million
-     vertices a second attribute would have been eight megabytes to say the
-     same thing. */
-  const phase=performance.now()/1000+0.05;
+  /* The one float each vertex already carries stops being a random phase and
+     becomes the second this hull is due out of the jump. Bob and tint are
+     hashed back out of it, so the arrival costs the fleet not one byte more:
+     at two million vertices a second attribute would have been eight megabytes
+     to say the same thing.
+
+     The schedule runs front to back, and that ordering is not decoration — it
+     is the whole collision argument. Every hull travels the same axis by the
+     same decaying offset, so a ship's path is the stretch of that axis just
+     behind her berth, which is exactly where the ships behind her will end up.
+     Order the arrivals nose-first and each of them is still out in the jump
+     when the ship ahead sweeps through the space they have yet to occupy.
+     Better than that: offset falls as station rises, so x-off is increasing in
+     x at every instant — the fleet cannot reorder itself, and no two hulls can
+     swap places or pass through one another at any point in the arrival. */
+  const phase=(1-(x+RAD)/(2*RAD))*JUMP_SPREAD;
   const ch=chunkFor(x,y,z);
   const ranges=[];
   [rec.mid,rec.far].forEach((m,li)=>{
@@ -2293,7 +2233,7 @@ function admit(rec){
   /* where she comes through: her berth, less the whole run she has yet to make */
   if(flashArr&&flashN*4+4<=flashArr.length){
     const q=flashN*4;
-    flashArr[q]=x-jumpLen()*jumpFactor(phase);flashArr[q+1]=y;flashArr[q+2]=z;flashArr[q+3]=phase;
+    flashArr[q]=x-jumpLen();flashArr[q+1]=y;flashArr[q+2]=z;flashArr[q+3]=phase;
     flashN++;
   }
   flagList.push({desig:rec.meta.desig,klass:rec.meta.klass,slen,hulls:rec.hulls,id});
@@ -2552,6 +2492,7 @@ function onWorkerMsg(e){
     uploadDirty();flashUpload();roster();
     /* forge complete: every hull is on the GPU, so the whole muster can come
        through together and every one of them be seen doing it */
+    if(forged>=forgeTotal&&jumpT0===Infinity)jumpT0=performance.now()/1000+0.15;
     if(forged>=forgeTotal)
       for(const ch of chunks.values())for(const l of ch.lod){l.v.a=null;l.i.a=null;}
   }else{
@@ -2592,8 +2533,7 @@ function startFleet(fresh){
   forgeTotal=targetN+8;forged=0;
   RAD=62*Math.cbrt(targetN)+90;
   sceneR=RAD*1.35;
-  jumpT0=0;                              /* w is absolute now; nothing to wait for */
-  introArmed=true;
+  jumpT0=Infinity;                       /* nobody arrives until everybody can */
   forgeStart=performance.now()/1000;
   flashReset(forgeTotal);
   chunkSize=Math.max(240,RAD/2.6);
@@ -2672,38 +2612,6 @@ function makeStars(){
 const cam={yaw:0,pitch:0,ex:0,ey:0,ez:0};
 let dpr=Math.min(devicePixelRatio||1,2);
 let nearestD=1e9,flyAnim=null;
-/* Where the opening shot ends: alongside the hull at the head of the muster.
-   Standing off at the fleet's own radius is the right way to watch it arrive
-   and the wrong place to be left afterwards — it is a diagram, not a berth. So
-   once the last hull has stopped, the camera closes on the ship that came out
-   of the jump in front of everybody and settles in beside her.
-   "At the very front" is taken as the leading few per cent of the run rather
-   than the single largest x, and the biggest hull in that band gets it: the
-   literal frontmost ship is as likely as not a twelve metre launch, and being
-   flown across the whole armada to arrive next to one is an anticlimax. */
-let introArmed=false;
-function leadShip(){
-  if(!ships.length)return null;
-  let xmax=-1e9,xmin=1e9;
-  for(const s of ships){if(s.x>xmax)xmax=s.x;if(s.x<xmin)xmin=s.x;}
-  const cut=xmax-(xmax-xmin)*0.06;
-  let best=null;
-  for(const s of ships)if(s.x>=cut&&(!best||s.slen>best.slen))best=s;
-  return best;
-}
-function flyToLead(){
-  const sh=leadShip();if(!sh)return;
-  const d=Math.max(sh.slen*2.1,20);
-  /* off her starboard bow and a little above: she keeps her own silhouette,
-     and the fleet she came in ahead of fills the space behind her */
-  const tgt=[sh.x+d*0.62, sh.y+d*0.30, sh.z+d*0.86];
-  const f=V.norm([sh.x-tgt[0],sh.y-tgt[1],sh.z-tgt[2]]);
-  let ty=Math.atan2(f[2],f[0]);
-  while(ty-cam.yaw>Math.PI)ty-=Math.PI*2;
-  while(ty-cam.yaw<-Math.PI)ty+=Math.PI*2;
-  flyAnim={t0:performance.now(),dur:2600,e0:[cam.ex,cam.ey,cam.ez],e1:tgt,
-           y0:cam.yaw,y1:ty,p0:cam.pitch,p1:Math.asin(Math.max(-1,Math.min(1,f[1])))};
-}
 const flySpeed=()=>Math.min(sceneR*0.5,Math.max(6,nearestD*0.35));
 function clampEye(){
   const d=Math.hypot(cam.ex,cam.ey,cam.ez);
@@ -2774,11 +2682,8 @@ let last=0,fpsA=60,triDrawn=0,idleT=0;
    asked for reduced motion — an arrival is the one thing here that moves on
    its own and cannot be waited out. */
 const jumpLen=()=>reduced?0:sceneR*0.55;
-/* the same hash the vertex shader takes, so a hull's flash opens exactly where
-   she comes through rather than where an average ship would have */
-const jumpFactor=ph=>0.55+0.90*((ph*7.3)%1);
 /* a viewer who asked for reduced motion gets a fleet that has already arrived */
-const jumpClock=()=>reduced?-1e6:jumpT0;
+const jumpClock=()=>reduced?-1e6:(jumpT0===Infinity?1e9:jumpT0);
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(0.1,(now-last)/1000||0.016);last=now;
@@ -2833,12 +2738,8 @@ function frame(now){
      forgeTotal. So the muster is called anyway once the wait stops being
      plausible. Late hulls then pop in as they used to, which is a poor arrival
      but an arrival, and far better than a fleet nobody ever sees. */
-  /* the last hull is down and nobody has taken the controls: go and stand
-     next to the one that led them in */
-  if(introArmed&&forged>=forgeTotal&&now/1000-forgeStart>1.5){
-    introArmed=false;
-    if(!drag&&!flyAnim&&sel==null&&!keys.size)flyToLead();
-  }
+  if(jumpT0===Infinity&&forgeStart&&now/1000-forgeStart>11)
+    jumpT0=now/1000+0.15;
 
   const {m,eye}=mat();
   gl.viewport(0,0,cvs.width,cvs.height);
@@ -3298,7 +3199,7 @@ cvs.addEventListener("pointermove",e=>{
   if(!drag)return;
   const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;
   drag.moved+=Math.abs(dx)+Math.abs(dy);
-  if(drag.moved>8){flyAnim=null;introArmed=false;}
+  if(drag.moved>8)flyAnim=null;
   if(sel!=null&&ships[sel]){
     if(!orb)orbFromCam();
     orb.yaw+=dx*0.005;
@@ -3325,7 +3226,7 @@ cvs.addEventListener("webglcontextlost",e=>{
   document.getElementById("stat").textContent=
     "GPU CONTEXT LOST — reload the page (try a smaller fleet if it recurs)";});
 cvs.addEventListener("wheel",e=>{
-  e.preventDefault();flyAnim=null;introArmed=false;
+  e.preventDefault();flyAnim=null;
   if(sel!=null&&ships[sel]){
     if(!orb)orbFromCam();
     orb.dist*=Math.exp(e.deltaY*0.0012);
@@ -3368,7 +3269,7 @@ document.getElementById("bNew").addEventListener("click",()=>{toast("FORGING FLE
 document.getElementById("bPal").addEventListener("click",()=>{palI=(palI+1)%PAL.length;applyPal();});
 addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
-  if("wasdqe".includes(k)&&k.length===1){keys.add(k);flyAnim=null;introArmed=false;return;}
+  if("wasdqe".includes(k)&&k.length===1){keys.add(k);flyAnim=null;return;}
   if(e.key==="Shift")keys.add("shift");
   if(e.key==="Escape")select(null);
   if(k==="n"){toast("FORGING FLEET");startFleet(true);}
