@@ -1894,13 +1894,13 @@ function compile(vs,fs){
 /* one vertex stream: xyz world-baked, w = the ship's bob phase (its tint too) */
 const shipProg=compile(`#version 300 es
 layout(location=0) in vec4 aV;
-uniform mat4 uVP;uniform float uT,uBob,uJump;
+uniform mat4 uVP;uniform float uT,uBob,uJump,uJumpT0;
 out vec3 vW;out float vTint;out float vIn;out float vGrain;
 void main(){
   vec3 p=aV.xyz;
   /* w is the second this hull is due, so a negative age is a ship that has
      not dropped out of the jump yet and is not there to be drawn at all */
-  float age=uT-aV.w;
+  float age=uT-uJumpT0-aV.w;
   /* hashed off the schedule rather than read straight from it: the schedule
      varies smoothly along the fleet, and tint and bob both want to look
      unrelated to a hull's neighbours rather than sweep across them in a band */
@@ -1950,7 +1950,7 @@ void main(){
   o=vec4(uInk,0.30*(1.0-r*1.4));
 }`);
 const U=n=>gl.getUniformLocation(shipProg,n);
-const UN={vp:U("uVP"),t:U("uT"),bob:U("uBob"),jump:U("uJump"),eye:U("uEye"),ink:U("uInk"),bg:U("uBg"),fog:U("uFog")};
+const UN={vp:U("uVP"),t:U("uT"),bob:U("uBob"),jump:U("uJump"),jt0:U("uJumpT0"),eye:U("uEye"),ink:U("uInk"),bg:U("uBg"),fog:U("uFog")};
 
 /* ---- the dressed ship ----------------------------------------------------
    The fleet's shader is one lambert term and a fill, which is right for two
@@ -1962,13 +1962,13 @@ const UN={vp:U("uVP"),t:U("uT"),bob:U("uBob"),jump:U("uJump"),eye:U("uEye"),ink:
    channel — the fleet should not carry an attribute only one ship reads. */
 const luxProg=compile(`#version 300 es
 layout(location=0) in vec4 aV;
-uniform mat4 uVP;uniform float uT,uBob,uJump;
+uniform mat4 uVP;uniform float uT,uBob,uJump,uJumpT0;
 out vec3 vW;out float vTint;out float vIn;out float vGrain;
 void main(){
   vec3 p=aV.xyz;
   /* w is the second this hull is due, so a negative age is a ship that has
      not dropped out of the jump yet and is not there to be drawn at all */
-  float age=uT-aV.w;
+  float age=uT-uJumpT0-aV.w;
   /* hashed off the schedule rather than read straight from it: the schedule
      varies smoothly along the fleet, and tint and bob both want to look
      unrelated to a hull's neighbours rather than sweep across them in a band */
@@ -2022,7 +2022,8 @@ void main(){
   o=vec4(mix(base,uBg,fog*0.88),1.0);
 }`);
 const LX={vp:gl.getUniformLocation(luxProg,"uVP"),t:gl.getUniformLocation(luxProg,"uT"),
-  bob:gl.getUniformLocation(luxProg,"uBob"),jump:gl.getUniformLocation(luxProg,"uJump"),eye:gl.getUniformLocation(luxProg,"uEye"),
+  bob:gl.getUniformLocation(luxProg,"uBob"),jump:gl.getUniformLocation(luxProg,"uJump"),
+  jt0:gl.getUniformLocation(luxProg,"uJumpT0"),eye:gl.getUniformLocation(luxProg,"uEye"),
   ink:gl.getUniformLocation(luxProg,"uInk"),bg:gl.getUniformLocation(luxProg,"uBg"),
   fog:gl.getUniformLocation(luxProg,"uFog"),emis:gl.getUniformLocation(luxProg,"uEmis"),
   mix:gl.getUniformLocation(luxProg,"uPaintMix")};
@@ -2038,10 +2039,10 @@ const USvp=gl.getUniformLocation(starProg,"uVP"),USink=gl.getUniformLocation(sta
    the fleet rather than a fixed smudge on the glass. */
 const flashProg=compile(`#version 300 es
 layout(location=0) in vec4 aF;
-uniform mat4 uVP;uniform float uT,uSize;
+uniform mat4 uVP;uniform float uT,uSize,uJumpT0;
 out float vA;
 void main(){
-  float age=uT-aF.w;
+  float age=uT-uJumpT0-aF.w;
   if(age<0.0||age>0.9){gl_Position=vec4(2.0,2.0,2.0,1.0);gl_PointSize=0.0;vA=0.0;return;}
   gl_Position=uVP*vec4(aF.xyz,1.0);
   float o=age/0.9;
@@ -2061,6 +2062,7 @@ void main(){
   o=vec4(uInk,(core*0.5+ring*0.95)*vA);
 }`);
 const FL={vp:gl.getUniformLocation(flashProg,"uVP"),t:gl.getUniformLocation(flashProg,"uT"),
+  jt0:gl.getUniformLocation(flashProg,"uJumpT0"),
   size:gl.getUniformLocation(flashProg,"uSize"),ink:gl.getUniformLocation(flashProg,"uInk")};
 let flashVao=null,flashVbo=null,flashArr=null,flashN=0;
 function flashReset(n){
@@ -2087,9 +2089,19 @@ gl.enable(gl.DEPTH_TEST);
 /* ===================== fleet state ===================== */
 let fleetSeed=(Math.random()*4294967296)|0, targetN=2500;
 let palI=0, sceneR=1000, RAD=800, chunkSize=300;
-/* when this muster was called, and how long the line takes to come through */
-let fleetT0=0;
+/* How long the line takes to come through, and when it starts.
+
+   The start is a uniform rather than something baked into the hulls, and that
+   is the whole point of it. w carries a hull's DELAY — her place in the queue,
+   fixed by her station — and the clock she is measured against is set once, in
+   one place, the moment the last hull has been forged. Baking an absolute time
+   at admit was the bug: the muster window is under two seconds and forging two
+   and a half thousand hulls is not, so every ship forged after her own slot had
+   passed arrived with her offset already decayed and her dissolve already
+   finished, and simply appeared. Most of the fleet never came out of the jump
+   at all. Nothing can start until everything can. */
 const JUMP_SPREAD=1.9;
+let jumpT0=Infinity, forgeStart=0;
 let ships=[], chunks=new Map(), flagList=[];
 let sepGrid=new Map(); const SEPCELL=320;
 let jr=null; const J=(a,b)=>a+(b-a)*jr();
@@ -2195,7 +2207,7 @@ function admit(rec){
      Better than that: offset falls as station rises, so x-off is increasing in
      x at every instant — the fleet cannot reorder itself, and no two hulls can
      swap places or pass through one another at any point in the arrival. */
-  const phase=fleetT0+(1-(x+RAD)/(2*RAD))*JUMP_SPREAD;
+  const phase=(1-(x+RAD)/(2*RAD))*JUMP_SPREAD;
   const ch=chunkFor(x,y,z);
   const ranges=[];
   [rec.mid,rec.far].forEach((m,li)=>{
@@ -2478,7 +2490,9 @@ function onWorkerMsg(e){
   if(d.kind==="batch"){
     for(const rec of d.out){admit(rec);forged++;}
     uploadDirty();flashUpload();roster();
-    /* forge complete: the CPU copies of the chunk buffers have done their job */
+    /* forge complete: every hull is on the GPU, so the whole muster can come
+       through together and every one of them be seen doing it */
+    if(forged>=forgeTotal&&jumpT0===Infinity)jumpT0=performance.now()/1000+0.15;
     if(forged>=forgeTotal)
       for(const ch of chunks.values())for(const l of ch.lod){l.v.a=null;l.i.a=null;}
   }else{
@@ -2519,7 +2533,8 @@ function startFleet(fresh){
   forgeTotal=targetN+8;forged=0;
   RAD=62*Math.cbrt(targetN)+90;
   sceneR=RAD*1.35;
-  fleetT0=performance.now()/1000+0.25;   /* a beat, so the first hulls are seen arriving */
+  jumpT0=Infinity;                       /* nobody arrives until everybody can */
+  forgeStart=performance.now()/1000;
   flashReset(forgeTotal);
   chunkSize=Math.max(240,RAD/2.6);
   makeStars();
@@ -2656,6 +2671,8 @@ let last=0,fpsA=60,triDrawn=0,idleT=0;
    asked for reduced motion — an arrival is the one thing here that moves on
    its own and cannot be waited out. */
 const jumpLen=()=>reduced?0:sceneR*0.55;
+/* a viewer who asked for reduced motion gets a fleet that has already arrived */
+const jumpClock=()=>reduced?-1e6:(jumpT0===Infinity?1e9:jumpT0);
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(0.1,(now-last)/1000||0.016);last=now;
@@ -2704,6 +2721,15 @@ function frame(now){
     cam.ex+=mx;cam.ey+=my;cam.ez+=mz;clampEye();
   }
 
+  /* Holding the whole fleet back until the last hull is forged is right, and it
+     is also the one thing here that can strand the stage empty for good: a
+     worker that dies, a job that never returns, and forged never reaches
+     forgeTotal. So the muster is called anyway once the wait stops being
+     plausible. Late hulls then pop in as they used to, which is a poor arrival
+     but an arrival, and far better than a fleet nobody ever sees. */
+  if(jumpT0===Infinity&&forgeStart&&now/1000-forgeStart>11)
+    jumpT0=now/1000+0.15;
+
   const {m,eye}=mat();
   gl.viewport(0,0,cvs.width,cvs.height);
   gl.clearColor(bgc[0],bgc[1],bgc[2],1);
@@ -2725,6 +2751,7 @@ function frame(now){
   gl.uniform1f(UN.t,now/1000);
   gl.uniform1f(UN.bob,reduced?0:0.45);
   gl.uniform1f(UN.jump,jumpLen());
+  gl.uniform1f(UN.jt0,jumpClock());
   gl.uniform3fv(UN.eye,eye);
   gl.uniform3fv(UN.ink,inkc);
   gl.uniform3fv(UN.bg,bgc);
@@ -2772,6 +2799,7 @@ function frame(now){
     gl.useProgram(flashProg);
     gl.uniformMatrix4fv(FL.vp,false,m);
     gl.uniform1f(FL.t,now/1000);
+    gl.uniform1f(FL.jt0,jumpClock());
     gl.uniform3fv(FL.ink,inkc);
     gl.uniform1f(FL.size,sceneR*0.030*(cvs.height*0.5)/Math.tan(0.42));
     gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);
@@ -2789,6 +2817,7 @@ function frame(now){
     gl.uniform1f(LX.t,now/1000);
     gl.uniform1f(LX.bob,reduced?0:0.45);
     gl.uniform1f(LX.jump,jumpLen());
+    gl.uniform1f(LX.jt0,jumpClock());
     gl.uniform3fv(LX.eye,eye);
     gl.uniform3fv(LX.ink,inkc);
     gl.uniform3fv(LX.bg,bgc);
