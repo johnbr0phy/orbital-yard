@@ -2635,7 +2635,14 @@ function camBasis(){
    the first hulls out of the jump are the ones that arrive in your face, and
    the muster fills in behind them. */
 function initCam(){
-  const a=0,pp=0.14,d=sceneR*1.5;
+  /* Close enough that the arrival fills the frame rather than sitting in the
+     middle of it. The hulls fizz up at their entry points, a full jump run back
+     down the axis, and fly at you from there — so the distance that matters is
+     to the entry cloud, not to the berths, and standing off at the fleet's own
+     radius put the whole event in the far half of the view. This is a couple of
+     hundred units clear of the frontmost berth: the muster overflows the edges,
+     which is the point, and still nobody arrives inside the camera. */
+  const a=0,pp=0.12,d=sceneR*0.86;
   cam.ex=Math.cos(pp)*Math.cos(a)*d;cam.ey=Math.sin(pp)*d;cam.ez=Math.cos(pp)*Math.sin(a)*d;
   const f=V.norm([-cam.ex,-cam.ey,-cam.ez]);
   cam.yaw=Math.atan2(f[2],f[0]);cam.pitch=Math.asin(f[1]);
