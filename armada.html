@@ -1895,23 +1895,37 @@ function compile(vs,fs){
 const shipProg=compile(`#version 300 es
 layout(location=0) in vec4 aV;
 uniform mat4 uVP;uniform float uT,uBob,uJump;
-out vec3 vW;out float vTint;
+out vec3 vW;out float vTint;out float vIn;out float vGrain;
 void main(){
   vec3 p=aV.xyz;
-  p.y+=sin(uT*0.55+aV.w)*uBob;
+  /* w is the second this hull is due, so a negative age is a ship that has
+     not dropped out of the jump yet and is not there to be drawn at all */
+  float age=uT-aV.w;
+  /* hashed off the schedule rather than read straight from it: the schedule
+     varies smoothly along the fleet, and tint and bob both want to look
+     unrelated to a hull's neighbours rather than sweep across them in a band */
+  float h=fract(aV.w*137.13);
+  p.y+=sin(uT*0.55+h*6.2832)*uBob;
   /* Out of the jump: she arrives running, along the fleet's axis, and sheds it
      in about a second. An exponential is the honest curve — all the speed is
      in the first moments and the tail is asymptotic, which is what a ship
      shedding velocity looks like and what a linear ease-out never does. */
-  p.x-=uJump*exp(-max(0.0,uT-aV.w)*3.4);
-  vW=p;vTint=fract(aV.w*0.618034);
+  p.x-=uJump*exp(-max(0.0,age)*3.4);
+  vW=p;vTint=h;
+  vIn=clamp(age/0.30,0.0,1.0);
+  /* a per-vertex grain, interpolated across each face, so she comes in as
+     blotches of hull rather than as a rectangle of dither */
+  vGrain=fract(sin(dot(aV.xyz,vec3(12.9898,78.233,37.719)))*43758.5453);
   gl_Position=uVP*vec4(p,1.0);
 }`,`#version 300 es
 precision highp float;
-in vec3 vW;in float vTint;
+in vec3 vW;in float vTint;in float vIn;in float vGrain;
 uniform vec3 uEye,uInk,uBg;uniform float uFog;
 out vec4 o;
 void main(){
+  /* she arrives out of nothing: no blending, no sort, no order to get wrong —
+     the hull simply is not there yet, one blotch at a time */
+  if(vGrain>vIn)discard;
   vec3 N=normalize(cross(dFdx(vW),dFdy(vW)));
   vec3 Vd=normalize(uEye-vW);
   if(dot(N,Vd)<0.0)N=-N;
@@ -1949,24 +1963,36 @@ const UN={vp:U("uVP"),t:U("uT"),bob:U("uBob"),jump:U("uJump"),eye:U("uEye"),ink:
 const luxProg=compile(`#version 300 es
 layout(location=0) in vec4 aV;
 uniform mat4 uVP;uniform float uT,uBob,uJump;
-out vec3 vW;out float vTint;
+out vec3 vW;out float vTint;out float vIn;out float vGrain;
 void main(){
   vec3 p=aV.xyz;
-  p.y+=sin(uT*0.55+aV.w)*uBob;
+  /* w is the second this hull is due, so a negative age is a ship that has
+     not dropped out of the jump yet and is not there to be drawn at all */
+  float age=uT-aV.w;
+  /* hashed off the schedule rather than read straight from it: the schedule
+     varies smoothly along the fleet, and tint and bob both want to look
+     unrelated to a hull's neighbours rather than sweep across them in a band */
+  float h=fract(aV.w*137.13);
+  p.y+=sin(uT*0.55+h*6.2832)*uBob;
   /* Out of the jump: she arrives running, along the fleet's axis, and sheds it
      in about a second. An exponential is the honest curve — all the speed is
      in the first moments and the tail is asymptotic, which is what a ship
      shedding velocity looks like and what a linear ease-out never does. */
-  p.x-=uJump*exp(-max(0.0,uT-aV.w)*3.4);
-  vW=p;vTint=fract(aV.w*0.618034);
+  p.x-=uJump*exp(-max(0.0,age)*3.4);
+  vW=p;vTint=h;
+  vIn=clamp(age/0.30,0.0,1.0);
+  /* a per-vertex grain, interpolated across each face, so she comes in as
+     blotches of hull rather than as a rectangle of dither */
+  vGrain=fract(sin(dot(aV.xyz,vec3(12.9898,78.233,37.719)))*43758.5453);
   gl_Position=uVP*vec4(p,1.0);
 }`,`#version 300 es
 precision highp float;
-in vec3 vW;in float vTint;
+in vec3 vW;in float vTint;in float vIn;in float vGrain;
 uniform vec3 uEye,uInk,uBg;
 uniform float uFog,uEmis,uPaintMix;
 out vec4 o;
 void main(){
+  if(vGrain>vIn)discard;
   float fog=1.0-exp(-length(uEye-vW)*uFog);
   /* A port reads as an opening, not as a lamp. The plating around it is
      already drawn at very nearly the ink colour, so there is no headroom above
@@ -2001,42 +2027,69 @@ const LX={vp:gl.getUniformLocation(luxProg,"uVP"),t:gl.getUniformLocation(luxPro
   fog:gl.getUniformLocation(luxProg,"uFog"),emis:gl.getUniformLocation(luxProg,"uEmis"),
   mix:gl.getUniformLocation(luxProg,"uPaintMix")};
 
-/* her name, painted on the flank. Discard rather than blend: the quad stands
-   a hair proud of the plating, so the letters need no sorting and no blend
-   state, and the hull shows through everywhere the glyphs are not. */
-const decalProg=compile(`#version 300 es
-layout(location=0) in vec3 aP;layout(location=1) in vec2 aUV;
-uniform mat4 uVP;uniform float uT,uBob,uPhase,uJump;
-out vec2 vUV;out vec3 vW;
+const USvp=gl.getUniformLocation(starProg,"uVP"),USink=gl.getUniformLocation(starProg,"uInk");
+
+/* ---- the mouth of the jump -----------------------------------------------
+   One point per hull, parked at the spot she drops out at, opening and dying
+   in under a second. A point sprite rather than a billboard because that is
+   one buffer of four floats a ship and one draw call for the whole muster —
+   the alternative was two and a half thousand quads to say the same thing.
+   It is sized in world units and divided by w, so it is a thing out there in
+   the fleet rather than a fixed smudge on the glass. */
+const flashProg=compile(`#version 300 es
+layout(location=0) in vec4 aF;
+uniform mat4 uVP;uniform float uT,uSize;
+out float vA;
 void main(){
-  vec3 p=aP;
-  p.y+=sin(uT*0.55+uPhase)*uBob;
-  p.x-=uJump*exp(-max(0.0,uT-uPhase)*3.4);   /* she brings her name with her */
-  vW=p;vUV=aUV;
-  gl_Position=uVP*vec4(p,1.0);
+  float age=uT-aF.w;
+  if(age<0.0||age>0.9){gl_Position=vec4(2.0,2.0,2.0,1.0);gl_PointSize=0.0;vA=0.0;return;}
+  gl_Position=uVP*vec4(aF.xyz,1.0);
+  float o=age/0.9;
+  vA=exp(-age*5.5)*(1.0-smoothstep(0.72,1.0,o));
+  gl_PointSize=clamp(uSize*(0.22+2.8*o)/max(gl_Position.w,1.0),1.0,460.0);
 }`,`#version 300 es
 precision highp float;
-in vec2 vUV;in vec3 vW;
-uniform sampler2D uTex;uniform vec3 uEye,uBg,uInk;uniform float uFog;
-out vec4 o;
+in float vA;uniform vec3 uInk;out vec4 o;
 void main(){
-  /* a lower cut than you would use for foliage: the glyph strokes are thin,
-     and minified through a mip chain their averaged coverage falls fast */
-  if(texture(uTex,vUV).a<0.30)discard;
-  float fog=1.0-exp(-length(uEye-vW)*uFog);
-  o=vec4(mix(mix(uBg,uInk,0.14),uBg,fog*0.80),1.0);
+  vec2 d=gl_PointCoord-0.5;
+  float r=length(d)*2.0;
+  if(r>1.0)discard;
+  /* a hot centre that goes almost at once, and a ring that keeps opening
+     after it — which is what reads as an aperture rather than a spark */
+  float core=exp(-r*r*7.0);
+  float ring=smoothstep(0.42,0.88,r)*(1.0-smoothstep(0.88,1.0,r));
+  o=vec4(uInk,(core*0.5+ring*0.95)*vA);
 }`);
-const DC={vp:gl.getUniformLocation(decalProg,"uVP"),t:gl.getUniformLocation(decalProg,"uT"),
-  bob:gl.getUniformLocation(decalProg,"uBob"),jump:gl.getUniformLocation(decalProg,"uJump"),phase:gl.getUniformLocation(decalProg,"uPhase"),
-  tex:gl.getUniformLocation(decalProg,"uTex"),eye:gl.getUniformLocation(decalProg,"uEye"),
-  bg:gl.getUniformLocation(decalProg,"uBg"),ink:gl.getUniformLocation(decalProg,"uInk"),
-  fog:gl.getUniformLocation(decalProg,"uFog")};
-const USvp=gl.getUniformLocation(starProg,"uVP"),USink=gl.getUniformLocation(starProg,"uInk");
+const FL={vp:gl.getUniformLocation(flashProg,"uVP"),t:gl.getUniformLocation(flashProg,"uT"),
+  size:gl.getUniformLocation(flashProg,"uSize"),ink:gl.getUniformLocation(flashProg,"uInk")};
+let flashVao=null,flashVbo=null,flashArr=null,flashN=0;
+function flashReset(n){
+  if(!flashVao){
+    flashVao=gl.createVertexArray();flashVbo=gl.createBuffer();
+    gl.bindVertexArray(flashVao);
+    gl.bindBuffer(gl.ARRAY_BUFFER,flashVbo);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0,4,gl.FLOAT,false,16,0);
+    gl.bindVertexArray(null);
+  }
+  flashArr=new Float32Array(n*4);flashN=0;
+  gl.bindBuffer(gl.ARRAY_BUFFER,flashVbo);
+  gl.bufferData(gl.ARRAY_BUFFER,flashArr.byteLength,gl.DYNAMIC_DRAW);
+}
+/* one upload a batch rather than one a ship */
+function flashUpload(){
+  if(!flashN)return;
+  gl.bindBuffer(gl.ARRAY_BUFFER,flashVbo);
+  gl.bufferSubData(gl.ARRAY_BUFFER,0,flashArr.subarray(0,flashN*4));
+}
 gl.enable(gl.DEPTH_TEST);
 
 /* ===================== fleet state ===================== */
 let fleetSeed=(Math.random()*4294967296)|0, targetN=2500;
 let palI=0, sceneR=1000, RAD=800, chunkSize=300;
+/* when this muster was called, and how long the line takes to come through */
+let fleetT0=0;
+const JUMP_SPREAD=1.9;
 let ships=[], chunks=new Map(), flagList=[];
 let sepGrid=new Map(); const SEPCELL=320;
 let jr=null; const J=(a,b)=>a+(b-a)*jr();
@@ -2128,10 +2181,21 @@ function admit(rec){
   const yaw=J(-0.4,0.4),cy=Math.cos(yaw),sy=Math.sin(yaw);
   const sc=rec.mul*J(0.96,1.04);
   /* The one float each vertex already carries stops being a random phase and
-     becomes the second she arrived. Bob and tint are both hashed back out of
-     it, so the jump costs the fleet not one byte more: at two million vertices
-     a second attribute would have been eight megabytes to say the same thing. */
-  const phase=performance.now()/1000+jr()*0.4;
+     becomes the second this hull is due out of the jump. Bob and tint are
+     hashed back out of it, so the arrival costs the fleet not one byte more:
+     at two million vertices a second attribute would have been eight megabytes
+     to say the same thing.
+
+     The schedule runs front to back, and that ordering is not decoration — it
+     is the whole collision argument. Every hull travels the same axis by the
+     same decaying offset, so a ship's path is the stretch of that axis just
+     behind her berth, which is exactly where the ships behind her will end up.
+     Order the arrivals nose-first and each of them is still out in the jump
+     when the ship ahead sweeps through the space they have yet to occupy.
+     Better than that: offset falls as station rises, so x-off is increasing in
+     x at every instant — the fleet cannot reorder itself, and no two hulls can
+     swap places or pass through one another at any point in the arrival. */
+  const phase=fleetT0+(1-(x+RAD)/(2*RAD))*JUMP_SPREAD;
   const ch=chunkFor(x,y,z);
   const ranges=[];
   [rec.mid,rec.far].forEach((m,li)=>{
@@ -2154,6 +2218,12 @@ function admit(rec){
   const id=ships.length;
   ships.push({x,y,z,slen,seed:rec.seed,hulls:rec.hulls,yaw,sc,phase,meta:rec.meta,rm:ranges[0],rf:ranges[1]});
   ch.ids.push(id);
+  /* where she comes through: her berth, less the whole run she has yet to make */
+  if(flashArr&&flashN*4+4<=flashArr.length){
+    const q=flashN*4;
+    flashArr[q]=x-jumpLen();flashArr[q+1]=y;flashArr[q+2]=z;flashArr[q+3]=phase;
+    flashN++;
+  }
   flagList.push({desig:rec.meta.desig,klass:rec.meta.klass,slen,hulls:rec.hulls,id});
   if(flagList.length>10){flagList.sort((a,b)=>b.slen-a.slen);flagList.length=10;}
 }
@@ -2252,7 +2322,7 @@ function dressOf(ship,seed){
     (p.k==="tube"||p.k==="capsule"||p.k==="sphere"||p.k==="box"||p.k==="panel"));
   hosts.sort((a,b)=>sizeOf(b)-sizeOf(a));
   const use=hosts.slice(0,7);
-  let decal=null,kept=0;
+  let kept=0;
   for(let bi=0;bi<use.length&&kept<120;bi++){
     const p=use[bi];
     const S=surfaceOf(p,R); if(!S||!S.at) continue;
@@ -2306,58 +2376,7 @@ function dressOf(ship,seed){
       }
     }
   }
-  /* ---- her name ----------------------------------------------------------
-     It is worth nothing unless it can be read from outside, so it is not
-     placed and hoped for: a candidate is a quad whose EVERY sampled point
-     stands clear of every solid on the ship, and which is backed by hull
-     across most of its area so it lies on her rather than floating beside
-     her. Candidates are tried biggest first and shrunk until one passes; if
-     none does, she carries no name rather than a hidden one. */
-  const inAny=q=>{for(const c of solids)if(inSolid(q,c))return true;return false;};
-  const GX=9,GY=3;
-  const tryQuad=(o2,e1,e2,nrm)=>{
-    let backed=0;
-    const lift=Math.max(diag*0.004,V.len(e2)*0.30);
-    for(let i=0;i<GX;i++)for(let j=0;j<GY;j++){
-      const a2=(i/(GX-1))*2-1, b2=(j/(GY-1))*2-1;
-      const q=V.add(o2,V.add(V.mul(e1,a2),V.mul(e2,b2)));
-      if(inAny(V.add(q,V.mul(nrm,lift*0.5))))return null;   /* buried: reject */
-      if(inAny(V.sub(q,V.mul(nrm,lift*1.6))))backed++;      /* hull underneath */
-    }
-    if(backed<GX*GY*0.62)return null;                        /* floating: reject */
-    return {o:o2,t1:e1,t2:e2};
-  };
-  for(const p of use){
-    if(decal)break;
-    const S=surfaceOf(p,R); if(!S||!S.at)continue;
-    const ext=sizeOf(p);
-    for(let shrink=0;shrink<5&&!decal;shrink++){
-      const half=Math.min(ext*0.32,diag*0.24)*Math.pow(0.78,shrink);
-      const h=half*0.17;
-      if(half<diag*0.03)break;
-      for(const uv of [[0,0.5],[0.5,0.5],[0.25,0.5],[0.75,0.5],[0.5,0.35],[0.5,0.65]]){
-        const A=S.at(uv[0],uv[1]); if(!A)continue;
-        if(S.ok&&!S.ok(uv[0],uv[1]))continue;
-        const du=S.flat?0.02:0, dv=S.flat?0:0.02;
-        const B2=S.at(Math.min(0.99,uv[0]+du),Math.min(0.99,uv[1]+dv));
-        if(!B2)continue;
-        const d=V.sub(B2.q,A.q), dl=V.len(d); if(dl<1e-9)continue;
-        let e1=V.mul(d,1/dl);
-        let nrm=A.n;
-        /* face outward, so the lettering is on the side anyone can see */
-        const outw=V.sub(A.q,[(bb[0][0]+bb[1][0])/2,(bb[0][1]+bb[1][1])/2,(bb[0][2]+bb[1][2])/2]);
-        if(V.dot(nrm,outw)<0)nrm=V.mul(nrm,-1);
-        let e2=V.norm(V.cross(nrm,e1));
-        /* and read left to right rather than mirrored */
-        const hand=V.dot(V.cross(e1,e2),nrm);
-        if(hand<0)e2=V.mul(e2,-1);
-        const o3=V.add(A.q,V.mul(nrm,Math.max(diag*0.0025,h*0.10)));
-        const got=tryQuad(o3,V.mul(e1,half),V.mul(e2,h),nrm);
-        if(got){decal=got;break;}
-      }
-    }
-  }
-  return {glass,paint,decal};
+  return {glass,paint};
 }
 onmessage=e=>{
   const d=e.data;
@@ -2368,12 +2387,10 @@ onmessage=e=>{
     const D=dressOf(ship,d.seed);
     const sub=a=>a.length?packMesh({parts:a,bb:ship.bb},c,1.0):null;
     const glass=sub(D.glass), paint=sub(D.paint);
-    const dec=D.decal?{o:[D.decal.o[0]-c[0],D.decal.o[1]-c[1],D.decal.o[2]-c[2]],
-                       t1:D.decal.t1,t2:D.decal.t2}:null;
     const tr=[hull.v.buffer,hull.i.buffer];
     if(glass)tr.push(glass.v.buffer,glass.i.buffer);
     if(paint)tr.push(paint.v.buffer,paint.i.buffer);
-    postMessage({kind:"lux",genId:d.genId,id:d.id,hull,glass,paint,decal:dec},tr);
+    postMessage({kind:"lux",genId:d.genId,id:d.id,hull,glass,paint},tr);
     return;
   }
   if(d.kind==="batch"){
@@ -2418,9 +2435,6 @@ function luxFree(){
   if(!luxShip)return;
   for(const g of luxShip.groups){
     gl.deleteVertexArray(g.vao);gl.deleteBuffer(g.vbo);gl.deleteBuffer(g.ibo);}
-  if(luxShip.dec){
-    gl.deleteVertexArray(luxShip.dec.vao);gl.deleteBuffer(luxShip.dec.vbo);
-    gl.deleteTexture(luxShip.dec.tex);}
   luxShip=null;
 }
 function luxRequest(id){
@@ -2431,31 +2445,6 @@ function luxRequest(id){
 }
 /* the lettering is drawn once, at the size it will be read at, into an alpha
    channel — the glyphs are the only thing the shader needs from it */
-function desigTexture(txt){
-  const c=document.createElement("canvas");
-  c.width=1024;c.height=128;
-  const x=c.getContext("2d");
-  x.clearRect(0,0,c.width,c.height);
-  x.fillStyle="#fff";
-  x.textAlign="center";x.textBaseline="middle";
-  let size=76;
-  x.font=`700 ${size}px "Saira Condensed",sans-serif`;
-  while(x.measureText(txt).width>c.width*0.92&&size>18){
-    size-=3;x.font=`700 ${size}px "Saira Condensed",sans-serif`;}
-  x.fillText(txt,c.width/2,c.height/2+2);
-  const t=gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D,t);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,gl.RGBA,gl.UNSIGNED_BYTE,c);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
-  gl.generateMipmap(gl.TEXTURE_2D);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  gl.bindTexture(gl.TEXTURE_2D,null);
-  return t;
-}
 function onWorkerMsg(e){
   const d=e.data;
   if(d.genId!==genId)return;
@@ -2483,31 +2472,12 @@ function onWorkerMsg(e){
       return {vao,vbo,ibo,icount:m.i.length,emis,paintMix};
     };
     const groups=[mk(d.hull,0,0),mk(d.paint,0,1),mk(d.glass,1,0)].filter(Boolean);
-    let dec=null;
-    if(d.decal){
-      const D=d.decal;
-      const corner=(a,b)=>place(D.o[0]+D.t1[0]*a+D.t2[0]*b,
-                                D.o[1]+D.t1[1]*a+D.t2[1]*b,
-                                D.o[2]+D.t1[2]*a+D.t2[2]*b);
-      const c00=corner(-1,-1),c10=corner(1,-1),c11=corner(1,1),c01=corner(-1,1);
-      const buf=new Float32Array([
-        c00[0],c00[1],c00[2],0,0, c10[0],c10[1],c10[2],1,0, c11[0],c11[1],c11[2],1,1,
-        c00[0],c00[1],c00[2],0,0, c11[0],c11[1],c11[2],1,1, c01[0],c01[1],c01[2],0,1]);
-      const vao=gl.createVertexArray(),vbo=gl.createBuffer();
-      gl.bindVertexArray(vao);
-      gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
-      gl.bufferData(gl.ARRAY_BUFFER,buf,gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,20,0);
-      gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,2,gl.FLOAT,false,20,12);
-      gl.bindVertexArray(null);
-      dec={vao,vbo,tex:desigTexture(s.meta.desig),phase:s.phase};
-    }
-    luxShip={id:d.id,groups,dec};
+    luxShip={id:d.id,groups};
     return;
   }
   if(d.kind==="batch"){
     for(const rec of d.out){admit(rec);forged++;}
-    uploadDirty();roster();
+    uploadDirty();flashUpload();roster();
     /* forge complete: the CPU copies of the chunk buffers have done their job */
     if(forged>=forgeTotal)
       for(const ch of chunks.values())for(const l of ch.lod){l.v.a=null;l.i.a=null;}
@@ -2549,6 +2519,8 @@ function startFleet(fresh){
   forgeTotal=targetN+8;forged=0;
   RAD=62*Math.cbrt(targetN)+90;
   sceneR=RAD*1.35;
+  fleetT0=performance.now()/1000+0.25;   /* a beat, so the first hulls are seen arriving */
+  flashReset(forgeTotal);
   chunkSize=Math.max(240,RAD/2.6);
   makeStars();
   select(null);
@@ -2709,7 +2681,9 @@ function frame(now){
       if(keys.has("s"))orb.dist*=Math.exp(kd*1.3);
       orbClamp();
     }
-    const by=sh.y+(reduced?0:Math.sin(now/1000*0.55+sh.phase)*0.45);
+    /* the same hash the shader takes off the schedule, or the camera tracks a
+       bob the ship is not doing and the held hull drifts under the crosshair */
+    const by=sh.y+(reduced?0:Math.sin(now/1000*0.55+(sh.phase*137.13%1)*6.2832)*0.45);
     const cp=Math.cos(orb.pitch),sp=Math.sin(orb.pitch);
     cam.ex=sh.x+orb.dist*cp*Math.cos(orb.yaw);
     cam.ey=by+orb.dist*sp;
@@ -2791,7 +2765,24 @@ function frame(now){
   }
   gl.bindVertexArray(null);
 
-  /* the ship being held: hull, then paint, then her lit ports, then her name */
+  /* the mouths they came through, over the top of everything and additive so
+     they read as light rather than as more hull. No depth written: a flash is
+     not a thing you can be behind. */
+  if(flashN&&!reduced){
+    gl.useProgram(flashProg);
+    gl.uniformMatrix4fv(FL.vp,false,m);
+    gl.uniform1f(FL.t,now/1000);
+    gl.uniform3fv(FL.ink,inkc);
+    gl.uniform1f(FL.size,sceneR*0.030*(cvs.height*0.5)/Math.tan(0.42));
+    gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);
+    gl.depthMask(false);
+    gl.bindVertexArray(flashVao);
+    gl.drawArrays(gl.POINTS,0,flashN);
+    gl.depthMask(true);gl.disable(gl.BLEND);
+    gl.bindVertexArray(null);
+  }
+
+  /* the ship being held: hull, then paint, then her lit ports */
   if(luxShip&&ships[luxShip.id]){
     gl.useProgram(luxProg);
     gl.uniformMatrix4fv(LX.vp,false,m);
@@ -2808,23 +2799,6 @@ function frame(now){
       gl.bindVertexArray(g.vao);
       gl.drawElements(gl.TRIANGLES,g.icount,gl.UNSIGNED_INT,0);
       triDrawn+=g.icount/3;
-    }
-    if(luxShip.dec){
-      gl.useProgram(decalProg);
-      gl.uniformMatrix4fv(DC.vp,false,m);
-      gl.uniform1f(DC.t,now/1000);
-      gl.uniform1f(DC.bob,reduced?0:0.45);
-      gl.uniform1f(DC.jump,jumpLen());
-      gl.uniform1f(DC.phase,luxShip.dec.phase);
-      gl.uniform3fv(DC.eye,eye);
-      gl.uniform3fv(DC.bg,bgc);
-      gl.uniform3fv(DC.ink,inkc);
-      gl.uniform1f(DC.fog,0.22/sceneR);
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D,luxShip.dec.tex);
-      gl.uniform1i(DC.tex,0);
-      gl.bindVertexArray(luxShip.dec.vao);
-      gl.drawArrays(gl.TRIANGLES,0,6);
     }
     gl.bindVertexArray(null);
   }
