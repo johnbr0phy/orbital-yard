@@ -2288,35 +2288,91 @@ function admit(rec){
 /* ---- worker pool: the fleet is forged off the main thread ---- */
 const WORKER_MAIN=`
 const P={fuse:0.5,detail:0.35,line:1};
-/* leviathans: a central keel, further hulls berthed in rings around it,
-   every hull its own section chain, every link from the yard's joint library */
+/* The great ships. A pile of hulls is a wreck; a ship is an argument — so
+   each class gets a naval architecture instead of a scatter. Every layout
+   obeys the same three rules: one keel with her engines kept clear astern,
+   strict port-and-starboard symmetry with the SAME build on both sides, and
+   sister hulls that really are sisters — one composition, berthed many
+   times — because a fleet yard casts a class, not fifty one-offs. */
 const MEGA_ROLE={50:["LV","LEVIATHAN"],25:["DN","DREADNOUGHT"],10:["AK","ARK CARRIER"]};
 function buildMegaShip(seed,nH){
   const R=mulberry32(seed|0),rr=(a,b)=>a+(b-a)*R();
   const parts=[],hulls=[];
+  /* cast a hull class once (nose at 0), then berth copies wherever asked */
+  const build=(L,r)=>{const tmp=[];const sp=composeSpine(-L,0,r,rr,R,P,tmp,null,{});
+    return {tmp,x0:sp.xTail,r};};
+  const place=(B,xN,y,z)=>{
+    for(const q of B.tmp)parts.push(xlate(q,[xN,y,z]));
+    hulls.push({x0:B.x0+xN,x1:xN,y,z,r:B.r});};
+  const pair=(B,xN,y,z)=>{place(B,xN,y,z);place(B,xN,y,-z);};
   const r0=8+rr(0,4);
-  {const L=r0*rr(12,15),tmp=[];
-   const sp=composeSpine(-L,0,r0,rr,R,P,tmp,null,{});
-   for(const q of tmp)parts.push(q);
-   hulls.push({x0:sp.xTail,x1:0,y:0,z:0,r:r0});}
-  const gap=r0*rr(1.6,2.0);
-  let ring=1,slot=0,cap=6;
-  for(let i=1;i<nH;i++){
-    if(slot>=cap){ring++;slot=0;cap=6*ring;}
-    const a=slot/cap*Math.PI*2+ring*0.7+rr(-0.1,0.1);
-    const rad=gap*ring*rr(0.92,1.08);
-    const y=Math.sin(a)*rad*0.58,z=Math.cos(a)*rad*0.82;
-    const r=r0*rr(0.34,0.62);
-    const xN=-rr(0,r0*5);
-    const L=r*rr(7,10),tmp=[];
-    const sp=composeSpine(xN-L,xN,r,rr,R,P,tmp,null,{});
-    for(const q of tmp)parts.push(xlate(q,[0,y,z]));
-    const h={x0:sp.xTail,x1:xN,y,z,r};
-    let best=hulls[0],bd=1e9;
-    for(const o of hulls){const d=(o.y-y)*(o.y-y)+(o.z-z)*(o.z-z);if(d<bd){bd=d;best=o;}}
+  const L0=r0*rr(12,15);
+  place(build(L0,r0),0,0,0);              /* the keel */
+  const left=nH-1;
+  const cmd=(left%2)===1;                 /* an odd hull becomes the bridge */
+  const pairs=(left-(cmd?1:0))>>1;
+  if(nH<=10){
+    /* ARK CARRIER: a spine freighter. One class of cargo hull, racked two
+       abreast and two deep at even stations down the keel like containers,
+       the aft third of the keel left clear for her engines. */
+    const rp=r0*rr(0.50,0.58),Lp=rp*rr(6.0,7.5);
+    const POD=build(Lp,rp);
+    const zo=(r0+rp)*rr(1.08,1.20),yo=rp*rr(1.15,1.30);
+    const rows=pairs>2?[yo,-yo]:[0];
+    for(let k=0,i=0;k<pairs;i++)
+      for(let rj=0;rj<rows.length&&k<pairs;rj++,k++)
+        pair(POD,-L0*0.06-i*Lp*1.15,rows[rj],zo);
+  }else if(nH<=25){
+    /* DREADNOUGHT: an armoured citadel. Two walls of sister hulls flank the
+       keel in ranked rows, the outer rank lighter and stepped astern, the
+       whole broadside deepest amidships — a slab with a waterline. */
+    const rp=r0*rr(0.40,0.46);
+    const B1=build(rp*rr(7,9),rp),B2=build(rp*0.85*rr(7,9),rp*0.85);
+    const zo=(r0+rp)*rr(1.10,1.18),sp2=rp*rr(2.3,2.5);
+    const rows=Math.ceil(pairs/2);
+    for(let k=0;k<pairs;k++){
+      const ci=k%2,ri=(k-ci)/2,yc=ri-(rows-1)/2;
+      pair(ci?B2:B1,-L0*0.04-Math.abs(yc)*r0*0.7-ci*r0*1.5,
+           yc*sp2,zo+ci*sp2);
+    }
+  }else{
+    /* LEVIATHAN: a city in rings. Concentric rings of sister hulls around
+       the keel, each ring a lighter class than the last, each stepped
+       further astern — the bow tapers, the stern is a wall of drive. */
+    let rem=pairs*2,ringI=1,edge=r0;
+    while(rem>1){
+      let m=Math.min(rem,8*ringI);if(m%2)m--;
+      const rp=r0*Math.max(0.22,0.58/(1+0.30*(ringI-1)));
+      const Rr=edge+rp*1.35;
+      const B=build(rp*rr(7,9),rp);
+      const xN=-L0*0.10-(ringI-1)*r0*1.9;
+      const off=(ringI%2)?Math.PI/m:0;
+      for(let k=0;k<m;k++){
+        const a=off+k/m*Math.PI*2;
+        place(B,xN,Math.sin(a)*Rr*0.8,Math.cos(a)*Rr);
+      }
+      rem-=m;edge=Rr+rp;ringI++;
+    }
+  }
+  if(cmd){
+    /* the bridge: a light hull with sight of the whole ship — riding the
+       bow dorsally, or run out ahead of a leviathan as a conning boom */
+    const rc=r0*rr(0.34,0.42),Lc=rc*rr(5,7),C=build(Lc,rc);
+    if(nH>25)place(C,Lc*1.05,r0*0.5,0);
+    else place(C,rc*1.6,r0+rc*1.35,0);
+  }
+  /* every hull ties inboard to the nearest earlier berth, so structure grows
+     from the keel out; the odd extra strut braces neighbours on one flank,
+     never across the centreline */
+  for(let i=1;i<hulls.length;i++){
+    const h=hulls[i];let best=hulls[0],bd=1e9;
+    for(let j=0;j<i;j++){
+      const o=hulls[j];
+      const d=(o.y-h.y)*(o.y-h.y)+(o.z-h.z)*(o.z-h.z)+(o.x1-h.x1)*(o.x1-h.x1)*0.06;
+      if(d<bd){bd=d;best=o;}
+    }
     linkHulls(best,h,rr,R,P,parts,null);
-    if(ring>1&&slot%3===1)linkHulls(hulls[hulls.length-1],h,rr,R,P,parts,null);
-    hulls.push(h);slot++;
+    if(i%3===1&&i>1&&hulls[i-1].z*h.z>0)linkHulls(hulls[i-1],h,rr,R,P,parts,null);
   }
   const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
   for(const p2 of parts)for(const e2 of partExtents(p2)){
