@@ -2707,6 +2707,12 @@ function ensureWorkers(){
    The decks are weighted differently: the Yard drills lines, flanks and
    screens; the Shoal swarms and envelops. The same war never repeats. */
 let ships=[],beams=[],flashes=[],squads=[],wrecks=[];
+/* the optimisation pass: same war, fewer wasted cycles. Foes are listed
+   once per tick instead of six hundred times; stream buffers are pooled
+   instead of reallocated; nothing off-screen costs a draw call. */
+let foeCache=[[],[]],simFrame=0;
+const flPool=new Float32Array(1600*7);
+const duPool=new Float32Array(8192*4);
 /* the graveyard is forever. A fresh piece tumbles on her own for a few
    seconds; once her drift is spent she is baked, at whatever attitude she
    died in, into merged static bone — so a whole war's wreckage stays in
@@ -2718,7 +2724,7 @@ let mines=[],missiles=[],ionState=[null,null],tracers=[],dusts=[];
    debris takes the bounce and a small scuff off her shields */
 const COLC=110;
 let boneGrid=new Map(),wreckUid=0;
-function gkey(ix,iy,iz){return ix+"|"+iy+"|"+iz;}
+function gkey(ix,iy,iz){return (ix*73856093)^(iy*19349663)^(iz*83492791);}
 /* two axis-angle rotations composed into one, because the ship shader
    takes exactly one — enough freedom for a hull to bank, pitch and roll */
 function xQAA(ax1,a1,ax2,a2){
@@ -2742,14 +2748,17 @@ function xPose(s,now){
   return xQAA([1,0,0],roll,[0,0,1],pitch);
 }
 function collide(now){
-  const grid=new Map();
-  const put2=o=>{
+  /* two grids, not one: ships shove ships pair-by-pair (few per cell),
+     while debris is scanned with a per-cell cap — a pile of pieces
+     shoves like a pile, and costs like one */
+  const sgrid=new Map(),wgrid=new Map();
+  const put2=(g,o)=>{
     const k2=gkey(Math.floor(o.x/COLC),Math.floor(o.y/COLC),Math.floor(o.z/COLC));
-    let a=grid.get(k2);if(!a){a=[];grid.set(k2,a);}a.push(o);
+    let a=g.get(k2);if(!a){a=[];g.set(k2,a);}a.push(o);
   };
   const crowns=[];
-  for(const s of ships)if(!s.dead&&s.vao&&!s.grace){if(s.hulls)crowns.push(s);else put2(s);}
-  for(const w of wrecks)put2(w);
+  for(const s of ships)if(!s.dead&&s.vao&&!s.grace){if(s.hulls)crowns.push(s);else put2(sgrid,s);}
+  for(const w of wrecks)put2(wgrid,w);
   for(const s of ships){
     if(s.dead||!s.vao||s.grace)continue;
     const sr=s.rad||8;
@@ -2764,36 +2773,45 @@ function collide(now){
     }
     if(s.hulls)continue;
     const ix=Math.floor(s.x/COLC),iy=Math.floor(s.y/COLC),iz=Math.floor(s.z/COLC);
-    for(let ax=-1;ax<=1;ax++)for(let ay=-1;ay<=1;ay++)for(let az=-1;az<=1;az++){
-      const kk=gkey(ix+ax,iy+ay,iz+az);
-      const cell=grid.get(kk);
+    for(let ax2=-1;ax2<=1;ax2++)for(let ay=-1;ay<=1;ay++)for(let az=-1;az<=1;az++){
+      const kk=gkey(ix+ax2,iy+ay,iz+az);
+      const cell=sgrid.get(kk);
       if(cell)for(const o of cell){
-        if(o===s)continue;
-        const wreck=o.spin!==undefined;
-        if(!wreck&&o.id<=s.id)continue;
+        if(o.id<=s.id)continue;
         const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
         const rb=sr+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
         if(d2>rb*rb||d2<1e-6)continue;
         const d=Math.sqrt(d2),pen=rb-d,inv=1/d;
-        if(wreck){
+        s.x+=dx*inv*pen*0.45;s.y+=dy*inv*pen*0.45;s.z+=dz*inv*pen*0.45;
+        o.x-=dx*inv*pen*0.45;o.y-=dy*inv*pen*0.45;o.z-=dz*inv*pen*0.45;
+      }
+      const wcell=wgrid.get(kk);
+      if(wcell){
+        const wn=Math.min(wcell.length,10);
+        for(let k9=0;k9<wn;k9++){
+          const o=wcell[k9];
+          const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
+          const rb=sr+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
+          if(d2>rb*rb||d2<1e-6)continue;
+          const d=Math.sqrt(d2),pen=rb-d,inv=1/d;
           /* a hull ploughs THROUGH debris: she barely notices, the piece
              is kicked flying ahead of her bow — and still scuffs her */
-          const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
-          const kick=Math.max(12,(s.v||10));
           s.x+=dx*inv*pen*0.15;s.y+=dy*inv*pen*0.15;s.z+=dz*inv*pen*0.15;
-          o.vx+=-dx*inv*kick*0.7+svx*0.4;
-          o.vy+=-dy*inv*kick*0.5;
-          o.vz+=-dz*inv*kick*0.7+svz*0.4;
-          o.spin*=1.5;
+          if(now-(o.kickT||0)>0.35){
+            o.kickT=now;
+            const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
+            const kick=Math.max(12,(s.v||10));
+            o.vx+=-dx*inv*kick*0.7+svx*0.4;
+            o.vy+=-dy*inv*kick*0.5;
+            o.vz+=-dz*inv*kick*0.7+svz*0.4;
+            o.spin*=1.5;
+          }
           if(now-(s.bumpT||0)>0.6){
             s.bumpT=now;s.hurtT=now;
             s.hp-=0.06;
             flash((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,now,7,2);
             if(s.hp<=0)kill(s,now);
           }
-        }else{
-          s.x+=dx*inv*pen*0.45;s.y+=dy*inv*pen*0.45;s.z+=dz*inv*pen*0.45;
-          o.x-=dx*inv*pen*0.45;o.y-=dy*inv*pen*0.45;o.z-=dz*inv*pen*0.45;
         }
       }
       const bcell=boneGrid.get(kk);
@@ -2812,17 +2830,18 @@ function collide(now){
       }
     }
   }
-  /* debris bangs into debris: a shove, and most of the speed is gone */
-  for(const w of wrecks){
+  /* debris bangs into debris at quarter rate — a shove, and most of the
+     speed is gone; no eye can tell the cadence */
+  if((simFrame&3)===1)for(const w of wrecks){
     const ix=Math.floor(w.x/COLC),iy=Math.floor(w.y/COLC),iz=Math.floor(w.z/COLC);
     for(let ax2=-1;ax2<=1;ax2++)for(let ay=-1;ay<=1;ay++)for(let az=-1;az<=1;az++){
-      const cell=grid.get(gkey(ix+ax2,iy+ay,iz+az));
+      const cell=wgrid.get(gkey(ix+ax2,iy+ay,iz+az));
       if(!cell)continue;
-      for(const o of cell){
-        if(o.spin===undefined||o.uid>=w.uid)continue;
-        /* birth grace: pieces of a fresh blast fly APART before they can
-           bang — this is what let explosions open instead of strangling */
-        if(now-w.t0<1.2||now-o.t0<1.2)continue;
+      const wn=Math.min(cell.length,10);
+      for(let k9=0;k9<wn;k9++){
+        const o=cell[k9];
+        if(o.uid>=w.uid)continue;
+        if(now-w.t0<2.4||now-o.t0<2.4)continue;
         const dx=w.x-o.x,dy=w.y-o.y,dz=w.z-o.z;
         const rb=(w.rad||6)+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
         if(d2>rb*rb||d2<1e-6)continue;
@@ -2832,7 +2851,6 @@ function collide(now){
         w.vx*=0.1;w.vy*=0.1;w.vz*=0.1;
         o.vx*=0.1;o.vy*=0.1;o.vz*=0.1;
         w.spin*=0.55;o.spin*=0.55;
-        /* but never to zero: this is space — slow is allowed, still is not */
         for(const q3 of [w,o]){
           const qs=Math.hypot(q3.vx,q3.vy,q3.vz);
           if(qs<1.5){
@@ -2863,7 +2881,9 @@ function settleWreck(w,now){
   pendVX+=w.vx;pendVY+=w.vy;pendVZ+=w.vz;pendN++;
   const bk=gkey(Math.floor(w.x/COLC),Math.floor(w.y/COLC),Math.floor(w.z/COLC));
   let ba=boneGrid.get(bk);if(!ba){ba=[];boneGrid.set(bk,ba);}
-  ba.push({x:w.x,y:w.y,z:w.z,rad:w.rad});
+  /* a pile of bone is one obstacle: past a dozen colliders in a cell,
+     more pieces add spectacle but no physics */
+  if(ba.length<14)ba.push({x:w.x,y:w.y,z:w.z,rad:w.rad});
   gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
 }
 function bakeBoneyard(){
@@ -2975,9 +2995,10 @@ function onWorkerMsg(e){
       const fvx=(s.dvx||0)+Math.cos(el2)*Math.cos(az2)*th+wox/rl*5;
       const fvy=(s.dvy||0)+Math.sin(el2)*th*0.6+woy/rl*3;
       const fvz=(s.dvz||0)+Math.cos(el2)*Math.sin(az2)*th+woz/rl*5;
-      /* a quarter of her never comes off as pieces at all — just dust */
-      if(Math.random()<0.25){
-        dustBurst(s.x+wox,s.y+woy,s.z+woz,fvx,fvy,fvz,7,performance.now()/1000);
+      /* half of her never comes off as pieces at all — just dust, the
+         slow mist that a battlefield breathes */
+      if(Math.random()<0.5){
+        dustBurst(s.x+wox,s.y+woy,s.z+woz,fvx,fvy,fvz,10,performance.now()/1000);
         continue;
       }
       const vao=gl.createVertexArray(),vbo=gl.createBuffer(),ibo=gl.createBuffer();
@@ -3074,7 +3095,7 @@ function fleetCentroid(side){
 function assignTactic(sq,now){
   sq.mem=sq.mem.filter(id=>!ships[id].dead);
   if(!sq.mem.length)return;
-  const foes=livingFoes(sq.side);
+  const foes=foeCache[1-sq.side].length?foeCache[1-sq.side]:livingFoes(sq.side);
   if(!foes.length)return;
   const c=centroidOf(sq.mem)||[0,0,0];
   const ec=fleetCentroid(1-sq.side);
@@ -3132,14 +3153,17 @@ function squadThink(now){
   for(const sq of squads){
     sq.mem=sq.mem.filter(id=>!ships[id].dead);
     if(!sq.mem.length)continue;
-    if(now>sq.until||(sq.phase===1&&(sq.tgt<0||ships[sq.tgt].dead))){assignTactic(sq,now);continue;}
+    if((now>sq.until||(sq.phase===1&&(sq.tgt<0||ships[sq.tgt].dead)))&&now>(sq.lock||0)){
+      sq.lock=now+0.4;                /* no re-dealing every tick of a massacre */
+      assignTactic(sq,now);continue;
+    }
     if(sq.phase===0&&sq.wp){
       const c=centroidOf(sq.mem);
       if(c&&Math.hypot(c[0]-sq.wp[0],c[1]-sq.wp[1],c[2]-sq.wp[2])<130){
         /* on station: fall on whatever is nearest the ambush point */
         sq.phase=1;
         let b=-1,bd=1e18;
-        for(const t of livingFoes(sq.side)){
+        for(const t of foeCache[1-sq.side]){
           const d=(t.x-sq.wp[0])*(t.x-sq.wp[0])+(t.y-sq.wp[1])*(t.y-sq.wp[1])+(t.z-sq.wp[2])*(t.z-sq.wp[2]);
           if(d<bd){bd=d;b=t.id;}}
         sq.tgt=b;
@@ -3150,8 +3174,9 @@ function squadThink(now){
 }
 function nearestFoeInRange(s,rng){
   let b=null,bd=rng*rng;
-  for(const t of ships){
-    if(t.side===s.side||t.dead||!t.vao||t.grace)continue;
+  const arr=foeCache[1-s.side];
+  for(let i=0;i<arr.length;i++){
+    const t=arr[i];
     const d=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
     if(d<bd){bd=d;b=t;}
   }
@@ -3160,9 +3185,9 @@ function nearestFoeInRange(s,rng){
 function flash(x,y,z,t0,size,c){flashes.push({x,y,z,t0,size,c,seed:Math.random()});}
 function dustBurst(x,y,z,vx,vy,vz,n,t0){
   for(let i=0;i<n;i++)
-    dusts.push({x:x+(Math.random()-0.5)*8,y:y+(Math.random()-0.5)*8,z:z+(Math.random()-0.5)*8,
-      vx:vx*0.6+(Math.random()-0.5)*12,vy:vy*0.6+(Math.random()-0.5)*12,
-      vz:vz*0.6+(Math.random()-0.5)*12,t0});
+    dusts.push({x:x+(Math.random()-0.5)*10,y:y+(Math.random()-0.5)*10,z:z+(Math.random()-0.5)*10,
+      vx:vx*0.5+(Math.random()-0.5)*8,vy:vy*0.5+(Math.random()-0.5)*8,
+      vz:vz*0.5+(Math.random()-0.5)*8,t0});
 }
 function boom(t,now){
   /* a death is a popcorn burst, never one circle: a hot centre, a clutch
@@ -3209,6 +3234,7 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
   if(t.hp<=0)kill(t,now);
 }
 function kill(t,now){
+  if(t.dead)return;      /* a tracer already in flight cannot kill her twice */
   t.dead=true;
   const dv=t.v||t.spd*0.5;
   t.dvx=Math.cos(t.yaw)*dv;t.dvy=t.vy||0;t.dvz=Math.sin(t.yaw)*dv;
@@ -3284,8 +3310,9 @@ function megaStep(s,now,dt){
     if(la.cool>0)continue;
     const rng=760;
     let best=null,bs=-1;
-    for(const t of ships){
-      if(t.side===s.side||t.dead||!t.vao||t.grace)continue;
+    const foes7=foeCache[1-s.side];
+    for(let k7=0;k7<foes7.length;k7++){
+      const t=foes7[k7];
       const d2=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
       if(d2>rng*rng)continue;
       const sc=t.slen+(t.hulls?500:0)-Math.sqrt(d2)*0.05;
@@ -3303,8 +3330,9 @@ function megaStep(s,now,dt){
   if(ready){
     const rng=260,cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
     const tgts=[];
-    for(const t of ships){
-      if(t.side===s.side||t.dead||!t.vao||t.grace)continue;
+    const foes6=foeCache[1-s.side];
+    for(let k6=0;k6<foes6.length;k6++){
+      const t=foes6[k6];
       if((t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z)>rng*rng)continue;
       tgts.push(t);
     }
@@ -3324,6 +3352,10 @@ function simStep(now,dt){
   if(warT0===Infinity)return;
   const T=now-warT0;
   for(const s of ships)if(!s.dead&&s.vao)s.grace=(T-s.delay)<1.0;
+  foeCache[0].length=0;foeCache[1].length=0;
+  for(const s of ships)
+    if(!s.dead&&s.vao&&!s.grace&&T-s.delay>=0)foeCache[s.side].push(s);
+  simFrame++;
   squadThink(now);
   for(const side of [0,1]){
     if(winner!=null||counts[side]<=0){ionState[side]=null;continue;}
@@ -3402,7 +3434,11 @@ function simStep(now,dt){
       }
     }
     if(!goal){
-      const nf=nearestFoeInRange(s,1e9);
+      let nf=(s.fbT&&!s.fbT.dead&&s.fbT.vao)?s.fbT:null;
+      if(!nf||now>(s.fbUntil||0)){
+        nf=nearestFoeInRange(s,1e9);
+        s.fbT=nf;s.fbUntil=now+0.5+Math.random()*0.4;
+      }
       if(nf){prefer=nf.id;goal=[nf.x,nf.y,nf.z];}
     }
     if(goal){
@@ -3481,10 +3517,13 @@ function simStep(now,dt){
     if(tr.dead)continue;
     if(now-tr.t0>1.4){tr.dead=true;continue;}
     tr.x+=tr.vx*dt;tr.y+=tr.vy*dt;tr.z+=tr.vz*dt;
-    for(const o of ships){
-      if(o.side===tr.side||o.dead||!o.vao||o.grace)continue;
+    const foes3=foeCache[1-tr.side];
+    for(let k3=0;k3<foes3.length;k3++){
+      const o=foes3[k3];
       const hr2=Math.max(9,o.rad*0.7);
-      const d2=(o.x-tr.x)*(o.x-tr.x)+(o.y-tr.y)*(o.y-tr.y)+(o.z-tr.z)*(o.z-tr.z);
+      const adx=o.x-tr.x;
+      if(adx>hr2||adx<-hr2)continue;
+      const d2=adx*adx+(o.y-tr.y)*(o.y-tr.y)+(o.z-tr.z)*(o.z-tr.z);
       if(d2<hr2*hr2){
         o.hurtT=now;o.hp-=0.4;
         flash(tr.x,tr.y,tr.z,now,8,tr.side);
@@ -3494,7 +3533,7 @@ function simStep(now,dt){
     }
   }
   tracers=tracers.filter(tr=>!tr.dead);
-  dusts=dusts.filter(du=>now-du.t0<4.5);
+  dusts=dusts.filter(du=>now-du.t0<9);
   for(const du of dusts){du.x+=du.vx*dt;du.y+=du.vy*dt;du.z+=du.vz*dt;}
   /* seekers: they lead their own lives — chase, retarget, or fizzle */
   for(const ms of missiles){
@@ -3503,8 +3542,9 @@ function simStep(now,dt){
     let t=ships[ms.tgt];
     if(!t||t.dead||t.grace){
       let b=null,bd=62500;
-      for(const o of ships){
-        if(o.side===ms.side||o.dead||!o.vao||o.grace)continue;
+      const foes5=foeCache[1-ms.side];
+      for(let k5=0;k5<foes5.length;k5++){
+        const o=foes5[k5];
         const d2=(o.x-ms.x)*(o.x-ms.x)+(o.y-ms.y)*(o.y-ms.y)+(o.z-ms.z)*(o.z-ms.z);
         if(d2<bd){bd=d2;b=o;}}
       if(b){ms.tgt=b.id;t=b;}
@@ -3526,11 +3566,14 @@ function simStep(now,dt){
   }
   missiles=missiles.filter(ms=>!ms.dead);
   /* mines: patient until something the wrong colour comes close */
-  for(const mi of mines){
+  if(simFrame&1)for(const mi of mines){
     if(mi.dead)continue;
-    for(const o of ships){
-      if(o.side===mi.side||o.dead||!o.vao||o.grace)continue;
-      const d2=(o.x-mi.x)*(o.x-mi.x)+(o.y-mi.y)*(o.y-mi.y)+(o.z-mi.z)*(o.z-mi.z);
+    const foes4=foeCache[1-mi.side];
+    for(let k4=0;k4<foes4.length;k4++){
+      const o=foes4[k4];
+      const adx=o.x-mi.x;
+      if(adx>55||adx<-55)continue;
+      const d2=adx*adx+(o.y-mi.y)*(o.y-mi.y)+(o.z-mi.z)*(o.z-mi.z);
       if(d2<3025){
         mi.dead=true;
         flash(mi.x,mi.y,mi.z,now,95,2);
@@ -3552,9 +3595,9 @@ function simStep(now,dt){
     }
   }
   mines=mines.filter(mi=>!mi.dead);
-  collide(now);
+  if(simFrame&1)collide(now);
   beams=beams.filter(b2=>now-b2.t0<(b2.ion?0.9:b2.spark?0.32:b2.heavy?0.42:0.13));
-  while(flashes.length>1400)flashes.shift();
+  if(flashes.length>1400)flashes.splice(0,flashes.length-1400);
 }
 /* ===================== stars ===================== */
 let starVao=null,starN=0;
@@ -3604,6 +3647,22 @@ function mat(){
     A*vx[1],Bq*vy[1],C*vz[1],-vz[1],
     A*vx[2],Bq*vy[2],C*vz[2],-vz[2],
     A*tx,Bq*ty,C*tz+D,-tz]);
+}
+function frustumPlanes(m){
+  const row=i=>[m[i],m[4+i],m[8+i],m[12+i]];
+  const r0=row(0),r1=row(1),r2=row(2),r3=row(3),P=[];
+  for(const rr2 of [r0,r1,r2]){
+    P.push([r3[0]+rr2[0],r3[1]+rr2[1],r3[2]+rr2[2],r3[3]+rr2[3]]);
+    P.push([r3[0]-rr2[0],r3[1]-rr2[1],r3[2]-rr2[2],r3[3]-rr2[3]]);
+  }
+  return P;
+}
+function sphereVis(P,x,y,z,r){
+  for(let i=0;i<6;i++){
+    const p=P[i];
+    if(p[0]*x+p[1]*y+p[2]*z+p[3]<-r)return false;
+  }
+  return true;
 }
 function pickShip(px,py){
   const m=mat(),rect=cvs.getBoundingClientRect();
@@ -3735,6 +3794,7 @@ function frame(nowMs){
     if(keys.has("e"))cam.ey+=sp;
   }
   const m=mat(),eye=[cam.ex,cam.ey,cam.ez];
+  const FRP=frustumPlanes(m);
   gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   gl.enable(gl.DEPTH_TEST);
   /* stars */
@@ -3760,6 +3820,7 @@ function frame(nowMs){
     const age=warT0===Infinity?-1:T-s.delay;
     if(age<0)continue;
     alive++;
+    if(!sphereVis(FRP,s.x,s.y,s.z,s.slen*0.8))continue;
     const slide=SLIDE*Math.exp(-Math.max(0,age)*3.4);
     const cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
     gl.uniform3f(SU.pos,s.x-cy*slide,s.y,s.z-sy*slide);
@@ -3810,6 +3871,7 @@ function frame(nowMs){
         w.vx=Math.cos(a5)*1.2;w.vy=(Math.random()-0.5)*0.8;w.vz=Math.sin(a5)*1.2;}
     }
     w.x+=w.vx*dt;w.y+=w.vy*dt;w.z+=w.vz*dt;
+    if(!sphereVis(FRP,w.x,w.y,w.z,(w.rad||6)*1.6))continue;
     gl.uniform3f(SU.pos,w.x,w.y,w.z);
     gl.uniform2f(SU.yaw,Math.cos(w.yaw),Math.sin(w.yaw));
     const wr=xQAA(w.bax||[0,1,0],w.bang||0,w.ax,w.spin*(now-w.t0));
@@ -3928,14 +3990,17 @@ function frame(nowMs){
     }
     /* the dust of the dead: faint motes drifting off with the momentum */
     if(dusts.length){
-      const da=[];
-      for(const du of dusts)
-        da.push(du.x,du.y,du.z,Math.max(0.6,2.4*(1-(now-du.t0)/4.5)));
+      const nd2=Math.min(dusts.length,8192);
+      for(let i=0;i<nd2;i++){
+        const du=dusts[i];
+        duPool[i*4]=du.x;duPool[i*4+1]=du.y;duPool[i*4+2]=du.z;
+        duPool[i*4+3]=Math.max(0.5,2.2*(1-(now-du.t0)/9));
+      }
       gl.bindVertexArray(mmVao);
       gl.bindBuffer(gl.ARRAY_BUFFER,mmVbo);
-      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(da),gl.STREAM_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER,duPool.subarray(0,nd2*4),gl.STREAM_DRAW);
       gl.uniform3f(USink,inkc[0]*0.7,inkc[1]*0.7,inkc[2]*0.7);
-      gl.drawArrays(gl.POINTS,0,da.length/4);
+      gl.drawArrays(gl.POINTS,0,nd2);
     }
     gl.depthMask(true);gl.disable(gl.BLEND);
   }
@@ -3945,12 +4010,13 @@ function frame(nowMs){
     for(const f2 of flashes)if(now-f2.t0<0.8)live.push(f2);
     flashes=live;
     if(live.length){
-      const arr=new Float32Array(live.length*7);
-      for(let i=0;i<live.length;i++){
+      const nfl=Math.min(live.length,1600);
+      for(let i=0;i<nfl;i++){
         const f2=live[i];
-        arr[i*7]=f2.x;arr[i*7+1]=f2.y;arr[i*7+2]=f2.z;arr[i*7+3]=f2.t0;
-        arr[i*7+4]=f2.size;arr[i*7+5]=f2.c;arr[i*7+6]=f2.seed||0;
+        flPool[i*7]=f2.x;flPool[i*7+1]=f2.y;flPool[i*7+2]=f2.z;flPool[i*7+3]=f2.t0;
+        flPool[i*7+4]=f2.size;flPool[i*7+5]=f2.c;flPool[i*7+6]=f2.seed||0;
       }
+      const arr=flPool.subarray(0,nfl*7);
       gl.useProgram(flashProg);
       gl.uniformMatrix4fv(FU.vp,false,m);
       gl.uniform1f(FU.t,now);
@@ -3968,6 +4034,9 @@ function frame(nowMs){
   gl.bindVertexArray(null);
   if(now-statT>0.25){
     statT=now;
+    if(rosterDirty)rosterDraw();
+    if(fpsA<45&&dpr>1.01){dpr=Math.max(1,dpr*0.85);resize();}
+    else if(fpsA>57&&dpr<Math.min(devicePixelRatio||1,2)){dpr=Math.min(devicePixelRatio||1,2,dpr*1.08);resize();}
     const st=document.getElementById("stat");
     if(forged<total)st.textContent="FORGING THE FLEETS · "+forged+" / "+total;
     else if(winner!=null)st.textContent=SIDE_NAME[winner]+" HOLDS THE SKY · N FOR THE NEXT WAR · "+Math.round(fpsA)+" FPS";
@@ -3978,7 +4047,10 @@ function frame(nowMs){
     }
   }
 }
-function roster(){
+let rosterDirty=true;
+function roster(){rosterDirty=true;}
+function rosterDraw(){
+  rosterDirty=false;
   document.getElementById("roster").innerHTML=
     "<div><span class=\"cnt\">"+SIDE_NAME[0]+"</span> · "+counts[0]+"</div>"+
     "<div><span class=\"cnt\">"+SIDE_NAME[1]+"</span> · "+counts[1]+"</div>";
