@@ -2544,19 +2544,23 @@ const celProg=compile(`#version 300 es
 layout(location=0) in vec3 aP;
 layout(location=1) in float aT;
 uniform mat4 uVP;uniform vec3 uPos;uniform vec2 uSpin;
-out vec3 vW;out float vT;
+out vec3 vW;out vec3 vL;out float vT;
 void main(){
   vec3 p=vec3(uSpin.x*aP.x-uSpin.y*aP.z,aP.y,uSpin.y*aP.x+uSpin.x*aP.z);
   vW=p+uPos;
+  vL=p;
   vT=aT;
   gl_Position=uVP*vec4(vW,1.0);
 }`,`#version 300 es
 precision highp float;
-in vec3 vW;in float vT;
+in vec3 vW;in vec3 vL;in float vT;
 uniform vec3 uInk,uBg;uniform float uAlpha,uHaze;
 out vec4 o;
 void main(){
-  vec3 N=normalize(cross(dFdx(vW),dFdy(vW)));
+  /* a world is not a hull: the yard's facets stop at the exosphere. A
+     sphere's true normal is its own radius, so the ball shades smooth;
+     the rings (the translucent pass) keep their flat plane. */
+  vec3 N=(uAlpha<0.99)?normalize(cross(dFdx(vW),dFdy(vW))):normalize(vL);
   float d=max(dot(N,normalize(vec3(0.45,0.80,0.35))),0.0);
   float a=1.0,shade;
   if(uAlpha<0.99){shade=0.50+0.28*d;a=uAlpha*clamp(vT,0.0,1.0);}
@@ -2591,7 +2595,8 @@ function addCel(mesh,x,y,z,rate,alpha,haze,Rr){
   celes.push({vao,vbo,tbo,ibo,icount:mesh.i.length,x,y,z,rate,alpha,haze,ph:Rr()*6.283});
 }
 function celSphere(rad,kind,Rr){
-  const LA=22,LO=32,V2=[],T2=[],I2=[];
+  /* fine enough that the limb reads as a curve, not a polygon */
+  const LA=48,LO=72,V2=[],T2=[],I2=[];
   const craters=[];
   if(kind===1){
     const nc=8+((Rr()*10)|0);
@@ -2616,7 +2621,9 @@ function celSphere(rad,kind,Rr){
         t=0.85+0.1*Math.sin(phl*3.0+th*5.0+ph);
         for(const c3 of craters){
           const dp=x*c3[0]+y*c3[1]+z*c3[2];
-          if(dp>1-c3[3])t*=c3[4];
+          /* a soft rim: the floor darkens fully, the wall ramps out */
+          const e=(dp-(1-c3[3]))/(c3[3]*0.35);
+          if(e>0)t*=1-(1-c3[4])*Math.min(1,e);
         }
       }
       T2.push(t);
@@ -2629,7 +2636,7 @@ function celSphere(rad,kind,Rr){
   return {v:V2,t:T2,i:I2};
 }
 function celRing(r0,r1,t1,t2,Rr){
-  const SEG=72,ROWS=9,V2=[],T2=[],I2=[];
+  const SEG=160,ROWS=9,V2=[],T2=[],I2=[];
   const pat=[];
   for(let r3=0;r3<=ROWS;r3++)pat.push(Rr()<0.3?0.05:0.25+Rr()*0.75);
   const c1=Math.cos(t1),s1=Math.sin(t1),c4=Math.cos(t2),s4=Math.sin(t2);
