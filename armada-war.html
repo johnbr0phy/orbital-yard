@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>Orbital Yard — The War</title>
 <!-- the card a shared link deals: real forge output, rendered offline in the
      same palette the war fights in -->
@@ -4225,12 +4225,24 @@ const cam={yaw:-Math.PI/2,pitch:-0.26,ex:0,ey:340,ez:1180};
 let dpr=Math.min(devicePixelRatio||1,2);
 let sel=null,orb=null;
 const keys=new Set();
+/* the viewport, measured honestly. A link opened inside WhatsApp and handed
+   to Chrome reports a stale size at load and swallows the resize that
+   follows — the page then lives in a window that never existed. On touch
+   we read the visual viewport, listen to every signal that it moved, and
+   the frame loop double-checks four times a second regardless. */
+const vvOK=typeof visualViewport!=="undefined"&&visualViewport;
+function vpW(){return Math.round((COARSE&&vvOK&&visualViewport.width)||innerWidth);}
+function vpH(){return Math.round((COARSE&&vvOK&&visualViewport.height)||innerHeight);}
 function resize(){
-  cvs.width=Math.round(innerWidth*dpr);cvs.height=Math.round(innerHeight*dpr);
-  cvs.style.width=innerWidth+"px";cvs.style.height=innerHeight+"px";
+  const w=vpW(),h=vpH();
+  cvs.width=Math.round(w*dpr);cvs.height=Math.round(h*dpr);
+  cvs.style.width=w+"px";cvs.style.height=h+"px";
   gl.viewport(0,0,cvs.width,cvs.height);
 }
 addEventListener("resize",resize);
+addEventListener("pageshow",resize);
+addEventListener("orientationchange",()=>{resize();setTimeout(resize,120);setTimeout(resize,420);});
+if(vvOK)visualViewport.addEventListener("resize",resize);
 function camBasis(){
   const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);
   const f=[cy*cp,sp,sy*cp],r=[-sy,0,cy];
@@ -4771,6 +4783,9 @@ function frame(nowMs){
   if(now-statT>0.25){
     statT=now;
     if(rosterDirty)rosterDraw();
+    /* self-healing: whatever resize event an in-app browser swallowed,
+       drift between the canvas and the real viewport never survives */
+    if(cvs.style.width!==vpW()+"px"||cvs.style.height!==vpH()+"px")resize();
     if(fpsA<45&&dpr>1.01){dpr=Math.max(1,dpr*0.85);resize();}
     else if(fpsA>57&&dpr<Math.min(devicePixelRatio||1,2)){dpr=Math.min(devicePixelRatio||1,2,dpr*1.08);resize();}
     const st=document.getElementById("stat");
