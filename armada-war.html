@@ -3341,23 +3341,101 @@ function dustBurst(x,y,z,vx,vy,vz,n,t0){
       vz:vz*0.5+(Math.random()-0.5)*8,t0});
 }
 function boom(t,now){
-  /* a death is a popcorn burst, never one circle: a hot centre, a clutch
-     of staggered secondary blasts around the hull, and spark streaks
-     thrown out along their own directions */
+  /* ten ways to die. The recipe is drawn fresh for every death, so no two
+     explosions in a war read quite the same: fireballs, magazines cooking
+     off down the hull, clean flashbulb annihilations, spark fountains,
+     rings of fire, slow smoulders, double-taps, shrapnel spears, ships
+     that simply crumble to mist, and catherine wheels. */
   const R2=Math.max(10,t.slen*0.5);
-  flash(t.x,t.y,t.z,now,Math.max(46,t.slen*(t.hulls?3.0:2.0)),2);
-  const n=4+((Math.random()*6)|0);
-  for(let i=0;i<n;i++)
-    flash(t.x+(Math.random()-0.5)*R2*1.6,t.y+(Math.random()-0.5)*R2*1.2,
-          t.z+(Math.random()-0.5)*R2*1.6,now+Math.random()*0.28,
-          Math.max(14,t.slen*(0.5+Math.random()*0.9)),2);
-  const ns2=5+((Math.random()*7)|0);
-  for(let i=0;i<ns2;i++){
-    const az=Math.random()*6.283,el=(Math.random()-0.5)*2;
-    const dv=[Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az)];
-    const L2=R2*(1.5+Math.random()*2.5);
-    beams.push({a:[t.x,t.y,t.z],
-      b:[t.x+dv[0]*L2,t.y+dv[1]*L2,t.z+dv[2]*L2],t0:now,spark:true});
+  const big=Math.max(46,t.slen*(t.hulls?3.0:2.0));
+  const cy=Math.cos(t.yaw),sy=Math.sin(t.yaw);
+  const sparks=(n,x,y,z,t0,len)=>{
+    for(let i=0;i<n;i++){
+      const az=Math.random()*6.283,el=(Math.random()-0.5)*2;
+      const dv=[Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az)];
+      const L2=len*(0.6+Math.random()*0.9);
+      beams.push({a:[x,y,z],b:[x+dv[0]*L2,y+dv[1]*L2,z+dv[2]*L2],t0,spark:true});
+    }
+  };
+  const cluster=(n,spread,t0a,t0b,s0,s1)=>{
+    for(let i=0;i<n;i++)
+      flash(t.x+(Math.random()-0.5)*spread,t.y+(Math.random()-0.5)*spread*0.7,
+            t.z+(Math.random()-0.5)*spread,now+t0a+Math.random()*(t0b-t0a),
+            s0+Math.random()*(s1-s0),2);
+  };
+  const kind=(Math.random()*10)|0;
+  switch(kind){
+    case 0: case 9: /* the classic fireball */
+      flash(t.x,t.y,t.z,now,big,2);
+      cluster(5,R2*1.6,0,0.28,R2*0.9,R2*1.8);
+      sparks(8,t.x,t.y,t.z,now,R2*2.2);
+      break;
+    case 1: /* magazines cook off, bow to stern */
+      for(let i=0;i<7;i++){
+        const u=i/6-0.5;
+        const bx=t.x+cy*u*t.slen*0.9,bz=t.z+sy*u*t.slen*0.9;
+        flash(bx,t.y,bz,now+i*0.09,R2*(0.8+Math.random()*0.9),2);
+        sparks(3,bx,t.y,bz,now+i*0.09,R2*1.4);
+      }
+      flash(t.x,t.y,t.z,now+0.62,big*1.1,2);
+      break;
+    case 2: /* the flashbulb: one clean annihilation */
+      flash(t.x,t.y,t.z,now,big*1.7,2);
+      dustBurst(t.x,t.y,t.z,0,0,0,14,now);
+      break;
+    case 3: /* the spark fountain */
+      flash(t.x,t.y,t.z,now,big*0.6,2);
+      sparks(26,t.x,t.y,t.z,now,R2*3.2);
+      sparks(10,t.x,t.y,t.z,now+0.15,R2*2.0);
+      break;
+    case 4:{ /* an equatorial ring of fire */
+      flash(t.x,t.y,t.z,now,big*0.9,2);
+      const [u2,v2]=basis(V.norm([Math.random()-0.5,Math.random()-0.5,Math.random()-0.5]));
+      for(let i=0;i<14;i++){
+        const a2=i/14*6.283;
+        const dv=V.add(V.mul(u2,Math.cos(a2)),V.mul(v2,Math.sin(a2)));
+        const L2=R2*2.6;
+        beams.push({a:[t.x,t.y,t.z],
+          b:[t.x+dv[0]*L2,t.y+dv[1]*L2,t.z+dv[2]*L2],t0:now,spark:true});
+        flash(t.x+dv[0]*L2*0.7,t.y+dv[1]*L2*0.7,t.z+dv[2]*L2*0.7,now+0.12,R2*0.5,2);
+      }
+      break;
+    }
+    case 5: /* the slow burn: she smoulders, then goes */
+      cluster(10,R2*1.8,0,1.3,R2*0.4,R2*0.9);
+      flash(t.x,t.y,t.z,now+1.45,big*1.2,2);
+      sparks(10,t.x,t.y,t.z,now+1.45,R2*2.2);
+      break;
+    case 6: /* the double tap */
+      flash(t.x,t.y,t.z,now,big*0.6,2);
+      sparks(5,t.x,t.y,t.z,now,R2*1.5);
+      flash(t.x,t.y,t.z,now+0.34,big*1.5,2);
+      sparks(14,t.x,t.y,t.z,now+0.34,R2*2.8);
+      break;
+    case 7: /* shrapnel: few spears, thrown far */
+      flash(t.x,t.y,t.z,now,big*0.7,2);
+      sparks(6,t.x,t.y,t.z,now,R2*5.5);
+      break;
+    default:{ /* 8: she crumbles to mist */
+      flash(t.x,t.y,t.z,now,big*0.45,2);
+      dustBurst(t.x,t.y,t.z,0,0,0,26,now);
+      dustBurst(t.x,t.y,t.z,0,0,0,16,now);
+      cluster(3,R2*1.2,0,0.4,R2*0.3,R2*0.6);
+      break;
+    }
+  }
+  if(kind===9){ /* the catherine wheel rides on a fireball */
+    const [u3,v3]=basis(V.norm([Math.random()-0.5,Math.random()-0.5,Math.random()-0.5]));
+    for(let i=0;i<12;i++){
+      const a2=i/12*6.283;
+      const rd=V.add(V.mul(u3,Math.cos(a2)),V.mul(v3,Math.sin(a2)));
+      const tg=V.add(V.mul(u3,-Math.sin(a2)),V.mul(v3,Math.cos(a2)));
+      const dv=V.norm(V.add(rd,V.mul(tg,1.3)));
+      const L2=R2*2.4;
+      beams.push({a:[t.x+rd[0]*R2*0.4,t.y+rd[1]*R2*0.4,t.z+rd[2]*R2*0.4],
+        b:[t.x+rd[0]*R2*0.4+dv[0]*L2,t.y+rd[1]*R2*0.4+dv[1]*L2,
+           t.z+rd[2]*R2*0.4+dv[2]*L2],t0:now+i*0.045,spark:true});
+    }
   }
 }
 function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
@@ -4187,7 +4265,7 @@ function frame(nowMs){
       if(side===0){
         /* explosion sparks: ember streaks, no faction colour */
         const sarr=[];
-        for(const b of beams)if(b.spark)
+        for(const b of beams)if(b.spark&&b.t0<=now)
           sarr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
         if(sarr.length){
           gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
