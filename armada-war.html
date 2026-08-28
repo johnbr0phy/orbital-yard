@@ -2960,19 +2960,28 @@ function collide(now){
           const rb=sr+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
           if(d2>rb*rb||d2<1e-6)continue;
           const d=Math.sqrt(d2),inv=1/d;
-          /* ramming debris never stops a warship: the piece shatters to
-             dust or is batted away at speed — she only takes the scuff */
-          if(now-(o.kickT||0)>0.25){
+          /* a newborn piece rides inside her own fireball: traffic cannot
+             touch her until the cloud has opened — this was the mystery
+             half-second jerk, squadmates sweeping through fresh debris */
+          if(now-o.t0<1.8)continue;
+          /* physical ramming: an impulse along the closing velocity, ADDED
+             to what the piece already carries — a graze nudges, a head-on
+             ram sends it flying, and nothing ever snaps to a new vector */
+          const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
+          const appr=(svx-o.vx)*(-dx*inv)+(0-o.vy)*(-dy*inv)+(svz-o.vz)*(-dz*inv);
+          if(appr>4&&now-(o.kickT||0)>0.3){
             o.kickT=now;
-            const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
-            const kick=Math.max(30,(s.v||10)*1.6);
-            o.vx=-dx*inv*kick*0.7+svx*0.9;
-            o.vy=-dy*inv*kick*0.5+(Math.random()-0.5)*10;
-            o.vz=-dz*inv*kick*0.7+svz*0.9;
-            o.spin*=2.2;
-            o.integ=(o.integ||2)-(((s.v||10)>30)?2:1);
-            dustBurst((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,o.vx*0.5,o.vy*0.5,o.vz*0.5,3,now);
-            if(o.integ<=0)o.shatter=true;
+            const imp=appr*0.9;
+            o.vx+=-dx*inv*imp+svx*0.15;
+            o.vy+=-dy*inv*imp*0.6;
+            o.vz+=-dz*inv*imp+svz*0.15;
+            o.spin*=1.6;
+            if(appr>14){
+              o.integ=(o.integ||2)-(appr>30?2:1);
+              dustBurst((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,
+                o.vx*0.5,o.vy*0.5,o.vz*0.5,3,now);
+              if(o.integ<=0)o.shatter=true;
+            }
           }
           if(now-(s.bumpT||0)>0.6){
             s.bumpT=now;s.hurtT=now;
