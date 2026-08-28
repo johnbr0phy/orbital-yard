@@ -2933,18 +2933,20 @@ function collide(now){
           const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
           const rb=sr+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
           if(d2>rb*rb||d2<1e-6)continue;
-          const d=Math.sqrt(d2),pen=rb-d,inv=1/d;
-          /* a hull ploughs THROUGH debris: she barely notices, the piece
-             is kicked flying ahead of her bow — and still scuffs her */
-          s.x+=dx*inv*pen*0.15;s.y+=dy*inv*pen*0.15;s.z+=dz*inv*pen*0.15;
-          if(now-(o.kickT||0)>0.35){
+          const d=Math.sqrt(d2),inv=1/d;
+          /* ramming debris never stops a warship: the piece shatters to
+             dust or is batted away at speed — she only takes the scuff */
+          if(now-(o.kickT||0)>0.25){
             o.kickT=now;
-            const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
-            const kick=Math.max(12,(s.v||10));
-            o.vx+=-dx*inv*kick*0.7+svx*0.4;
-            o.vy+=-dy*inv*kick*0.5;
-            o.vz+=-dz*inv*kick*0.7+svz*0.4;
-            o.spin*=1.5;
+            if(Math.random()<0.45)o.shatter=true;
+            else{
+              const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
+              const kick=Math.max(30,(s.v||10)*1.6);
+              o.vx=-dx*inv*kick*0.7+svx*0.9;
+              o.vy=-dy*inv*kick*0.5+(Math.random()-0.5)*10;
+              o.vz=-dz*inv*kick*0.7+svz*0.9;
+              o.spin*=2.2;
+            }
           }
           if(now-(s.bumpT||0)>0.6){
             s.bumpT=now;s.hurtT=now;
@@ -2959,7 +2961,8 @@ function collide(now){
         const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
         const rb=sr+o.rad,d2=dx*dx+dy*dy+dz*dz;
         if(d2>rb*rb||d2<1e-6)continue;
-        const d=Math.sqrt(d2),pen=(rb-d)/d*0.8;
+        const d=Math.sqrt(d2),pen=(rb-d)/d*0.12;
+        /* the settled bone scrapes rather than stops */
         s.x+=dx*pen;s.y+=dy*pen;s.z+=dz*pen;
         if(now-(s.bumpT||0)>0.6){
           s.bumpT=now;s.hurtT=now;
