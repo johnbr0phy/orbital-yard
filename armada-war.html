@@ -2692,7 +2692,7 @@ let ships=[],beams=[],flashes=[],squads=[],wrecks=[];
    seconds; once her drift is spent she is baked, at whatever attitude she
    died in, into merged static bone — so a whole war's wreckage stays in
    the sky for the cost of a handful of draw calls. */
-let boneyard=[],pendV=[],pendI=[],pendBase=0,lastBake=0;
+let boneyard=[],pendV=[],pendI=[],pendBase=0,lastBake=0,pendVX=0,pendVY=0,pendVZ=0,pendN=0;
 let mines=[],missiles=[],ionState=[null,null],tracers=[],dusts=[];
 /* nothing flies through anything: a coarse hash of ships and wreckage,
    soft shoulder-pushes between the living, and a hull that ploughs into
@@ -2813,6 +2813,15 @@ function collide(now){
         w.vx*=0.1;w.vy*=0.1;w.vz*=0.1;
         o.vx*=0.1;o.vy*=0.1;o.vz*=0.1;
         w.spin*=0.55;o.spin*=0.55;
+        /* but never to zero: this is space — slow is allowed, still is not */
+        for(const q3 of [w,o]){
+          const qs=Math.hypot(q3.vx,q3.vy,q3.vz);
+          if(qs<1.5){
+            if(qs>0.05){const f3=1.5/qs;q3.vx*=f3;q3.vy*=f3;q3.vz*=f3;}
+            else{const a3=Math.random()*6.283;
+              q3.vx=Math.cos(a3)*1.5;q3.vy=(Math.random()-0.5)*1.0;q3.vz=Math.sin(a3)*1.5;}
+          }
+        }
         if(Math.random()<0.25)((w.rad<o.rad)?w:o).shatter=true;
       }
     }
@@ -2832,6 +2841,7 @@ function settleWreck(w,now){
   }
   for(let i=0;i<w.i.length;i++)pendI.push(w.i[i]+pendBase);
   pendBase+=v.length/3;
+  pendVX+=w.vx;pendVY+=w.vy;pendVZ+=w.vz;pendN++;
   const bk=gkey(Math.floor(w.x/COLC),Math.floor(w.y/COLC),Math.floor(w.z/COLC));
   let ba=boneGrid.get(bk);if(!ba){ba=[];boneGrid.set(bk,ba);}
   ba.push({x:w.x,y:w.y,z:w.z,rad:w.rad});
@@ -2848,8 +2858,17 @@ function bakeBoneyard(){
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(pendI),gl.STATIC_DRAW);
   gl.bindVertexArray(null);
-  boneyard.push({vao,vbo,ibo,icount:pendI.length});
-  pendV=[];pendI=[];pendBase=0;
+  /* the chunk keeps the averaged momentum of the pieces inside it,
+     floored so it is never zero: in space nothing stops, it only slows */
+  let ax=pendVX/Math.max(1,pendN),ay=pendVY/Math.max(1,pendN),az=pendVZ/Math.max(1,pendN);
+  const dm=Math.hypot(ax,ay,az);
+  if(dm<0.4){
+    const a2=Math.random()*6.283,e2=(Math.random()-0.5);
+    ax=Math.cos(a2)*0.6;ay=e2*0.4;az=Math.sin(a2)*0.6;
+  }else if(dm>2.2){ax*=2.2/dm;ay*=2.2/dm;az*=2.2/dm;}
+  boneyard.push({vao,vbo,ibo,icount:pendI.length,
+    t0:performance.now()/1000,dvx:ax,dvy:ay,dvz:az});
+  pendV=[];pendI=[];pendBase=0;pendVX=0;pendVY=0;pendVZ=0;pendN=0;
 }
 let perFleet=300,warSeed=(Math.random()*4294967296)|0;
 let genId=0,forged=0,total=0,warT0=Infinity,winner=null;
@@ -2873,7 +2892,7 @@ function disposeShips(){
   for(const w of wrecks){gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);}
   wrecks=[];
   for(const b of boneyard){gl.deleteVertexArray(b.vao);gl.deleteBuffer(b.vbo);gl.deleteBuffer(b.ibo);}
-  boneyard=[];pendV=[];pendI=[];pendBase=0;lastBake=0;boneGrid=new Map();
+  boneyard=[];pendV=[];pendI=[];pendBase=0;lastBake=0;boneGrid=new Map();pendVX=0;pendVY=0;pendVZ=0;pendN=0;
   mines=[];missiles=[];ionState=[null,null];ionNext=[Infinity,Infinity];tracers=[];dusts=[];
 }
 function startWar(fresh){
@@ -3738,10 +3757,11 @@ function frame(nowMs){
   gl.uniform1f(SU.inz,1.0);
   gl.uniform1f(SU.hurt,0.0);
   gl.uniform1f(SU.tone,0.42);
-  gl.uniform3f(SU.pos,0.0,0.0,0.0);
   gl.uniform2f(SU.yaw,1.0,0.0);
   gl.uniform4f(SU.rot,0.0,1.0,0.0,0.0);
   for(const b of boneyard){
+    const bt=now-(b.t0||now);
+    gl.uniform3f(SU.pos,(b.dvx||0)*bt,(b.dvy||0)*bt,(b.dvz||0)*bt);
     gl.bindVertexArray(b.vao);
     gl.drawElements(gl.TRIANGLES,b.icount,gl.UNSIGNED_INT,0);
   }
@@ -3759,7 +3779,12 @@ function frame(nowMs){
       w.baked=true;anySettle=true;continue;
     }
     const wsp=Math.hypot(w.vx,w.vy,w.vz);
-    if((wsp<5.0&&now-w.t0>2)||now-w.t0>30){settleWreck(w,now);w.baked=true;anySettle=true;continue;}
+    if((wsp<2.6&&now-w.t0>2)||now-w.t0>30){settleWreck(w,now);w.baked=true;anySettle=true;continue;}
+    if(wsp<1.2){
+      if(wsp>0.05){const f3=1.2/wsp;w.vx*=f3;w.vy*=f3;w.vz*=f3;}
+      else{const a5=Math.random()*6.283;
+        w.vx=Math.cos(a5)*1.2;w.vy=(Math.random()-0.5)*0.8;w.vz=Math.sin(a5)*1.2;}
+    }
     w.x+=w.vx*dt;w.y+=w.vy*dt;w.z+=w.vz*dt;
     gl.uniform3f(SU.pos,w.x,w.y,w.z);
     gl.uniform2f(SU.yaw,Math.cos(w.yaw),Math.sin(w.yaw));
