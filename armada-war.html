@@ -2490,13 +2490,17 @@ const FU={vp:gl.getUniformLocation(flashProg,"uVP"),t:gl.getUniformLocation(flas
 const starProg=compile(`#version 300 es
 layout(location=0) in vec4 aS;
 uniform mat4 uVP;
-void main(){gl_Position=uVP*vec4(aS.xyz,1.0);gl_PointSize=aS.w;}`,`#version 300 es
+out float vS;
+void main(){gl_Position=uVP*vec4(aS.xyz,1.0);gl_PointSize=aS.w;vS=aS.w;}`,`#version 300 es
 precision highp float;
+in float vS;
 uniform vec3 uInk;out vec4 o;
 void main(){
   float r=length(gl_PointCoord-0.5);
   if(r>0.5)discard;
-  o=vec4(uInk,0.30*(1.0-r*1.4));
+  /* the bigger the star, the brighter she burns */
+  float b=0.25+0.6*clamp((vS-0.8)/3.0,0.0,1.0);
+  o=vec4(uInk,b*(1.0-r*1.4));
 }`);
 const USvp=gl.getUniformLocation(starProg,"uVP"),USink=gl.getUniformLocation(starProg,"uInk");
 /* ===================== the sky sometimes has company =====================
@@ -2789,7 +2793,7 @@ onmessage=e=>{
       const a=Math.floor(k*n/K),b=Math.floor((k+1)*n/K);
       const sub=ship.parts.slice(a,b);
       if(!sub.length)continue;
-      const m=packMesh({parts:sub,bb:ship.bb},c,0.26);
+      const m=packMesh({parts:sub,bb:ship.bb},c,0.30);
       if(!m.i.length)continue;
       let ox=0,oy=0,oz=0,cnt=0;
       for(const p2 of sub){const q2=partCentroid(p2);ox+=q2[0];oy+=q2[1];oz+=q2[2];cnt++;}
@@ -2863,7 +2867,7 @@ let mines=[],missiles=[],ionState=[null,null],tracers=[],dusts=[];
    soft shoulder-pushes between the living, and a hull that ploughs into
    debris takes the bounce and a small scuff off her shields */
 const COLC=110;
-let boneGrid=new Map(),wreckUid=0;
+let boneGrid=new Map(),wreckUid=0,wreckRR=0;
 function gkey(ix,iy,iz){return (ix*73856093)^(iy*19349663)^(iz*83492791);}
 /* two axis-angle rotations composed into one, because the ship shader
    takes exactly one — enough freedom for a hull to bank, pitch and roll */
@@ -3099,6 +3103,16 @@ function startWar(fresh){
   if(fresh)warSeed=(Math.random()*4294967296)|0;
   const R=mulberry32(warSeed|0);
   makeCelestial(mulberry32((warSeed^0xC0FFEE)>>>0));
+  /* when the sky has company, the war opens facing it */
+  if(celes.length){
+    const c0=celes[0];
+    const L0=Math.hypot(c0.x,c0.y,c0.z)||1;
+    cam.ex=-c0.x/L0*1150;cam.ey=-c0.y/L0*1150+260;cam.ez=-c0.z/L0*1150;
+    cam.yaw=Math.atan2(c0.z-cam.ez,c0.x-cam.ex);
+    cam.pitch=Math.atan2(c0.y-cam.ey,Math.hypot(c0.x-cam.ex,c0.z-cam.ez));
+  }else{
+    cam.ex=0;cam.ey=340;cam.ez=1180;cam.yaw=-Math.PI/2;cam.pitch=-0.26;
+  }
   forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
   document.getElementById("win").style.display="none";
   const jobs=[];
@@ -3143,21 +3157,38 @@ function onWorkerMsg(e){
     const s=ships[d.id];
     if(!s)return;
     const cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
+    /* the swap is rigid-body honest: the corpse has drifted AND turned
+       since she died, so every piece spawns exactly where the tumbling
+       hull put it, keeps the hull's orientation at the instant of the
+       split, and inherits its spin as tangential velocity. The cloud
+       then travels while it slowly opens — a breakup, not a detonation. */
+    const dtc=Math.max(0,performance.now()/1000-(s.deadT||0));
+    const dax=s.dax||[0,1,0];
+    const angT=(s.dang||0)+dtc*(s.corpseSpin||0);
+    const caT=Math.cos(angT),saT=Math.sin(angT);
+    const rod=v=>{
+      const dot2=dax[0]*v[0]+dax[1]*v[1]+dax[2]*v[2];
+      return [
+        v[0]*caT+(dax[1]*v[2]-dax[2]*v[1])*saT+dax[0]*dot2*(1-caT),
+        v[1]*caT+(dax[2]*v[0]-dax[0]*v[2])*saT+dax[1]*dot2*(1-caT),
+        v[2]*caT+(dax[0]*v[1]-dax[1]*v[0])*saT+dax[2]*dot2*(1-caT)];
+    };
+    const axW=[cy*dax[0]-sy*dax[2],dax[1],sy*dax[0]+cy*dax[2]];
+    const shipSp=Math.hypot(s.dvx||0,s.dvy||0,s.dvz||0);
+    const dustFrac=s.slen>90?0.3:0.5;   /* a frigate sheds bits, not just mist */
     for(const f2 of d.frags){
-      const wox=cy*f2.ox-sy*f2.oz,woy=f2.oy,woz=sy*f2.ox+cy*f2.oz;
+      const rl0=rod([f2.ox,f2.oy,f2.oz]);
+      const wox=cy*rl0[0]-sy*rl0[2],woy=rl0[1],woz=sy*rl0[0]+cy*rl0[2];
       const rl=Math.hypot(wox,woy,woz)||1;
-      /* the blast owns the throw: every piece keeps ALL of her momentum
-         and is hurled outward at the speed she could fly, not the crawl
-         she happened to die at */
-      const shipSp=Math.max(s.spd||20,Math.hypot(s.dvx||0,s.dvy||0,s.dvz||0));
-      const az2=Math.random()*6.283,el2=(Math.random()-0.5)*2.4;
-      const th=shipSp*(0.55+Math.random()*0.75);
-      const fvx=(s.dvx||0)+Math.cos(el2)*Math.cos(az2)*th+wox/rl*5;
-      const fvy=(s.dvy||0)+Math.sin(el2)*th*0.6+woy/rl*3;
-      const fvz=(s.dvz||0)+Math.cos(el2)*Math.sin(az2)*th+woz/rl*5;
-      /* half of her never comes off as pieces at all — just dust, the
-         slow mist that a battlefield breathes */
-      if(Math.random()<0.5){
+      const sp3=s.corpseSpin||0;
+      const tvx=sp3*(axW[1]*woz-axW[2]*woy);
+      const tvy=sp3*(axW[2]*wox-axW[0]*woz);
+      const tvz=sp3*(axW[0]*woy-axW[1]*wox);
+      const outw=(6+Math.random()*10)+shipSp*0.15+Math.max(0,40-s.slen)*0.25;
+      const fvx=(s.dvx||0)+tvx+wox/rl*outw+(Math.random()-0.5)*5;
+      const fvy=(s.dvy||0)+tvy+woy/rl*outw*0.7+(Math.random()-0.5)*4;
+      const fvz=(s.dvz||0)+tvz+woz/rl*outw+(Math.random()-0.5)*5;
+      if(Math.random()<dustFrac){
         dustBurst(s.x+wox,s.y+woy,s.z+woz,fvx,fvy,fvz,10,performance.now()/1000);
         continue;
       }
@@ -3172,10 +3203,16 @@ function onWorkerMsg(e){
       gl.bindVertexArray(null);
       wrecks.push({vao,vbo,ibo,icount:f2.i.length,v:f2.v,i:f2.i,rad:Math.max(3,f2.r||6),
         x:s.x+wox,y:s.y+woy,z:s.z+woz,yaw:s.yaw,
-        bax:s.dax||[0,1,0],bang:s.dang||0,uid:wreckUid++,
+        bax:[dax[0],dax[1],dax[2]],bang:angT,uid:wreckUid++,
         vx:fvx,vy:fvy,vz:fvz,
-        ax:V.norm([Math.random()-0.5,Math.random()-0.5,Math.random()-0.5]),
-        spin:(0.3+Math.random()*1.4)*(Math.random()<0.5?-1:1),
+        /* her tumble continues through the break: the piece's axis leans
+           toward the hull's, its rate near the hull's, sized to the mass */
+        ax:V.norm([dax[0]+(Math.random()-0.5)*0.7,
+                   dax[1]+(Math.random()-0.5)*0.7,
+                   dax[2]+(Math.random()-0.5)*0.7]),
+        spin:(s.corpseSpin||0)*0.8
+             +(0.15+Math.random()*0.5)*Math.min(1,14/Math.sqrt((f2.r||6)+4))
+              *(Math.random()<0.5?-1:1),
         t0:performance.now()/1000,integ:2+((Math.random()*2)|0),life:32+Math.random()*16,baked:false});
     }
     if(s.vao){gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);s.vao=null;}
@@ -3485,8 +3522,8 @@ function kill(t,now){
      until the worker delivers her pieces — the break-up is a swap at the
      same spot in the same frame, never a blink of empty space */
   t.deadT=now;
-  t.corpseSpin=(0.25+Math.random()*0.5)*(Math.random()<0.5?-1:1);
-  if(workers.length)workers[t.id%workers.length].postMessage(
+  t.corpseSpin=(8/Math.max(20,t.slen))*(0.6+Math.random()*0.8)*(Math.random()<0.5?-1:1);
+  if(workers.length)workers[(wreckRR++)%workers.length].postMessage(
     {kind:"wreck",genId,id:t.id,seed:t.seed,f:t.side,hulls:t.hulls});
   counts[t.side]--;
   if(sel===t.id){sel=null;orb=null;card(null);}
@@ -3955,7 +3992,7 @@ function makeStars(){
   for(let i=0;i<starN;i++){
     const u=R()*2-1,ph=R()*Math.PI*2,rr2=Math.sqrt(1-u*u),d=sceneR*(3+R()*5);
     a[i*4]=Math.cos(ph)*rr2*d;a[i*4+1]=u*d;a[i*4+2]=Math.sin(ph)*rr2*d;
-    a[i*4+3]=1+R()*1.8;
+    a[i*4+3]=R()<0.08?2.8+R()*1.8:0.8+R()*2.2;
   }
   starVao=gl.createVertexArray();
   gl.bindVertexArray(starVao);
@@ -4185,6 +4222,7 @@ function frame(nowMs){
     if(s.dead){
       /* a corpse: whole, dark, drifting on her death momentum */
       if(now-(s.deadT||0)>4){
+        dustBurst(s.x,s.y,s.z,s.dvx||0,s.dvy||0,s.dvz||0,16,now);
         gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);s.vao=null;
         continue;
       }
