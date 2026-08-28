@@ -1,0 +1,3944 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orbital Yard — The War</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Saira+Condensed:wght@500;600;700&display=swap">
+<style>
+:root{--bg:#0E2E52;--ink:#D9E6F2}
+html,body{height:100%}
+body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;-webkit-font-smoothing:antialiased;
+  user-select:none;-webkit-user-select:none}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#gl.dragging{cursor:grabbing}
+.hud{position:fixed;z-index:5;pointer-events:none}
+#brand{top:18px;left:20px}
+#brand .t{font-family:"Saira Condensed",sans-serif;font-weight:700;font-size:22px;
+  letter-spacing:.14em}
+#brand .s{font-size:11px;opacity:.62;margin-top:3px;letter-spacing:.08em}
+#brand a{color:inherit;text-decoration:none;border-bottom:1px solid;opacity:.62;pointer-events:auto}
+#stat{bottom:16px;left:20px;font-size:11px;letter-spacing:.06em;opacity:.75;line-height:1.7}
+#roster{top:18px;right:20px;font-size:10.5px;line-height:1.75;letter-spacing:.04em;
+  text-align:right;opacity:.8;max-height:60vh;overflow:hidden}
+#roster .cnt{opacity:.55}
+#roster{pointer-events:auto;cursor:pointer}
+#roster [data-id]:hover{opacity:1;text-decoration:underline}
+/* border-box so a max-height ceiling means the height you can see: with the
+   default content box the padding and border stack on top of the cap, and a
+   sheet told to stop at 46% of the screen quietly took 53% of it */
+#card{box-sizing:border-box;position:fixed;left:20px;bottom:56px;z-index:8;max-width:380px;
+  background:var(--bg);border:1px solid var(--ink);padding:14px 16px 12px;
+  font-size:11px;line-height:1.7;letter-spacing:.03em;display:none}
+#card.on{display:block}
+#card .d{font-family:"Saira Condensed",sans-serif;font-weight:700;font-size:20px;letter-spacing:.12em;padding-right:16px}
+#card .k{opacity:.65;font-size:10.5px}
+#card .story{margin:9px 0;opacity:.88}
+#card .cr{display:flex;gap:10px}
+#card .role{opacity:.5;min-width:86px}
+#cardX{position:absolute;top:5px;right:11px;cursor:pointer;opacity:.6;font-size:15px}
+#cardX:hover{opacity:1}
+@media(max-width:820px){#card{max-width:calc(100vw - 40px)}}
+#bar{position:fixed;bottom:14px;right:20px;z-index:6;display:flex;gap:8px;align-items:center}
+#bar button{font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;
+  color:var(--ink);background:transparent;border:1px solid var(--ink);
+  border-radius:2px;padding:7px 11px;cursor:pointer;opacity:.65;transition:opacity .15s}
+#bar button:hover{opacity:1}
+#bar button.on{opacity:1;background:var(--ink);color:var(--bg)}
+#toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9;
+  font:600 13px "IBM Plex Mono",monospace;letter-spacing:.22em;opacity:0;
+  transition:opacity .25s;pointer-events:none}
+#toast.on{opacity:.9}
+#brand .s2{display:none}
+
+/* ---- compact chrome: any screen short of room on either axis -------------
+   Width alone was the wrong test. A phone on its side is 874 across and 402
+   tall: it sails straight past a width breakpoint while having less room to
+   give than the portrait case the breakpoint was written for, and the card
+   went back to growing unbounded and covered the whole screen. Both axes get
+   a say now.
+   Hiding the desktop hint line on a phone had also hidden the only link back
+   to the yard, so a touch-worded one keeps it — one line, clipped rather than
+   wrapped, so the readout underneath has a fixed place to be instead of being
+   overprinted the moment the hint runs to two lines. */
+@media(max-width:820px),(max-height:620px){
+  #roster{display:none}
+  #brand .s{display:none}
+  #brand .s2{display:block;font-size:10px;opacity:.62;margin-top:3px;
+    letter-spacing:.04em;line-height:1.4;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #brand .s2 a{color:inherit;text-decoration:none;border-bottom:1px solid;
+    opacity:.85;pointer-events:auto}
+  #stat{bottom:auto;top:52px;left:12px;right:12px;font-size:10px;opacity:.58;
+    line-height:1.4;white-space:nowrap;overflow:hidden}
+  /* the ceiling. The service record is the longest thing on the card and the
+     only one with no natural limit, so it gets a box of its own inside a
+     sheet that has one too — neither can crowd out the designation above it
+     or the crew below. */
+  #card{max-height:40vh;overflow-y:auto;overscroll-behavior:contain}
+  #card .story{max-height:4.6em;overflow-y:auto;overscroll-behavior:contain}
+  /* sticky, not absolute: the close control has to survive the sheet being
+     scrolled, or a long record traps you inside it */
+  #cardX{position:sticky;float:right;top:0;right:0;font-size:19px;line-height:1;
+    padding:1px 3px;opacity:.75}
+  #bar{left:0;right:0;bottom:0;justify-content:center;flex-wrap:wrap;gap:6px;
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
+    background:linear-gradient(to top,var(--bg) 58%,rgba(0,0,0,0))}
+  #bar button{padding:9px 11px;font-size:11px;opacity:.8}
+}
+/* ---- phone width: the card stops being a panel and becomes a sheet ---- */
+@media(max-width:820px){
+  #brand{top:10px;left:12px;right:12px}
+  #brand .t{font-size:16px;letter-spacing:.10em}
+  #card{left:8px;right:8px;max-width:none;
+    bottom:calc(54px + env(safe-area-inset-bottom,0px));
+    padding:11px 12px 10px;font-size:10.5px;line-height:1.55}
+  #card .d{font-size:16px;letter-spacing:.09em;padding-right:26px}
+  #card .k{font-size:10px}
+  #card .cr{gap:8px}
+  #card .role{min-width:72px}
+}
+/* ---- and where the short axis is really short, the readout goes ---- */
+@media(max-height:520px){
+  #stat{display:none}
+  #card{max-height:44vh}
+  #card .story{max-height:3.4em}
+}
+#win{position:fixed;left:0;right:0;top:32%;text-align:center;display:none;pointer-events:none;
+  font-family:"Saira Condensed",sans-serif;font-weight:700;font-size:64px;letter-spacing:0.12em;
+  color:var(--ink);text-shadow:0 0 34px var(--bg),0 0 8px var(--bg)}
+#win .sub{font-size:15px;font-family:"IBM Plex Mono",monospace;letter-spacing:0.22em;margin-top:12px;opacity:0.85}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="hud" id="brand">
+  <div class="t">ORBITAL YARD — THE WAR</div>
+  <div class="s"><a href="index.html">&larr; the yard</a> &nbsp;·&nbsp; two yards, one sky · click a ship to follow her · drag orbits, wheel closes in · click space to release · WASD QE fly · N new war · P palette</div>
+  <div class="s2"><a href="index.html">&larr; the yard</a> &nbsp;·&nbsp; tap a ship &middot; drag orbits &middot; pinch zooms</div>
+</div>
+<div class="hud" id="stat"></div>
+<div class="hud" id="roster"></div>
+<div id="bar">
+  <button data-n="150">150</button>
+  <button data-n="300" class="on">300</button>
+  <button data-n="600">600</button>
+  <button id="bNew">NEW WAR</button>
+  <button id="bPal">PALETTE</button>
+</div>
+<div id="card"></div>
+<div id="win"></div>
+<div id="toast"></div>
+<script>
+"use strict";
+/* ===================== vector ===================== */
+const V={
+  add:(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],
+  sub:(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],
+  mul:(a,s)=>[a[0]*s,a[1]*s,a[2]*s],
+  dot:(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],
+  cross:(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],
+  len:a=>Math.hypot(a[0],a[1],a[2]),
+  norm:a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];},
+  lerp:(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]
+};
+function basis(n){const t=Math.abs(n[0])<0.85?[1,0,0]:[0,1,0];const u=V.norm(V.cross(n,t));return [u,V.cross(n,u)];}
+function ringPts(c,r,n,segs){
+  const [u,v]=basis(n),o=[];
+  for(let i=0;i<segs;i++){const a=i/segs*Math.PI*2;
+    o.push(V.add(c,V.add(V.mul(u,r*Math.cos(a)),V.mul(v,r*Math.sin(a)))));}
+  return o;
+}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;
+  let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;
+  return ((t^t>>>14)>>>0)/4294967296;};}
+
+/* ===================== socket contract =====================
+   Ship space: +X fore, +Y up, +Z starboard. Everything is built on the
+   centreline or to starboard, then mirrored — bilateral symmetry is free.
+   A variant works in its socket's local frame (f = out of the socket, u = up,
+   s = side) and obeys three rules:
+     1. start at x = -inset          (bury the root; never butt-joint)
+     2. cover the socket radius      (no daylight at the joint)
+     3. stay inside the envelope box (proportions survive any combination)
+   Buried faces are flagged hidden so no line is stroked inside a neighbour. */
+
+function builder(fr,out){
+  const L=(x,y,z)=>V.add(fr.o,V.add(V.mul(fr.f,x),V.add(V.mul(fr.u,y),V.mul(fr.s,z))));
+  const D=(x,y,z)=>V.add(V.mul(fr.f,x),V.add(V.mul(fr.u,y),V.mul(fr.s,z)));
+  const push=p=>{out.push(p);return p;};
+  return {
+    L,D,
+    tube:(a,b,r1,r2,o)=>push(Object.assign({k:"tube",a:L(a[0],a[1],a[2]),b:L(b[0],b[1],b[2]),r1,r2},o||{})),
+    cap:(a,b,r,o)=>push(Object.assign({k:"capsule",a:L(a[0],a[1],a[2]),b:L(b[0],b[1],b[2]),r},o||{})),
+    ball:(c,r,o)=>push(Object.assign({k:"sphere",c:L(c[0],c[1],c[2]),r},o||{})),
+    disc:(c,n,r,ri)=>push({k:"disc",c:L(c[0],c[1],c[2]),n:V.norm(D(n[0],n[1],n[2])),r,ri}),
+    box:(c,hx,hy,hz,o)=>push(Object.assign({k:"box",c:L(c[0],c[1],c[2]),
+        u:D(hx,0,0),v:D(0,hy,0),w:D(0,0,hz)},o||{})),
+    /* pts are [span, chord] in the frame's x–z plane; pts[0]→pts[1] is the root edge */
+    panel:(pts,th,o)=>push(Object.assign({k:"panel",pts:pts.map(p=>L(p[0],0,p[1])),
+        n:V.norm(D(0,1,0)),th,skipSide:0},o||{})),
+    /* the other plate: standing square to the span instead of lying in the
+       planform, so pts are [chord, up] in the y–z plane at one station out the
+       boom. No edge of it is buried, so none is skipped. */
+    vane:(x,pts,th,o)=>push(Object.assign({k:"panel",pts:pts.map(p=>L(x,p[1],p[0])),
+        n:V.norm(D(1,0,0)),th,skipSide:-1},o||{}))
+  };
+}
+
+/* ===================== variant library ===================== */
+const VAR={
+/* ---- cockpit: local x = fore, y = up, z = starboard ---- */
+cockpit:[
+ {n:"BUBBLE",crew:2,make(B,sr,rr,R,E){
+   const L=E.x*rr(0.62,0.86), in_=sr*0.7;
+   B.cap([-in_,0,0],[L*0.55,0,0],sr*0.96,{hideA:true,det:hullDet([0.4,0.7],[0.6,3.9],[])});
+   B.tube([L*0.55,0,0],[L,0,0],sr*0.96,sr*0.34);
+   B.cap([L*0.18,sr*0.62,0],[L*0.62,sr*0.5,0],sr*0.44,{det:hullDet([0.35,0.65],[],[])});
+   B.disc([L*0.30,sr*0.95,0],[0,1,0],sr*0.30,sr*0.17);
+   B.tube([L,0,0],[L+E.x*0.10,0,0],0.10,0.05);
+ }},
+ {n:"WEDGE",crew:3,make(B,sr,rr,R,E){
+   const L=E.x*rr(0.7,0.95), in_=sr*0.7;
+   B.tube([-in_,0,0],[L*0.5,0,0],sr,sr*0.82,{hideA:true,det:hullDet([0.35,0.6,0.85],[0.5,2.6,4.2],[])});
+   B.tube([L*0.5,0,0],[L*0.88,-sr*0.16,0],sr*0.82,sr*0.30);
+   B.box([L*0.55,-sr*0.10,0],L*0.14,sr*0.16,sr*0.30);
+   B.box([L*0.34,sr*0.62,0],L*0.20,sr*0.20,sr*0.52,{det:{ribs:3}});
+   B.box([L*0.05,sr*0.55,0],L*0.16,sr*0.22,sr*0.42);
+ }},
+ {n:"POD",crew:1,make(B,sr,rr,R,E){
+   const in_=sr*0.7, r=sr*rr(1.0,1.22), cx=E.x*0.42;
+   B.tube([-in_,0,0],[cx-r*0.6,0,0],sr*0.9,sr*0.62,{hideA:true});
+   B.ball([cx,0,0],r,{det:hullDet([0.3,0.5,0.7],[],[])});
+   B.disc([cx+r*0.78,0,0],[1,0,0],r*0.52,r*0.30);
+   for(let i=0;i<3;i++) B.disc([cx+r*0.5,r*0.55,r*(i-1)*0.5],[0.5,1,0],r*0.15,r*0.08);
+ }},
+ {n:"NEEDLE",crew:1,make(B,sr,rr,R,E){
+   const L=E.x*rr(0.85,1.0), in_=sr*0.7;
+   B.tube([-in_,0,0],[L*0.42,0,0],sr,sr*0.55,{hideA:true,det:hullDet([0.3,0.55,0.8],[0.4,3.4],[])});
+   B.tube([L*0.42,0,0],[L*0.9,0,0],sr*0.55,sr*0.10);
+   B.tube([L*0.9,0,0],[L,0,0],0.09,0.045);
+   B.disc([L*0.30,0,0],[1,0,0],sr*0.72,sr*0.55);
+   B.box([L*0.16,sr*0.5,0],L*0.10,sr*0.14,sr*0.30);
+ }},
+ {n:"BLUNT",crew:4,make(B,sr,rr,R,E){
+   const L=E.x*rr(0.42,0.6), in_=sr*0.7, r=sr*rr(1.0,1.15);
+   B.tube([-in_,0,0],[L*0.75,0,0],sr,r,{hideA:true,det:hullDet([0.4,0.7],[0.5,2.2,3.9,5.4],[])});
+   B.disc([L*0.78,0,0],[1,0,0],r*0.92,r*0.44);
+   B.tube([L*0.78,0,0],[L,0,0],r*0.44,r*0.40);
+   for(let i=0;i<4;i++){const a=i/4*Math.PI*2+0.4;
+     B.disc([L*0.5,Math.cos(a)*r*0.75,Math.sin(a)*r*0.75],[Math.cos(a)*0.4,Math.sin(a),0.0],r*0.16,r*0.09);}
+ }},
+ {n:"STEPPED",crew:3,make(B,sr,rr,R,E){
+   const L=E.x*rr(0.7,0.92), in_=sr*0.7;
+   B.tube([-in_,0,0],[L*0.30,0,0],sr,sr*0.86,{hideA:true});
+   B.cap([L*0.30,0,0],[L*0.62,0,0],sr*0.86,{det:hullDet([0.4,0.7],[0.7,3.8],[])});
+   B.tube([L*0.62,0,0],[L*0.72,0,0],sr*0.62,sr*0.55);
+   B.cap([L*0.72,0,0],[L,0,0],sr*0.5,{det:hullDet([0.5],[],[])});
+   B.box([L*0.44,sr*0.72,0],L*0.13,sr*0.16,sr*0.40,{det:{ribs:2}});
+   B.tube([L*0.2,sr*0.9,0],[L*0.2,sr*1.9,0],0.09,0.07);
+   B.disc([L*0.2,sr*1.95,0],[0.3,1,0],sr*0.34,sr*0.06);
+ }}
+],
+/* ---- wing: local x = outboard span, y = up, z = fore ---- */
+wing:[
+ {n:"DELTA",make(B,sr,rr,R,E){
+   const sp=E.x*rr(0.88,1.05), cr=E.z*rr(0.52,0.72), ct=cr*rr(0.12,0.24), th=sr*0.42;
+   const sw=cr*rr(0.55,0.75);
+   B.panel([[-sr*0.6,-cr*0.5],[-sr*0.6,cr*0.5],[sp,cr*0.5-sw],[sp,cr*0.5-sw-ct]],th,
+           {det:{ribs:3,line:0.7}});
+   B.cap([sp*0.99,0,cr*0.5-sw-ct*0.5],[sp*1.02,0,cr*0.5-sw],th*0.9);
+ }},
+ {n:"TRAPEZOID",make(B,sr,rr,R,E){
+   const sp=E.x*rr(0.8,1.0), cr=E.z*rr(0.62,0.85), ct=cr*rr(0.4,0.6), th=sr*0.4;
+   const sw=cr*rr(0.3,0.55);
+   B.panel([[-sr*0.6,-cr*0.5],[-sr*0.6,cr*0.5],[sp,cr*0.5-sw],[sp,cr*0.5-sw-ct]],th,{det:{ribs:3,line:0.75}});
+   B.cap([sp*0.94,0,cr*0.5-sw+ct*0.15],[sp*0.94,0,cr*0.5-sw-ct*1.1],th*1.5,
+         {det:hullDet([0.35,0.7],[],[])});
+ }},
+ {n:"STRAIGHT",make(B,sr,rr,R,E){
+   const sp=E.x*rr(0.72,0.95), cr=E.z*rr(0.45,0.62), th=sr*0.36;
+   B.panel([[-sr*0.6,-cr*0.5],[-sr*0.6,cr*0.5],[sp,cr*0.46],[sp,-cr*0.46]],th,{det:{ribs:5,line:0.7}});
+   const px=sp*rr(0.5,0.68);
+   B.box([px,-th*1.6,0],cr*0.12,th*1.5,cr*0.34);
+   B.cap([px,-th*3.2,cr*0.6],[px,-th*3.2,-cr*0.5],sr*0.5,{det:hullDet([0.3,0.6],[],[])});
+   B.tube([px,-th*3.2,-cr*0.5],[px,-th*3.2,-cr*0.95],sr*0.42,sr*0.52,{det:hullDet([0.5],[],[])});
+ }},
+ {n:"DOUBLE DELTA",make(B,sr,rr,R,E){
+   const sp=E.x*rr(0.9,1.05), cr=E.z*rr(0.62,0.82), th=sr*0.4;
+   const k=rr(0.34,0.46), mid=sp*k;
+   B.panel([[-sr*0.6,-cr*0.5],[-sr*0.6,cr*0.5],[mid,cr*0.5-cr*0.42],[mid,-cr*0.5]],th,{det:{ribs:2,line:0.8}});
+   B.panel([[mid*0.98,-cr*0.5],[mid*0.98,cr*0.08],[sp,-cr*0.24],[sp,-cr*0.40]],th,{det:{ribs:3,line:0.8},skipSide:-1});
+ }},
+ {n:"FORWARD SWEPT",make(B,sr,rr,R,E){
+   const sp=E.x*rr(0.7,0.9), cr=E.z*rr(0.55,0.75), ct=cr*rr(0.5,0.7), th=sr*0.4;
+   const sw=cr*rr(0.35,0.6);
+   B.panel([[-sr*0.6,-cr*0.5],[-sr*0.6,cr*0.5],[sp,cr*0.5+sw],[sp,cr*0.5+sw-ct]],th,{det:{ribs:3,line:0.75}});
+   B.box([sp*0.62,th*1.8,cr*0.1],cr*0.10,th*1.4,cr*0.22);
+ }},
+ /* the vane the VANE chassis carries, cut to the wing socket so any hull can
+    fly it: a hexagonal plate square to the span, framed and spoked on both
+    faces, hung off a boom instead of sprouting a planform */
+ {n:"HEX VANE",make(B,sr,rr,R,E){
+   const sp=E.x*rr(0.86,1.02);
+   const hy=Math.max(E.y*0.95,sp*rr(0.52,0.66));      /* half-height */
+   const hc=Math.min(E.z*rr(0.48,0.62),hy*0.74);      /* half-chord  */
+   const sh=hy*rr(0.58,0.74);                         /* shoulder    */
+   const th=Math.min(sr*rr(0.44,0.60),hc*0.22);
+   const hex=[[hc,sh],[0,hy],[-hc,sh],[-hc,-sh],[0,-hy],[hc,-sh]];
+   B.tube([-sr*0.6,0,0],[sp-th*0.5,0,0],sr*0.66,sr*0.40,{hideA:true});
+   B.vane(sp,hex,th,{});
+   const fk=rr(0.62,0.74), tt=th*rr(0.36,0.52), rw=Math.max(th*0.55,hc*0.055);
+   for(const s2 of [1,-1]){
+     const xf=sp+s2*(th*0.5+tt*0.5);
+     B.vane(xf,hex.map(q=>[q[0]*fk,q[1]*fk]),tt,{});
+     for(const q of hex){
+       const vz=q[0]*fk*0.94, vy=q[1]*fk*0.94, L2=Math.hypot(vz,vy)||1;
+       const pz=-vy/L2*rw, py=vz/L2*rw;
+       B.vane(xf+s2*(tt*0.5+tt*0.4),
+              [[pz,py],[vz+pz,vy+py],[vz-pz,vy-py],[-pz,-py]],tt*0.8,{});
+     }
+   }
+ }},
+ {n:"STUB + NACELLE",make(B,sr,rr,R,E){
+   const sp=E.x*rr(0.34,0.5), cr=E.z*rr(0.42,0.6), th=sr*0.44;
+   B.panel([[-sr*0.6,-cr*0.5],[-sr*0.6,cr*0.5],[sp,cr*0.34],[sp,-cr*0.34]],th,{det:{ribs:2,line:0.7}});
+   const nr=sr*rr(0.7,0.95), nz=cr*0.1;
+   B.cap([sp+nr*0.6,0,nz+cr*0.55],[sp+nr*0.6,0,nz-cr*0.35],nr,{det:hullDet([0.28,0.55,0.8],[0.4,3.6],[])});
+   B.tube([sp+nr*0.6,0,nz-cr*0.35],[sp+nr*0.6,0,nz-cr*0.85],nr*0.8,nr*1.02,{det:hullDet([0.45,0.8],[],[])});
+   B.disc([sp+nr*0.6,0,nz+cr*0.58],[0,0,1],nr*0.8,nr*0.45);
+ }}
+],
+/* ---- tail: local x = up, y = fore, z = starboard ---- */
+tail:[
+ {n:"NONE",make(){}},
+ {n:"SINGLE FIN",make(B,sr,rr,R,E,probe){
+   const h=E.x*rr(0.7,1.0), cr=E.y*rr(0.7,0.95), ct=cr*rr(0.3,0.5), sw=cr*rr(0.35,0.6);
+   const d=probe(0,0)+sr*0.35;
+   B.panel([[-d,-cr*0.5],[-d,cr*0.5],[h,cr*0.5-sw],[h,cr*0.5-sw-ct]],sr*0.38,{det:{ribs:3,line:0.75}});
+ }},
+ {n:"TWIN FIN",make(B,sr,rr,R,E,probe){
+   const h=E.x*rr(0.55,0.8), cr=E.y*rr(0.5,0.75), ct=cr*rr(0.35,0.55), sw=cr*rr(0.3,0.5);
+   const z=Math.min(E.z*0.85,sr*rr(1.1,2.0)), cant=rr(0,0.22);
+   const d=probe(0,z)+sr*0.35;
+   B.panel([[-d,-cr*0.5],[-d,cr*0.5],[h,cr*0.5-sw],[h,cr*0.5-sw-ct]],
+           sr*0.34,{det:{ribs:2,line:0.75},shiftZ:z,cant});
+ },twin:true},
+ {n:"V-TAIL",make(B,sr,rr,R,E,probe){
+   const h=E.x*rr(0.6,0.85), cr=E.y*rr(0.6,0.85), ct=cr*rr(0.35,0.55), sw=cr*rr(0.3,0.55);
+   const d=probe(0,0)+sr*0.5;
+   B.panel([[-d,-cr*0.5],[-d,cr*0.5],[h,cr*0.5-sw],[h,cr*0.5-sw-ct]],sr*0.34,
+           {det:{ribs:2,line:0.75},cant:rr(0.55,0.85)});
+ },twin:true},
+ {n:"CRUCIFORM",make(B,sr,rr,R,E,probe){
+   const h=E.x*rr(0.6,0.9), cr=E.y*rr(0.6,0.9), ct=cr*rr(0.35,0.5), sw=cr*rr(0.3,0.5);
+   const d0=probe(0,0)+sr*0.4;
+   B.panel([[-d0,-cr*0.5],[-d0,cr*0.5],[h,cr*0.5-sw],[h,cr*0.5-sw-ct]],sr*0.36,{det:{ribs:3,line:0.75}});
+   const sp=E.z*rr(0.55,0.8), hc=cr*0.62;
+   B.panel([[-d0,-hc*0.5],[-d0,hc*0.5],[sp,hc*0.5-sw*0.6],[sp,hc*0.5-sw*0.6-hc*0.45]],sr*0.3,
+           {det:{ribs:2,line:0.75},cant:Math.PI/2});
+ }}
+],
+/* ---- booster: local x = aft, y = up, z = starboard ---- */
+booster:[
+ {n:"SINGLE",make(B,sr,rr,R,E){
+   const in_=sr*0.7, br=sr*rr(0.9,1.1), bl=E.x*rr(0.55,0.75);
+   B.tube([-in_,0,0],[bl*0.34,0,0],sr,br*0.72,{hideA:true,det:hullDet([0.5],[],[])});
+   B.disc([bl*0.34,0,0],[1,0,0],br*0.72,br*0.42);
+   B.tube([bl*0.34,0,0],[bl,0,0],br*0.44,br,{det:hullDet([0.3,0.58,0.84],[],[])});
+   ring(B,br,bl,sr,rr);
+ }},
+ {n:"TWIN",make(B,sr,rr,R,E){
+   const in_=sr*0.7, br=sr*rr(0.6,0.78), bl=E.x*rr(0.5,0.7), off=sr*rr(0.85,1.05);
+   B.tube([-in_,0,0],[bl*0.24,0,0],sr,sr*1.02,{hideA:true});
+   for(const s of [1,-1]){
+     B.tube([bl*0.2,s*off,0],[bl*0.42,s*off,0],br*0.66,br*0.46);
+     B.tube([bl*0.42,s*off,0],[bl,s*off,0],br*0.46,br,{det:hullDet([0.32,0.6,0.85],[],[])});
+   }
+   ring(B,br,bl,sr,rr);
+ }},
+ {n:"QUAD",make(B,sr,rr,R,E){
+   const in_=sr*0.7, br=sr*rr(0.42,0.56), bl=E.x*rr(0.45,0.62), off=sr*rr(0.66,0.8);
+   B.tube([-in_,0,0],[bl*0.22,0,0],sr,sr*1.05,{hideA:true});
+   B.disc([bl*0.22,0,0],[1,0,0],sr*1.05,sr*0.5);
+   for(const a of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+     B.tube([bl*0.2,a[0]*off,a[1]*off],[bl*0.4,a[0]*off,a[1]*off],br*0.6,br*0.44);
+     B.tube([bl*0.4,a[0]*off,a[1]*off],[bl,a[0]*off,a[1]*off],br*0.44,br,{det:hullDet([0.35,0.7],[],[])});
+   }
+ }},
+ {n:"RING OF SIX",make(B,sr,rr,R,E){
+   const in_=sr*0.7, br=sr*rr(0.3,0.4), bl=E.x*rr(0.4,0.55), rad=sr*rr(0.72,0.9);
+   B.tube([-in_,0,0],[bl*0.3,0,0],sr,sr*1.08,{hideA:true,det:hullDet([0.6],[],[])});
+   B.tube([bl*0.3,0,0],[bl*0.62,0,0],sr*1.08,sr*0.66);
+   for(let i=0;i<6;i++){
+     const a=i/6*Math.PI*2+0.26, y=Math.cos(a)*rad, z=Math.sin(a)*rad;
+     B.tube([bl*0.3,y,z],[bl*0.5,y,z],br*0.62,br*0.46);
+     B.tube([bl*0.5,y,z],[bl,y,z],br*0.46,br,{det:hullDet([0.4,0.75],[],[])});
+   }
+ }},
+ {n:"AEROSPIKE",make(B,sr,rr,R,E){
+   const in_=sr*0.7, bl=E.x*rr(0.52,0.7), w=sr*rr(1.0,1.25);
+   B.tube([-in_,0,0],[bl*0.22,0,0],sr,w*0.94,{hideA:true});
+   B.box([bl*0.34,0,0],bl*0.14,w*0.86,w*0.72,{det:{ribs:3}});
+   for(const sgn of [1,-1])
+     B.tube([bl*0.48,sgn*w*0.52,0],[bl*0.98,sgn*w*0.10,0],w*0.34,w*0.12,{hideA:true});
+   B.box([bl*0.50,0,0],bl*0.04,w*0.62,w*0.74);
+   for(let i=0;i<5;i++){const z=(i/4-0.5)*w*1.2;
+     B.tube([bl*0.44,0,z],[bl*0.52,0,z],w*0.09,w*0.12);}
+ }}
+],
+/* ---- gear: local x = down, y = fore, z = starboard ----
+   A leg's gauge follows its own span. Scaling it from the socket radius alone
+   gave a needle whenever a spread-out foot had to reach a long way up to the
+   hull, which is exactly what an edge-on spade asks for. */
+gear:[
+ {n:"STOWED",make(B,sr,rr,R,E,probe){
+   for(const y of [E.y*0.55,-E.y*0.1]){
+     const d=probe(y,0);
+     B.box([-d+sr*0.06,y,0],sr*0.05,E.y*0.14,sr*0.62,{det:{ribs:2}});
+   }
+ }},
+ {n:"TRICYCLE",make(B,sr,rr,R,E,probe){
+   const h=E.x*rr(0.6,0.85), wr=h*0.24;
+   /* rake the strut inboard at the top: a foot set wide of a thin hull has
+      nothing above it to root in, and a raked leg is what the real thing does */
+   const leg=(y,z,scale)=>{
+     const zt=z*0.3;
+     const d=probe(y,zt)+sr*0.3, g=gauge(sr,d+h*scale);
+     B.tube([-d,y,zt],[h*scale,y,z],g,g*0.72,{hideA:true});
+     B.tube([h*scale*0.55,y,z],[h*scale,y+h*0.12,z],g*0.5,g*0.43);
+     B.disc([h*scale,y,z+wr*0.42],[0,0,1],wr*scale,wr*0.34);
+     B.disc([h*scale,y,z-wr*0.42],[0,0,1],wr*scale,wr*0.34);
+   };
+   leg(E.y*0.62,0,0.72);
+   leg(-E.y*0.15,E.z*rr(0.6,0.85),1);
+ }},
+ {n:"SKIDS",make(B,sr,rr,R,E,probe){
+   const h=E.x*rr(0.45,0.65), z=E.z*rr(0.55,0.8);
+   let g=sr*0.13;
+   for(const y of [E.y*0.5,-E.y*0.2]){
+     const d=probe(y,z*0.3)+sr*0.3;
+     g=Math.max(g,gauge(sr,d+h));
+     B.tube([-d,y,z*0.3],[h,y,z],g,g*0.7,{hideA:true});
+   }
+   B.cap([h,E.y*0.72,z],[h,-E.y*0.5,z],g*1.2);
+   B.tube([h,E.y*0.72,z],[h*0.78,E.y*0.95,z],g*1.05,g*0.75);
+ }},
+ {n:"LEGS",make(B,sr,rr,R,E,probe){
+   const h=E.x*rr(0.7,0.95), sp=E.z*rr(0.7,1.0);
+   for(const y of [E.y*0.55,-E.y*0.35]){
+     const d=probe(y,sp*0.25)+sr*0.3, g=gauge(sr,d+h);
+     B.tube([-d,y,sp*0.25],[h,y,sp],g,g*0.7,{hideA:true});
+     B.tube([h*0.42,y,sp*0.55],[h*0.95,y,sp*0.35],g*0.54,g*0.46);
+     B.disc([h,y,sp],[1,0,0],h*0.20,h*0.09);
+   }
+ }}
+]};
+const gauge=(sr,len)=>Math.max(sr*0.13,Math.abs(len)*0.052);
+function ring(B,br,bl,sr,rr){
+  for(let i=0;i<4;i++){const a=i/4*Math.PI*2+0.5;
+    B.tube([bl*0.30,Math.cos(a)*sr*0.9,Math.sin(a)*sr*0.9],
+           [bl*0.34,Math.cos(a)*sr*0.9,Math.sin(a)*sr*0.9],sr*0.12,sr*0.15);}
+}
+
+/* Is a point inside a solid? Bounding boxes were lying: a spade hull's box
+   overlaps a landing leg that is nowhere near its curved underside. Every
+   attachment question below is answered against real geometry instead. */
+function inSolid(q,p){
+  if(p.k==="sphere") return V.len(V.sub(q,p.c))<=p.r;
+  if(p.k==="capsule"||p.k==="tube"){
+    const ab=V.sub(p.b,p.a), dd=V.dot(ab,ab)||1;
+    const t=Math.max(0,Math.min(1,V.dot(V.sub(q,p.a),ab)/dd));
+    const r=p.k==="capsule"?p.r:p.r1+(p.r2-p.r1)*t;
+    return V.len(V.sub(q,V.add(p.a,V.mul(ab,t))))<=r;
+  }
+  if(p.k==="disc"){
+    const n=V.norm(p.n), d=V.dot(V.sub(q,p.c),n);
+    if(Math.abs(d)>p.r*0.14) return false;
+    return V.len(V.sub(V.sub(q,p.c),V.mul(n,d)))<=p.r;
+  }
+  if(p.k==="box"){
+    const d=V.sub(q,p.c);
+    for(const ax of ["u","v","w"]){
+      const a=p[ax];
+      if(Math.abs(V.dot(d,a))>V.dot(a,a)) return false;
+    }
+    return true;
+  }
+  if(p.k==="lathe"){
+    const t=V.dot(V.sub(q,p.c),p.axis), pr=p.prof;
+    if(t<pr[0][0]||t>pr[pr.length-1][0]) return false;
+    let r=pr[0][1];
+    for(let i=1;i<pr.length;i++) if(t<=pr[i][0]){
+      const f=(t-pr[i-1][0])/((pr[i][0]-pr[i-1][0])||1);
+      r=pr[i-1][1]+(pr[i][1]-pr[i-1][1])*f; break;
+    }
+    const rad=V.sub(V.sub(q,p.c),V.mul(p.axis,t));
+    if(p.ell){
+      const [bu,bv]=basis(p.axis);
+      return Math.hypot(V.dot(rad,bu)/(p.ell[0]||1),V.dot(rad,bv)/(p.ell[1]||1))<=r;
+    }
+    return V.len(rad)<=r;
+  }
+  if(p.k==="panel"){
+    const n=V.norm(p.n), d=V.dot(V.sub(q,p.pts[0]),n);
+    if(Math.abs(d)>p.th*0.5) return false;
+    const [u,v]=basis(n), o=p.pts[0];
+    const P=[V.dot(V.sub(q,o),u),V.dot(V.sub(q,o),v)];
+    const poly=p.pts.map(z=>[V.dot(V.sub(z,o),u),V.dot(V.sub(z,o),v)]);
+    let inside=false;
+    for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+      if((poly[i][1]>P[1])!==(poly[j][1]>P[1])&&
+         P[0]<(poly[j][0]-poly[i][0])*(P[1]-poly[i][1])/((poly[j][1]-poly[i][1])||1e-9)+poly[i][0])
+        inside=!inside;
+    }
+    return inside;
+  }
+  return false;
+}
+
+/* ===================== assembler =====================
+   A topology decides how many hull masses there are and how they connect;
+   it publishes the same five sockets wherever they land. Variants never
+   learn which topology they are on, so the whole variant library survives
+   every new skeleton. Paired outriggers cost nothing: put a socket off the
+   centreline and the mirror pass duplicates it and everything plugged in. */
+const BIRDS=[
+"HARRIER","KESTREL","TERN","SHRIKE","AVOCET","CURLEW","GANNET","PETREL","SKUA","MERLIN",
+"GODWIT","PLOVER","EIDER","BRANT","SORA","VEERY","JUNCO","SISKIN","REDPOLL","BITTERN","NODDY",
+"JAEGER","FULMAR","WHIMBREL","DUNLIN","KITTIWAKE","RAZORBILL","LAPWING","OSPREY","PHALAROPE",
+"WILLET","SANDERLING","TATTLER","OVENBIRD","NIGHTJAR","CHUKAR","ACCENTOR","ALBATROSS","ANHINGA",
+"ANTBIRD","ANTPITTA","ANTSHRIKE","ANTWREN","APAPANE","ARACARI","AUKLET","BABBLER","BARBET",
+"BATELEUR","BECARD","BELLBIRD","BLACKCAP","BLUETHROAT","BOBOLINK","BOBWHITE","BRAMBLING",
+"BROADBILL","BUFFLEHEAD","BULBUL","BUNTING","BUSHTIT","BUSTARD","BUZZARD","CACIQUE",
+"CANVASBACK","CARACARA","CARDINAL","CATBIRD","CHACHALACA","CHAFFINCH","CHICKADEE","CHIFFCHAFF",
+"CHOUGH","CISTICOLA","COOT","CORMORANT","CORNCRAKE","COTINGA","COWBIRD","CRAKE","CRANE",
+"CREEPER","CROSSBILL","CUCKOO","CURASSOW","DARTER","DICKCISSEL","DIPPER","DOTTEREL","DOVEKIE",
+"DOWITCHER","DRONGO","DUNNOCK","EAGLE","EGRET","ELAENIA","EUPHONIA","FAIRYWREN","FALCON",
+"FANTAIL","FIELDFARE","FIGBIRD","FINCH","FIRECREST","FLAMINGO","FLICKER","FLYCATCHER",
+"FRANCOLIN","FRIGATEBIRD","FROGMOUTH","GADWALL","GALLINULE","GARGANEY","GNATCATCHER",
+"GOLDCREST","GOLDENEYE","GOLDFINCH","GOSHAWK","GRACKLE","GREBE","GREENSHANK","GROSBEAK",
+"GROUSE","GUILLEMOT","GYRFALCON","HAMERKOP","HAWFINCH","HERMIT","HERON","HOATZIN","HOBBY",
+"HONEYEATER","HONEYGUIDE","HOOPOE","HORNBILL","IBIS","IIWI","JABIRU","JACAMAR","JACANA",
+"JACKDAW","JAY","KAGU","KAKAPO","KEA","KILLDEER","KINGBIRD","KINGFISHER","KINGLET","KISKADEE",
+"KITE","KIWI","KNOT","KOEL","KOKAKO","LAMMERGEIER","LANNER","LARK","LIMPKIN","LINNET",
+"LONGSPUR","LOON","LORIKEET","LYREBIRD","MAGPIE","MALLARD","MALLEEFOWL","MANAKIN","MARTIN",
+"MEADOWLARK","MERGANSER","MESITE","MINIVET","MOCKINGBIRD","MONAL","MOORHEN","MOTMOT",
+"MOUSEBIRD","MURRE","MURRELET","MYNA","NENE","NIGHTHAWK","NUTCRACKER","NUTHATCH","ORIOLE",
+"OROPENDOLA","OUZEL","OYSTERCATCHER","PARAKEET","PARDALOTE","PARROTBILL","PARTRIDGE","PEEWIT",
+"PELICAN","PENGUIN","PEWEE","PHOEBE","PICULET","PIHA","PINTAIL","PIPIT","PITTA","POCHARD",
+"POORWILL","POTOO","PRATINCOLE","PTARMIGAN","PUFFBIRD","PUFFIN","PYRRHULOXIA","QUELEA",
+"QUETZAL","RAIL","RAVEN","REDHEAD","REDSHANK","REDSTART","REDWING","ROADRUNNER","ROBIN",
+"ROLLER","ROOK","ROSEFINCH","RUBYTHROAT","RUFF","SANDPIPER","SAPSUCKER","SCAUP","SCOTER",
+"SCRUBWREN","SEEDEATER","SERIEMA","SERIN","SHEARWATER","SHELDUCK","SHOEBILL","SHOVELER",
+"SIRYSTES","SKIMMER","SKYLARK","SMEW","SNIPE","SOLITAIRE","SPARROW","SPINETAIL","SPOONBILL",
+"STANDARDWING","STARLING","STILT","STINT","STONECHAT","STORK","SUNBIRD","SUNBITTERN","SWALLOW",
+"SWIFT","TANAGER","TAPACULO","TATTLERBIRD","TEAL","THICKKNEE","THORNBILL","THRASHER","THRUSH",
+"TINAMOU","TITMOUSE","TODY","TOUCAN","TOWHEE","TRAGOPAN","TREECREEPER","TROGON","TROPICBIRD",
+"TURACO","TURNSTONE","TWITE","UMBRELLABIRD","VANGA","VEERYBIRD","VERDIN","VIREO","VULTURE",
+"WAGTAIL","WARBLER","WATERTHRUSH","WAXBILL","WAXWING","WEAVER","WHEATEAR","WHINCHAT",
+"WHITETHROAT","WIDGEON","WIGEON","WOODCOCK","WOODLARK","WREN","WRENTIT","WRYNECK","XENOPS",
+"YELLOWHAMMER","YELLOWLEGS","YELLOWTHROAT","ZOSTEROPS"];
+
+const CAP=(a,b,r,o)=>Object.assign({k:"capsule",a,b,r},o||{});
+const TUB=(a,b,r1,r2,o)=>Object.assign({k:"tube",a,b,r1,r2},o||{});
+const BOX=(c,u,v,w,o)=>Object.assign({k:"box",c,u,v,w},o||{});
+const SPH=(c,r,o)=>Object.assign({k:"sphere",c,r},o||{});
+const DSC=(c,n,r,ri,o)=>Object.assign({k:"disc",c,n,r,ri},o||{});
+const LTH=(c,axis,prof,det,o)=>Object.assign({k:"lathe",c,axis,prof,det},o||{});
+const PNL=(pts,pts2,n,th,det,o)=>Object.assign({k:"panel",pts,pts2,n,th,skipSide:-1,det},o||{});
+const FR=(o,f,u,s,E,solo,sr)=>({fr:{o,f,u,s},E,solo:!!solo,sr});
+const hullDet=(rings,longs,ports)=>({rings,longs,ports});
+
+/* ===================== spine sections =====================
+   A hull is no longer one body. It is a fore section, a joint, and an aft
+   section laid along the same axis. The mating contract is the socket
+   contract again, one level down: every section, however wide it gets in
+   the middle, necks to a circular face of the spine radius at both ends —
+   so any section mates with any other through any joint, and a 1920s ogive
+   can sit in front of a lifting slab without either knowing about it. */
+/* rides a part built along +X onto an arbitrary frame — the joint library is
+   authored along the spine, and this is what lets it also span between hulls */
+function xform(p,o,ex,ey,ez){
+  const Pt=q=>V.add(o,V.add(V.mul(ex,q[0]),V.add(V.mul(ey,q[1]),V.mul(ez,q[2]))));
+  const Dr=q=>V.add(V.mul(ex,q[0]),V.add(V.mul(ey,q[1]),V.mul(ez,q[2])));
+  const q=Object.assign({},p);
+  for(const k of ["c","a","b"]) if(q[k])q[k]=Pt(q[k]);
+  for(const k of ["n","u","v","w","axis"]) if(q[k])q[k]=Dr(q[k]);
+  if(q.pts)q.pts=q.pts.map(Pt);
+  if(q.pts2)q.pts2=q.pts2.map(Pt);
+  return q;
+}
+function xlate(p,d){
+  const q=Object.assign({},p), t=v=>[v[0]+d[0],v[1]+d[1],v[2]+d[2]];
+  for(const k of ["c","a","b"]) if(q[k])q[k]=t(q[k]);
+  if(q.pts)q.pts=q.pts.map(t);
+  if(q.pts2)q.pts2=q.pts2.map(t);
+  return q;
+}
+const SECT=[
+{n:"BARREL",minL:1.4,make(x0,x1,r,rr,R,P,out){
+  out.push(CAP([x1,0,0],[x0,0,0],r,{hideA:true,hideB:true,
+    det:hullDet([0.2,0.4,0.6,0.8],P.detail>0.3?[0.5,2.1,4.2,5.6]:[0.5,4.2],
+      Array.from({length:Math.round(P.detail*3)},()=>({t:rr(0.2,0.8),th:rr(0,6.28),r:r*rr(0.1,0.2)})))}));
+  return {hz:r,hy:r};
+}},
+{n:"OGIVE",minL:1.9,make(x0,x1,r,rr,R,P,out){
+  const L=x1-x0, rb=r*rr(1.20,1.55), xm=x0+L*rr(0.42,0.60);
+  out.push(TUB([x1,0,0],[xm,0,0],r,rb,{hideA:true,det:hullDet([0.4,0.75],[0.5,3.9],[])}));
+  out.push(TUB([xm,0,0],[x0,0,0],rb,r,{hideB:true,det:hullDet([0.28,0.56,0.84],[0.5,3.9],[])}));
+  if(P.detail>0.35)for(let i=0;i<3;i++)
+    out.push(DSC([xm-L*0.12*i,0,0],[1,0,0],rb*(1-i*0.07)*1.02,rb*0.5));
+  return {hz:rb,hy:rb};
+}},
+{n:"LIFTING SLAB",minL:2.6,make(x0,x1,r,rr,R,P,out){
+  const L=x1-x0, w=r*rr(2.3,3.4), th=r*rr(0.72,1.0), inn=L*0.16;
+  out.push(TUB([x1,0,0],[x1-inn,0,0],r,r*1.06,{hideA:true}));
+  out.push(TUB([x0,0,0],[x0+inn,0,0],r,r*1.06,{hideB:true}));
+  const zc=r*0.85;
+  out.push(PNL([[x1-inn*0.5,0,zc],[x1-L*rr(0.26,0.38),0,w],[x0+L*rr(0.18,0.30),0,w],
+                [x0+inn*0.5,0,zc],[x0+inn*0.5,0,-zc],[x0+L*0.24,0,-w],
+                [x1-L*0.32,0,-w],[x1-inn*0.5,0,-zc]],null,[0,1,0],th,{ribs:0}));
+  return {hz:w,hy:th*0.5};
+}},
+{n:"ARROWHEAD",minL:2.6,make(x0,x1,r,rr,R,P,out){
+  const L=x1-x0, w=r*rr(2.6,4.0), th=r*rr(0.62,0.9), inn=L*0.14, sw=L*rr(0.45,0.7);
+  out.push(TUB([x1,0,0],[x1-inn,0,0],r,r*1.06,{hideA:true}));
+  out.push(TUB([x0,0,0],[x0+inn,0,0],r,r*1.06,{hideB:true}));
+  out.push(PNL([[x1-inn*0.4,0,r*0.7],[x0+L*0.10,0,w],[x0+inn*0.2,0,w*0.92],
+                [x0+inn*0.2,0,-w*0.92],[x0+L*0.10,0,-w],[x1-inn*0.4,0,-r*0.7]],
+               null,[0,1,0],th,{ribs:0}));
+  if(P.detail>0.3)for(const sgn of [1,-1])
+    out.push(BOX([x0+L*0.26,0,sgn*w*0.62],[L*0.10,0,0],[0,th*0.62,0],[0,0,w*0.10],{det:{ribs:2}}));
+  return {hz:w,hy:th*0.5};
+}},
+{n:"DISC",minL:2.4,make(x0,x1,r,rr,R,P,out){
+  const L=x1-x0, xm=(x0+x1)*0.5, Rd=r*rr(2.0,2.9), h=Math.min(L*0.42,r*rr(1.0,1.5));
+  out.push(TUB([x1,0,0],[xm+L*0.16,0,0],r,r*1.1,{hideA:true}));
+  out.push(TUB([x0,0,0],[xm-L*0.16,0,0],r,r*1.1,{hideB:true}));
+  out.push(LTH([xm,0,0],[0,1,0],
+    [[-h,Rd*0.44],[-h*0.42,Rd*0.90],[0,Rd],[h*0.42,Rd*0.88],[h,Rd*0.42]],
+    {rings:[1,2,3],mer:Math.round(5+P.detail*4)},{ell:[1,rr(0.82,1.1)]}));
+  return {hz:Rd,hy:h};
+}},
+{n:"TRUSS",minL:3.0,make(x0,x1,r,rr,R,P,out){
+  const L=x1-x0, w=r*rr(0.62,0.9), bays=Math.max(3,Math.round(L/(r*1.5)));
+  const cor=[[w,w],[w,-w],[-w,-w],[-w,w]];
+  const at=(t,c)=>[x1-L*t,c[0],c[1]];
+  for(const c of cor) out.push(CAP(at(0,c),at(1,c),r*0.16));
+  for(let i=0;i<=bays;i++){
+    const t=i/bays;
+    for(let j=0;j<4;j++) out.push(CAP(at(t,cor[j]),at(t,cor[(j+1)%4]),r*0.12));
+    if(i<bays){const t2=(i+1)/bays;
+      for(let j=0;j<4;j++) out.push(CAP(at(t,cor[j]),at(t2,cor[(j+1)%4]),r*0.09));}
+  }
+  out.push(CAP([x1-L*0.03,w*0.55,w*0.75],[x0+L*0.03,w*0.55,w*0.75],r*0.19));
+  out.push(CAP([x1-L*0.03,-w*0.55,w*0.75],[x0+L*0.03,-w*0.55,w*0.75],r*0.19));
+  out.push(DSC([x1,0,0],[1,0,0],r,r*0.62));
+  out.push(DSC([x0,0,0],[1,0,0],r,r*0.62));
+  return {hz:w*1.5,hy:w*1.5};
+}},
+{n:"FACETED",minL:1.8,make(x0,x1,r,rr,R,P,out){
+  const L=x1-x0, rb=r*rr(1.15,1.5), inn=L*0.14, fc=R()<0.5?6:8;
+  out.push(TUB([x1,0,0],[x1-inn,0,0],r,rb*0.98,{hideA:true}));
+  out.push(TUB([x0,0,0],[x0+inn,0,0],r,rb*0.98,{hideB:true}));
+  out.push(LTH([(x0+x1)*0.5,0,0],[1,0,0],
+    [[-(L*0.5-inn),rb*rr(0.86,1.0)],[0,rb],[L*0.5-inn,rb*rr(0.86,1.0)]],
+    {rings:[0,1,2],mer:fc,merOff:0},{facets:fc}));
+  return {hz:rb,hy:rb};
+}},
+{n:"SPHERE HAB",minL:3.2,make(x0,x1,r,rr,R,P,out){
+  const L=x1-x0, xm=(x0+x1)*0.5, Rs=Math.min(L*0.46,r*rr(1.6,2.3));
+  out.push(TUB([x1,0,0],[xm+Rs*0.7,0,0],r,r*1.05,{hideA:true}));
+  out.push(TUB([x0,0,0],[xm-Rs*0.7,0,0],r,r*1.05,{hideB:true}));
+  out.push(SPH([xm,0,0],Rs,{det:{rings:[0.22,0.38,0.5,0.62,0.78]}}));
+  out.push(DSC([xm,0,0],[1,0,0],Rs*1.06,Rs*0.86));
+  if(P.detail>0.35)for(let i=0;i<4;i++){const a=i/4*Math.PI*2+0.4;
+    out.push(DSC([xm+Math.cos(a)*Rs*0.2,Math.sin(a)*Rs*0.86,Math.cos(a)*Rs*0.4],
+                 [0,Math.sin(a),Math.cos(a)],Rs*0.18,Rs*0.09));}
+  return {hz:Rs,hy:Rs};
+}},
+{n:"RIB CAGE",minL:3.0,make(x0,x1,r,rr,R,P,out){
+  const L=x1-x0, Rc=r*rr(1.25,1.7), n=Math.max(4,Math.round(L/(r*1.1)));
+  out.push(CAP([x1,0,0],[x0,0,0],r*rr(0.42,0.58),{hideA:true,hideB:true,
+    det:hullDet([0.3,0.7],[],[])}));
+  for(let i=0;i<=n;i++){
+    const t=i/n, rad=Rc*(0.82+0.18*Math.sin(t*Math.PI));
+    out.push(DSC([x1-L*t,0,0],[1,0,0],rad,rad*0.80));
+  }
+  for(let i=0;i<4;i++){const a=i/4*Math.PI*2+0.5;
+    out.push(CAP([x1-L*0.02,Math.cos(a)*Rc*0.86,Math.sin(a)*Rc*0.86],
+                 [x0+L*0.02,Math.cos(a)*Rc*0.86,Math.sin(a)*Rc*0.86],r*0.13));}
+  return {hz:Rc,hy:Rc};
+}},
+{n:"TANK RUN",minL:4.2,make(x0,x1,r,rr,R,P,out){
+  const L=x1-x0, n=Math.max(2,Math.min(4,Math.round(L/(r*2.1))));
+  out.push(CAP([x1,0,0],[x0,0,0],r*0.34,{hideA:true,hideB:true}));
+  const tr=Math.min(r*rr(1.15,1.5),L/(n*2.05));
+  for(let i=0;i<n;i++){
+    const cx=x1-L*(i+0.5)/n;
+    out.push(SPH([cx,0,0],tr,{det:{rings:[0.28,0.5,0.72]}}));
+    if(P.detail>0.4)out.push(DSC([cx,0,tr*0.86],[0,0,1],tr*0.22,tr*0.11));
+  }
+  return {hz:tr,hy:tr};
+}}
+];
+const JOINT=[
+{n:"FLANGE",make(x0,x1,r,rr,R,P,out,st){
+  const w=r*rr(1.05,1.25);
+  out.push(DSC([x1,0,0],[1,0,0],w,r*0.55));
+  out.push(DSC([x0,0,0],[1,0,0],w,r*0.55));
+  out.push(TUB([x1,0,0],[x0,0,0],r*0.94,r*0.94,{hideA:true,hideB:true,det:hullDet([0.5],[],[])}));
+}},
+{n:"COLLAR",make(x0,x1,r,rr,R,P,out,st){
+  const wz=r*rr(0.48,0.66);
+  out.push(TUB([x1,0,0],[x1-(x1-x0)*0.3,0,0],r,wz,{hideA:true}));
+  out.push(CAP([x1-(x1-x0)*0.3,0,0],[x0+(x1-x0)*0.3,0,0],wz,{det:hullDet([0.3,0.7],[],[])}));
+  out.push(TUB([x0+(x1-x0)*0.3,0,0],[x0,0,0],wz,r,{hideB:true}));
+  if(P.detail>0.35)for(let i=0;i<6;i++){const a=i/6*Math.PI*2;
+    out.push(CAP([x1-(x1-x0)*0.28,Math.cos(a)*wz*1.25,Math.sin(a)*wz*1.25],
+                 [x0+(x1-x0)*0.28,Math.cos(a)*wz*1.25,Math.sin(a)*wz*1.25],r*0.07));}
+}},
+{n:"OPEN STRUTS",make(x0,x1,r,rr,R,P,out,st){
+  out.push(DSC([x1,0,0],[1,0,0],r*1.02,r*0.6));
+  out.push(DSC([x0,0,0],[1,0,0],r*1.02,r*0.6));
+  for(let i=0;i<4;i++){const a=i/4*Math.PI*2+0.4;
+    out.push(CAP([x1,Math.cos(a)*r*0.78,Math.sin(a)*r*0.78],
+                 [x0,Math.cos(a)*r*0.78,Math.sin(a)*r*0.78],r*0.13));}
+  out.push(CAP([x1,0,0],[x0,0,0],r*0.22));
+}},
+{n:"SPREADER",make(x0,x1,r,rr,R,P,out,st){
+  const xm=(x0+x1)*0.5, w=r*rr(1.6,2.3);
+  out.push(TUB([x1,0,0],[xm+(x1-x0)*0.12,0,0],r,r*0.8,{hideA:true}));
+  out.push(TUB([x0,0,0],[xm-(x1-x0)*0.12,0,0],r,r*0.8,{hideB:true}));
+  out.push(BOX([xm,0,0],[(x1-x0)*0.12,0,0],[0,r*0.9,0],[0,0,w],{det:{ribs:3}}));
+}},
+{n:"GIMBAL",make(x0,x1,r,rr,R,P,out,st){
+  const xm=(x0+x1)*0.5;
+  out.push(TUB([x1,0,0],[xm+(x1-x0)*0.16,0,0],r,r*0.66,{hideA:true}));
+  out.push(TUB([x0,0,0],[xm-(x1-x0)*0.16,0,0],r,r*0.66,{hideB:true}));
+  out.push(SPH([xm,0,0],r*rr(0.72,0.88),{det:{rings:[0.3,0.5,0.7]}}));
+  for(const ax of [[0,1,0],[0,0,1]])
+    out.push(DSC([xm,0,0],ax,r*1.02,r*0.88));
+}},
+/* jogs the axis vertically — the spine stops being a straight line */
+{n:"OFFSET",step:(r,rr,R)=>[0,(R()<0.5?1:-1)*r*rr(1.0,2.1),0],
+ make(x0,x1,r,rr,R,P,out,st){
+  const d=(x1-x0)*0.26;
+  out.push(TUB([x1,0,0],[x1-d,0,0],r,r*0.78,{hideA:true}));
+  out.push(TUB([x0,st[1],st[2]],[x0+d,st[1],st[2]],r,r*0.78,{hideB:true}));
+  out.push(CAP([x1-d,0,0],[x0+d,st[1],st[2]],r*0.72,{det:hullDet([0.35,0.65],[],[])}));
+  if(P.detail>0.35)for(const sgn of [1,-1])
+    out.push(CAP([x1-d*0.5,sgn*r*0.6,0],[x0+d*0.5,st[1]+sgn*r*0.6,st[2]],r*0.13));
+}},
+/* splits the spine: the mirror pass turns everything aft of it into a pair */
+{n:"FORK",step:(r,rr,R)=>[0,0,r*rr(1.5,2.6)],
+ make(x0,x1,r,rr,R,P,out,st){
+  const d=(x1-x0)*0.3;
+  out.push(TUB([x1,0,0],[x1-d,0,0],r,r*0.9,{hideA:true}));
+  out.push(BOX([x1-d*1.2,0,0],[d*0.3,0,0],[0,r*0.8,0],[0,0,st[2]*0.9],{det:{ribs:2}}));
+  out.push(TUB([x0,st[1],st[2]],[x0+d,st[1],st[2]],r,r*0.8,{hideB:true}));
+  out.push(CAP([x1-d*1.3,st[1]*0.4,st[2]*0.45],[x0+d,st[1],st[2]],r*0.62));
+}}
+];
+function composeSpine(xTail,xNose,r,rr,R,P,out,lock,opts){
+  opts=opts||{};
+  const pickI=(k,n)=>(lock&&lock[k]!=null)?Math.min(lock[k],n-1):Math.floor(R()*n);
+  const nSec=(lock&&lock.nsec!=null)?2+Math.min(lock.nsec,2)
+            :(R()<0.4?2:R()<0.75?3:4);
+  const idx=[];
+  for(let i=0;i<nSec;i++)
+    idx.push(i===0?pickI("fore",SECT.length)
+      :i===nSec-1?pickI("aft",SECT.length):Math.floor(R()*SECT.length));
+
+  /* a radial ship has to stay a surface of revolution, so stepping joints are out */
+  const jOK=[];
+  for(let i=0;i<JOINT.length;i++) if(!opts.noStep||!JOINT[i].step) jOK.push(i);
+  const jIdx=[];
+  for(let i=0;i<nSec-1;i++){
+    let ji=pickI("joint",JOINT.length);
+    if(jOK.indexOf(ji)<0) ji=jOK[Math.floor(R()*jOK.length)];
+    jIdx.push(ji);
+  }
+
+  const jl=Math.max(r*0.95,Math.min((xNose-xTail)*0.13,r*rr(1.0,1.8)));
+  const mins=idx.map(i=>(SECT[i].minL||1.4)*r);
+  const minSum=mins.reduce((a,b)=>a+b,0);
+  const need=minSum+jl*(nSec-1);
+  /* the hull lengthens rather than letting a section shrink below its minimum */
+  let total=Math.max(xNose-xTail,need);
+  xTail=xNose-total;
+  const surplus=total-jl*(nSec-1)-minSum;
+  const w=idx.map(()=>rr(0.7,1.3)), wsum=w.reduce((a,b)=>a+b,0);
+  const lens=mins.map((m,k)=>m+surplus*w[k]/wsum);
+
+  let x=xNose, off=[0,0,0];
+  const secs=[],joints=[];
+  for(let i=0;i<nSec;i++){
+    const x1=x, x0=x-lens[i];
+    const si=idx[i], tmp=[];
+    const info=SECT[si].make(x0,x1,r,rr,R,P,tmp);
+    /* a structural core runs the whole section: the hull can never read as severed */
+    tmp.push(CAP([x1,0,0],[x0,0,0],r*0.30,{hideA:true,hideB:true}));
+    for(const q of tmp)out.push(xlate(q,off));
+    secs.push({i:si,n:SECT[si].n,x0,x1,off:off.slice(),info});
+    x=x0;
+    if(i<nSec-1){
+      const ji=jIdx[i], J=JOINT[ji];
+      const step=J.step?J.step(r,rr,R):[0,0,0];
+      const tmp2=[];
+      J.make(x-jl,x,r,rr,R,P,tmp2,step);
+      tmp2.push(CAP([x,0,0],[x-jl,step[1],step[2]],r*0.26,{hideA:true,hideB:true}));
+      for(const q of tmp2)out.push(xlate(q,off));
+      joints.push({i:ji,n:J.n});
+      off=[off[0],off[1]+step[1],off[2]+step[2]];
+      x-=jl;
+    }
+  }
+  let wide=secs[0];
+  for(const sc of secs) if(sc.info.hz>wide.info.hz) wide=sc;
+  const last=secs[secs.length-1];
+  return {
+    fore:secs[0],aft:last,joint:joints[0]||{i:0,n:"—"},
+    secs,joints,nSec,endOff:off,xTail,
+    jx:(secs[0].x0+(secs[1]?secs[1].x1:secs[0].x0))*0.5,
+    wingX:(wide.x0+wide.x1)*0.5, wingY:wide.off[1]-wide.info.hy*0.3,
+    wingZ:wide.off[2]+wide.info.hz*0.92,
+    tailX:last.x0+(last.x1-last.x0)*rr(0.18,0.4), tailY:last.off[1]+last.info.hy*0.86,
+    gearX:last.x0+(last.x1-last.x0)*0.55, gearY:last.off[1]-last.info.hy*0.95,
+    gearZ:last.info.hz};
+}
+
+/* ===================== multi-hull =====================
+   The old dual hull was one shape: a saucer and an engineering hull, welded
+   together for good. This is the general case. Every mass is its own section
+   chain, so a truss can fly beside a sphere hab beside an ogive and none of
+   them needs to know about the others; and the joint library that mates
+   sections along a spine does the mating between masses too, ridden onto the
+   link by xform. A mass placed off the centreline comes back from the mirror
+   pass as a pair, which is how three and four masses stay symmetrical about
+   the keel without any of them being authored twice. */
+function linkHulls(A,B,rr,R,P,out,lock){
+  /* connect axis to axis, not surface to surface: the ends bury themselves in
+     both masses, so a link can never read as floating however they are sized */
+  const lo=Math.max(A.x0,B.x0), hi=Math.min(A.x1,B.x1);
+  let xa,xb;
+  if(hi>lo+1e-6){xa=xb=lo+(hi-lo)*rr(0.30,0.70);}
+  else if(A.x0>B.x1){xa=A.x0+(A.x1-A.x0)*0.20;xb=B.x1-(B.x1-B.x0)*0.20;}
+  else{xa=A.x1-(A.x1-A.x0)*0.20;xb=B.x0+(B.x1-B.x0)*0.20;}
+  const pa=[xa,A.y,A.z], pb=[xb,B.y,B.z];
+  const d=V.sub(pb,pa), L=V.len(d);
+  if(L<1e-6)return null;
+  const ex=V.mul(d,1/L);
+  const up=Math.abs(ex[1])>0.94?[0,0,1]:[0,1,0];
+  const ez=V.norm(V.cross(ex,up)), ey=V.cross(ez,ex);
+  let cr=Math.min(A.r,B.r)*rr(0.46,0.72);
+  if(cr<L*0.11)cr=L*0.11;                    /* never spindly over a long reach */
+  const ji=(lock&&lock.joint!=null)?Math.min(lock.joint,JOINT.length-1)
+                                   :Math.floor(R()*JOINT.length);
+  const tmp=[];
+  JOINT[ji].make(0,L,cr,rr,R,P,tmp,[0,0,0]);
+  tmp.push(CAP([L,0,0],[0,0,0],cr*0.34,{hideA:true,hideB:true}));
+  for(const q of tmp)out.push(xform(q,pa,ex,ey,ez));
+  return {i:ji,n:JOINT[ji].n};
+}
+/* Hull count is its own axis, not a property of any one chassis. Whatever the
+   topology builds becomes the lead mass, and 1-3 further masses berth alongside
+   it — so a lattice rig, a saucer or a plain keel can each be the front half of
+   a two-, three- or four-hull ship. A berth on the centreline is one mass; a
+   berth off it comes back from the mirror as two, so the plans that add up are
+   1+1, 1+2 and 1+1+2. */
+function leadExtent(parts){
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,hz=0;
+  for(const p of parts)for(const [q,r] of partExtents(p)){
+    x0=Math.min(x0,q[0]-r);x1=Math.max(x1,q[0]+r);
+    y0=Math.min(y0,q[1]-r);y1=Math.max(y1,q[1]+r);
+    hz=Math.max(hz,Math.abs(q[2])+r);
+  }
+  return {x0,x1,y0,y1,hz};
+}
+function addHulls(nH,lead,sr,R,rr,P,out,lock,opts){
+  if(nH<2)return null;
+  const side=R()<0.6?-1:1;
+  const plan=nH===2?[{dy:side,pair:false}]
+            :nH===3?[{dy:rr(-0.4,0.4),pair:true}]
+                   :[{dy:side,pair:false},{dy:rr(-0.4,0.4),pair:true}];
+  const L=Math.max(lead.x1-lead.x0,sr*4);
+  let low=null;
+  for(const b of plan){
+    const r=sr*rr(0.55,0.85), tmp=[];
+    const xN=lead.x1-L*rr(0,0.28);
+    const sp=composeSpine(xN-L*rr(0.55,0.90),xN,r,rr,R,P,tmp,lock,opts);
+    let hy=r,hz=r;
+    for(const q of sp.secs){
+      hy=Math.max(hy,Math.abs(q.off[1])+q.info.hy);
+      hz=Math.max(hz,Math.abs(q.off[2])+q.info.hz);
+    }
+    /* berth off the lead's real extents, so every link is visible daylight */
+    const gap=sr*rr(0.7,1.8);
+    let y=0,z=0;
+    if(b.pair){z=lead.hz+hz+gap;y=b.dy*sr*1.4;}
+    else y=b.dy>0?lead.y1+hy+gap:lead.y0-hy-gap;
+    for(const q of tmp)out.push(xlate(q,[0,y,z]));
+    const h={sp,r,y,z,hy,x0:sp.xTail,x1:xN};
+    linkHulls({x0:lead.x0,x1:lead.x1,y:(lead.y0+lead.y1)*0.5,z:0,r:sr},h,rr,R,P,out,lock);
+    if(!low||h.y-h.hy<low.y-low.hy)low=h;
+  }
+  /* if a mass now hangs below the lead, the gear belongs on it, not on thin air */
+  if(low&&low.y-low.hy<lead.y0)
+    return {gear:FR([low.sp.gearX,low.y+low.sp.gearY,low.z],[0,-1,0],[1,0,0],[0,0,1],
+                    {x:sr*2.0,y:L*0.28,z:low.sp.gearZ*1.1})};
+  return null;
+}
+
+const HULLN=[{n:"SINGLE"},{n:"TWIN"},{n:"TRIPLE"},{n:"QUAD"}];
+const SYM=[{n:"BILATERAL",k:2},{n:"RADIAL-3",k:3},{n:"RADIAL-4",k:4},{n:"RADIAL-6",k:6}];
+const TOPO=[
+/* ---------------- 1. keel: one tube, everything bolted to it ---------------- */
+{n:"KEEL",role:["ALV","ATMOSPHERIC LANDING VEHICLE"],spine:true,axial:true,
+  make(R,rr,P,out,lock,opts){
+  const sr=1.8+P.fuse*1.05, L0=(13+P.fuse*15)*rr(0.92,1.12);
+  const nose=L0*0.5;
+  const sp=composeSpine(-L0*0.5,nose,sr,rr,R,P,out,lock,opts);
+  const tail=sp.xTail, L=nose-tail;
+  if(P.detail>0.45)
+    out.push(BOX([sp.jx,sr*0.98,0],[L*0.06,0,0],[0,sr*0.12,0],[0,0,sr*0.44],{det:{ribs:3}}));
+  return {sr,spine:sp,sockets:{
+    cockpit:FR([nose,0,0],[1,0,0],[0,1,0],[0,0,1],{x:L*0.34,y:sr*2.4,z:sr*2.4}),
+    wing:FR([sp.wingX,sp.wingY,sp.wingZ],[0,0,1],[0,1,0],[1,0,0],{x:L*0.42,y:sr*1.6,z:L*0.30}),
+    tail:FR([sp.tailX,sp.tailY,sp.endOff[2]],[0,1,0],[1,0,0],[0,0,1],{x:L*0.24,y:L*0.22,z:L*0.20}),
+    booster:FR([tail,sp.endOff[1],sp.endOff[2]],[-1,0,0],[0,1,0],[0,0,1],
+               {x:L*0.34,y:sr*2.2,z:sr*2.2}),
+    gear:FR([sp.gearX,sp.gearY,sp.endOff[2]*0.5],[0,-1,0],[1,0,0],[0,0,1],
+            {x:sr*2.0,y:L*0.30,z:sp.gearZ*1.1})
+  }};
+}},
+
+/* ---- 3. saucer: one lifting disc, forward prongs, cockpit off to one side ---- */
+{n:"SAUCER",role:["LFR","LIGHT FREIGHTER"],make(R,rr,P,out){
+  const Rp=6.5+P.fuse*4.5, ph=Rp*rr(0.24,0.34), sr=Rp*0.30;
+  const ez=rr(0.86,1.0), ex=rr(0.94,1.18);
+  out.push(LTH([0,0,0],[0,1,0],
+    [[-ph,Rp*0.46],[-ph*0.42,Rp*0.90],[0,Rp],[ph*0.46,Rp*0.88],[ph,Rp*0.44]],
+    {rings:[1,2,3],mer:Math.round(6+P.detail*5)},{ell:[ez,ex]}));
+  out.push(LTH([0,ph*0.98,0],[0,1,0],
+    [[0,Rp*0.34],[Rp*0.13,Rp*0.24],[Rp*0.19,Rp*0.10]],{rings:[1]},{ell:[ez,ex]}));
+  out.push(LTH([0,-ph*0.98,0],[0,1,0],
+    [[0,Rp*0.28],[-Rp*0.10,Rp*0.20],[-Rp*0.14,Rp*0.08]],{rings:[1]},{ell:[ez,ex]}));
+
+  /* forward prongs, split about the centreline */
+  const mz=Rp*rr(0.28,0.42), mL=Rp*rr(0.5,0.85);
+  out.push(CAP([Rp*ex*0.86+mL,0,mz],[Rp*ex*0.52,0,mz],ph*rr(0.44,0.62),
+    {hideB:true,det:hullDet([0.3,0.6],[],[])}));
+  out.push(TUB([Rp*ex*0.86+mL,0,mz],[Rp*ex*0.86+mL*1.3,0,mz],ph*0.44,ph*0.20));
+
+  /* cockpit boom to starboard — the one deliberate break in symmetry */
+  const bz=Rp*rr(0.52,0.70), bx=Rp*rr(0.18,0.40);
+  out.push(CAP([bx,0,bz*0.8],[bx,0,bz+Rp*0.34],ph*rr(0.34,0.46),{solo:true,hideA:true}));
+
+  /* engine strip across the trailing edge */
+  out.push(BOX([-Rp*ex*0.80,0,0],[Rp*0.10,0,0],[0,ph*0.52,0],[0,0,Rp*0.62],{det:{ribs:5}}));
+  return {sr,sockets:{
+    cockpit:FR([bx+ph*0.2,0,bz+Rp*0.34],[1,0,0],[0,1,0],[0,0,1],
+               {x:Rp*0.55,y:ph*1.8,z:Rp*0.45},true),
+    wing:FR([-Rp*0.2,0,Rp*ez*0.92],[0,0,1],[0,1,0],[1,0,0],{x:Rp*0.5,y:ph*1.4,z:Rp*0.7}),
+    tail:FR([-Rp*0.3,ph*0.9,0],[0,1,0],[1,0,0],[0,0,1],{x:Rp*0.45,y:Rp*0.45,z:Rp*0.45}),
+    booster:FR([-Rp*ex*0.88,0,0],[-1,0,0],[0,1,0],[0,0,1],{x:Rp*0.42,y:ph*1.6,z:Rp*0.62}),
+    gear:FR([0,-ph*0.95,0],[0,-1,0],[1,0,0],[0,0,1],{x:Rp*0.5,y:Rp*0.9,z:Rp*0.8})
+  }};
+}},
+
+/* ------------- 4. catamaran: twin hulls, one bridge, paired sterns ------------- */
+{n:"CATAMARAN",role:["TND","ORBITAL TENDER"],spine:true,make(R,rr,P,out,lock,opts){
+  const sr=1.5+P.fuse*0.85, L=(11+P.fuse*12)*rr(0.9,1.1), off=sr*rr(2.6,3.8);
+  const tmp=[], sp=composeSpine(-L*0.5,L*0.5,sr,rr,R,P,tmp,lock,opts);
+  for(const q of tmp) out.push(xlate(q,[0,0,off]));
+  const bx=L*rr(0.02,0.16), bw=L*rr(0.13,0.20);
+  out.push(BOX([bx,sr*0.30,0],[bw,0,0],[0,sr*0.62,0],[0,0,off*0.94],{det:{ribs:4}}));
+  for(const cx of [bx+bw*1.6,bx-bw*1.9])
+    out.push(TUB([cx,0,off*0.9],[cx,0,-off*0.9],sr*0.26,sr*0.26,{hideA:true,hideB:true}));
+  return {sr,spine:sp,sockets:{
+    cockpit:FR([bx+bw,sr*0.30,0],[1,0,0],[0,1,0],[0,0,1],{x:L*0.30,y:sr*2.0,z:off*0.9}),
+    wing:FR([sp.wingX,0,off+sp.wingZ*0.9],[0,0,1],[0,1,0],[1,0,0],{x:L*0.34,y:sr*1.4,z:L*0.28}),
+    tail:FR([bx-bw*0.6,sr*0.95,0],[0,1,0],[1,0,0],[0,0,1],{x:L*0.24,y:L*0.22,z:off*0.9}),
+    booster:FR([-L*0.5,0,off],[-1,0,0],[0,1,0],[0,0,1],{x:L*0.34,y:sr*2.0,z:sr*2.0}),
+    gear:FR([bx,-sr*0.4,0],[0,-1,0],[1,0,0],[0,0,1],{x:sr*2.4,y:L*0.28,z:off*0.9})
+  }};
+}},
+
+/* ---- 6. trimaran: engines are full-length bodies flanking the hull, not a stern ---- */
+{n:"TRIMARAN",role:["PBT","PATROL TENDER"],spine:true,make(R,rr,P,out,lock,opts){
+  const sr=1.5+P.fuse*0.85, L=(12+P.fuse*13)*rr(0.92,1.1);
+  const orr=sr*rr(0.62,0.88), off=sr*rr(2.4,3.4);
+  const sp=composeSpine(-L*0.5,L*0.5,sr,rr,R,P,out,lock,opts);
+  /* one outrigger, running most of the hull's length; the mirror pass makes the pair */
+  const oL=L*rr(0.74,0.96), ox=L*rr(-0.08,0.10);
+  out.push(CAP([ox+oL*0.5,0,off],[ox-oL*0.5,0,off],orr,{hideB:true,
+    det:hullDet([0.16,0.34,0.52,0.70,0.88],[0.5,3.9],[])}));
+  out.push(TUB([ox+oL*0.5,0,off],[ox+oL*0.5+orr*0.8,0,off],orr*0.92,orr*0.38,
+    {det:hullDet([0.5],[],[])}));
+  for(const px of [ox+oL*rr(0.22,0.34),ox-oL*rr(0.16,0.30)])
+    out.push(PNL([[px+L*0.045,-sr*0.12,sr*0.55],[px+L*0.045,-sr*0.12,off-orr*0.5],
+                  [px-L*0.045,-sr*0.12,off-orr*0.5],[px-L*0.045,-sr*0.12,sr*0.55]],null,
+                 [0,1,0],sr*rr(0.34,0.5),{ribs:2}));
+  return {sr,spine:sp,sockets:{
+    cockpit:FR([L*0.5,0,0],[1,0,0],[0,1,0],[0,0,1],{x:L*0.34,y:sr*2.2,z:sr*2.2}),
+    wing:FR([ox,0,off+orr*0.82],[0,0,1],[0,1,0],[1,0,0],{x:L*0.30,y:orr*1.6,z:L*0.26}),
+    tail:FR([sp.tailX,sp.tailY,0],[0,1,0],[1,0,0],[0,0,1],{x:L*0.24,y:L*0.22,z:L*0.20}),
+    booster:FR([ox-oL*0.5,0,off],[-1,0,0],[0,1,0],[0,0,1],{x:L*0.26,y:orr*2.1,z:orr*2.1}),
+    gear:FR([L*0.02,-sr*0.9,0],[0,-1,0],[1,0,0],[0,0,1],{x:sr*2.2,y:L*0.3,z:off*0.85})
+  }};
+}},
+
+/* ---- 7. edge-on: the hull's long axis is not the flight axis. It stands on its
+   stern to land and flies flat-face-forward, so thrust leaves through the narrow
+   trailing edge and the crew module is gimballed to stay level in both attitudes. ---- */
+{n:"EDGE-ON",role:["PTL","EDGE-ON PATROL CRAFT"],note:"ATTITUDE 90°",make(R,rr,P,out){
+  const Hh=(10+P.fuse*10)*rr(0.9,1.1);      /* long axis — vertical in flight */
+  const Lx=Hh*rr(0.44,0.60);                /* fore-aft depth */
+  const th=Hh*rr(0.15,0.22);                /* beam */
+  const sr=th*0.5;
+  const spade=[[Lx*0.50,Hh*0.06],[Lx*0.28,Hh*0.44],[-Lx*0.20,Hh*0.50],[-Lx*0.50,Hh*0.18],
+               [-Lx*0.46,-Hh*0.34],[-Lx*0.06,-Hh*0.50],[Lx*0.38,-Hh*0.28]];
+  out.push(PNL(spade.map(q=>[q[0],q[1],0]),null,[0,0,1],th,
+    {ribs:Math.round(3+P.detail*3)}));
+  /* raised flank superstructure — mirrored to both faces */
+  const sp2=spade.map(q=>[q[0]*0.68,q[1]*0.66,0]);
+  out.push(PNL(sp2.map(q=>[q[0],q[1],th*0.5]),null,[0,0,1],th*rr(0.20,0.34),{ribs:2}));
+  /* gimbal ring the crew module turns in */
+  const cy=Hh*rr(0.24,0.34);
+  out.push(DSC([Lx*0.30,cy,0],[1,0,0],th*rr(0.62,0.80),th*0.34));
+  if(P.detail>0.35){
+    out.push(BOX([-Lx*0.24,Hh*0.40,0],[Lx*0.09,0,0],[0,Hh*0.04,0],[0,0,th*0.62],{det:{ribs:3}}));
+    out.push(TUB([Lx*0.10,-Hh*0.46,0],[Lx*0.10,-Hh*0.56,0],th*0.14,th*0.20));
+  }
+  return {sr,sockets:{
+    cockpit:FR([Lx*0.32,cy,0],[1,0,0],[0,1,0],[0,0,1],{x:Lx*0.55,y:th*1.9,z:th*1.6}),
+    wing:FR([-Lx*0.06,-Hh*0.06,th*0.60],[0,0,1],[0,1,0],[1,0,0],{x:Hh*0.34,y:Hh*0.34,z:Lx*0.6}),
+    tail:FR([-Lx*0.28,Hh*0.48,0],[0,1,0],[1,0,0],[0,0,1],{x:Hh*0.26,y:Lx*0.5,z:th*1.6}),
+    booster:FR([-Lx*0.48,-Hh*0.02,0],[-1,0,0],[0,1,0],[0,0,1],{x:Lx*0.42,y:Hh*0.42,z:th*1.5}),
+    /* the drop and the foot spread are the beam's business, not the height's:
+       scaling them off Hh put the feet out past the sloping bottom edge and
+       asked for stilts to reach back up to it */
+    gear:FR([-Lx*0.04,-Hh*0.48,0],[0,-1,0],[1,0,0],[0,0,1],{x:th*1.8,y:Lx*0.30,z:th*1.5})
+  }};
+}},
+
+/* ---- 8. lattice: no pressure hull at all — an open frame with modules clipped in ---- */
+{n:"LATTICE",role:["CRV","CONSTRUCTION RIG"],spine:true,make(R,rr,P,out,lock,opts){
+  const sr=1.5+P.fuse*0.8, L=(15+P.fuse*15)*rr(0.9,1.1);
+  const w=sr*rr(1.8,2.6), h=sr*rr(1.4,2.1), bays=Math.max(3,Math.round(L/(sr*2.6)));
+  const cor=[[h,w],[h,-w],[-h,-w],[-h,w]];
+  const at=(t,c)=>[L*0.5-L*t,c[0],c[1]];
+  for(const c of cor) out.push(CAP(at(0,c),at(1,c),sr*0.22));
+  for(let i=0;i<=bays;i++){
+    const t=i/bays;
+    for(let j=0;j<4;j++) out.push(CAP(at(t,cor[j]),at(t,cor[(j+1)%4]),sr*0.17));
+    if(i<bays){const t2=(i+1)/bays;
+      for(let j=0;j<4;j++) out.push(CAP(at(t,cor[j]),at(t2,cor[(j+1)%4]),sr*0.12));}
+  }
+  /* payload rides inside the frame instead of being part of it */
+  const pr=Math.min(h,w)*0.62;
+  const sp=composeSpine(-L*0.40,L*0.40,pr,rr,R,P,out,lock,opts);
+  out.push(DSC([L*0.5,0,0],[1,0,0],Math.min(h,w)*1.05,sr*0.5));
+  return {sr,spine:sp,sockets:{
+    cockpit:FR([L*0.5,0,0],[1,0,0],[0,1,0],[0,0,1],
+               {x:L*0.26,y:h*1.5,z:w*1.5},false,Math.min(h,w)*0.8),
+    wing:FR([L*rr(-0.1,0.1),0,w],[0,0,1],[0,1,0],[1,0,0],
+            {x:L*0.30,y:h*1.2,z:L*0.24},false,sr*0.5),
+    tail:FR([-L*rr(0.22,0.36),h,0],[0,1,0],[1,0,0],[0,0,1],
+            {x:L*0.2,y:L*0.18,z:w*1.2},false,sr*0.5),
+    booster:FR([sp.xTail,0,0],[-1,0,0],[0,1,0],[0,0,1],
+               {x:L*0.28,y:h*1.6,z:w*1.6},false,pr),
+    gear:FR([L*0.02,-h,0],[0,-1,0],[1,0,0],[0,0,1],
+            {x:h*1.6,y:L*0.28,z:w*1.2},false,sr*0.6)
+  }};
+}},
+
+{n:"SPINAL",role:["SMV","SPINAL MOUNT VESSEL"],spine:true,make(R,rr,P,out,lock,opts){
+  const sr=1.6+P.fuse*0.9, L=(16+P.fuse*16)*rr(0.9,1.1), br=sr*rr(1.9,2.6);
+  out.push(TUB([L*0.5,0,0],[L*0.34,0,0],br*0.72,br,{det:hullDet([0.5],[],[])}));
+  out.push(DSC([L*0.5,0,0],[1,0,0],br*0.78,br*0.52));
+  for(let i=0;i<3;i++) out.push(DSC([L*(0.3-i*0.16),0,0],[1,0,0],br*1.1,br*0.94));
+  const sp=composeSpine(-L*0.36,L*0.34,br,rr,R,P,out,lock,opts);
+  const tail=sp.xTail;
+  out.push(TUB([tail,0,0],[tail-br*0.5,0,0],br,br*0.7,{hideB:true}));
+  /* the crew section is a small mass hung off the big one */
+  const cy=br*rr(0.95,1.25), cx=tail*rr(0.2,0.5);
+  out.push(CAP([cx+L*0.10,cy,0],[cx-L*0.10,cy,0],sr*0.9,
+    {det:hullDet([0.3,0.6],[0.5,3.9],[])}));
+  out.push(CAP([cx,cy*0.45,0],[cx,0,0],sr*0.5,{hideB:true}));
+  return {sr,spine:sp,sockets:{
+    cockpit:FR([cx+L*0.10,cy,0],[1,0,0],[0,1,0],[0,0,1],
+               {x:L*0.2,y:sr*2.0,z:sr*2.0},false,sr*0.9),
+    wing:FR([sp.wingX,0,sp.wingZ],[0,0,1],[0,1,0],[1,0,0],
+            {x:L*0.32,y:br*1.2,z:L*0.24},false,br*0.5),
+    tail:FR([sp.tailX,sp.tailY,0],[0,1,0],[1,0,0],[0,0,1],
+            {x:L*0.2,y:L*0.18,z:L*0.18},false,br*0.5),
+    booster:FR([tail-br*0.5,0,0],[-1,0,0],[0,1,0],[0,0,1],
+               {x:L*0.26,y:br*1.5,z:br*1.5},false,br*0.7),
+    gear:FR([sp.gearX,sp.gearY,0],[0,-1,0],[1,0,0],[0,0,1],
+            {x:br*1.5,y:L*0.28,z:br*1.3},false,br*0.45)
+  }};
+}},
+
+/* ---- 10. stack: plates on a vertical column, flying edge-on ---- */
+{n:"STACK",role:["HSV","HEAVY SURVEY VESSEL"],make(R,rr,P,out){
+  const n=3+Math.round(R()*1.4), Rd=(5+P.fuse*3.4)*rr(0.9,1.1);
+  const gap=Rd*rr(0.32,0.48), ex=rr(0.9,1.25), col=Rd*0.17, sr=col;
+  const top=(n-1)*gap*0.5;
+  out.push(CAP([0,top+gap*0.6,0],[0,-top-gap*0.6,0],col,{hideA:true,hideB:true,
+    det:hullDet([0.3,0.5,0.7],[],[])}));
+  let wideR=0, wideY=0;
+  for(let i=0;i<n;i++){
+    const y=top-i*gap, k=1-Math.abs(i-(n-1)/2)/n*0.5, rd=Rd*k, th=gap*rr(0.26,0.4);
+    if(rd>wideR){wideR=rd;wideY=y;}
+    out.push(LTH([0,y,0],[0,1,0],
+      [[-th,rd*0.5],[-th*0.4,rd*0.92],[0,rd],[th*0.4,rd*0.9],[th,rd*0.48]],
+      {rings:[1,2,3],mer:Math.round(5+P.detail*4)},{ell:[1,ex]}));
+  }
+  for(let i=0;i<4;i++){
+    const a=i/4*Math.PI*2+0.4;
+    out.push(CAP([Math.cos(a)*Rd*0.62,top,Math.sin(a)*Rd*0.62],
+                 [Math.cos(a)*Rd*0.62,-top,Math.sin(a)*Rd*0.62],col*0.9));
+  }
+  /* a bridge pod forward and an engine pod aft, both spanning the stack, so the
+     cockpit and the boosters continue an existing body instead of sitting on a rim */
+  const pr=gap*rr(0.62,0.82), py=wideY;
+  out.push(CAP([wideR*ex*0.55,py,0],[wideR*ex*1.02,py,0],pr,{hideB:true,
+    det:hullDet([0.4,0.75],[0.5,3.9],[])}));
+  out.push(CAP([-wideR*ex*0.55,py-gap*0.35,0],[-wideR*ex*1.0,py-gap*0.35,0],pr*1.1,
+    {hideB:true,det:hullDet([0.35,0.7],[],[])}));
+  return {sr,sockets:{
+    cockpit:FR([wideR*ex*1.02,py,0],[1,0,0],[0,1,0],[0,0,1],
+               {x:Rd*0.55,y:pr*2.2,z:pr*2.2},false,pr),
+    wing:FR([0,wideY,wideR*0.96],[0,0,1],[0,1,0],[1,0,0],
+            {x:Rd*0.70,y:gap*1.1,z:Rd*0.8},false,gap*0.34),
+    tail:FR([0,top+gap*0.6,0],[0,1,0],[1,0,0],[0,0,1],
+            {x:Rd*0.5,y:Rd*0.45,z:Rd*0.45},false,col),
+    booster:FR([-wideR*ex*1.0,py-gap*0.35,0],[-1,0,0],[0,1,0],[0,0,1],
+               {x:Rd*0.5,y:pr*2.0,z:pr*2.0},false,pr*1.1),
+    gear:FR([0,-top-gap*0.6,0],[0,-1,0],[1,0,0],[0,0,1],
+            {x:Rd*0.55,y:Rd*0.7,z:Rd*0.7},false,col)
+  }};
+}},
+
+/* ---- 11. delta: the whole ship is one lifting planform ---- */
+{n:"DELTA",role:["ASV","AEROSPACE VEHICLE"],make(R,rr,P,out){
+  const L=(15+P.fuse*13)*rr(0.9,1.1), W=L*rr(0.46,0.64), H=L*rr(0.12,0.18);
+  const sp=H*rr(0.30,0.38), sr=sp;
+  const plan=[[L*0.5,0],[L*0.06,W*0.62],[-L*0.42,W],[-L*0.5,W*0.82],
+              [-L*0.5,-W*0.82],[-L*0.42,-W],[L*0.06,-W*0.62]];
+  const top=plan.map(q=>[q[0]*0.9,q[1]*0.78]);
+  out.push(PNL(top.map(q=>[q[0],0,q[1]]),plan.map(q=>[q[0],0,q[1]]),[0,1,0],H,{ribs:0}));
+  out.push(CAP([L*0.36,H*0.36,0],[-L*0.30,H*0.40,0],sp,
+    {det:hullDet([0.25,0.5,0.75],[0.5,3.9],[])}));
+  if(P.detail>0.3)for(const sgn of [1,-1])
+    out.push(BOX([-L*0.30,H*0.12,sgn*W*0.5],[L*0.12,0,0],[0,H*0.40,0],[0,0,W*0.11],{det:{ribs:3}}));
+  out.push(TUB([-L*0.5,H*0.06,0],[-L*0.54,H*0.06,0],H*0.58,H*0.52,{hideA:true}));
+  return {sr,sockets:{
+    cockpit:FR([L*0.46,H*0.38,0],[1,0,0],[0,1,0],[0,0,1],
+               {x:L*0.20,y:sp*2.4,z:sp*2.4},false,sp),
+    wing:FR([-L*0.30,0,W*0.94],[0,0,1],[0,1,0],[1,0,0],
+            {x:L*0.17,y:H*0.9,z:L*0.20},false,H*0.42),
+    tail:FR([-L*0.34,H*0.62,0],[0,1,0],[1,0,0],[0,0,1],
+            {x:L*0.18,y:L*0.16,z:W*0.55},false,sp*0.9),
+    booster:FR([-L*0.54,H*0.06,0],[-1,0,0],[0,1,0],[0,0,1],
+               {x:L*0.18,y:H*1.2,z:W*0.45},false,H*0.52),
+    gear:FR([0,-H*0.5,0],[0,-1,0],[1,0,0],[0,0,1],
+            {x:H*1.6,y:L*0.26,z:W*0.55},false,H*0.45)
+  }};
+}},
+
+{n:"ASYMMETRIC",role:["ITV","INDEPENDENT TRADER"],spine:true,make(R,rr,P,out,lock,opts){
+  const sr=1.7+P.fuse*1.0, L=(13+P.fuse*13)*rr(0.9,1.1);
+  const sp=composeSpine(-L*0.5,L*0.5,sr,rr,R,P,out,lock,opts);
+  const tail=sp.xTail;
+  /* a big cargo mass on one side only */
+  const pz=sr*rr(2.0,2.8), pr=sr*rr(0.9,1.3), px=L*rr(-0.16,0.10);
+  out.push(CAP([px+L*0.20,0,pz],[px-L*0.20,0,pz],pr,{solo:true,
+    det:hullDet([0.2,0.45,0.7],[0.5,3.9],[])}));
+  for(const dx of [px+L*0.13,px-L*0.11])
+    out.push(CAP([dx,0,sr*0.7],[dx,0,pz-pr*0.7],sr*0.24,{solo:true}));
+  /* and a counterweight boom the other way */
+  const bz=-sr*rr(2.2,3.4);
+  out.push(CAP([px+L*0.03,0,-sr*0.7],[px+L*0.03,0,bz],sr*0.2,{solo:true}));
+  out.push(SPH([px+L*0.03,0,bz],sr*rr(0.42,0.62),{solo:true,det:{rings:[0.3,0.5,0.7]}}));
+  return {sr,spine:sp,sockets:{
+    cockpit:FR([L*0.5,0,0],[1,0,0],[0,1,0],[0,0,1],{x:L*0.28,y:sr*2.2,z:sr*2.2},false,sr),
+    wing:FR([px,-pr*0.2,pz+pr*0.85],[0,0,1],[0,1,0],[1,0,0],
+            {x:L*0.28,y:pr*1.4,z:L*0.22},true,pr*0.7),
+    tail:FR([sp.tailX,sp.tailY,0],[0,1,0],[1,0,0],[0,0,1],
+            {x:L*0.22,y:L*0.20,z:L*0.18},false,sr*0.7),
+    booster:FR([tail,0,0],[-1,0,0],[0,1,0],[0,0,1],{x:L*0.28,y:sr*2.2,z:sr*2.2},false,sr),
+    gear:FR([sp.gearX,sp.gearY,0],[0,-1,0],[1,0,0],[0,0,1],
+            {x:sr*1.9,y:L*0.28,z:sr*1.5},false,sr*0.6)
+  }};
+}},
+
+/* --------------- 5. ring: an annulus around a spine, no keel at all --------------- */
+{n:"RING",role:["SRV","SURVEY RING"],make(R,rr,P,out){
+  const sr=1.5+P.fuse*0.8, Rr=(6+P.fuse*4)*rr(0.9,1.1), tr=Rr*rr(0.08,0.13);
+  const L=Rr*rr(0.95,1.4), rx=-L*rr(0.0,0.16);
+  out.push(CAP([L*0.5,0,0],[-L*0.5,0,0],sr,{hideA:true,hideB:true,
+    det:hullDet([0.25,0.5,0.75],[0.5,3.9],[])}));
+  const seg=20;
+  for(let i=0;i<seg;i++){
+    const a0=i/seg*Math.PI*2,a1=(i+1)/seg*Math.PI*2;
+    out.push(CAP([rx+Math.cos(a0)*Rr,0,Math.sin(a0)*Rr],
+                 [rx+Math.cos(a1)*Rr,0,Math.sin(a1)*Rr],tr,{solo:true}));
+  }
+  for(let i=0;i<4;i++){
+    const a=i/4*Math.PI*2+Math.PI/4;
+    out.push(TUB([rx,0,0],[rx+Math.cos(a)*(Rr-tr),0,Math.sin(a)*(Rr-tr)],
+                 sr*0.30,sr*0.20,{solo:true,hideA:true}));
+  }
+  if(P.detail>0.35) for(let i=0;i<4;i++){
+    const a=i/4*Math.PI*2;
+    out.push(BOX([rx+Math.cos(a)*Rr,0,Math.sin(a)*Rr],
+      [Math.cos(a)*tr*1.5,0,Math.sin(a)*tr*1.5],[0,tr*1.4,0],
+      [-Math.sin(a)*tr*2.2,0,Math.cos(a)*tr*2.2],{solo:true}));
+  }
+  return {sr,sockets:{
+    cockpit:FR([L*0.5,0,0],[1,0,0],[0,1,0],[0,0,1],{x:L*0.5,y:sr*2.2,z:sr*2.2}),
+    wing:FR([rx,0,Rr+tr*0.5],[0,0,1],[0,1,0],[1,0,0],{x:Rr*0.45,y:tr*3,z:Rr*0.5}),
+    tail:FR([rx,sr*0.85,0],[0,1,0],[1,0,0],[0,0,1],{x:Rr*0.4,y:Rr*0.4,z:Rr*0.4}),
+    booster:FR([-L*0.5,0,0],[-1,0,0],[0,1,0],[0,0,1],{x:L*0.45,y:sr*2.0,z:sr*2.0}),
+    gear:FR([L*0.1,-sr*0.9,0],[0,-1,0],[1,0,0],[0,0,1],{x:sr*2.0,y:L*0.4,z:sr*1.6})
+  }};
+}},
+/* ---- 12. vane: the pressure hull is a single sphere and nothing else. Two
+   lateral pylons carry flat hexagonal vanes standing square to the beam —
+   radiator, collector and armour in one plate — so there is no fore-aft body
+   to hang anything on, and the ship's whole planform is the pair of vanes. ---- */
+{n:"VANE",role:["ICP","VANED INTERCEPTOR"],make(R,rr,P,out){
+  const Rb=(3.2+P.fuse*2.4)*rr(0.92,1.10);   /* the pressure sphere is the hull */
+  const sr=Rb*0.46;
+  const Rp=Rb*rr(1.9,2.6);                   /* vane half-height */
+  const hx=Rp*rr(0.50,0.64);                 /* vane half-chord  */
+  const h1=Rp*rr(0.56,0.74);                 /* shoulder height  */
+  const th=Rb*rr(0.15,0.22);                 /* vane thickness   */
+  const zp=Rb+Rp*rr(0.34,0.54)+th;           /* vane mid-plane   */
+
+  out.push(SPH([0,0,0],Rb,{det:hullDet([0.3,0.5,0.7],[],[])}));
+  /* the forward hatch ring stays visible around whatever cockpit plugs in */
+  out.push(DSC([Rb*0.80,0,0],[1,0,0],Rb*0.56,Rb*0.30));
+  if(P.detail>0.45)
+    out.push(BOX([-Rb*0.60,Rb*0.54,0],[Rb*0.20,0,0],[0,Rb*0.10,0],[0,0,Rb*0.34],
+                 {det:{ribs:3}}));
+
+  /* one pylon and one vane, authored to starboard: the mirror pass makes the
+     pair, and everything the vane carries comes back with it */
+  const hex=[[hx,h1],[0,Rp],[-hx,h1],[-hx,-h1],[0,-Rp],[hx,-h1]];
+  const at=(k,z)=>hex.map(q=>[q[0]*k,q[1]*k,z]);
+  out.push(TUB([0,0,Rb*0.55],[0,0,zp-th*0.5],Rb*0.42,Rb*0.28,{hideA:true}));
+  out.push(TUB([0,0,Rb*0.58],[0,0,Rb*0.92],Rb*0.56,Rb*0.46,{hideA:true}));
+  out.push(PNL(at(1,zp),null,[0,0,1],th,{}));
+  /* a frame plate stands proud of each face, spoked out to the corners: two
+     concentric outlines edge-on, and the vane is braced from both sides so the
+     inboard one is not a blank slab when the pictorial looks at its back */
+  const fk=rr(0.64,0.76), tt=th*rr(0.34,0.52), rt=th*0.18, rw=th*0.52;
+  for(const sg of [1,-1]){
+    const zf=zp+sg*(th*0.5+tt*0.5);
+    out.push(PNL(at(fk,zf),null,[0,0,1],tt,{}));
+    if(P.detail>0.4){
+      const zs=zf+sg*(tt*0.5+rt);
+      for(const q of hex){
+        const vx=q[0]*fk*0.94, vy=q[1]*fk*0.94, L2=Math.hypot(vx,vy)||1;
+        out.push(BOX([vx*0.5,vy*0.5,zs],[vx*0.5,vy*0.5,0],
+                     [-vy/L2*rw,vx/L2*rw,0],[0,0,rt]));
+      }
+    }
+  }
+  return {sr,sockets:{
+    cockpit:FR([Rb*0.92,0,0],[1,0,0],[0,1,0],[0,0,1],{x:Rb*1.25,y:Rb*1.1,z:Rb*1.1}),
+    /* the wing socket rides the pylon and is stopped short of the vane, so a
+       wing reads as the strake between hull and plate instead of piercing it */
+    wing:FR([0,0,Rb*0.74],[0,0,1],[0,1,0],[1,0,0],
+            {x:Math.max(sr*1.2,(zp-th*0.5-Rb*0.74)*0.80),y:Rb*0.62,z:Rb*1.15}),
+    tail:FR([0,Rb*0.90,0],[0,1,0],[1,0,0],[0,0,1],{x:Rb*0.85,y:Rb*0.95,z:Rb*0.75}),
+    booster:FR([-Rb*0.92,0,0],[-1,0,0],[0,1,0],[0,0,1],{x:Rb*1.15,y:Rb*1.0,z:Rb*1.0}),
+    gear:FR([0,-Rb*0.90,0],[0,-1,0],[1,0,0],[0,0,1],{x:Rb*1.5,y:Rb*1.0,z:Rb*1.4})
+  }};
+}}
+];
+
+/* ===================== fit-out =====================
+   Everything above decides what the ship IS: which masses, which chain of
+   sections, which variant fills each socket. This runs once all of that has
+   settled and decides what has been BOLTED TO it — cable runs, receptacles,
+   access plates, inspection ports. It reads the finished parts list back and
+   works in each surface's own parameter space, the same trick the hatch uses,
+   so a run follows the form instead of swimming across it.
+
+   Nothing here is mirrored. Plumbing is the one thing on a ship with no reason
+   to be symmetrical, and that asymmetry is most of what makes two hulls off the
+   same slot recipe read as different ships. It is also why the pass runs after
+   the registry: a cable is not displacement, so the length, beam and tonnage on
+   the plate must not move when the detail slider does. */
+const inPoly=(poly,X,Y)=>{
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    if((poly[i][1]>Y)!==(poly[j][1]>Y)&&
+       X<(poly[j][0]-poly[i][0])*(Y-poly[i][1])/((poly[j][1]-poly[i][1])||1e-9)+poly[i][0])
+      inside=!inside;
+  }
+  return inside;
+};
+/* one host surface, parameterised on the unit square. u wraps where the form
+   wraps, so a run that leaves one edge comes back on the other by itself. */
+function surfaceOf(p,R){
+  if(p.k==="sphere")
+    return {span:p.r*2.2,curv:p.r,at:(u,v)=>{
+      const th=u*Math.PI*2, ph=Math.acos(Math.max(-1,Math.min(1,1-2*v)));
+      const n=[Math.cos(ph),Math.sin(ph)*Math.cos(th),Math.sin(ph)*Math.sin(th)];
+      return {q:V.add(p.c,V.mul(n,p.r)),n};
+    }};
+  if(p.k==="capsule"||p.k==="tube"){
+    const d=V.sub(p.b,p.a), L=V.len(d);
+    if(L<1e-6)return null;
+    const ax=V.mul(d,1/L), [bu,bv]=basis(ax);
+    const r1=p.k==="capsule"?p.r:p.r1, r2=p.k==="capsule"?p.r:p.r2;
+    const dr=(r2-r1)/L;
+    return {span:Math.min(L,Math.max(r1,r2)*3),curv:Math.min(r1,r2),at:(u,v)=>{
+      const th=u*Math.PI*2;
+      const rad=V.add(V.mul(bu,Math.cos(th)),V.mul(bv,Math.sin(th)));
+      const r=r1+(r2-r1)*v;
+      return {q:V.add(V.add(p.a,V.mul(ax,L*v)),V.mul(rad,r)),
+              n:V.norm(V.sub(rad,V.mul(ax,dr)))};
+    }};
+  }
+  if(p.k==="box"){
+    const f=Math.floor(R()*6), s=(f&1)?1:-1;
+    const [e1,e2,e3]=f<2?[p.v,p.w,p.u]:f<4?[p.u,p.w,p.v]:[p.u,p.v,p.w];
+    const n=V.norm(V.mul(e3,s)), o=V.add(p.c,V.mul(e3,s));
+    return {span:Math.max(V.len(e1),V.len(e2))*2,flat:true,at:(u,v)=>
+      ({q:V.add(o,V.add(V.mul(e1,u*2-1),V.mul(e2,v*2-1))),n})};
+  }
+  if(p.k==="panel"){
+    const s=R()<0.5?1:-1, n=V.norm(V.mul(p.n,s));
+    const [bu,bv]=basis(p.n), o=V.add(p.pts[0],V.mul(n,p.th*0.5));
+    const poly=p.pts.map(q=>[V.dot(V.sub(q,p.pts[0]),bu),V.dot(V.sub(q,p.pts[0]),bv)]);
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+    for(const q of poly){x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);
+                         y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);}
+    return {span:Math.max(x1-x0,y1-y0),flat:true,
+      ok:(u,v)=>inPoly(poly,x0+(x1-x0)*u,y0+(y1-y0)*v),
+      at:(u,v)=>({q:V.add(o,V.add(V.mul(bu,x0+(x1-x0)*u),V.mul(bv,y0+(y1-y0)*v))),n})};
+  }
+  return null;
+}
+function fitOut(parts,R,rr,P,sr){
+  if(P.detail<0.18)return;
+  const hosts=[];
+  for(const p of parts){
+    if(p.k==="disc"||p.k==="lathe")continue;
+    const s=p.k==="sphere"?p.r
+           :p.k==="box"?Math.max(V.len(p.u),V.len(p.v),V.len(p.w))
+           :p.k==="panel"?p.th*8
+           :V.len(V.sub(p.b,p.a));
+    if(s>sr*0.7)hosts.push(p);
+  }
+  if(!hosts.length)return;
+  const solids=parts.slice();
+  const clear=q=>{for(const c of solids)if(inSolid(q,c))return false;return true;};
+  const out=[];
+  /* the budget is the detail slider's, and it is spent per feature rather than
+     per part: a cable run is one feature however many segments it takes */
+  const N=Math.round(7+P.detail*26);
+  /* a hard ceiling on the whole pass. The sheet is redrawn every frame of the
+     spin, so fit-out has to be affordable at 60 Hz on a phone, not merely
+     affordable once. */
+  const CAP=Math.round(34+P.detail*76);
+  const used=new Map();
+  for(let i=0;i<N;i++){
+    if(out.length>=CAP)break;
+    const host=hosts[Math.floor(R()*hosts.length)];
+    /* three features is a fitted-out part; six is a rash */
+    const nu=used.get(host)||0;
+    if(nu>=4)continue;
+    const S2=surfaceOf(host,R);
+    if(!S2)continue;
+    used.set(host,nu+1);
+    const g=sr*rr(0.11,0.19);                        /* gauge of the fit-out */
+    const u0=R(), v0=rr(0.12,0.88);
+    if(S2.ok&&!S2.ok(u0,v0))continue;
+    const a=S2.at(u0,v0);
+    if(!a||!clear(V.add(a.q,V.mul(a.n,g*1.6))))continue;
+    /* A cable run wants curvature to read against. On a flat host it comes out
+       as a straight bar lying on a straight face — indistinguishable from
+       structure, and on a vane it reads as a spoke that has slipped. So flat
+       surfaces take plates and receptacles only, and the runs live on the
+       fuselages, bells and spheres where they look like plumbing. */
+    const roll=S2.flat?0.42+R()*0.58:R();
+    if(roll<0.42){
+      /* a cable run: stepped along the surface, clamped at both ends */
+      /* runs go along the form rather than round it: a cable that wraps out
+         of sight is a cable nobody sees */
+      const du=rr(-0.10,0.10), dv=rr(-0.52,0.52);
+      const u1=u0+du, v1=Math.max(0.06,Math.min(0.94,v0+dv));
+      const seg=Math.max(3,Math.round(4+P.detail*4));
+      const pts=[],nrm=[];
+      for(let k2=0;k2<=seg;k2++){
+        const t2=k2/seg, s3=S2.at(u0+(u1-u0)*t2,v0+(v1-v0)*t2);
+        if(!s3){pts.length=0;break;}
+        /* half proud, half bedded in: a run that merely touches the surface
+           is a run that reads as floating the moment the hull curves away
+           under it, and a cable is laid in a trough anyway */
+        pts.push(V.add(s3.q,V.mul(s3.n,g*0.5)));nrm.push(s3.n);
+      }
+      if(pts.length<3)continue;
+      /* the offset for a parallel pair is taken against the LOCAL normal at
+         each station, not the one where the run started: on a sphere a fixed
+         sideways vector walks the second cable off the hull within a few steps */
+      const sideAt=k2=>{
+        const t1=V.norm(V.sub(pts[Math.min(k2+1,pts.length-1)],pts[Math.max(k2-1,0)]));
+        return V.norm(V.cross(t1,nrm[k2]));
+      };
+      const nw=1+Math.floor(R()*2);                  /* one cable or a pair */
+      for(let w2=0;w2<nw;w2++){
+        const off=(w2-(nw-1)*0.5)*g*2.3;
+        for(let k2=0;k2<pts.length-1;k2++)
+          out.push(TUB(V.add(pts[k2],V.mul(sideAt(k2),off)),
+                       V.add(pts[k2+1],V.mul(sideAt(k2+1),off)),
+                       g,g,{hideA:true,hideB:true,bare:true}));
+      }
+      for(const k2 of [0,pts.length-1]){
+        const t1=V.norm(V.sub(pts[Math.min(k2+1,pts.length-1)],pts[Math.max(k2-1,0)]));
+        out.push(BOX(V.add(pts[k2],V.mul(nrm[k2],g*0.1)),V.mul(t1,g*0.8),
+                     V.mul(nrm[k2],g*0.9),V.mul(sideAt(k2),g*(1.1+nw*0.8)),{bare:true}));
+      }
+    }else if(roll<0.72){
+      /* receptacles: a stub and its face, in a little cluster */
+      const nk=1+Math.floor(R()*3);
+      for(let k2=0;k2<nk;k2++){
+        const s3=S2.at(u0+k2*g/(S2.span||1)*rr(1.4,2.6),v0+k2*rr(-0.05,0.05));
+        if(!s3)continue;
+        if(S2.ok&&!S2.ok(u0+k2*0.04,v0))continue;
+        const r=Math.min(g*rr(1.7,2.8),(S2.curv||1e9)*0.5), h=g*rr(0.9,1.7);
+        if(r<g*0.8)continue;
+        out.push(TUB(V.sub(s3.q,V.mul(s3.n,g*0.4)),V.add(s3.q,V.mul(s3.n,h)),r,r*0.86,
+                     {hideA:true,bare:true}));
+        out.push(DSC(V.add(s3.q,V.mul(s3.n,h)),s3.n,r*0.86,r*rr(0.30,0.46),{bare:true}));
+      }
+    }else{
+      /* an access plate, lying flush and lipped */
+      const t1=V.norm(V.cross(a.n,Math.abs(a.n[1])>0.9?[1,0,0]:[0,1,0]));
+      const t2=V.cross(a.n,t1);
+      /* a plate is flat and the hull under it is often not. Sized off the
+         gauge alone it hangs off a slim pylon like a shelf, so it is clamped
+         to the host's own radius of curvature and to the room on that face. */
+      const lim=Math.min((S2.curv||1e9)*0.62,(S2.span||1e9)*0.34);
+      const w2=Math.min(g*rr(3.6,8.0),lim), h2=Math.min(g*rr(2.6,6.0),lim),
+            th=g*rr(0.34,0.62);
+      if(w2<g*1.4||h2<g*1.1)continue;
+      const c=V.add(a.q,V.mul(a.n,th*0.34));   /* bedded, not balanced on top */
+      if(!clear(V.add(c,V.mul(t1,w2*0.98))))continue;
+      /* a plate is the one feature with real corners, so it is the one that can
+         hang off the edge of a cut face. Test them in the host's own parameter
+         space before committing it. */
+      if(S2.ok){
+        const du2=w2/(S2.span||1), dv2=h2/(S2.span||1);
+        let off=false;
+        for(const [su,sv] of [[1,1],[1,-1],[-1,1],[-1,-1]])
+          if(!S2.ok(u0+su*du2,v0+sv*dv2))off=true;
+        if(off)continue;
+      }
+      out.push(BOX(c,V.mul(t1,w2),V.mul(t2,h2),V.mul(a.n,th),
+                   {bare:true,det:{ribs:2+Math.floor(R()*3)}}));
+      if(R()<0.5)
+        out.push(DSC(V.add(c,V.mul(a.n,th*0.6)),a.n,Math.min(w2,h2)*0.28,0,{bare:true}));
+    }
+  }
+  /* inspection ports cost no geometry at all: they are circles cut on a surface
+     the drawing is already stroking, so they are free where a plate is not */
+  const rings=parts.filter(p=>(p.k==="tube"||p.k==="capsule")&&p.det&&!p.bare);
+  for(let i=0;i<Math.round(P.detail*10);i++){
+    if(!rings.length)break;
+    const p=rings[Math.floor(R()*rings.length)], d=p.det;
+    p.det={rings:d.rings,longs:d.longs,
+           ports:(d.ports||[]).concat([{t:rr(0.15,0.85),th:R()*Math.PI*2,
+                                        r:sr*rr(0.10,0.22)}])};
+  }
+  for(const q of out)parts.push(q);
+}
+
+function buildShip(seed,P,lock){
+  const R=mulberry32(seed|0), rr=(a,b)=>a+(b-a)*R(), pick=a=>a[Math.floor(R()*a.length)|0];
+  const parts=[], envs=[], chosen={};
+
+  const tIdx=(lock&&lock.topo!=null)?Math.min(lock.topo,TOPO.length-1):Math.floor(R()*TOPO.length);
+  const topo=TOPO[tIdx];
+  chosen.topo={i:tIdx,n:topo.n};
+  const NA={i:0,n:"—"};
+  chosen.fore=chosen.joint=chosen.aft=chosen.nsec=NA;chosen.recipe="";
+  const chassis=topo.make(R,rr,P,parts,lock);
+
+  /* rolled on its own, so three ships in four carry more than one hull */
+  const hIdx=(lock&&lock.hulls!=null)?Math.min(lock.hulls,HULLN.length-1)
+                                     :Math.floor(R()*HULLN.length);
+  const nHull=hIdx+1;
+  chosen.hulls={i:hIdx,n:HULLN[hIdx].n};
+  if(nHull>1){
+    const extra=addHulls(nHull,leadExtent(parts),chassis.sr,R,rr,P,parts,lock,{});
+    if(extra&&extra.gear)chassis.sockets.gear=extra.gear;
+  }
+
+  if(chassis.spine){
+    const sp=chassis.spine;
+    chosen.fore={i:sp.fore.i,n:sp.fore.n};
+    chosen.aft={i:sp.aft.i,n:sp.aft.n};
+    chosen.joint={i:sp.joint.i,n:sp.joint.n};
+    chosen.nsec={i:sp.nSec-2,n:sp.nSec+" SECTION"+(sp.nSec>1?"S":"")};
+    chosen.recipe=chassis.recipe||sp.secs.map(q=>q.n).join(" + ");
+    chosen.recipeShort=chassis.recipeShort||chosen.recipe;
+  }
+
+  /* The mount is a point, but a variant that spreads out — gear legs, twin
+     fins — needs the hull surface at each of its feet, not at the socket. */
+  const hullSoFar=parts.slice();
+  /* The reach used to be chassis.sr*5, which is the beam — fine on a hull whose
+     feet spread about as far as it is wide, hopeless on an edge-on spade that
+     is six times taller than it is broad. A foot out past the old reach found
+     nothing, took the 0, and rooted its leg in mid-air with the buried cap
+     still flagged hidden: a strut open at the top, floating. The reach now
+     follows the socket's own envelope, and a miss falls back to the depth under
+     the socket origin — which is on the hull by construction — instead of 0. */
+  const probeFor=(fr,E)=>{
+    const back=V.mul(V.norm(fr.f),-1);
+    const M=Math.max(chassis.sr*5,E.x*1.7+E.y*0.9), N=48;
+    const hit=(u,v)=>{
+      const base=V.add(fr.o,V.add(V.mul(fr.u,u),V.mul(fr.s,v)));
+      for(let i=0;i<=N;i++){
+        const d=M*i/N, q=V.add(base,V.mul(back,d));
+        for(const cp of hullSoFar) if(inSolid(q,cp)) return d;
+      }
+      return -1;
+    };
+    const home=Math.max(0,hit(0,0));
+    /* an open frame is mostly gaps, so a ray straight up can slip between two
+       members with solid metal either side of it. Nudge and retry before giving
+       up — the leg then roots on the member it was a hair away from. */
+    const du=E.y*0.11, dv=E.z*0.11;
+    return (u,v)=>{
+      let d=hit(u,v);
+      if(d<0)for(const [au,av] of [[du,0],[-du,0],[0,dv],[0,-dv],[du,dv],[-du,-dv]]){
+        d=hit(u+au,v+av);
+        if(d>=0)break;
+      }
+      /* no ceiling on the depth: clamping it was quietly guaranteeing the very
+         thing this is here to prevent, since a truncated root sits below the
+         surface it was meant to bury itself in. A long leg is handled by making
+         it thicker, not by cutting it short. */
+      return d<0?home:d;
+    };
+  };
+
+  for(const id of ["cockpit","wing","tail","booster","gear"]){
+    const sock=chassis.sockets[id];
+    if(!sock)continue;
+    const list=VAR[id];
+    let idx=(lock&&lock[id]!=null)?Math.min(lock[id],list.length-1):Math.floor(R()*list.length);
+    /* Gear is grounded for now. A deployed leg is sized to reach the ground
+       under the HULL, but on a vaned ship the lowest point is the bottom edge
+       of a vane, so the legs stopped short and the ship hung off them in mid
+       air. Until the probe measures to the whole ship's underside rather than
+       the hull's, nothing rolls gear down — the roll still happens so the seed
+       stream is unchanged, and locking the rail still deploys any of them. */
+    if(id==="gear"&&(!lock||lock.gear==null))idx=0;
+    const v=list[idx];
+    chosen[id]={i:idx,n:v.n,crew:v.crew||0};
+    const out=[];
+    const mr=sock.sr||Math.min(chassis.sr,sock.E.y*0.8,sock.E.z*0.8);
+    v.make(builder(sock.fr,out),mr,rr,R,sock.E,probeFor(sock.fr,sock.E));
+    for(const p of out){applyOps(p,sock.fr);p.slot=true;p.g=id;p.sd=V.norm(sock.fr.f);
+      if(sock.solo)p.solo=true;}
+    parts.push(...out);
+    const f=sock.fr;
+    envs.push({id,c:V.add(f.o,V.mul(f.f,sock.E.x*0.5)),
+      u:V.mul(f.f,sock.E.x*0.5),v:V.mul(f.u,sock.E.y),w:V.mul(f.s,sock.E.z)});
+  }
+
+  /* Symmetry is a design axis, not a constant. The chassis always mirrors about
+     the centreline; what is bolted to it can instead be repeated radially, which
+     turns one wing into three fins and one leg into a tripod. Only offered where
+     the hull is actually centred on the axis — a forked spine has no axis to
+     rotate about, so it falls back to bilateral. */
+  const mir=p=>{
+    const g=v=>[v[0],v[1],-v[2]];
+    const q=Object.assign({},p);
+    for(const k of ["c","a","b","n","u","v","w","axis","sd"]) if(q[k])q[k]=g(q[k]);
+    if(q.pts)q.pts=q.pts.map(g);
+    if(q.pts2)q.pts2=q.pts2.map(g);
+    return q;
+  };
+  const zOf=p=>{
+    if(p.pts)return p.pts.reduce((s,q)=>s+q[2],0)/p.pts.length;
+    if(p.c)return p.c[2];
+    return (p.a[2]+p.b[2])/2;
+  };
+  const rotX=(p,th)=>{
+    const c=Math.cos(th),sn=Math.sin(th);
+    const g=v=>[v[0],v[1]*c-v[2]*sn,v[1]*sn+v[2]*c];
+    const q=Object.assign({},p);
+    for(const k of ["c","a","b","n","u","v","w","axis","sd"]) if(q[k])q[k]=g(q[k]);
+    if(q.pts)q.pts=q.pts.map(g);
+    if(q.pts2)q.pts2=q.pts2.map(g);
+    return q;
+  };
+  const radOf=p=>{const c=partCentroid(p);return Math.hypot(c[1],c[2]);};
+
+  const forked=chassis.spine?Math.abs(chassis.spine.endOff[2])>1e-6:false;
+  const axialOK=!!topo.axial&&!forked&&nHull===1;
+  const syI=axialOK?((lock&&lock.sym!=null)?Math.min(lock.sym,SYM.length-1):Math.floor(R()*SYM.length)):0;
+  chosen.sym={i:syI,n:axialOK?SYM[syI].n:"BILATERAL"};
+
+  for(const p of parts.slice()) if(!p.solo&&!p.slot&&Math.abs(zOf(p))>1e-4) parts.push(mir(p));
+  const slotParts=parts.filter(p=>p.slot&&!p.solo);
+  if(syI===0){
+    for(const p of slotParts) if(Math.abs(zOf(p))>1e-4){const q=mir(p);q.g=p.g+"#m";parts.push(q);}
+  }else{
+    const N=SYM[syI].k, thr=chassis.sr*0.25;
+    for(const p of slotParts){
+      if(radOf(p)<thr)continue;
+      for(let k2=1;k2<N;k2++){const q=rotX(p,k2*Math.PI*2/N);q.g=p.g+"#"+k2;parts.push(q);}
+    }
+  }
+
+  /* ---- attachment guarantee ----
+     The probe roots each variant on the surface it actually sits on. This is
+     the net under that: every bolted-on group is tested against real solids,
+     not bounding boxes, and anything not touching is drawn back along its own
+     mounting direction until it is. Dropped only if it never can be. */
+  const chassisSolids=parts.filter(p=>!p.slot);
+  const touches=grp=>{
+    for(const p of grp)
+      for(const [q,rd] of partExtents(p)){
+        if(chassisSolids.some(c=>inSolid(q,c)))return true;
+        if(rd>0){
+          for(const ax of [[rd,0,0],[-rd,0,0],[0,rd,0],[0,-rd,0],[0,0,rd],[0,0,-rd]])
+            if(chassisSolids.some(c=>inSolid(V.add(q,ax),c)))return true;
+        }
+      }
+    return false;
+  };
+  const shift=(p,d)=>{
+    const t=v=>[v[0]+d[0],v[1]+d[1],v[2]+d[2]];
+    for(const k of ["c","a","b"]) if(p[k])p[k]=t(p[k]);
+    if(p.pts)p.pts=p.pts.map(t);
+    if(p.pts2)p.pts2=p.pts2.map(t);
+  };
+  const groups={};
+  for(const p of parts) if(p.slot){(groups[p.g]=groups[p.g]||[]).push(p);}
+  const dropped=[];
+  for(const key in groups){
+    const gp=groups[key];
+    if(touches(gp))continue;
+    /* first try straight back down the mount, then radially inward */
+    const dirs=[];
+    if(gp[0].sd) dirs.push(V.mul(V.norm(gp[0].sd),-1));
+    let cen=[0,0,0],n=0;
+    for(const p of gp){cen=V.add(cen,partCentroid(p));n++;}
+    cen=V.mul(cen,1/Math.max(n,1));
+    const rad=Math.hypot(cen[1],cen[2]);
+    if(rad>1e-6)dirs.push([0,-cen[1]/rad,-cen[2]/rad]);
+    dirs.push([cen[0]>0?-1:1,0,0]);
+    let fixed=false;
+    for(const dir of dirs){
+      const span=Math.max(rad,Math.abs(cen[0]),chassis.sr)||1;
+      const stepv=V.mul(dir,span/26);
+      for(let k2=1;k2<=30;k2++){
+        for(const p of gp)shift(p,stepv);
+        if(touches(gp)){fixed=true;break;}
+      }
+      if(fixed)break;
+      for(const p of gp)shift(p,V.mul(stepv,-30));   /* rewind and try the next direction */
+    }
+    if(!fixed)dropped.push(key);
+  }
+  if(dropped.length){
+    const kill=new Set(dropped);
+    for(let i=parts.length-1;i>=0;i--) if(parts[i].slot&&kill.has(parts[i].g)) parts.splice(i,1);
+  }
+
+  /* registry, derived from what actually got built */
+  let vol=0;const pts=[];
+  for(const p of parts){
+    if(p.k==="sphere"){vol+=4/3*Math.PI*p.r**3;pts.push([p.c,p.r]);}
+    else if(p.k==="capsule"){vol+=Math.PI*p.r*p.r*V.len(V.sub(p.b,p.a))+4/3*Math.PI*p.r**3;
+      pts.push([p.a,p.r],[p.b,p.r]);}
+    else if(p.k==="tube"){vol+=Math.PI/3*(p.r1*p.r1+p.r1*p.r2+p.r2*p.r2)*V.len(V.sub(p.b,p.a));
+      pts.push([p.a,p.r1],[p.b,p.r2]);}
+    else if(p.k==="disc"){vol+=Math.PI*p.r*p.r*p.r*0.18;pts.push([p.c,p.r]);}
+    else if(p.k==="lathe"){
+      const e=p.ell?p.ell[0]*p.ell[1]:1;
+      for(let i=1;i<p.prof.length;i++){
+        const h=Math.abs(p.prof[i][0]-p.prof[i-1][0]),r1=p.prof[i-1][1],r2=p.prof[i][1];
+        vol+=Math.PI/3*(r1*r1+r1*r2+r2*r2)*h*e;
+      }
+      for(const [tt,r] of p.prof)pts.push([V.add(p.c,V.mul(p.axis,tt)),r*Math.max(p.ell?p.ell[0]:1,p.ell?p.ell[1]:1)]);}
+    else if(p.k==="box"){vol+=8*V.len(p.u)*V.len(p.v)*V.len(p.w);
+      for(let i=0;i<8;i++)pts.push([V.add(p.c,V.add(V.mul(p.u,i&1?1:-1),
+        V.add(V.mul(p.v,i&2?1:-1),V.mul(p.w,i&4?1:-1)))),0]);}
+    else if(p.k==="panel"){
+      let a2=0;for(let i=1;i<p.pts.length-1;i++)
+        a2+=V.len(V.cross(V.sub(p.pts[i],p.pts[0]),V.sub(p.pts[i+1],p.pts[0])))/2;
+      vol+=a2*p.th;
+      for(const q of p.pts)pts.push([q,p.th]);
+      if(p.pts2)for(const q of p.pts2)pts.push([q,p.th]);}
+  }
+  const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
+  for(const [q,r] of pts)for(let i=0;i<3;i++){
+    bb[0][i]=Math.min(bb[0][i],q[i]-r);bb[1][i]=Math.max(bb[1][i],q[i]+r);}
+
+
+  /* No two ships may carry the same designation, and luck is not a good enough
+     guarantee. The seed is a 32-bit word; read it as a mixed-radix number whose
+     digits ARE the designation — one digit names the ship, two are the yard
+     block letters, and the remainder is the pennant. Digit extraction is a
+     bijection, so the seed can be reconstructed from the name on the plate and
+     all 4,294,967,296 hulls are distinct by construction, not by odds.
+       304 names x 26 x 26 letters x 20,900 pennants > 2^32. */
+  const NB=BIRDS.length, AZ=26;
+  let u=seed>>>0;
+  const name=BIRDS[u%NB];             u=(u-u%NB)/NB;
+  const b1=u%AZ;                      u=(u-b1)/AZ;
+  const b2=u%AZ;                      u=(u-b2)/AZ;
+  const block=String.fromCharCode(65+b1,65+b2), pennant=u;
+  const klass=pick(BIRDS);
+  const role = chosen.gear.i===0&&topo.n==="KEEL" ? ["OSV","ORBITAL SERVICE VEHICLE"] : topo.role;
+
+  /* Dead last: the layout is settled, weighed and named. Running the fit-out
+     here rather than a few lines earlier is what keeps it decoration — it draws
+     from the same stream, so it cannot shift the class name or the pennant, and
+     it lands after the registry, so it cannot shift the tonnage or the
+     dimensions either. The same hull with the detail slider at either end is
+     the same ship on the plate, wearing more or less plumbing. */
+  fitOut(parts,R,rr,P,chassis.sr);
+  return {parts,envs,chosen,bb,meta:{
+    desig:`${role[0]}-${block}${String(pennant).padStart(5,"0")} ${name}`,
+    klass:`${klass}-CLASS ${role[1]}`,
+    length:bb[1][0]-bb[0][0], beam:bb[1][2]-bb[0][2], height:bb[1][1]-bb[0][1],
+    mass:vol*0.21, crew:chosen.cockpit.crew, note:topo.note||"",
+    sym:chosen.sym.n, seed}};
+}
+
+/* variant post-ops: cant a fin, shift it outboard, lay it horizontal */
+function applyOps(p,fr){
+  if(p.k!=="panel")return;
+  const rot=(q,ax,ang)=>{
+    const c=Math.cos(ang),s=Math.sin(ang),k=V.sub(q,fr.o);
+    const r=V.add(V.add(V.mul(k,c),V.mul(V.cross(ax,k),s)),V.mul(ax,V.dot(ax,k)*(1-c)));
+    return V.add(fr.o,r);
+  };
+  if(p.cant){p.pts=p.pts.map(q=>rot(q,V.norm(fr.u),p.cant));p.n=V.norm(
+    V.add(V.mul(p.n,Math.cos(p.cant)),V.mul(V.cross(V.norm(fr.u),p.n),Math.sin(p.cant))));}
+  if(p.shiftZ)p.pts=p.pts.map(q=>V.add(q,V.mul(fr.s,p.shiftZ)));
+}
+
+/* ===================== targets ===================== */
+function hull(pts){
+  const p=pts.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const lo=[],up=[];
+  for(const q of p){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q);}
+  for(let i=p.length-1;i>=0;i--){const q=p[i];
+    while(up.length>=2&&cr(up[up.length-2],up[up.length-1],q)<=0)up.pop();up.push(q);}
+  lo.pop();up.pop();return lo.concat(up);
+}
+function partCentroid(p){
+  if(p.k==="lathe")return p.c;
+  if(p.pts)return V.mul(p.pts.reduce((s,q)=>V.add(s,q),[0,0,0]),1/p.pts.length);
+  if(p.c)return p.c;
+  return V.mul(V.add(p.a,p.b),0.5);
+}
+function partExtents(p){
+  const o=[];
+  if(p.k==="box"){for(let i=0;i<8;i++)
+    o.push([V.add(p.c,V.add(V.mul(p.u,i&1?1:-1),V.add(V.mul(p.v,i&2?1:-1),V.mul(p.w,i&4?1:-1)))),0]);}
+  else if(p.k==="panel"){for(const q of p.pts)o.push([q,p.th]);
+    if(p.pts2)for(const q of p.pts2)o.push([q,p.th]);}
+  else if(p.k==="lathe"){for(const [tt,r] of p.prof)o.push([V.add(p.c,V.mul(p.axis,tt)),r]);}
+  else if(p.k==="sphere"||p.k==="disc")o.push([p.c,p.r]);
+  else if(p.k==="capsule")o.push([p.a,p.r],[p.b,p.r]);
+  else o.push([p.a,p.r1],[p.b,p.r2]);
+  return o;
+}
+
+/* =====================================================================
+   ARMADA — the yard's generator feeding a WebGL2 instanced renderer.
+   Everything above this banner is the single-ship page's code, verbatim:
+   the slot contract, the variant library, buildShip. Below, each hull is
+   built once in a pool of workers — every hull from its own seed, no two
+   alike — and baked into merged spatial chunks, so thousands of unique
+   ships still draw as a few dozen static calls. Ships the camera nears
+   are re-forged at full facet count on the fly.
+   ===================================================================== */
+
+/* ---- tessellation, parametrised: q=1 is the yard's own facet budget ---- */
+function shipMeshQ(ship,q){
+  const T=[];
+  const tri=(a,b,c)=>T.push(a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2]);
+  const quad=(a,b,c,d)=>{tri(a,b,c);tri(a,c,d);};
+  const fan=p=>{for(let i=1;i<p.length-1;i++)tri(p[0],p[i],p[i+1]);};
+  const band=(A,B)=>{const n=A.length;
+    for(let i=0;i<n;i++)quad(A[i],B[i],B[(i+1)%n],A[(i+1)%n]);};
+  const bb=ship.bb;
+  const diag=Math.hypot(bb[1][0]-bb[0][0],bb[1][1]-bb[0][1],bb[1][2]-bb[0][2])||1;
+  const SG=r=>Math.max(3,Math.round(Math.max(8,Math.min(40,Math.round(8+r/diag*280)))*q));
+  /* at the far level, fittings smaller than a distant pixel are not cut at
+     all — but a grown ship IS her small parts (a limb is a chain of little
+     capsules), so the shoal culls at half the yard's threshold */
+  const tiny=q<0.18?Math.min(6,diag*0.03):q<0.25?Math.min(6,diag*0.025)
+            :q<0.45?Math.min(2.5,diag*0.01):0;
+  const psize=p=>{
+    if(p.k==="sphere"||p.k==="disc")return p.r;
+    if(p.k==="capsule")return Math.max(p.r,V.len(V.sub(p.b,p.a))*0.5);
+    if(p.k==="tube")return Math.max(p.r1,p.r2,V.len(V.sub(p.b,p.a))*0.5);
+    if(p.k==="box")return Math.max(V.len(p.u),V.len(p.v),V.len(p.w));
+    return 1e9; /* lathes and panels always draw */
+  };
+  const profAt=prof=>{
+    if(q>=0.45||prof.length<5)return prof;
+    const step=Math.max(2,Math.round(1/(q*2.2))),o=[prof[0]];
+    for(let i=step;i<prof.length-1;i+=step)o.push(prof[i]);
+    o.push(prof[prof.length-1]);return o;
+  };
+  for(const p of ship.parts){
+    if(tiny&&psize(p)<tiny)continue;
+    if(p.k==="sphere"){
+      const n=SG(p.r),m=Math.max(2,n>>1),rg=[];
+      for(let i=0;i<=m;i++){const th=i/m*Math.PI;
+        rg.push(ringPts([p.c[0],p.c[1]+Math.cos(th)*p.r,p.c[2]],
+                        Math.sin(th)*p.r,[0,1,0],n));}
+      for(let i=0;i<m;i++)band(rg[i],rg[i+1]);
+    }else if(p.k==="capsule"){
+      const ax=V.norm(V.sub(p.b,p.a)),n=SG(p.r),m=Math.max(2,n>>2);
+      const A=ringPts(p.a,p.r,ax,n),B=ringPts(p.b,p.r,ax,n);
+      band(A,B);
+      let pv=A;
+      for(let i=1;i<=m;i++){const th=i/m*Math.PI/2;
+        const rg=ringPts(V.add(p.a,V.mul(ax,-Math.sin(th)*p.r)),Math.cos(th)*p.r,ax,n);
+        band(pv,rg);pv=rg;}
+      pv=B;
+      for(let i=1;i<=m;i++){const th=i/m*Math.PI/2;
+        const rg=ringPts(V.add(p.b,V.mul(ax,Math.sin(th)*p.r)),Math.cos(th)*p.r,ax,n);
+        band(pv,rg);pv=rg;}
+    }else if(p.k==="tube"){
+      const ax=V.norm(V.sub(p.b,p.a)),n=SG(Math.max(p.r1,p.r2));
+      const A=ringPts(p.a,p.r1,ax,n),B=ringPts(p.b,p.r2,ax,n);
+      band(A,B);fan(A);fan(B);
+    }else if(p.k==="box"){
+      const c=[];
+      for(let j=0;j<8;j++)c.push(V.add(p.c,V.add(V.mul(p.u,j&1?1:-1),
+        V.add(V.mul(p.v,j&2?1:-1),V.mul(p.w,j&4?1:-1)))));
+      for(const f of [[0,2,6,4],[1,5,7,3],[0,4,5,1],[2,3,7,6],[0,1,3,2],[4,6,7,5]])
+        quad(c[f[0]],c[f[1]],c[f[2]],c[f[3]]);
+    }else if(p.k==="disc"){
+      const nn=V.norm(p.n),th=V.mul(nn,p.r*0.10),n=SG(p.r);
+      const a=V.sub(p.c,th),b=V.add(p.c,th);
+      const oA=ringPts(a,p.r,nn,n),oB=ringPts(b,p.r,nn,n);
+      band(oA,oB);
+      if(p.ri>1e-6){
+        const iA=ringPts(a,p.ri,nn,n),iB=ringPts(b,p.ri,nn,n);
+        band(iB,iA);band(oA,iA);band(iB,oB);
+      }else{fan(oA);fan(oB);}
+    }else if(p.k==="lathe"){
+      const prof=profAt(p.prof);
+      const mr=prof.reduce((m,q2)=>Math.max(m,q2[1]),0),n=SG(mr);
+      const [bu,bv]=basis(p.axis),ea=p.ell?p.ell[0]:1,eb=p.ell?p.ell[1]:1;
+      const rg=prof.map(([tt,r])=>{
+        const c=V.add(p.c,V.mul(p.axis,tt)),o=[];
+        for(let j=0;j<n;j++){const a=j/n*Math.PI*2;
+          o.push(V.add(c,V.add(V.mul(bu,r*ea*Math.cos(a)),V.mul(bv,r*eb*Math.sin(a)))));}
+        return o;});
+      for(let i=0;i<rg.length-1;i++)band(rg[i],rg[i+1]);
+      if(prof[0][1]>1e-6)fan(rg[0]);
+      if(prof[prof.length-1][1]>1e-6)fan(rg[rg.length-1]);
+    }else if(p.k==="panel"){
+      const nn=V.norm(p.n),h=V.mul(nn,p.th*0.5),lo=p.pts2||p.pts;
+      const up=p.pts.map(q2=>V.add(q2,h)),dn=lo.map(q2=>V.sub(q2,h));
+      fan(up);fan(dn);band(up,dn);
+    }
+  }
+  return {t:new Float32Array(T),tris:T.length/9};
+}
+
+/* =====================================================================
+   THE SHOAL — a hatchery bolted onto the yard.
+   Everything above still stands: the primitives, the tessellator, the
+   depth-tested drawing. But nothing below the banner is BUILT any more —
+   it is grown. The two rebindings at the end of this block replace the
+   yard's forge with a body-plan library: flesh is a lathe with a swelling
+   profile, a limb is a chain of capsules that curls as it tapers, a thorn
+   is a drawn tube, an eye is a sphere. Same seeds, same workers, same
+   drawing — different life.
+   ===================================================================== */
+const XN=["VORAX","NYCTH","MAW","THALASS","OPHION","KHARYB","NIDHOGG","SCYLLA",
+  "DAGON","MOLOCH","TIAMAT","APEP","LEVIA","GORGON","HYDRUS","KRAITH",
+  "ZHARR","ULGOTH","VERMIS","NOCTUA","SIRRUSH","ABYSSA","MORDAX","PHAGE"];
+const XROLE=["JUGGERNAUT","HIVE SHIP","RAZORWING","LAMPREY","SPORE MINE",
+  "MEDUSA","STARFANG","ANGLER"];
+const xMirZ=p=>{
+  const f=v=>[v[0],v[1],-v[2]];
+  const q=Object.assign({},p);
+  if(q.a)q.a=f(q.a);if(q.b)q.b=f(q.b);if(q.c)q.c=f(q.c);
+  if(q.axis)q.axis=f(q.axis);if(q.n)q.n=f(q.n);
+  if(q.u)q.u=f(q.u);if(q.v)q.v=f(q.v);if(q.w)q.w=f(q.w);
+  if(q.pts)q.pts=q.pts.map(f);
+  if(q.pts2)q.pts2=q.pts2.map(f);
+  return q;
+};
+/* the whole creature banks and dives: a roll about her axis of travel and a
+   little pitch, applied to every part after she is grown. A shoal where
+   every animal flies straight and level is a parade; this is what makes it
+   a shoal. */
+const xTilt=(parts,roll,pitch)=>{
+  const cr=Math.cos(roll),sr=Math.sin(roll),cp=Math.cos(pitch),sp=Math.sin(pitch);
+  const M=v=>{
+    const x=v[0],y=v[1]*cr-v[2]*sr,z=v[1]*sr+v[2]*cr;
+    return [x*cp-y*sp,x*sp+y*cp,z];
+  };
+  for(const p of parts){
+    for(const k2 of ["a","b","c","axis","n","u","v","w"])if(p[k2])p[k2]=M(p[k2]);
+    if(p.pts)p.pts=p.pts.map(M);
+    if(p.pts2)p.pts2=p.pts2.map(M);
+  }
+};
+/* the grower. Eight body plans now, and they must not rhyme: a bone arc, a
+   whale, a wing, a centipede, a cyst, a bell, a grasping star, a lantern
+   hunter. Smooth flesh is the default; ribs, legs, pustules and frills are
+   spent where a species earns them. */
+function xGrow(parts,R){
+  const rr=(a,b)=>a+(b-a)*R();
+  const put=p=>{parts.push(p);return p;};
+  const tent=(p0,dir,L,r0,curl,wob)=>{
+    let p=p0.slice(),d=V.norm(dir);
+    const n=9+((R()*5)|0),segL=L/n;
+    const [cu,cv]=basis(d);
+    const ca=V.norm(V.add(V.mul(cu,Math.cos(curl.a)),V.mul(cv,Math.sin(curl.a))));
+    for(let i=0;i<n;i++){
+      const r=Math.max(r0*(1-(i/n)*0.92),r0*0.06);
+      const q=V.add(p,V.mul(d,segL));
+      put(CAP(p,q,r));
+      p=q;
+      d=V.norm(V.add(V.add(d,V.mul(ca,curl.k*3.2/n)),
+                     V.mul([R()-0.5,R()-0.5,R()-0.5],wob)));
+    }
+    put(TUB(p,V.add(p,V.mul(d,segL*1.6)),r0*0.10,r0*0.012));
+    return p;
+  };
+  const spk=(p,dir,L,r)=>put(TUB(p,V.add(p,V.mul(V.norm(dir),L)),r,r*0.05));
+  /* a scythe; curl.dir bends it toward a given heading, curl.a picks a
+     plane blind — a claw knows where it is reaching */
+  const scy=(p0,dir,L,r0,curl)=>{
+    let p=p0.slice(),d=V.norm(dir);
+    const ns=4,segL=L/ns;
+    let ca;
+    if(curl.dir){
+      const b2=V.norm(curl.dir),pr=V.sub(b2,V.mul(d,V.dot(b2,d))),pl=V.len(pr);
+      ca=pl>1e-4?V.mul(pr,1/pl):basis(d)[0];
+    }else{
+      const [cu,cv]=basis(d);
+      ca=V.norm(V.add(V.mul(cu,Math.cos(curl.a||0)),V.mul(cv,Math.sin(curl.a||0))));
+    }
+    for(let i=0;i<ns;i++){
+      const r1=Math.max(r0*(1-i/ns*0.85),r0*0.06);
+      const q=V.add(p,V.mul(d,segL));
+      put(TUB(p,q,r1,Math.max(r0*(1-(i+1)/ns*0.85),r0*0.05)));
+      p=q;d=V.norm(V.add(d,V.mul(ca,curl.k*2.6/ns)));
+    }
+    put(TUB(p,V.add(p,V.mul(d,segL*0.9)),r0*0.12,r0*0.02));
+  };
+  const seg2=(a,b,r,ellY,pw)=>{
+    const dv=V.sub(b,a),L2=V.len(dv);if(L2<1e-6)return;
+    const ax=V.mul(dv,1/L2);
+    const n2=10,prof=[];
+    for(let i=0;i<=n2;i++){const u=i/n2;
+      prof.push([u*L2,Math.max(r*Math.pow(Math.max(Math.sin(Math.PI*u),0.001),pw||0.62),0.001)]);}
+    prof[0][1]=0.001;prof[n2][1]=0.001;
+    put({k:"lathe",c:a.slice(),axis:ax,prof,ell:[1,ellY||1]});
+  };
+  const spine=(pts,rF,ellY,o)=>{
+    const pw=(o&&o.pw)||0.40, ov=(o&&o.ov!=null)?o.ov:0.85;
+    const FR=[];
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i],b=pts[i+1];
+      const t=V.norm(V.sub(b,a));
+      const r=rF(i/Math.max(1,pts.length-2));
+      seg2(V.sub(a,V.mul(t,r*ov)),V.add(b,V.mul(t,r*ov)),r,ellY,pw);
+      FR.push({c:V.lerp(a,b,0.5),t,r});
+    }
+    return FR;
+  };
+  const rib=(c,t,r,dd)=>{const d2=dd||1;
+    put({k:"disc",c:c.slice(),n:t.slice(),r:r*(1+0.09*d2),ri:r*(1-0.13*d2)});};
+  /* a boil of cysts breaking the skin — sickness is very biological */
+  const pust=(c,r,n3)=>{
+    for(let i=0;i<n3;i++){
+      const az=rr(0,6.283),el=rr(-1,1);
+      put(SPH(V.add(c,[Math.cos(el)*Math.cos(az)*r*0.7,Math.sin(el)*r*0.7,
+                       Math.cos(el)*Math.sin(az)*r*0.7]),r*rr(0.22,0.42)));}};
+  /* a frill: a run of thin fin-panels down a stretch of spine */
+  const frill=(FR,i0,i1,up)=>{
+    for(let i=i0;i<Math.min(i1,FR.length);i++){
+      const f=FR[i],h=f.r;
+      put({k:"panel",n:[0,0,1],th:h*0.06,pts:[
+        V.add(f.c,V.mul(up,h*0.85)),
+        V.add(V.add(f.c,V.mul(f.t,-h*0.55)),V.mul(up,h*1.7)),
+        V.add(V.add(f.c,V.mul(f.t,-h*1.05)),V.mul(up,h*0.85))]});}};
+  return {rr,put,tent,spk,scy,seg2,spine,rib,pust,frill};
+}
+var buildXeno=function(seed){
+  const R=mulberry32(seed|0);
+  const parts=[];
+  const G=xGrow(parts,R),rr=G.rr;
+  const limb=fn=>{
+    const tmp=[];fn(xGrow(tmp,R));
+    for(const p of tmp){parts.push(p);parts.push(xMirZ(p));}
+  };
+  const arch=(R()*8)|0;
+  /* each species has its own size band — a shoal is fry and whales, never
+     a parade of sister frigates */
+  const SZ=[[20,60],[30,75],[18,52],[20,60],[8,20],[12,30],[10,30],[16,45]][arch];
+  const L=SZ[0]+Math.pow(R(),1.6)*SZ[1];
+  if(arch===0){
+    /* JUGGERNAUT: the flying bone — smooth arch, ribs where the bone
+       shows, two arms reaching out in front, a stern horn, orifices */
+    const Rm=L*rr(0.042,0.058);
+    const np=12,pts=[],archH=L*rr(0.10,0.22);
+    for(let i=0;i<np;i++){const u=i/(np-1);
+      pts.push([L*0.42-u*L*0.9,Math.sin(Math.PI*u)*archH,0]);}
+    const FR=G.spine(pts,u=>Rm*(0.45+0.75*Math.sin(Math.PI*Math.pow(u,0.95))),rr(0.72,0.95));
+    if(R()<0.35)for(const f of FR)G.rib(f.c,f.t,f.r,1.3);   /* the odd one is all skeleton */
+    else for(let i=4;i<FR.length-4;i+=2)G.rib(FR[i].c,FR[i].t,FR[i].r,1.5);
+    limb(g=>{g.scy(V.add(pts[0],[0,0,Rm*0.4]),V.norm([1,rr(-0.2,0.25),rr(0.35,0.8)]),
+      L*rr(0.34,0.52),Rm*rr(0.34,0.50),{a:rr(0,6.283),k:rr(0.7,1.4)});});
+    if(R()<0.4)limb(g=>{g.scy(V.add(pts[1],[0,0,Rm*0.5]),V.norm([0.6,rr(-0.3,0.4),1]),
+      L*rr(0.22,0.36),Rm*rr(0.24,0.34),{a:rr(0,6.283),k:rr(0.7,1.4)});});
+    G.scy(pts[np-1],V.norm([-0.6,rr(0.5,1.0),0]),L*rr(0.18,0.30),Rm*rr(0.30,0.45),
+          {a:rr(0,6.283),k:rr(0.4,0.9)});
+    const no=2+((R()*3)|0);
+    for(let i=0;i<no;i++){
+      const u=rr(0.25,0.75),bx=L*0.42-u*L*0.9,by=Math.sin(Math.PI*u)*archH;
+      const or2=Rm*rr(0.26,0.38);
+      G.put(TUB([bx,by-Rm*0.75,0],[bx,by-Rm*1.25,0],or2,or2*rr(1.25,1.5)));
+    }
+    xTilt(parts,rr(-0.6,0.6),rr(-0.12,0.12));
+  }else if(arch===1){
+    /* HIVE SHIP: a whale in chitin — and no two whales dressed alike */
+    const Rm=L*rr(0.085,0.115);
+    const droop=Rm*rr(0.25,0.75);
+    G.seg2([L*0.44,0,0],[L*0.12,0,0],Rm*rr(0.58,0.70),rr(0.85,1.0),0.5);
+    G.seg2([L*0.20,0,0],[-L*0.30,-droop*0.5,0],Rm,rr(0.80,0.95),0.45);
+    const tpts=[[-L*0.24,-droop*0.5,0],[-L*0.36,-droop*0.75,0],
+                [-L*0.46,-droop*0.95,0],[-L*0.54,-droop*1.1,0]];
+    G.spine(tpts,u=>Rm*(0.35-u*0.24),rr(0.85,1.0),{pw:0.5,ov:0.7});
+    G.rib([L*0.16,0,0],[1,0,0],Rm*0.68,1.6);
+    const nh=1+((R()*2)|0);
+    for(let i=0;i<nh;i++){
+      const x0=L*rr(-0.12,0.10);
+      G.seg2([x0+L*0.14,Rm*0.42,0],[x0-L*0.14,Rm*0.38,0],
+             Rm*rr(0.55,0.72),rr(0.5,0.68),0.5);
+    }
+    if(R()<0.7){
+      const cx=L*rr(-0.05,0.10),ch=Rm*rr(0.5,1.0);
+      G.put({k:"panel",n:[0,0,1],th:Rm*0.10,pts:[
+        [cx+L*0.16,Rm*0.55,0],[cx+L*0.05,Rm*0.75+ch,0],
+        [cx-L*0.07,Rm*0.72+ch*0.8,0],[cx-L*0.16,Rm*0.5,0]]});
+    }
+    const head=[L*0.44,0,0],hr=Rm*0.66;
+    G.spk(head,[1,rr(-0.12,0.06),0],L*rr(0.10,0.18),hr*0.40);
+    limb(g=>{g.scy(V.add(head,[0,-hr*0.25,hr*0.45]),V.norm([0.6,-0.75,0.35]),
+      L*rr(0.10,0.17),hr*rr(0.18,0.26),{a:rr(0,6.283),k:rr(0.9,1.6)});});
+    limb(g=>{g.tent(V.add(head,[0,-hr*0.4,hr*0.25]),V.norm([1,rr(-0.5,-0.2),0.25]),
+      L*rr(0.25,0.45),hr*rr(0.13,0.20),{a:rr(0,6.283),k:rr(0.8,1.6)},0.05);});
+    if(R()<0.4)limb(g=>{g.tent([L*rr(-0.05,0.1),-Rm*0.85,Rm*0.2],
+      V.norm([-0.3,-1,0.15]),L*rr(0.3,0.5),Rm*rr(0.08,0.12),
+      {a:rr(0,6.283),k:rr(0.3,0.9)},0.06);});
+    if(R()<0.5)G.pust([L*rr(-0.15,0.1),Rm*rr(0.1,0.5),Rm*rr(0.3,0.6)],Rm*rr(0.35,0.55),4+((R()*4)|0));
+    limb(g=>{for(let i=0;i<2;i++){
+      const bx=L*rr(-0.15,0.12);
+      for(let j=0;j<3;j++)
+        g.spk([bx+rr(-1,1)*Rm*0.2,Rm*rr(0.0,0.3),Rm*rr(0.75,0.9)],
+              V.norm([rr(-0.2,0.2),rr(0.2,0.6),1]),
+              Rm*rr(0.5,1.0),Rm*rr(0.07,0.11));}});
+    limb(g=>{g.put(SPH(V.add(head,[hr*0.25,hr*0.35,hr*0.4]),hr*rr(0.13,0.19)));});
+    G.scy(tpts[3],V.norm([-1,rr(-0.35,0.0),0]),L*rr(0.12,0.20),Rm*0.22,
+          {a:rr(0,6.283),k:rr(0.6,1.2)});
+    xTilt(parts,rr(-0.25,0.25),rr(-0.08,0.08));
+  }else if(arch===2){
+    /* RAZORWING: membranes first, body an afterthought — some grow a
+       second pair aft, and they all fly banked */
+    const Rm=L*rr(0.035,0.050);
+    const np=10,pts=[],lift=Rm*rr(0.25,0.60);
+    for(let i=0;i<np;i++){const u=i/(np-1);
+      pts.push([L*0.45-u*L*0.9,Math.sin(Math.PI*u)*lift,0]);}
+    G.spine(pts,u=>Rm*(0.40+0.75*Math.sin(Math.PI*Math.pow(u,0.8))),rr(0.55,0.72));
+    const wing=(rootX,W,sw)=>{limb(g=>{
+      const zr=Rm*0.5,tipX=rootX-L*rr(0.18,0.34);
+      const wp=[[rootX,0,zr],[tipX+W*0.35,sw,zr+W*0.65],[tipX-W*0.15,sw,zr+W],
+                [tipX-W*0.45,sw,zr+W*0.55],[rootX-L*0.36,0,zr]];
+      g.put({k:"panel",pts:wp,n:[0,1,0],th:Rm*0.14});
+      g.put(TUB([rootX,0,zr],[tipX+W*0.35,sw,zr+W*0.65],Rm*0.22,Rm*0.08));});};
+    wing(L*0.14,L*rr(0.38,0.60),Rm*rr(-1.5,1.5));
+    if(R()<0.4)wing(-L*0.16,L*rr(0.18,0.30),Rm*rr(-1,1));
+    if(R()<0.6)limb(g=>{g.scy([L*rr(0.10,0.24),0,Rm*0.5],
+      V.norm([rr(0.5,0.9),rr(-0.2,0.6),rr(0.9,1.5)]),
+      L*rr(0.40,0.60),Rm*rr(0.30,0.42),{a:rr(0,6.283),k:rr(0.9,1.7)});});
+    G.spk(pts[0],[1,rr(-0.08,0.08),0],L*rr(0.12,0.20),Rm*0.30);
+    limb(g=>{g.put(SPH(V.add(pts[0],[0,Rm*0.25,Rm*0.30]),Rm*rr(0.12,0.18)));});
+    G.tent(pts[np-1],V.norm([-1,rr(-0.1,0.3),0]),L*rr(0.35,0.55),Rm*0.24,
+           {a:rr(0,6.283),k:rr(0.4,1.0)},0.05);
+    xTilt(parts,rr(-0.7,0.7),rr(-0.15,0.15));
+  }else if(arch===3){
+    /* LAMPREY: the centipede — though a third of them shed their legs for
+       a dorsal frill and swim like eels. Any roll at all: a worm has no
+       idea which way is up */
+    const Rm=L*rr(0.045,0.065);
+    const np=9+((R()*5)|0),pts=[];
+    const amp=Rm*rr(0.6,1.6),ph=rr(0,6.283),f2=rr(1.3,2.4);
+    for(let i=0;i<np;i++){const u=i/(np-1);
+      pts.push([L*0.45-u*L*0.9,Math.sin(u*f2*Math.PI+ph)*amp,0]);}
+    const FR=G.spine(pts,u=>Rm*(0.55+0.55*Math.sin(Math.PI*Math.pow(u,0.85))),rr(0.80,1.0),
+                     {pw:0.62,ov:0.5});
+    for(const f of FR)G.rib(f.c,f.t,f.r,1.2);
+    if(R()<0.65){
+      limb(g=>{for(let i=1;i<FR.length;i++){
+        const f=FR[i];
+        g.spk(V.add(f.c,[0,-f.r*0.4,f.r*0.7]),V.norm([rr(-0.1,0.2),-0.55,1]),
+              f.r*rr(0.6,1.0),f.r*rr(0.10,0.15));}});
+    }else G.frill(FR,1,FR.length-1,[0,1,0]);
+    if(R()<0.3)G.pust(FR[(FR.length/2)|0].c,Rm*rr(0.5,0.8),3+((R()*4)|0));
+    const head=pts[0],hr=FR[0].r;
+    const nm=4+((R()*3)|0);
+    for(let j=0;j<nm;j++){
+      const a2=(j+0.5)/nm*6.283;
+      G.scy(V.add(head,[hr*0.3,Math.sin(a2)*hr*0.6,Math.cos(a2)*hr*0.6]),
+            V.norm([1,Math.sin(a2)*0.5,Math.cos(a2)*0.5]),
+            L*rr(0.10,0.16),hr*rr(0.14,0.20),{a:a2+Math.PI,k:rr(1.2,2.0)});
+    }
+    G.spk(pts[np-1],[-1,rr(-0.2,0.2),0],L*rr(0.12,0.20),Rm*0.30);
+    xTilt(parts,rr(-3.14,3.14),rr(-0.2,0.2));
+  }else if(arch===4){
+    /* SPORE MINE: small, drifting at any attitude — the plankton */
+    const Rm=L*rr(0.11,0.15);
+    const np=6,pts=[];
+    for(let i=0;i<np;i++){const u=i/(np-1);
+      pts.push([Rm*1.6-u*Rm*3.2,0,0]);}
+    const FR=G.spine(pts,u=>Rm*Math.pow(Math.sin(Math.PI*(0.08+u*0.84)),0.6),rr(0.85,1.0),
+                     {pw:0.45,ov:0.9});
+    G.rib(FR[2].c,FR[2].t,FR[2].r,1.7);
+    const rings=R()<0.4?[0.30,0.62]:[0.42];
+    for(const uc of rings){
+      const nsp=6+((R()*4)|0),elc=rr(-0.35,0.35);
+      for(let i=0;i<nsp;i++){
+        const a2=i/nsp*6.283;
+        const d=[Math.sin(elc),Math.sin(a2)*Math.cos(elc),Math.cos(a2)*Math.cos(elc)];
+        G.spk(V.add([Rm*1.6-uc*Rm*3.2,0,0],V.mul(V.norm(d),Rm*0.72)),d,
+              Rm*rr(1.2,2.2),Rm*rr(0.06,0.10));
+      }
+    }
+    G.spk([Rm*1.5,0,0],[1,0,0],Rm*rr(1.4,2.2),Rm*0.12);
+    const nt2=3+((R()*3)|0);
+    for(let i=0;i<nt2;i++){
+      const a2=rr(0,6.283);
+      G.tent([-Rm*1.4,Math.sin(a2)*Rm*0.3,Math.cos(a2)*Rm*0.3],
+             V.norm([-1,Math.sin(a2)*0.25,Math.cos(a2)*0.25]),
+             Rm*rr(3.5,5.5),Rm*rr(0.10,0.16),{a:rr(0,6.283),k:rr(0.3,0.8)},0.05);
+    }
+    xTilt(parts,rr(-3.14,3.14),rr(-0.5,0.5));
+  }else if(arch===5){
+    /* MEDUSA: the first vertical animal in the shoal — a bell, a deep rim
+       ring, and a skirt of tendrils hanging into the dark */
+    const Rm=L*rr(0.26,0.36);
+    const H=Rm*rr(1.0,1.3),n3=14,prof=[];
+    for(let i=0;i<=n3;i++){const u=i/n3;
+      prof.push([u*H,Math.max(Rm*Math.pow(Math.sin(0.22+u*1.45),0.75),0.001)]);}
+    prof[0][1]=0.001;
+    G.put({k:"lathe",c:[0,H*0.55,0],axis:[0,-1,0],prof,ell:[1,1]});
+    G.put({k:"disc",c:[0,-H*0.42,0],n:[0,1,0],r:Rm*1.08,ri:Rm*0.78});
+    const nT=9+((R()*6)|0);
+    for(let i=0;i<nT;i++){
+      const a2=i/nT*6.283+rr(-0.1,0.1);
+      G.tent([Math.cos(a2)*Rm*0.85,-H*0.40,Math.sin(a2)*Rm*0.85],
+             V.norm([Math.cos(a2)*0.22,-1,Math.sin(a2)*0.22]),
+             L*rr(0.7,1.2),Rm*rr(0.07,0.11),{a:rr(0,6.283),k:rr(0.3,0.9)},0.06);
+    }
+    for(let i=0;i<3;i++){
+      const a2=i/3*6.283+0.5;
+      G.tent([Math.cos(a2)*Rm*0.4,-H*0.35,Math.sin(a2)*Rm*0.4],
+             [0,-1,0],L*rr(0.9,1.4),Rm*rr(0.13,0.18),
+             {a:rr(0,6.283),k:rr(0.2,0.6)},0.04);
+    }
+    const nc=3+((R()*4)|0);
+    for(let i=0;i<nc;i++){
+      const a2=i/nc*6.283;
+      G.spk([Math.cos(a2)*Rm*0.25,H*0.5,Math.sin(a2)*Rm*0.25],
+            V.norm([Math.cos(a2)*0.5,1,Math.sin(a2)*0.5]),
+            Rm*rr(0.5,1.1),Rm*rr(0.05,0.09));
+    }
+    if(R()<0.4)G.pust([0,H*0.2,0],Rm*rr(0.5,0.7),4+((R()*4)|0));
+    xTilt(parts,rr(-0.35,0.35),rr(-0.2,0.2));
+  }else if(arch===6){
+    /* STARFANG: a grasping hand adrift — radial arms all curling toward
+       whatever lies ahead of it, an eye where a palm should be */
+    const Rc=L*rr(0.12,0.17);
+    G.seg2([L*0.18,0,0],[-L*0.18,0,0],Rc,rr(0.85,1.0),0.5);
+    const na=5+((R()*3)|0),off=rr(0,6.283);
+    for(let i=0;i<na;i++){
+      const a2=off+i/na*6.283;
+      G.scy([rr(-0.04,0.04)*L,Math.sin(a2)*Rc*0.8,Math.cos(a2)*Rc*0.8],
+            V.norm([rr(0.05,0.3),Math.sin(a2),Math.cos(a2)]),
+            L*rr(0.45,0.65),Rc*rr(0.28,0.40),{dir:[1,0,0],k:rr(0.9,1.7)});
+      G.spk([L*0.05,Math.sin(a2+3.14/na)*Rc*0.7,Math.cos(a2+3.14/na)*Rc*0.7],
+            V.norm([0.2,Math.sin(a2+3.14/na),Math.cos(a2+3.14/na)]),
+            Rc*rr(0.6,1.2),Rc*rr(0.07,0.11));
+    }
+    G.put(SPH([L*0.20,0,0],Rc*rr(0.30,0.42)));
+    G.tent([-L*0.18,0,0],[-1,rr(-0.2,0.2),rr(-0.2,0.2)],L*rr(0.5,0.9),Rc*0.22,
+           {a:rr(0,6.283),k:rr(0.4,1.0)},0.06);
+    xTilt(parts,rr(-3.14,3.14),rr(-0.08,0.08));
+  }else{
+    /* ANGLER: hunched, all skull and appetite — a lure held out over the
+       jaw, teeth both ways, a crest down the hump and a whip behind */
+    const Rm=L*rr(0.07,0.10);
+    const np=11,pts=[],hump=L*rr(0.10,0.16);
+    for(let i=0;i<np;i++){const u=i/(np-1);
+      pts.push([L*0.44-u*L*0.9,Math.sin(u*Math.PI*0.95)*hump-hump*0.35,0]);}
+    const FR=G.spine(pts,u=>Rm*(0.20+1.05*Math.pow(1-u,1.2)),rr(0.80,0.95),{pw:0.42});
+    const head=pts[0],hy=head[1],hr=FR[0].r;
+    /* the jaw, slung under and thrown forward */
+    G.seg2([head[0]+hr*0.9,hy-hr*0.8,0],[head[0]-hr*1.6,hy-hr*0.55,0],
+           hr*rr(0.38,0.5),rr(0.7,0.9),0.5);
+    limb(g=>{for(let i=0;i<4+((R()*3)|0);i++){
+      const tx=head[0]+hr*0.6-i*hr*0.42;
+      g.spk([tx,hy-hr*0.55,hr*rr(0.1,0.3)],V.norm([0.1,1,0.1]),hr*rr(0.3,0.5),hr*0.07);
+      g.spk([tx-hr*0.2,hy-hr*0.05,hr*rr(0.1,0.3)],V.norm([0.1,-1,0.1]),hr*rr(0.3,0.5),hr*0.07);
+    }});
+    /* the lure */
+    G.scy([head[0]-hr*0.2,hy+hr*0.7,0],V.norm([1,rr(0.6,0.9),0]),
+          L*rr(0.20,0.30),hr*rr(0.10,0.14),{dir:[0.4,-1,0],k:rr(1.4,2.0)});
+    G.put(SPH([head[0]+L*0.20,hy+hr*rr(0.3,0.7),0],hr*rr(0.16,0.24)));
+    /* crest down the hump */
+    const ncr=4+((R()*4)|0);
+    for(let i=0;i<ncr;i++){
+      const f=FR[2+((i/ncr*(FR.length*0.5))|0)];
+      G.spk(V.add(f.c,[0,f.r*0.8,0]),V.norm([rr(-0.5,-0.1),1,0]),
+            f.r*rr(0.8,1.6),f.r*rr(0.08,0.12));
+    }
+    limb(g=>{g.scy(V.add(FR[3].c,[0,-FR[3].r*0.3,FR[3].r*0.7]),
+      V.norm([0.3,-0.6,1]),L*rr(0.14,0.22),FR[3].r*rr(0.16,0.24),
+      {a:rr(0,6.283),k:rr(0.8,1.4)});});
+    limb(g=>{g.put(SPH(V.add(head,[hr*0.5,hy>0?0:hr*0.35-hy*0,hr*0.45]),hr*rr(0.14,0.2)));});
+    if(R()<0.35)G.pust(FR[4].c,Rm*rr(0.5,0.8),3+((R()*4)|0));
+    G.tent(pts[np-1],V.norm([-1,rr(-0.3,0.1),0]),L*rr(0.3,0.5),Rm*0.18,
+           {a:rr(0,6.283),k:rr(0.4,1.0)},0.06);
+    xTilt(parts,rr(-0.3,0.3),rr(-0.1,0.1));
+  }
+  const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
+  for(const p of parts)for(const e2 of partExtents(p)){
+    const q=e2[0],r=e2[1];
+    for(let a2=0;a2<3;a2++){
+      if(q[a2]-r<bb[0][a2])bb[0][a2]=q[a2]-r;
+      if(q[a2]+r>bb[1][a2])bb[1][a2]=q[a2]+r;}}
+  const NB=XN.length;let u=seed>>>0;
+  const name=XN[u%NB];u=(u-u%NB)/NB;
+  const b1=u%26;u=(u-b1)/26;
+  const b2=u%26;u=(u-b2)/26;
+  const LN=bb[1][0]-bb[0][0],BM=bb[1][2]-bb[0][2],HT=bb[1][1]-bb[0][1];
+  return {parts,bb,meta:{
+    desig:"XB-"+String.fromCharCode(65+b1,65+b2)+String(u).padStart(5,"0")+" "+name,
+    klass:name+"-BROOD "+XROLE[arch],
+    length:LN,beam:BM,height:HT,
+    mass:LN*BM*HT*0.05,
+    crew:Math.max(1,Math.round(Math.pow(LN,1.45)/7))}};
+};
+/* the great ones: the hive-ship plan grown past argument — with pustule
+   fields, a frilled tail, and the faint list of something alive rather
+   than trimmed. nH counts appetite, not hulls. */
+var buildXenoMega=function(seed,nH){
+  const R=mulberry32(seed|0);
+  const parts=[];
+  const G=xGrow(parts,R),rr=G.rr;
+  const limb=fn=>{
+    const tmp=[];fn(xGrow(tmp,R));
+    for(const p of tmp){parts.push(p);parts.push(xMirZ(p));}
+  };
+  const XMROLE={50:["HQ","HIVE QUEEN"],25:["BH","BEHEMOTH"],10:["BR","BROODMOTHER"]};
+  const L=140+nH*rr(1.2,2.2);
+  const Rm=L*rr(0.075,0.10);
+  const droop=Rm*rr(0.3,0.8);
+  G.seg2([L*0.44,0,0],[L*0.12,0,0],Rm*rr(0.58,0.70),rr(0.85,1.0),0.5);
+  G.seg2([L*0.20,0,0],[-L*0.30,-droop*0.5,0],Rm,rr(0.80,0.95),0.45);
+  const tpts=[[-L*0.24,-droop*0.5,0],[-L*0.36,-droop*0.75,0],
+              [-L*0.46,-droop*0.95,0],[-L*0.54,-droop*1.1,0]];
+  const TFR=G.spine(tpts,u=>Rm*(0.35-u*0.24),rr(0.85,1.0),{pw:0.5,ov:0.7});
+  G.frill(TFR,0,TFR.length,[0,1,0]);
+  G.rib([L*0.16,0,0],[1,0,0],Rm*0.68,1.6);
+  G.rib([-L*0.26,-droop*0.55,0],[1,0,0],Rm*0.38,1.5);
+  const nh2=2+((R()*2)|0);
+  for(let i=0;i<nh2;i++){
+    const x0=L*rr(-0.14,0.10);
+    G.seg2([x0+L*0.14,Rm*0.42,0],[x0-L*0.14,Rm*0.38,0],
+           Rm*rr(0.55,0.72),rr(0.5,0.68),0.5);
+  }
+  const cx=L*rr(-0.05,0.10),ch=Rm*rr(0.6,1.1);
+  G.put({k:"panel",n:[0,0,1],th:Rm*0.09,pts:[
+    [cx+L*0.18,Rm*0.55,0],[cx+L*0.05,Rm*0.75+ch,0],
+    [cx-L*0.08,Rm*0.72+ch*0.8,0],[cx-L*0.18,Rm*0.5,0]]});
+  const head=[L*0.44,0,0],hr=Rm*0.66;
+  G.spk(head,[1,rr(-0.10,0.05),0],L*rr(0.10,0.16),hr*0.38);
+  limb(g=>{g.scy(V.add(head,[0,-hr*0.28,hr*0.45]),V.norm([0.6,-0.7,0.35]),
+    L*rr(0.08,0.14),hr*rr(0.16,0.24),{a:rr(0,6.283),k:rr(0.9,1.6)});});
+  const nt=Math.min(22,Math.round(nH*0.4));
+  for(let i=0;i<nt;i++){
+    const a2=(i+0.5)/nt*6.283;
+    G.tent(V.add(head,[hr*0.3,Math.sin(a2)*hr*0.55,Math.cos(a2)*hr*0.55]),
+           V.norm([1,Math.sin(a2)*0.6-0.25,Math.cos(a2)*0.6]),
+           L*rr(0.22,0.42),hr*rr(0.08,0.13),{a:rr(0,6.283),k:rr(0.8,1.6)},0.05);
+  }
+  const nl=Math.max(2,Math.round(nH*0.08));
+  for(let i=0;i<nl;i++){
+    const bx=L*rr(-0.10,0.16);
+    limb(g=>{g.scy([bx,0,Rm*0.7],
+      V.norm([rr(0.4,0.9),rr(-0.1,0.7),rr(0.9,1.5)]),
+      L*rr(0.25,0.45),Rm*rr(0.16,0.24),{a:rr(0,6.283),k:rr(0.9,1.7)});});
+  }
+  const ns=Math.max(4,Math.round(nH*0.12));
+  for(let i=0;i<ns;i++){
+    const bx=L*rr(-0.25,0.15);
+    G.spk([bx,Rm*rr(0.55,0.75),0],V.norm([rr(-0.3,0.1),1,rr(-0.1,0.1)]),
+          Rm*rr(0.7,1.4),Rm*rr(0.06,0.10));
+  }
+  const npu=2+((R()*3)|0);
+  for(let i=0;i<npu;i++)
+    G.pust([L*rr(-0.28,0.10),Rm*rr(-0.4,0.5),Rm*rr(-0.7,0.7)],Rm*rr(0.30,0.50),4+((R()*5)|0));
+  for(let i=0;i<nH;i++){
+    const bx=L*rr(-0.30,0.12);
+    G.put(SPH([bx,-Rm*rr(0.65,0.95)-Math.max(0,-bx/L-0.2)*droop,rr(-0.5,0.5)*Rm*0.7],
+              Rm*rr(0.10,0.18)));
+  }
+  const ne=3+((R()*4)|0);
+  for(let i=0;i<ne;i++)limb(g=>{
+    g.put(SPH(V.add(head,[hr*rr(0.1,0.5),hr*rr(0.2,0.5),hr*rr(0.15,0.5)]),
+              hr*rr(0.08,0.13)));});
+  G.scy(tpts[3],V.norm([-1,rr(-0.3,0.0),0]),L*rr(0.10,0.18),Rm*0.20,
+        {a:rr(0,6.283),k:rr(0.6,1.2)});
+  xTilt(parts,rr(-0.15,0.15),rr(-0.05,0.05));
+  const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
+  for(const p of parts)for(const e2 of partExtents(p)){
+    const q=e2[0],r=e2[1];
+    for(let a2=0;a2<3;a2++){
+      if(q[a2]-r<bb[0][a2])bb[0][a2]=q[a2]-r;
+      if(q[a2]+r>bb[1][a2])bb[1][a2]=q[a2]+r;}}
+  const NB=XN.length;let u=seed>>>0;
+  const name=XN[u%NB];u=(u-u%NB)/NB;
+  const b1=u%26;u=(u-b1)/26;
+  const b2=u%26;u=(u-b2)/26;
+  const role=XMROLE[nH]||["HQ","HIVE QUEEN"];
+  const LN=bb[1][0]-bb[0][0],BM=bb[1][2]-bb[0][2],HT=bb[1][1]-bb[0][1];
+  return {parts,bb,meta:{
+    desig:role[0]+"-"+String.fromCharCode(65+b1,65+b2)+String(u).padStart(5,"0")+" "+name,
+    klass:name+"-SPAWN "+role[1],
+    length:LN,beam:BM,height:HT,
+    mass:LN*BM*HT*0.05,crew:Math.round(nH*rr(400,900))}};
+};
+//__ARMADA_WORKER_CUT__
+
+/* =====================================================================
+   THE WAR — two yards, one sky.
+   Everything above is the two fleets' biology: the Orbital Yard's forge
+   and the Shoal's hatchery, side by side. Below, neither fleet is baked
+   into chunks any more — every combatant is her own mesh with her own
+   heading, because a ship that cannot move cannot fight. They hyperspace
+   in from opposite sides, close, and burn until one sky is empty.
+   ===================================================================== */
+const PAL=[
+  {id:"blueprint",bg:"#0E2E52",ink:"#D9E6F2",foe:"#7CFFB2"},
+  {id:"bone",bg:"#E9E2D2",ink:"#191512",foe:"#B03A2E"},
+  {id:"slate",bg:"#1A1A1C",ink:"#C6CACE",foe:"#8CFF9E"},
+  {id:"vermilion",bg:"#F0450E",ink:"#150F0B",foe:"#FFF3B0"},
+  {id:"sulphur",bg:"#E5C132",ink:"#161310",foe:"#2E1E66"}
+];
+let palI=2, sceneR=1500;
+const BSTAND=680, SLIDE=320;
+const cvs=document.getElementById("gl");
+const gl=cvs.getContext("webgl2",{antialias:true,powerPreference:"high-performance"});
+if(!gl){document.getElementById("stat").textContent="THIS SKY NEEDS WEBGL2";throw new Error("no webgl2");}
+function compile(vs,fs){
+  const mk=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);
+    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));
+    return s;};
+  const p=gl.createProgram();
+  gl.attachShader(p,mk(gl.VERTEX_SHADER,vs));gl.attachShader(p,mk(gl.FRAGMENT_SHADER,fs));
+  gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));
+  return p;
+}
+/* one ship, one draw: local mesh, a heading and a berth as uniforms */
+const shipProg=compile(`#version 300 es
+layout(location=0) in vec3 aP;
+uniform mat4 uVP;uniform vec3 uPos;uniform vec2 uYaw;uniform vec4 uRot;
+out vec3 vW;out float vGrain;
+void main(){
+  vec3 p=aP;
+  /* wreckage tumbles about its own heart; a living ship passes w=0 */
+  if(uRot.w!=0.0){
+    vec3 ax=uRot.xyz;
+    float c=cos(uRot.w),s2=sin(uRot.w);
+    p=p*c+cross(ax,p)*s2+ax*dot(ax,p)*(1.0-c);
+  }
+  vec3 w=vec3(uYaw.x*p.x-uYaw.y*p.z,p.y,uYaw.y*p.x+uYaw.x*p.z)+uPos;
+  vW=w;
+  vGrain=fract(sin(dot(aP,vec3(12.9898,78.233,37.719)))*43758.5453);
+  gl_Position=uVP*vec4(w,1.0);
+}`,`#version 300 es
+precision highp float;
+in vec3 vW;in float vGrain;
+uniform vec3 uEye,uInk,uBg;
+uniform float uFog,uIn,uHurt,uTone;
+out vec4 o;
+void main(){
+  if(vGrain>uIn)discard;
+  vec3 N=normalize(cross(dFdx(vW),dFdy(vW)));
+  vec3 Vd=normalize(uEye-vW);
+  if(dot(N,Vd)<0.0)N=-N;
+  float d=max(dot(N,normalize(vec3(0.45,0.80,0.35))),0.0);
+  float f=max(dot(N,normalize(vec3(-0.55,0.10,-0.65))),0.0);
+  float shade=(0.20+0.66*d+0.16*f+0.12*(N.y*0.5+0.5))*uTone;
+  /* a hit rings the whole hull for a breath */
+  shade=mix(shade,1.0,uHurt);
+  vec3 col=mix(uBg,uInk,clamp(shade,0.0,1.0));
+  float fog=1.0-exp(-length(uEye-vW)*uFog);
+  o=vec4(mix(col,uBg,fog*0.85),1.0);
+}`);
+const SU={vp:0,pos:0,yaw:0,rot:0,eye:0,ink:0,bg:0,fog:0,inz:0,hurt:0,tone:0};
+for(const k of Object.keys(SU))SU[k]=gl.getUniformLocation(shipProg,
+  {vp:"uVP",pos:"uPos",yaw:"uYaw",rot:"uRot",eye:"uEye",ink:"uInk",bg:"uBg",fog:"uFog",
+   inz:"uIn",hurt:"uHurt",tone:"uTone"}[k]);
+const beamProg=compile(`#version 300 es
+layout(location=0) in vec3 aP;
+uniform mat4 uVP;
+void main(){gl_Position=uVP*vec4(aP,1.0);}`,`#version 300 es
+precision highp float;
+uniform vec4 uCol;out vec4 o;
+void main(){o=uCol;}`);
+const BU={vp:gl.getUniformLocation(beamProg,"uVP"),col:gl.getUniformLocation(beamProg,"uCol")};
+const flashProg=compile(`#version 300 es
+layout(location=0) in vec4 aF;
+layout(location=1) in vec3 aS;
+uniform mat4 uVP;uniform float uT,uPx;
+out float vA;out float vC;out float vO;out float vSeed;
+void main(){
+  float age=uT-aF.w;
+  if(age<0.0||age>0.8){gl_Position=vec4(2.0,2.0,2.0,1.0);gl_PointSize=0.0;vA=0.0;vC=0.0;vO=0.0;vSeed=0.0;return;}
+  gl_Position=uVP*vec4(aF.xyz,1.0);
+  float o2=age/0.8;
+  vA=exp(-age*5.0)*(1.0-smoothstep(0.70,1.0,o2));
+  vC=aS.y;vO=o2;vSeed=aS.z;
+  gl_PointSize=clamp(aS.x*(0.25+2.6*o2)*uPx/max(gl_Position.w,1.0),1.0,420.0);
+}`,`#version 300 es
+precision highp float;
+in float vA;in float vC;in float vO;in float vSeed;
+uniform vec3 uC0,uC1;out vec4 o;
+void main(){
+  vec2 d=gl_PointCoord-0.5;
+  float a=atan(d.y,d.x);
+  float r=length(d)*2.0;
+  vec3 col;
+  float rw=0.9;
+  if(vC>1.5){
+    /* an explosion is heat, not a team colour: white going to ember, and
+       no two the same shape — the lobes come off the flash's own seed */
+    float spike=0.72+0.28*sin(a*(3.0+floor(vSeed*4.0))+vSeed*43.0)
+                    +0.14*sin(a*(7.0+floor(vSeed*5.0))-vSeed*17.0);
+    r/=max(spike,0.2);
+    col=mix(vec3(1.0,0.97,0.88),vec3(1.0,0.45,0.16),clamp(vO*1.4,0.0,1.0));
+    rw=0.45;
+  }else col=mix(uC0,uC1,vC);
+  if(r>1.0)discard;
+  float core=exp(-r*r*7.0);
+  float ring=smoothstep(0.42,0.88,r)*(1.0-smoothstep(0.88,1.0,r));
+  o=vec4(col,(core*0.6+ring*rw)*vA);
+}`);
+const FU={vp:gl.getUniformLocation(flashProg,"uVP"),t:gl.getUniformLocation(flashProg,"uT"),
+  px:gl.getUniformLocation(flashProg,"uPx"),c0:gl.getUniformLocation(flashProg,"uC0"),
+  c1:gl.getUniformLocation(flashProg,"uC1")};
+const starProg=compile(`#version 300 es
+layout(location=0) in vec4 aS;
+uniform mat4 uVP;
+void main(){gl_Position=uVP*vec4(aS.xyz,1.0);gl_PointSize=aS.w;}`,`#version 300 es
+precision highp float;
+uniform vec3 uInk;out vec4 o;
+void main(){
+  float r=length(gl_PointCoord-0.5);
+  if(r>0.5)discard;
+  o=vec4(uInk,0.30*(1.0-r*1.4));
+}`);
+const USvp=gl.getUniformLocation(starProg,"uVP"),USink=gl.getUniformLocation(starProg,"uInk");
+function hex(h){return [parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255];}
+let inkc=[1,1,1],bgc=[0,0,0],foec=[0,1,0];
+function applyPal(){
+  const P2=PAL[palI];
+  inkc=hex(P2.ink);bgc=hex(P2.bg);foec=hex(P2.foe);
+  document.documentElement.style.setProperty("--bg",P2.bg);
+  document.documentElement.style.setProperty("--ink",P2.ink);
+  gl.clearColor(bgc[0],bgc[1],bgc[2],1);
+}
+/* ===================== the workers forge both fleets ===================== */
+const WORKER_MAIN=`
+const P={fuse:0.5,detail:0.35,line:1};
+const MEGA_ROLE={50:["LV","LEVIATHAN"],25:["DN","DREADNOUGHT"],10:["AK","ARK CARRIER"]};
+function buildMegaShip(seed,nH){
+  const R=mulberry32(seed|0),rr=(a,b)=>a+(b-a)*R();
+  const parts=[],hulls=[];
+  /* cast a hull class once (nose at 0), then berth copies wherever asked */
+  const build=(L,r)=>{const tmp=[];const sp=composeSpine(-L,0,r,rr,R,P,tmp,null,{});
+    return {tmp,x0:sp.xTail,r};};
+  const place=(B,xN,y,z)=>{
+    for(const q of B.tmp)parts.push(xlate(q,[xN,y,z]));
+    hulls.push({x0:B.x0+xN,x1:xN,y,z,r:B.r});};
+  const pair=(B,xN,y,z)=>{place(B,xN,y,z);place(B,xN,y,-z);};
+  const r0=8+rr(0,4);
+  const L0=r0*rr(12,15);
+  place(build(L0,r0),0,0,0);              /* the keel */
+  const left=nH-1;
+  const cmd=(left%2)===1;                 /* an odd hull becomes the bridge */
+  const pairs=(left-(cmd?1:0))>>1;
+  if(nH<=10){
+    /* ARK CARRIER: a spine freighter. One class of cargo hull, racked two
+       abreast and two deep at even stations down the keel like containers,
+       the aft third of the keel left clear for her engines. */
+    const rp=r0*rr(0.50,0.58),Lp=rp*rr(6.0,7.5);
+    const POD=build(Lp,rp),POD2=build(rp*rr(4.5,7.0),rp*rr(0.78,1.10));
+    const zo=(r0+rp)*rr(1.08,1.20),yo=rp*rr(1.15,1.30);
+    const rows=pairs>2?[yo,-yo]:[0];
+    for(let k=0,i=0;k<pairs;i++)
+      for(let rj=0;rj<rows.length&&k<pairs;rj++,k++)
+        pair(R()<0.70?POD:POD2,-L0*0.06-i*Lp*1.15+rr(-0.4,0.4)*rp,
+             rows[rj]*rr(0.90,1.10),zo*rr(0.96,1.08));
+  }else if(nH<=25){
+    /* DREADNOUGHT: an armoured citadel. Two walls of sister hulls flank the
+       keel in ranked rows, the outer rank lighter and stepped astern, the
+       whole broadside deepest amidships — a slab with a waterline. */
+    const rp=r0*rr(0.40,0.46);
+    const B1=build(rp*rr(7,9),rp),B2=build(rp*0.85*rr(7,9),rp*0.85),
+          B3=build(rp*rr(5.5,8.0),rp*rr(0.62,0.78));
+    const zo=(r0+rp)*rr(1.10,1.18),sp2=rp*rr(2.3,2.5);
+    const rows=Math.ceil(pairs/2);
+    for(let k=0;k<pairs;k++){
+      const ci=k%2,ri=(k-ci)/2,yc=ri-(rows-1)/2;
+      pair(R()<0.24?B3:(ci?B2:B1),
+           -L0*0.04-Math.abs(yc)*r0*0.7-ci*r0*1.5+rr(-0.7,0.7)*r0,
+           yc*sp2+rr(-0.16,0.16)*sp2,(zo+ci*sp2)*rr(0.96,1.05));
+    }
+  }else{
+    /* LEVIATHAN: a city in rings. Concentric rings of sister hulls around
+       the keel, each ring a lighter class than the last, each stepped
+       further astern — the bow tapers, the stern is a wall of drive. */
+    let rem=pairs*2,ringI=1,edge=r0;
+    while(rem>1){
+      let m=Math.min(rem,8*ringI);if(m%2)m--;
+      const rp=r0*Math.max(0.22,0.58/(1+0.30*(ringI-1)));
+      const Rr=edge+rp*1.35;
+      const Ba=build(rp*rr(7,9),rp),Bb=build(rp*rr(5.5,8.5),rp*rr(0.72,1.02));
+      const xN=-L0*0.10-(ringI-1)*r0*1.9;
+      const off=(ringI%2)?Math.PI/m:0;
+      for(let k=0;k<m;k++){
+        const a=off+(k+rr(-0.16,0.16))/m*Math.PI*2;
+        const Rk=Rr*rr(0.93,1.07);
+        place(R()<0.65?Ba:Bb,xN+rr(-0.9,0.9)*r0,
+              Math.sin(a)*Rk*0.8,Math.cos(a)*Rk);
+      }
+      rem-=m;edge=Rr+rp;ringI++;
+    }
+  }
+  if(cmd){
+    /* the bridge: a light hull with sight of the whole ship — riding the
+       bow dorsally, or run out ahead of a leviathan as a conning boom */
+    const rc=r0*rr(0.34,0.42),Lc=rc*rr(5,7),C=build(Lc,rc);
+    if(nH>25)place(C,Lc*1.05,r0*0.5,0);
+    else place(C,rc*1.6,r0+rc*1.35,0);
+  }
+  /* every hull ties inboard to the nearest earlier berth, so structure grows
+     from the keel out; the odd extra strut braces neighbours on one flank,
+     never across the centreline */
+  for(let i=1;i<hulls.length;i++){
+    const h=hulls[i];let best=hulls[0],bd=1e9;
+    for(let j=0;j<i;j++){
+      const o=hulls[j];
+      const d=(o.y-h.y)*(o.y-h.y)+(o.z-h.z)*(o.z-h.z)+(o.x1-h.x1)*(o.x1-h.x1)*0.06;
+      if(d<bd){bd=d;best=o;}
+    }
+    linkHulls(best,h,rr,R,P,parts,null);
+    if(i%3===1&&i>1&&hulls[i-1].z*h.z>0)linkHulls(hulls[i-1],h,rr,R,P,parts,null);
+  }
+  const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
+  for(const p2 of parts)for(const e2 of partExtents(p2)){
+    const q=e2[0],r=e2[1];
+    for(let a2=0;a2<3;a2++){
+      if(q[a2]-r<bb[0][a2])bb[0][a2]=q[a2]-r;
+      if(q[a2]+r>bb[1][a2])bb[1][a2]=q[a2]+r;}}
+  const NB=BIRDS.length;
+  let u=seed>>>0;
+  const name=BIRDS[u%NB];u=(u-u%NB)/NB;
+  const b1=u%26;u=(u-b1)/26;
+  const b2=u%26;u=(u-b2)/26;
+  const role=MEGA_ROLE[nH]||["LV","LEVIATHAN"];
+  const LN=bb[1][0]-bb[0][0],BM=bb[1][2]-bb[0][2],HT=bb[1][1]-bb[0][1];
+  return {parts,bb,meta:{
+    desig:role[0]+"-"+String.fromCharCode(65+b1,65+b2)+String(u).padStart(5,"0")+" "+name,
+    klass:name+"-CLASS "+role[1],
+    length:LN,beam:BM,height:HT,
+    mass:LN*BM*HT*0.045,crew:Math.round(nH*rr(70,140))}};
+}
+
+const NL={topo:null,hulls:null,sym:null,nsec:null,fore:null,joint:null,aft:null,cockpit:null,wing:null,tail:null,booster:null,gear:null};
+
+function centre(ship){const b=ship.bb;return [(b[0][0]+b[1][0])/2,(b[0][1]+b[1][1])/2,(b[0][2]+b[1][2])/2];}
+function packMesh(ship,c,q){
+  const m=shipMeshQ(ship,q);
+  const map=new Map(),verts=[];
+  const inds=new Uint32Array(m.t.length/3);
+  for(let v=0,j=0;v<m.t.length;v+=3,j++){
+    const x=m.t[v]-c[0],y=m.t[v+1]-c[1],z=m.t[v+2]-c[2];
+    const k=x+","+y+","+z;
+    let id=map.get(k);
+    if(id===undefined){id=verts.length/3;map.set(k,id);verts.push(x,y,z);}
+    inds[j]=id;
+  }
+  return {v:new Float32Array(verts),i:inds,tris:m.tris};
+}
+
+onmessage=e=>{
+  const d=e.data;
+  if(d.kind==="wreck"){
+    /* carve the dead ship along her own anatomy: the parts list is laid
+       down body-first then limb by limb, so contiguous slices come away
+       as recognisable pieces — a wing, a tail, a ring of hull */
+    const ship=d.f?(d.hulls?buildXenoMega(d.seed,d.hulls):buildXeno(d.seed))
+                  :(d.hulls?buildMegaShip(d.seed,d.hulls):buildShip(d.seed,P,NL));
+    const c=centre(ship);
+    const n=ship.parts.length;
+    const K=Math.max(2,Math.min(d.hulls?12:6,2+Math.round(n/30)));
+    const frags=[],tr2=[];
+    for(let k=0;k<K;k++){
+      const a=Math.floor(k*n/K),b=Math.floor((k+1)*n/K);
+      const sub=ship.parts.slice(a,b);
+      if(!sub.length)continue;
+      const m=packMesh({parts:sub,bb:ship.bb},c,0.26);
+      if(!m.i.length)continue;
+      let ox=0,oy=0,oz=0,cnt=0;
+      for(const p2 of sub){const q2=partCentroid(p2);ox+=q2[0];oy+=q2[1];oz+=q2[2];cnt++;}
+      ox=ox/cnt-c[0];oy=oy/cnt-c[1];oz=oz/cnt-c[2];
+      for(let i=0;i<m.v.length;i+=3){m.v[i]-=ox;m.v[i+1]-=oy;m.v[i+2]-=oz;}
+      let rr2=0;
+      for(let i=0;i<m.v.length;i+=9){
+        const q3=m.v[i]*m.v[i]+m.v[i+1]*m.v[i+1]+m.v[i+2]*m.v[i+2];
+        if(q3>rr2)rr2=q3;}
+      frags.push({v:m.v,i:m.i,ox,oy,oz,r:Math.sqrt(rr2)});
+      tr2.push(m.v.buffer,m.i.buffer);
+    }
+    postMessage({kind:"wreck",genId:d.genId,id:d.id,frags},tr2);
+    return;
+  }
+  const out=[],tr=[];
+  for(const j of d.jobs){
+    const ship=j.f?(j.hulls?buildXenoMega(j.seed,j.hulls):buildXeno(j.seed))
+                  :(j.hulls?buildMegaShip(j.seed,j.hulls):buildShip(j.seed,P,NL));
+    const c=centre(ship);
+    const m=packMesh(ship,c,0.32);
+    out.push({id:j.id,mesh:m,nose:ship.bb[1][0]-c[0],
+      meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length}});
+    tr.push(m.v.buffer,m.i.buffer);
+  }
+  postMessage({kind:"batch",genId:d.genId,out},tr);
+};`;
+const workers=[];
+function ensureWorkers(){
+  if(workers.length)return;
+  const SRC=document.querySelector("script").textContent;
+  const cut=SRC.indexOf("//__ARMADA_WORKER_CUT__");
+  const url=URL.createObjectURL(new Blob([SRC.slice(0,cut)+WORKER_MAIN],{type:"text/javascript"}));
+  const n=Math.min(8,Math.max(2,(navigator.hardwareConcurrency||4)-1));
+  for(let i=0;i<n;i++){
+    const w=new Worker(url);
+    w.onmessage=onWorkerMsg;
+    w.onerror=err=>console.error("worker:",err.message);
+    workers.push(w);
+  }
+}
+/* ===================== the war ===================== */
+/* Sun Tzu, for both admiralties. The last engine had every captain pick
+   the nearest enemy alone — not a battle, six hundred private duels. Now
+   the small craft fight in squadrons of eight, and each squadron is dealt
+   a stratagem from its fleet's doctrine:
+     CHARGE  — "the direct method may be used for joining battle..."
+     FLANK   — "...but indirect methods will be needed to secure victory"
+     ENVELOP — "appear where you are not expected" — over the top, or under
+     SWARM   — "attack him where he is unprepared" — focus the wounded
+     HUNT    — kill the crown ship: "if his forces are united, separate them"
+     SCREEN  — guard your own crown
+     FEIGN   — "pretend to be weak, that he may grow arrogant" — withdraw,
+               turn at distance, and crush the pursuit
+   The decks are weighted differently: the Yard drills lines, flanks and
+   screens; the Shoal swarms and envelops. The same war never repeats. */
+let ships=[],beams=[],flashes=[],squads=[],wrecks=[];
+/* the graveyard is forever. A fresh piece tumbles on her own for a few
+   seconds; once her drift is spent she is baked, at whatever attitude she
+   died in, into merged static bone — so a whole war's wreckage stays in
+   the sky for the cost of a handful of draw calls. */
+let boneyard=[],pendV=[],pendI=[],pendBase=0,lastBake=0;
+let mines=[],missiles=[],ionState=[null,null],tracers=[],dusts=[];
+/* nothing flies through anything: a coarse hash of ships and wreckage,
+   soft shoulder-pushes between the living, and a hull that ploughs into
+   debris takes the bounce and a small scuff off her shields */
+const COLC=110;
+let boneGrid=new Map(),wreckUid=0;
+function gkey(ix,iy,iz){return ix+"|"+iy+"|"+iz;}
+/* two axis-angle rotations composed into one, because the ship shader
+   takes exactly one — enough freedom for a hull to bank, pitch and roll */
+function xQAA(ax1,a1,ax2,a2){
+  if(Math.abs(a1)<1e-4)return {ax:ax2,ang:a2};
+  if(Math.abs(a2)<1e-4)return {ax:ax1,ang:a1};
+  const s1=Math.sin(a1/2),c1=Math.cos(a1/2),s2=Math.sin(a2/2),c2=Math.cos(a2/2);
+  const x1=ax1[0]*s1,y1=ax1[1]*s1,z1=ax1[2]*s1;
+  const x2=ax2[0]*s2,y2=ax2[1]*s2,z2=ax2[2]*s2;
+  const w=c2*c1-(x2*x1+y2*y1+z2*z1);
+  const x=c2*x1+x2*c1+y2*z1-z2*y1;
+  const y=c2*y1+y2*c1+z2*x1-x2*z1;
+  const z=c2*z1+z2*c1+x2*y1-y2*x1;
+  const l=Math.hypot(x,y,z);
+  if(l<1e-6)return {ax:[0,1,0],ang:0};
+  return {ax:[x/l,y/l,z/l],ang:2*Math.atan2(l,w)};
+}
+function xPose(s,now){
+  const roll=(s.roll||0)+((s.brUntil&&now<s.brUntil)?(1-(s.brUntil-now)/0.9)*6.283:0);
+  const pitch=s.pitch||0;
+  if(Math.abs(roll)<0.02&&Math.abs(pitch)<0.02)return {ax:[0,1,0],ang:0};
+  return xQAA([1,0,0],roll,[0,0,1],pitch);
+}
+function collide(now){
+  const grid=new Map();
+  const put2=o=>{
+    const k2=gkey(Math.floor(o.x/COLC),Math.floor(o.y/COLC),Math.floor(o.z/COLC));
+    let a=grid.get(k2);if(!a){a=[];grid.set(k2,a);}a.push(o);
+  };
+  const crowns=[];
+  for(const s of ships)if(!s.dead&&s.vao&&!s.grace){if(s.hulls)crowns.push(s);else put2(s);}
+  for(const w of wrecks)put2(w);
+  for(const s of ships){
+    if(s.dead||!s.vao||s.grace)continue;
+    const sr=s.rad||8;
+    /* the crowns are walls: nobody flies through a leviathan */
+    for(const c2 of crowns){
+      if(c2===s)continue;
+      const dx=s.x-c2.x,dy=s.y-c2.y,dz=s.z-c2.z;
+      const rb=sr+c2.rad,d2=dx*dx+dy*dy+dz*dz;
+      if(d2>rb*rb||d2<1e-6)continue;
+      const d=Math.sqrt(d2),pen=(rb-d)/d*(s.hulls?0.25:0.6);
+      s.x+=dx*pen;s.y+=dy*pen;s.z+=dz*pen;
+    }
+    if(s.hulls)continue;
+    const ix=Math.floor(s.x/COLC),iy=Math.floor(s.y/COLC),iz=Math.floor(s.z/COLC);
+    for(let ax=-1;ax<=1;ax++)for(let ay=-1;ay<=1;ay++)for(let az=-1;az<=1;az++){
+      const kk=gkey(ix+ax,iy+ay,iz+az);
+      const cell=grid.get(kk);
+      if(cell)for(const o of cell){
+        if(o===s)continue;
+        const wreck=o.spin!==undefined;
+        if(!wreck&&o.id<=s.id)continue;
+        const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
+        const rb=sr+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
+        if(d2>rb*rb||d2<1e-6)continue;
+        const d=Math.sqrt(d2),pen=rb-d,inv=1/d;
+        if(wreck){
+          /* a hull ploughs THROUGH debris: she barely notices, the piece
+             is kicked flying ahead of her bow — and still scuffs her */
+          const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
+          const kick=Math.max(12,(s.v||10));
+          s.x+=dx*inv*pen*0.15;s.y+=dy*inv*pen*0.15;s.z+=dz*inv*pen*0.15;
+          o.vx+=-dx*inv*kick*0.7+svx*0.4;
+          o.vy+=-dy*inv*kick*0.5;
+          o.vz+=-dz*inv*kick*0.7+svz*0.4;
+          o.spin*=1.5;
+          if(now-(s.bumpT||0)>0.6){
+            s.bumpT=now;s.hurtT=now;
+            s.hp-=0.06;
+            flash((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,now,7,2);
+            if(s.hp<=0)kill(s,now);
+          }
+        }else{
+          s.x+=dx*inv*pen*0.45;s.y+=dy*inv*pen*0.45;s.z+=dz*inv*pen*0.45;
+          o.x-=dx*inv*pen*0.45;o.y-=dy*inv*pen*0.45;o.z-=dz*inv*pen*0.45;
+        }
+      }
+      const bcell=boneGrid.get(kk);
+      if(bcell)for(const o of bcell){
+        const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
+        const rb=sr+o.rad,d2=dx*dx+dy*dy+dz*dz;
+        if(d2>rb*rb||d2<1e-6)continue;
+        const d=Math.sqrt(d2),pen=(rb-d)/d*0.8;
+        s.x+=dx*pen;s.y+=dy*pen;s.z+=dz*pen;
+        if(now-(s.bumpT||0)>0.6){
+          s.bumpT=now;s.hurtT=now;
+          s.hp-=0.06;
+          flash((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,now,7,2);
+          if(s.hp<=0)kill(s,now);
+        }
+      }
+    }
+  }
+  /* debris bangs into debris: a shove, and most of the speed is gone */
+  for(const w of wrecks){
+    const ix=Math.floor(w.x/COLC),iy=Math.floor(w.y/COLC),iz=Math.floor(w.z/COLC);
+    for(let ax2=-1;ax2<=1;ax2++)for(let ay=-1;ay<=1;ay++)for(let az=-1;az<=1;az++){
+      const cell=grid.get(gkey(ix+ax2,iy+ay,iz+az));
+      if(!cell)continue;
+      for(const o of cell){
+        if(o.spin===undefined||o.uid>=w.uid)continue;
+        /* birth grace: pieces of a fresh blast fly APART before they can
+           bang — this is what let explosions open instead of strangling */
+        if(now-w.t0<1.2||now-o.t0<1.2)continue;
+        const dx=w.x-o.x,dy=w.y-o.y,dz=w.z-o.z;
+        const rb=(w.rad||6)+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
+        if(d2>rb*rb||d2<1e-6)continue;
+        const d=Math.sqrt(d2),pen=(rb-d)/d*0.5;
+        w.x+=dx*pen;w.y+=dy*pen;w.z+=dz*pen;
+        o.x-=dx*pen;o.y-=dy*pen;o.z-=dz*pen;
+        w.vx*=0.1;w.vy*=0.1;w.vz*=0.1;
+        o.vx*=0.1;o.vy*=0.1;o.vz*=0.1;
+        w.spin*=0.55;o.spin*=0.55;
+        if(Math.random()<0.25)((w.rad<o.rad)?w:o).shatter=true;
+      }
+    }
+  }
+}
+function settleWreck(w,now){
+  const q0=xQAA(w.bax||[0,1,0],w.bang||0,w.ax,w.spin*(now-w.t0));
+  const an=q0.ang,c=Math.cos(an),s2=Math.sin(an),ax=q0.ax;
+  const cy=Math.cos(w.yaw),sy=Math.sin(w.yaw),v=w.v;
+  for(let i=0;i<v.length;i+=3){
+    const x=v[i],y=v[i+1],z=v[i+2];
+    const dt2=ax[0]*x+ax[1]*y+ax[2]*z;
+    const rx=x*c+(ax[1]*z-ax[2]*y)*s2+ax[0]*dt2*(1-c);
+    const ry=y*c+(ax[2]*x-ax[0]*z)*s2+ax[1]*dt2*(1-c);
+    const rz=z*c+(ax[0]*y-ax[1]*x)*s2+ax[2]*dt2*(1-c);
+    pendV.push(cy*rx-sy*rz+w.x,ry+w.y,sy*rx+cy*rz+w.z);
+  }
+  for(let i=0;i<w.i.length;i++)pendI.push(w.i[i]+pendBase);
+  pendBase+=v.length/3;
+  const bk=gkey(Math.floor(w.x/COLC),Math.floor(w.y/COLC),Math.floor(w.z/COLC));
+  let ba=boneGrid.get(bk);if(!ba){ba=[];boneGrid.set(bk,ba);}
+  ba.push({x:w.x,y:w.y,z:w.z,rad:w.rad});
+  gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
+}
+function bakeBoneyard(){
+  if(!pendI.length)return;
+  const vao=gl.createVertexArray(),vbo=gl.createBuffer(),ibo=gl.createBuffer();
+  gl.bindVertexArray(vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(pendV),gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(pendI),gl.STATIC_DRAW);
+  gl.bindVertexArray(null);
+  boneyard.push({vao,vbo,ibo,icount:pendI.length});
+  pendV=[];pendI=[];pendBase=0;
+}
+let perFleet=300,warSeed=(Math.random()*4294967296)|0;
+let genId=0,forged=0,total=0,warT0=Infinity,winner=null;
+let counts=[0,0];
+const SIDE_NAME=["THE YARD FLEET","THE SHOAL"];
+const BEAMCOL=[[0.52,0.78,0.58],[0.78,0.46,0.42]];  /* everyday fire: muted green, muted red */
+const IONCOL=[[0.45,1.0,0.60],[1.0,0.32,0.26]];     /* the ion lance keeps the full voltage */
+const SQN=8;
+const DOCTRINE=[
+  {n:"CHARGE", w:[3,2]},
+  {n:"FLANK",  w:[3,2]},
+  {n:"ENVELOP",w:[1,3]},
+  {n:"SWARM",  w:[1,4]},
+  {n:"HUNT",   w:[2,2]},
+  {n:"SCREEN", w:[2,1]},
+  {n:"FEIGN",  w:[2,1]},
+  {n:"MINE",   w:[2,3]}
+];
+function disposeShips(){
+  for(const s of ships)if(s.vao){gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);}
+  for(const w of wrecks){gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);}
+  wrecks=[];
+  for(const b of boneyard){gl.deleteVertexArray(b.vao);gl.deleteBuffer(b.vbo);gl.deleteBuffer(b.ibo);}
+  boneyard=[];pendV=[];pendI=[];pendBase=0;lastBake=0;boneGrid=new Map();
+  mines=[];missiles=[];ionState=[null,null];ionNext=[Infinity,Infinity];tracers=[];dusts=[];
+}
+function startWar(fresh){
+  genId++;disposeShips();
+  ships=[];beams=[];flashes=[];squads=[];
+  if(fresh)warSeed=(Math.random()*4294967296)|0;
+  const R=mulberry32(warSeed|0);
+  forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
+  document.getElementById("win").style.display="none";
+  const jobs=[];
+  const mk=(side,hulls)=>{
+    const id=ships.length;
+    const seed=(R()*4294967296)|0;
+    ships.push({id,side,seed,
+      x:(side?1:-1)*(680+R()*374),
+      y:(R()-0.5)*300,z:(R()-0.5)*1150,
+      yaw:side?Math.PI:0,vy:0,v:0,roll:0,pitch:0,brUntil:0,
+      hp:1,hpMax:1,cool:R()*2,squad:-1,grace:true,
+      delay:0.4+R()*4.4,arr:false,hurtT:-9,dead:false,
+      vao:null,vbo:null,ibo:null,icount:0,meta:null,
+      hulls:hulls||0,slen:20,nose:9,spd:25,turn:1,wf:R()*6.283});
+    jobs.push({id,seed,f:side,hulls:hulls||0});
+    total++;
+  };
+  for(const side of [0,1]){
+    mk(side,50);mk(side,10);mk(side,10);      /* each fleet brings her crowns */
+    for(let i=3;i<perFleet;i++)mk(side,0);
+  }
+  /* squadrons of eight, dealt from each fleet's small craft */
+  for(const side of [0,1]){
+    const sm=ships.filter(s=>s.side===side&&!s.hulls);
+    for(let i=0;i<sm.length;i+=SQN){
+      const mem=sm.slice(i,i+SQN).map(s=>s.id);
+      for(const id of mem)ships[id].squad=squads.length;
+      squads.push({side,mem,tac:"CHARGE",phase:1,wp:null,tgt:-1,until:0,guard:-1});
+    }
+  }
+  counts=[perFleet,perFleet];
+  ensureWorkers();
+  const nw=workers.length;
+  for(let w=0;w<nw;w++)
+    workers[w].postMessage({kind:"batch",genId,jobs:jobs.filter((_,i)=>i%nw===w)});
+  roster();
+}
+function onWorkerMsg(e){
+  const d=e.data;
+  if(d.genId!==genId)return;
+  if(d.kind==="wreck"){
+    const s=ships[d.id];
+    if(!s)return;
+    const cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
+    for(const f2 of d.frags){
+      const wox=cy*f2.ox-sy*f2.oz,woy=f2.oy,woz=sy*f2.ox+cy*f2.oz;
+      const rl=Math.hypot(wox,woy,woz)||1;
+      /* the blast owns the throw: every piece keeps ALL of her momentum
+         and is hurled outward at the speed she could fly, not the crawl
+         she happened to die at */
+      const shipSp=Math.max(s.spd||20,Math.hypot(s.dvx||0,s.dvy||0,s.dvz||0));
+      const az2=Math.random()*6.283,el2=(Math.random()-0.5)*2.4;
+      const th=shipSp*(0.55+Math.random()*0.75);
+      const fvx=(s.dvx||0)+Math.cos(el2)*Math.cos(az2)*th+wox/rl*5;
+      const fvy=(s.dvy||0)+Math.sin(el2)*th*0.6+woy/rl*3;
+      const fvz=(s.dvz||0)+Math.cos(el2)*Math.sin(az2)*th+woz/rl*5;
+      /* a quarter of her never comes off as pieces at all — just dust */
+      if(Math.random()<0.25){
+        dustBurst(s.x+wox,s.y+woy,s.z+woz,fvx,fvy,fvz,7,performance.now()/1000);
+        continue;
+      }
+      const vao=gl.createVertexArray(),vbo=gl.createBuffer(),ibo=gl.createBuffer();
+      gl.bindVertexArray(vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+      gl.bufferData(gl.ARRAY_BUFFER,f2.v,gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(0);
+      gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,f2.i,gl.STATIC_DRAW);
+      gl.bindVertexArray(null);
+      wrecks.push({vao,vbo,ibo,icount:f2.i.length,v:f2.v,i:f2.i,rad:Math.max(3,f2.r||6),
+        x:s.x+wox,y:s.y+woy,z:s.z+woz,yaw:s.yaw,
+        bax:s.dax||[0,1,0],bang:s.dang||0,uid:wreckUid++,
+        vx:fvx,vy:fvy,vz:fvz,
+        ax:V.norm([Math.random()-0.5,Math.random()-0.5,Math.random()-0.5]),
+        spin:(0.3+Math.random()*1.4)*(Math.random()<0.5?-1:1),
+        t0:performance.now()/1000,baked:false});
+    }
+    return;
+  }
+  for(const rec of d.out){
+    const s=ships[rec.id],m=rec.mesh;
+    const vao=gl.createVertexArray(),vbo=gl.createBuffer(),ibo=gl.createBuffer();
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+    gl.bufferData(gl.ARRAY_BUFFER,m.v,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,m.i,gl.STATIC_DRAW);
+    gl.bindVertexArray(null);
+    s.vao=vao;s.vbo=vbo;s.ibo=ibo;s.icount=m.i.length;
+    s.meta=rec.meta;s.slen=rec.meta.length;s.nose=rec.nose;
+    s.rad=s.slen*0.32;
+    if(s.hulls){
+      /* the crowns: five hit points to the hull, one cannon per hull —
+         each cannon a turret at her own fixed station down the length,
+         the same battery every war because it grows from her seed */
+      s.hpMax=s.hp=s.hulls*5;
+      s.spd=8.5;s.turn=0.12;
+      const TR=mulberry32((s.seed^0xBEEF)>>>0);
+      s.turrets=[];
+      for(let i=0;i<s.hulls;i++){
+        const u=s.hulls>1?i/(s.hulls-1):0.5;
+        s.turrets.push({
+          lx:(u-0.5)*s.slen*0.86,
+          ly:(TR()-0.35)*s.slen*0.16,
+          lz:((i%2)?1:-1)*(0.05+TR()*0.12)*s.slen,
+          cool:TR()*2.2});
+      }
+      /* and the lances: one per five hulls, mounted down the spine */
+      s.lances=[];
+      const nL=Math.max(1,Math.round(s.hulls/5));
+      for(let i=0;i<nL;i++){
+        const u=nL>1?i/(nL-1):0.5;
+        s.lances.push({lx:(u-0.5)*s.slen*0.62,ly:s.slen*0.10*(0.4+TR()*0.6),lz:0,
+          cool:3+TR()*4});
+      }
+    }else{
+      /* chitin burns easier than hull plate; the small are quick */
+      s.hpMax=s.hp=Math.max(1,Math.round(s.slen/(s.side?38:22)));
+      s.spd=Math.min(70,Math.max(7,1400/s.slen));
+      s.turn=Math.min(2.2,Math.max(0.12,34/s.slen));
+      /* the middleweights carry seeker racks; roughly one hull in seven
+         mounts a gatling battery and walks tracer instead of light */
+      s.msl=s.slen>48&&s.slen<130;
+      s.gat=((s.seed>>>4)%100)<15;
+    }
+    forged++;
+  }
+  if(forged>=total&&warT0===Infinity){
+    warT0=performance.now()/1000+0.4;
+    ionNext=[warT0+10,warT0+15];
+    toast("CONTACT IMMINENT");
+  }
+  roster();
+}
+function livingFoes(side){
+  const o=[];
+  for(const t of ships)if(t.side!==side&&!t.dead&&t.vao)o.push(t);
+  return o;
+}
+function centroidOf(mem){
+  let x=0,y=0,z=0,n=0;
+  for(const id of mem){const s=ships[id];if(s.dead)continue;x+=s.x;y+=s.y;z+=s.z;n++;}
+  return n?[x/n,y/n,z/n]:null;
+}
+function fleetCentroid(side){
+  let x=0,y=0,z=0,n=0;
+  for(const t of ships)if(t.side===side&&!t.dead&&t.vao){x+=t.x;y+=t.y;z+=t.z;n++;}
+  return n?[x/n,y/n,z/n]:[0,0,0];
+}
+function assignTactic(sq,now){
+  sq.mem=sq.mem.filter(id=>!ships[id].dead);
+  if(!sq.mem.length)return;
+  const foes=livingFoes(sq.side);
+  if(!foes.length)return;
+  const c=centroidOf(sq.mem)||[0,0,0];
+  const ec=fleetCentroid(1-sq.side);
+  /* the approach is not the melee: nobody feigns weakness or picks over
+     the wounded before the fleets have even met — early hands are dealt
+     from the advancing half of the deck only */
+  const gap=Math.hypot(c[0]-ec[0],c[1]-ec[1],c[2]-ec[2]);
+  const deck=gap>640?DOCTRINE.filter(d2=>d2.n!=="FEIGN"&&d2.n!=="SWARM"):DOCTRINE;
+  let tot=0;for(const d of deck)tot+=d.w[sq.side];
+  let r=Math.random()*tot,pick=deck[0];
+  for(const d of deck){r-=d.w[sq.side];if(r<=0){pick=d;break;}}
+  sq.tac=pick.n;sq.until=now+9+Math.random()*7;sq.wp=null;sq.tgt=-1;sq.phase=1;sq.guard=-1;
+  const nearestTo=p=>{
+    let b=-1,bd=1e18;
+    for(const t of foes){
+      const d=(t.x-p[0])*(t.x-p[0])+(t.y-p[1])*(t.y-p[1])+(t.z-p[2])*(t.z-p[2]);
+      if(d<bd){bd=d;b=t.id;}}
+    return b;};
+  if(pick.n==="CHARGE")sq.tgt=nearestTo(c);
+  else if(pick.n==="SWARM"){
+    let b=-1,bs=1e9;
+    for(const t of foes){
+      const k2=t.hp/t.hpMax*2+Math.hypot(t.x-c[0],t.y-c[1],t.z-c[2])/1400;
+      if(k2<bs){bs=k2;b=t.id;}}
+    sq.tgt=b;
+  }else if(pick.n==="HUNT"){
+    const crowns=foes.filter(t=>t.hulls);
+    sq.tgt=crowns.length?crowns[(Math.random()*crowns.length)|0].id:nearestTo(c);
+  }else if(pick.n==="FLANK"){
+    const sg=Math.random()<0.5?1:-1;
+    sq.wp=[ec[0],ec[1]+(Math.random()-0.5)*120,ec[2]+sg*(430+Math.random()*260)];
+    sq.phase=0;
+  }else if(pick.n==="ENVELOP"){
+    const sg=Math.random()<0.5?1:-1;
+    sq.wp=[ec[0],ec[1]+sg*(300+Math.random()*160),ec[2]+(Math.random()-0.5)*220];
+    sq.phase=0;
+  }else if(pick.n==="SCREEN"){
+    const crowns=[];
+    for(const t of ships)if(t.side===sq.side&&t.hulls&&!t.dead)crowns.push(t);
+    if(crowns.length){sq.guard=crowns[(Math.random()*crowns.length)|0].id;sq.phase=2;}
+    else sq.tgt=nearestTo(c);
+  }else if(pick.n==="MINE"){
+    /* seed the water between the fleets — "hold out baits" */
+    sq.wp=[(c[0]+ec[0])/2+(Math.random()-0.5)*200,
+           (c[1]+ec[1])/2+(Math.random()-0.5)*120,
+           (c[2]+ec[2])/2+(Math.random()-0.5)*520];
+    sq.phase=4;
+  }else{ /* FEIGN */
+    const away=V.norm([c[0]-ec[0],0,c[2]-ec[2]]);
+    sq.wp=[c[0]+away[0]*500,c[1],c[2]+away[2]*500];
+    sq.phase=3;sq.until=now+4.5+Math.random()*3;
+  }
+}
+function squadThink(now){
+  for(const sq of squads){
+    sq.mem=sq.mem.filter(id=>!ships[id].dead);
+    if(!sq.mem.length)continue;
+    if(now>sq.until||(sq.phase===1&&(sq.tgt<0||ships[sq.tgt].dead))){assignTactic(sq,now);continue;}
+    if(sq.phase===0&&sq.wp){
+      const c=centroidOf(sq.mem);
+      if(c&&Math.hypot(c[0]-sq.wp[0],c[1]-sq.wp[1],c[2]-sq.wp[2])<130){
+        /* on station: fall on whatever is nearest the ambush point */
+        sq.phase=1;
+        let b=-1,bd=1e18;
+        for(const t of livingFoes(sq.side)){
+          const d=(t.x-sq.wp[0])*(t.x-sq.wp[0])+(t.y-sq.wp[1])*(t.y-sq.wp[1])+(t.z-sq.wp[2])*(t.z-sq.wp[2]);
+          if(d<bd){bd=d;b=t.id;}}
+        sq.tgt=b;
+      }
+    }
+    if(sq.phase===2&&(sq.guard<0||ships[sq.guard].dead))assignTactic(sq,now);
+  }
+}
+function nearestFoeInRange(s,rng){
+  let b=null,bd=rng*rng;
+  for(const t of ships){
+    if(t.side===s.side||t.dead||!t.vao||t.grace)continue;
+    const d=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
+    if(d<bd){bd=d;b=t;}
+  }
+  return b;
+}
+function flash(x,y,z,t0,size,c){flashes.push({x,y,z,t0,size,c,seed:Math.random()});}
+function dustBurst(x,y,z,vx,vy,vz,n,t0){
+  for(let i=0;i<n;i++)
+    dusts.push({x:x+(Math.random()-0.5)*8,y:y+(Math.random()-0.5)*8,z:z+(Math.random()-0.5)*8,
+      vx:vx*0.6+(Math.random()-0.5)*12,vy:vy*0.6+(Math.random()-0.5)*12,
+      vz:vz*0.6+(Math.random()-0.5)*12,t0});
+}
+function boom(t,now){
+  /* a death is a popcorn burst, never one circle: a hot centre, a clutch
+     of staggered secondary blasts around the hull, and spark streaks
+     thrown out along their own directions */
+  const R2=Math.max(10,t.slen*0.5);
+  flash(t.x,t.y,t.z,now,Math.max(46,t.slen*(t.hulls?3.0:2.0)),2);
+  const n=4+((Math.random()*6)|0);
+  for(let i=0;i<n;i++)
+    flash(t.x+(Math.random()-0.5)*R2*1.6,t.y+(Math.random()-0.5)*R2*1.2,
+          t.z+(Math.random()-0.5)*R2*1.6,now+Math.random()*0.28,
+          Math.max(14,t.slen*(0.5+Math.random()*0.9)),2);
+  const ns2=5+((Math.random()*7)|0);
+  for(let i=0;i<ns2;i++){
+    const az=Math.random()*6.283,el=(Math.random()-0.5)*2;
+    const dv=[Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az)];
+    const L2=R2*(1.5+Math.random()*2.5);
+    beams.push({a:[t.x,t.y,t.z],
+      b:[t.x+dv[0]*L2,t.y+dv[1]*L2,t.z+dv[2]*L2],t0:now,spark:true});
+  }
+}
+function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
+  const ddx=t.x-ox,ddy=t.y-oy,ddz=t.z-oz;
+  const dist=Math.hypot(ddx,ddy,ddz);
+  let p=0.95-(t.spd/70)*0.5-dist*0.0006;
+  if(now-t.hurtT<1.6)p-=0.12;              /* she is jinking */
+  if(t.hulls)p=0.97;                       /* you do not miss a crown */
+  if(Math.random()>Math.max(0.25,p)){
+    /* a clean miss: the bolt streaks past her and dies in the dark */
+    const mo=Math.max(10,t.slen*1.1);
+    beams.push({a:[ox,oy,oz],
+      b:[t.x+(Math.random()-0.5)*mo*2.4,
+         t.y+(Math.random()-0.5)*mo*1.2,
+         t.z+(Math.random()-0.5)*mo*2.4],t0:now,side:s.side,heavy:!!heavy});
+    return;
+  }
+  beams.push({a:[ox,oy,oz],
+    b:[t.x+(Math.random()-0.5)*t.slen*0.3,
+       t.y+(Math.random()-0.5)*t.slen*0.15,
+       t.z+(Math.random()-0.5)*t.slen*0.3],t0:now,side:s.side,heavy:!!heavy});
+  flash(t.x,t.y,t.z,now,Math.max(heavy?16:9,t.slen*(heavy?0.5:0.3)),s.side);
+  t.hurtT=now;
+  t.hp-=(dmg||1);
+  if(t.hp<=0)kill(t,now);
+}
+function kill(t,now){
+  t.dead=true;
+  const dv=t.v||t.spd*0.5;
+  t.dvx=Math.cos(t.yaw)*dv;t.dvy=t.vy||0;t.dvz=Math.sin(t.yaw)*dv;
+  const dp=xPose(t,now);t.dax=dp.ax;t.dang=dp.ang;
+  boom(t,now);
+  if(t.vao){gl.deleteVertexArray(t.vao);gl.deleteBuffer(t.vbo);gl.deleteBuffer(t.ibo);t.vao=null;}
+  if(workers.length)workers[t.id%workers.length].postMessage(
+    {kind:"wreck",genId,id:t.id,seed:t.seed,f:t.side,hulls:t.hulls});
+  counts[t.side]--;
+  if(sel===t.id){sel=null;orb=null;card(null);}
+  if(counts[t.side]<=0&&winner==null){
+    winner=1-t.side;
+    const w=document.getElementById("win");
+    w.innerHTML=SIDE_NAME[winner]+" HOLDS THE SKY"+
+      "<div class=\"sub\">"+SIDE_NAME[0]+" LOST "+(perFleet-Math.max(0,counts[0]))+
+      " \u00b7 "+SIDE_NAME[1]+" LOST "+(perFleet-Math.max(0,counts[1]))+
+      " \u00b7 "+Math.max(0,(now-warT0)|0)+" SECONDS \u00b7 N FOR THE NEXT WAR</div>";
+    w.style.display="block";
+    toast(SIDE_NAME[winner]+" HOLDS THE SKY");
+  }
+  roster();
+}
+let ionNext=[Infinity,Infinity];
+function fireIonFrom(g,side,now){
+  /* the discharge: an ion lance aimed at the thickest knot of the enemy,
+     with a blast radius — not a shot so much as a hole torn in the line */
+  if(now-warT0-g.delay<1)return;
+  const foes=livingFoes(side);
+  if(!foes.length)return;
+  let best=null,bs=-1;
+  for(const t of foes){
+    if(now-warT0-t.delay<1)continue;
+    let n=0;
+    for(const o of foes){
+      const dx=o.x-t.x,dy=o.y-t.y,dz=o.z-t.z;
+      if(dx*dx+dy*dy+dz*dz<8100)n++;
+    }
+    if(n>bs){bs=n;best=t;}
+  }
+  if(!best)return;
+  const cy=Math.cos(g.yaw),sy=Math.sin(g.yaw);
+  beams.push({a:[g.x+cy*g.slen*0.4,g.y+g.slen*0.05,g.z+sy*g.slen*0.4],
+    b:[best.x,best.y,best.z],t0:now,side,ion:true});
+  flash(g.x+cy*g.slen*0.4,g.y+g.slen*0.05,g.z+sy*g.slen*0.4,now,g.slen*1.7,2);
+  flash(g.x+cy*g.slen*0.4,g.y+g.slen*0.05,g.z+sy*g.slen*0.4,now,g.slen*0.9,side);
+  flash(best.x,best.y,best.z,now,340,2);
+  for(const t of foes){
+    const dx=t.x-best.x,dy=t.y-best.y,dz=t.z-best.z;
+    if(dx*dx+dy*dy+dz*dz>8100)continue;
+    t.hurtT=now;t.hp-=6;
+    flash(t.x,t.y,t.z,now,Math.max(20,t.slen*0.6),2);
+    if(t.hp<=0)kill(t,now);
+  }
+}
+function megaStep(s,now,dt){
+  /* a crown ship advances on the enemy's heart, and answers with a
+     broadside from every hull she has */
+  const ec=fleetCentroid(1-s.side);
+  const dx=ec[0]-s.x,dz=ec[2]-s.z;
+  let dyaw=Math.atan2(dz,dx)-s.yaw;
+  dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+  const mx=s.turn*dt;
+  s.yaw+=Math.max(-mx,Math.min(mx,dyaw));
+  if(Math.hypot(dx,dz)>185){s.x+=Math.cos(s.yaw)*s.spd*dt;s.z+=Math.sin(s.yaw)*s.spd*dt;}
+  s.vy+=(Math.max(-8,Math.min(8,(ec[1]-s.y)*0.2))-s.vy)*Math.min(1,dt);
+  s.y+=s.vy*dt;
+  /* the lances speak first: ranged far beyond the battery, they open the
+     bombardment while the fleets are still closing, and each one hunts
+     the biggest thing she can see */
+  const lcy=Math.cos(s.yaw),lsy=Math.sin(s.yaw);
+  for(const la of s.lances){
+    la.cool-=dt;
+    if(la.cool>0)continue;
+    const rng=760;
+    let best=null,bs=-1;
+    for(const t of ships){
+      if(t.side===s.side||t.dead||!t.vao||t.grace)continue;
+      const d2=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
+      if(d2>rng*rng)continue;
+      const sc=t.slen+(t.hulls?500:0)-Math.sqrt(d2)*0.05;
+      if(sc>bs){bs=sc;best=t;}
+    }
+    if(best){
+      fireBeam(s,best,now,s.x+lcy*la.lx-lsy*la.lz,s.y+la.ly,s.z+lsy*la.lx+lcy*la.lz,3,true);
+      la.cool=5.5+Math.random()*3;
+    }
+  }
+  /* the battery never speaks as one thunderclap: every turret keeps her
+     own clock, so fire rolls up and down the ship as stations come ready */
+  let ready=false;
+  for(const tu of s.turrets){tu.cool-=dt;if(tu.cool<=0)ready=true;}
+  if(ready){
+    const rng=260,cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
+    const tgts=[];
+    for(const t of ships){
+      if(t.side===s.side||t.dead||!t.vao||t.grace)continue;
+      if((t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z)>rng*rng)continue;
+      tgts.push(t);
+    }
+    if(tgts.length){
+      for(let ti=0;ti<s.turrets.length;ti++){
+        const tu=s.turrets[ti];
+        if(tu.cool>0)continue;
+        const t=tgts[ti%tgts.length];
+        if(t.dead)continue;
+        fireBeam(s,t,now,s.x+cy*tu.lx-sy*tu.lz,s.y+tu.ly,s.z+sy*tu.lx+cy*tu.lz);
+        tu.cool=1.6+Math.random()*1.2;
+      }
+    }
+  }
+}
+function simStep(now,dt){
+  if(warT0===Infinity)return;
+  const T=now-warT0;
+  for(const s of ships)if(!s.dead&&s.vao)s.grace=(T-s.delay)<1.0;
+  squadThink(now);
+  for(const side of [0,1]){
+    if(winner!=null||counts[side]<=0){ionState[side]=null;continue;}
+    const st=ionState[side];
+    if(!st){
+      if(now>=ionNext[side]-2.4){
+        let g=null;
+        for(const s2 of ships)if(s2.side===side&&!s2.dead&&s2.vao&&(!g||s2.slen>g.slen))g=s2;
+        if(g)ionState[side]={fire:ionNext[side],gun:g.id,last:0};
+        else ionNext[side]=now+10;
+      }
+    }else{
+      const g=ships[st.gun];
+      if(!g||g.dead){ionState[side]=null;ionNext[side]=now+6;}
+      else{
+        /* the charge: white light gathering at the muzzle for two and a
+           half seconds — you see the shot coming before it speaks */
+        if(now-st.last>0.09){
+          st.last=now;
+          const prog=Math.min(1,1-(st.fire-now)/2.4);
+          const cy2=Math.cos(g.yaw),sy2=Math.sin(g.yaw);
+          flash(g.x+cy2*g.slen*0.4,g.y+g.slen*0.05,g.z+sy2*g.slen*0.4,now,
+                8+prog*prog*g.slen*0.9,2);
+        }
+        if(now>=st.fire){
+          ionState[side]=null;ionNext[side]=now+10;
+          fireIonFrom(g,side,now);
+        }
+      }
+    }
+  }
+  for(const s of ships){
+    if(s.dead||!s.vao)continue;
+    const age=T-s.delay;
+    if(age<0)continue;
+    if(!s.arr){s.arr=true;flash(s.x,s.y,s.z,now,Math.max(26,s.slen*1.3),s.side);}
+    if(age<1.0){ /* shedding the jump: running straight, untouchable */
+      s.v=s.spd*1.6;
+      s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
+      continue;
+    }
+    s.cool-=dt;
+    if(s.hulls){megaStep(s,now,dt);continue;}
+    const sq=s.squad>=0?squads[s.squad]:null;
+    let goal=null,boost=1,prefer=-1;
+    if(sq&&sq.mem.length){
+      const mi=Math.max(0,sq.mem.indexOf(s.id));
+      if(sq.phase===0&&sq.wp){
+        /* the run to station — "cleverness has never been seen
+           associated with long delays" */
+        goal=[sq.wp[0],sq.wp[1]+((mi%4)-1.5)*26,sq.wp[2]+((mi>>2)-0.5)*44];
+        boost=1.4;
+      }else if(sq.phase===2&&sq.guard>=0){
+        const g=ships[sq.guard];
+        const a2=(mi/Math.max(1,sq.mem.length))*6.283+now*0.18;
+        goal=[g.x+Math.cos(a2)*170,g.y+((mi%3)-1)*46,g.z+Math.sin(a2)*170];
+      }else if(sq.phase===3&&sq.wp){
+        goal=[sq.wp[0],sq.wp[1],sq.wp[2]];boost=1.3;
+      }else if(sq.phase===4&&sq.wp){
+        goal=[sq.wp[0]+((mi%4)-1.5)*60,sq.wp[1]+((mi>>2)-0.5)*40,sq.wp[2]+((mi%3)-1)*70];
+        const gd=Math.hypot(goal[0]-s.x,goal[1]-s.y,goal[2]-s.z);
+        if(gd<160&&now>(s.mineT||0)&&mines.length<300){
+          s.mineT=now+2.2+Math.random();
+          mines.push({x:s.x+(Math.random()-0.5)*20,y:s.y+(Math.random()-0.5)*14,
+            z:s.z+(Math.random()-0.5)*20,side:s.side,ph:Math.random()*6.28,dead:false});
+        }
+      }else{
+        const t=(sq.tgt>=0&&!ships[sq.tgt].dead)?ships[sq.tgt]:null;
+        if(t){
+          prefer=t.id;
+          /* the squadron rings its mark rather than queueing behind it */
+          const a2=(mi/SQN)*6.283;
+          const hold=30+t.slen*0.5;
+          goal=[t.x+Math.cos(a2)*hold,t.y+((mi%3)-1)*30,t.z+Math.sin(a2)*hold];
+        }
+      }
+    }
+    if(!goal){
+      const nf=nearestFoeInRange(s,1e9);
+      if(nf){prefer=nf.id;goal=[nf.x,nf.y,nf.z];}
+    }
+    if(goal){
+      const dx=goal[0]-s.x,dy=goal[1]-s.y,dz=goal[2]-s.z;
+      let dyaw=Math.atan2(dz,dx)-s.yaw;
+      dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+      const mx=s.turn*dt*(1+0.5*(boost-1));
+      const ta=Math.max(-mx,Math.min(mx,dyaw));
+      s.yaw+=ta+Math.sin(now*0.6+s.wf)*0.04*dt;
+      /* under fire, a small hull jinks — the chase is the whole show */
+      if(now-s.hurtT<1.6)s.yaw+=Math.sin(now*3.1+s.wf*2.0)*s.turn*dt*1.4;
+      /* she banks into the turn, and a small hull being hunted will throw
+         a full barrel roll to shake the firing solution */
+      const bankT=Math.max(-1.15,Math.min(1.15,-(ta/(dt*Math.max(0.15,s.turn)))*0.9));
+      s.roll+=(bankT-s.roll)*Math.min(1,dt*3);
+      if(!s.hulls&&s.slen<52&&now>=s.brUntil&&
+         ((now-s.hurtT<1.6&&Math.random()<dt*0.8)||Math.random()<dt*0.03))
+        s.brUntil=now+0.9;
+      const wv=Math.max(-s.spd*0.6,Math.min(s.spd*0.6,dy*0.5));
+      s.vy+=(wv-s.vy)*Math.min(1,dt*2.2);
+      s.pitch+=(Math.atan2(s.vy,Math.max(8,s.v))-s.pitch)*Math.min(1,dt*3);
+      const dist=Math.hypot(dx,dy,dz);
+      /* a throttle, not a constant: surge in the open, ease off on the
+         mark, breathe in the knife-fight, and floor it when burning */
+      let want=s.spd*boost;
+      if(dist<26)want=s.spd*0.22;
+      else if(prefer>=0&&dist<150)want=s.spd*(0.55+0.45*Math.sin(now*1.6+s.wf));
+      if(now-s.hurtT<1.6)want=Math.min(s.spd*1.3,want*1.5+8);
+      s.v+=(want-s.v)*Math.min(1,dt*(1.0+24/s.slen));
+      s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
+    }
+    /* fire at the squadron's mark first, else whatever crosses the sights */
+    if(s.cool<=0){
+      const rng=170;
+      let t=null;
+      if(prefer>=0){
+        const c2=ships[prefer];
+        if(!c2.dead&&!c2.grace&&
+           (c2.x-s.x)*(c2.x-s.x)+(c2.y-s.y)*(c2.y-s.y)+(c2.z-s.z)*(c2.z-s.z)<rng*rng)t=c2;
+      }
+      if(!t)t=nearestFoeInRange(s,rng);
+      if(t){
+        if(s.gat){
+          /* the gatling walks a stream of tracer onto a led target */
+          const nx=s.x+Math.cos(s.yaw)*s.nose,ny=s.y,nz=s.z+Math.sin(s.yaw)*s.nose;
+          const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
+          const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/300;
+          for(let b3=0;b3<6;b3++){
+            const ax3=t.x+tvx*lead-nx+(Math.random()-0.5)*t.slen*0.6;
+            const ay3=t.y-ny+(Math.random()-0.5)*t.slen*0.35;
+            const az3=t.z+tvz*lead-nz+(Math.random()-0.5)*t.slen*0.6;
+            const il=1/Math.max(1,Math.hypot(ax3,ay3,az3));
+            tracers.push({x:nx-ax3*il*b3*9,y:ny-ay3*il*b3*9,z:nz-az3*il*b3*9,
+              vx:ax3*il*300,vy:ay3*il*300,vz:az3*il*300,t0:now,side:s.side,dead:false});
+          }
+          s.cool=1.2+Math.random()*0.6;
+        }else{
+          s.cool=(0.75+s.slen*0.006)*(0.7+Math.random()*0.6);
+          fireBeam(s,t,now,s.x+Math.cos(s.yaw)*s.nose,s.y,s.z+Math.sin(s.yaw)*s.nose);
+        }
+      }
+    }
+    if(s.msl&&now>(s.mslT||0)&&missiles.length<140){
+      const t2=(prefer>=0&&!ships[prefer].dead&&!ships[prefer].grace)?ships[prefer]
+              :nearestFoeInRange(s,600);
+      if(t2){
+        s.mslT=now+6+Math.random()*4;
+        missiles.push({x:s.x,y:s.y,z:s.z,
+          vx:Math.cos(s.yaw)*40,vy:0,vz:Math.sin(s.yaw)*40,
+          spd:95,side:s.side,tgt:t2.id,t0:now,dead:false});
+      }
+    }
+  }
+  /* tracer rounds: dumb, fast, and honest — they hit whatever crosses */
+  for(const tr of tracers){
+    if(tr.dead)continue;
+    if(now-tr.t0>1.4){tr.dead=true;continue;}
+    tr.x+=tr.vx*dt;tr.y+=tr.vy*dt;tr.z+=tr.vz*dt;
+    for(const o of ships){
+      if(o.side===tr.side||o.dead||!o.vao||o.grace)continue;
+      const hr2=Math.max(9,o.rad*0.7);
+      const d2=(o.x-tr.x)*(o.x-tr.x)+(o.y-tr.y)*(o.y-tr.y)+(o.z-tr.z)*(o.z-tr.z);
+      if(d2<hr2*hr2){
+        o.hurtT=now;o.hp-=0.4;
+        flash(tr.x,tr.y,tr.z,now,8,tr.side);
+        if(o.hp<=0)kill(o,now);
+        tr.dead=true;break;
+      }
+    }
+  }
+  tracers=tracers.filter(tr=>!tr.dead);
+  dusts=dusts.filter(du=>now-du.t0<4.5);
+  for(const du of dusts){du.x+=du.vx*dt;du.y+=du.vy*dt;du.z+=du.vz*dt;}
+  /* seekers: they lead their own lives — chase, retarget, or fizzle */
+  for(const ms of missiles){
+    if(ms.dead)continue;
+    if(now-ms.t0>8){ms.dead=true;flash(ms.x,ms.y,ms.z,now,16,2);continue;}
+    let t=ships[ms.tgt];
+    if(!t||t.dead||t.grace){
+      let b=null,bd=62500;
+      for(const o of ships){
+        if(o.side===ms.side||o.dead||!o.vao||o.grace)continue;
+        const d2=(o.x-ms.x)*(o.x-ms.x)+(o.y-ms.y)*(o.y-ms.y)+(o.z-ms.z)*(o.z-ms.z);
+        if(d2<bd){bd=d2;b=o;}}
+      if(b){ms.tgt=b.id;t=b;}
+      else{ms.dead=true;flash(ms.x,ms.y,ms.z,now,16,2);continue;}
+    }
+    const dx=t.x-ms.x,dy=t.y-ms.y,dz=t.z-ms.z;
+    const d=Math.hypot(dx,dy,dz);
+    if(d<Math.max(12,t.rad*0.6)){
+      t.hurtT=now;t.hp-=2;
+      flash(t.x,t.y,t.z,now,Math.max(26,t.slen*0.4),2);
+      if(t.hp<=0)kill(t,now);
+      ms.dead=true;continue;
+    }
+    const inv=1/d,k3=Math.min(1,dt*2.4);
+    ms.vx+=(dx*inv*ms.spd-ms.vx)*k3;
+    ms.vy+=(dy*inv*ms.spd-ms.vy)*k3;
+    ms.vz+=(dz*inv*ms.spd-ms.vz)*k3;
+    ms.x+=ms.vx*dt;ms.y+=ms.vy*dt;ms.z+=ms.vz*dt;
+  }
+  missiles=missiles.filter(ms=>!ms.dead);
+  /* mines: patient until something the wrong colour comes close */
+  for(const mi of mines){
+    if(mi.dead)continue;
+    for(const o of ships){
+      if(o.side===mi.side||o.dead||!o.vao||o.grace)continue;
+      const d2=(o.x-mi.x)*(o.x-mi.x)+(o.y-mi.y)*(o.y-mi.y)+(o.z-mi.z)*(o.z-mi.z);
+      if(d2<3025){
+        mi.dead=true;
+        flash(mi.x,mi.y,mi.z,now,95,2);
+        for(let i2=0;i2<4;i2++){
+          const az=Math.random()*6.283,el=(Math.random()-0.5)*2;
+          beams.push({a:[mi.x,mi.y,mi.z],
+            b:[mi.x+Math.cos(el)*Math.cos(az)*60,mi.y+Math.sin(el)*60,
+               mi.z+Math.cos(el)*Math.sin(az)*60],t0:now,spark:true});
+        }
+        for(const v of ships){
+          if(v.side===mi.side||v.dead||!v.vao||v.grace)continue;
+          const e2=(v.x-mi.x)*(v.x-mi.x)+(v.y-mi.y)*(v.y-mi.y)+(v.z-mi.z)*(v.z-mi.z);
+          if(e2>4900)continue;
+          v.hurtT=now;v.hp-=3;
+          if(v.hp<=0)kill(v,now);
+        }
+        break;
+      }
+    }
+  }
+  mines=mines.filter(mi=>!mi.dead);
+  collide(now);
+  beams=beams.filter(b2=>now-b2.t0<(b2.ion?0.9:b2.spark?0.32:b2.heavy?0.42:0.13));
+  while(flashes.length>1400)flashes.shift();
+}
+/* ===================== stars ===================== */
+let starVao=null,starN=0;
+function makeStars(){
+  const R=mulberry32(7);
+  starN=2800;
+  const a=new Float32Array(starN*4);
+  for(let i=0;i<starN;i++){
+    const u=R()*2-1,ph=R()*Math.PI*2,rr2=Math.sqrt(1-u*u),d=sceneR*(3+R()*5);
+    a[i*4]=Math.cos(ph)*rr2*d;a[i*4+1]=u*d;a[i*4+2]=Math.sin(ph)*rr2*d;
+    a[i*4+3]=1+R()*1.8;
+  }
+  starVao=gl.createVertexArray();
+  gl.bindVertexArray(starVao);
+  const b=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,b);
+  gl.bufferData(gl.ARRAY_BUFFER,a,gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0,4,gl.FLOAT,false,0,0);
+  gl.bindVertexArray(null);
+}
+/* ===================== camera ===================== */
+const cam={yaw:-Math.PI/2,pitch:-0.26,ex:0,ey:340,ez:1180};
+let dpr=Math.min(devicePixelRatio||1,2);
+let sel=null,orb=null;
+const keys=new Set();
+function resize(){
+  cvs.width=Math.round(innerWidth*dpr);cvs.height=Math.round(innerHeight*dpr);
+  cvs.style.width=innerWidth+"px";cvs.style.height=innerHeight+"px";
+  gl.viewport(0,0,cvs.width,cvs.height);
+}
+addEventListener("resize",resize);
+function camBasis(){
+  const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);
+  const f=[cy*cp,sp,sy*cp],r=[-sy,0,cy];
+  return [f,r,V.cross(r,f)];
+}
+function mat(){
+  const [f,r,u]=camBasis();
+  const e=[cam.ex,cam.ey,cam.ez];
+  const zn=0.6,zf=sceneR*9,t=1/Math.tan(0.44),ar=cvs.width/cvs.height;
+  const vx=r,vy=u,vz=[-f[0],-f[1],-f[2]];
+  const tx=-V.dot(vx,e),ty=-V.dot(vy,e),tz=-V.dot(vz,e);
+  const A=t/ar,Bq=t,C=(zf+zn)/(zn-zf),D=2*zf*zn/(zn-zf);
+  return new Float32Array([
+    A*vx[0],Bq*vy[0],C*vz[0],-vz[0],
+    A*vx[1],Bq*vy[1],C*vz[1],-vz[1],
+    A*vx[2],Bq*vy[2],C*vz[2],-vz[2],
+    A*tx,Bq*ty,C*tz+D,-tz]);
+}
+function pickShip(px,py){
+  const m=mat(),rect=cvs.getBoundingClientRect();
+  let best=null,bd=28*28;
+  for(const s of ships){
+    if(s.dead||!s.vao)continue;
+    const x=s.x,y=s.y,z=s.z;
+    const cx=m[0]*x+m[4]*y+m[8]*z+m[12];
+    const cy2=m[1]*x+m[5]*y+m[9]*z+m[13];
+    const cw=m[3]*x+m[7]*y+m[11]*z+m[15];
+    if(cw<1)continue;
+    const sx=(cx/cw*0.5+0.5)*rect.width,sy=(0.5-cy2/cw*0.5)*rect.height;
+    const d=(sx-px)*(sx-px)+(sy-py)*(sy-py);
+    const rad=Math.max(20,s.slen*0.5/cw*rect.height);
+    if(d<Math.max(bd,rad*rad)&&d<bd*4){if(d<bd||rad>20){best=s.id;bd=Math.min(bd,d);}}
+  }
+  return best;
+}
+function card(id){
+  const el=document.getElementById("card");
+  if(id==null||!ships[id]||!ships[id].meta){el.style.display="none";return;}
+  const s=ships[id];
+  el.style.display="block";
+  el.innerHTML="<h2>"+s.meta.desig+"</h2><div class=\"k\">"+s.meta.klass+
+    " · "+SIDE_NAME[s.side]+"</div><div class=\"k\">"+Math.round(s.slen)+
+    " m · INTEGRITY <span id=\"chp\">"+Math.ceil(s.hp)+"/"+s.hpMax+"</span></div>";
+}
+function select(id){
+  sel=id;orb=null;card(id);
+}
+/* pointer */
+let pdown=null,pmoved=false;
+cvs.addEventListener("pointerdown",e=>{
+  pdown=[e.clientX,e.clientY];pmoved=false;cvs.setPointerCapture(e.pointerId);
+});
+cvs.addEventListener("pointermove",e=>{
+  if(!pdown)return;
+  const dx=e.clientX-pdown[0],dy=e.clientY-pdown[1];
+  if(Math.abs(dx)+Math.abs(dy)>4)pmoved=true;
+  if(!pmoved)return;
+  if(sel!=null&&orb){orb.yaw+=dx*0.005;orb.pitch=Math.max(-1.3,Math.min(1.3,orb.pitch+dy*0.005));}
+  else{cam.yaw+=dx*0.0035;cam.pitch=Math.max(-1.45,Math.min(1.45,cam.pitch-dy*0.0035));}
+  pdown=[e.clientX,e.clientY];
+});
+cvs.addEventListener("pointerup",e=>{
+  if(pdown&&!pmoved)select(pickShip(e.clientX,e.clientY));
+  pdown=null;
+});
+cvs.addEventListener("wheel",e=>{
+  e.preventDefault();
+  if(sel!=null&&orb)orb.dist=Math.max(12,Math.min(sceneR*2,orb.dist*Math.exp(e.deltaY*0.0012)));
+  else{
+    const [f]=camBasis(),k=-e.deltaY*0.6;
+    cam.ex+=f[0]*k;cam.ey+=f[1]*k;cam.ez+=f[2]*k;
+  }
+},{passive:false});
+addEventListener("keydown",e=>{
+  const k=e.key.toLowerCase();
+  keys.add(k);
+  if(k==="n"){toast("FLEETS INBOUND");startWar(true);}
+  if(k==="p"){palI=(palI+1)%PAL.length;applyPal();}
+  if(e.key==="Escape")select(null);
+});
+addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
+document.querySelectorAll("#bar button[data-n]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("#bar button[data-n]").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    perFleet=+b.dataset.n;
+    toast("FLEETS INBOUND");startWar(true);
+  });
+});
+document.getElementById("bNew").addEventListener("click",()=>{toast("FLEETS INBOUND");startWar(true);});
+document.getElementById("bPal").addEventListener("click",()=>{palI=(palI+1)%PAL.length;applyPal();});
+function toast(t){
+  const el=document.getElementById("toast");
+  el.textContent=t;el.classList.add("show");
+  clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),2600);
+}
+/* ===================== dynamic buffers ===================== */
+const beamVao=gl.createVertexArray(),beamVbo=gl.createBuffer();
+gl.bindVertexArray(beamVao);
+gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
+gl.bindVertexArray(null);
+const mmVao=gl.createVertexArray(),mmVbo=gl.createBuffer();
+gl.bindVertexArray(mmVao);
+gl.bindBuffer(gl.ARRAY_BUFFER,mmVbo);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0,4,gl.FLOAT,false,16,0);
+gl.bindVertexArray(null);
+const flVao=gl.createVertexArray(),flVbo=gl.createBuffer();
+gl.bindVertexArray(flVao);
+gl.bindBuffer(gl.ARRAY_BUFFER,flVbo);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0,4,gl.FLOAT,false,28,0);
+gl.enableVertexAttribArray(1);
+gl.vertexAttribPointer(1,3,gl.FLOAT,false,28,16);
+gl.bindVertexArray(null);
+/* ===================== frame ===================== */
+let lastT=0,fpsA=60,statT=0;
+function frame(nowMs){
+  requestAnimationFrame(frame);
+  const now=nowMs/1000;
+  const dt=Math.min(0.05,lastT?now-lastT:0.016);
+  lastT=now;
+  fpsA+=((dt>0?1/dt:60)-fpsA)*0.05;
+  simStep(now,dt);
+  /* camera: free flight, or a pursuit orbit around the chosen combatant */
+  if(sel!=null&&ships[sel]&&!ships[sel].dead){
+    const s=ships[sel];
+    if(!orb)orb={dist:Math.max(26,s.slen*2.4),yaw:cam.yaw+Math.PI,pitch:0.3};
+    const cp=Math.cos(orb.pitch),sp=Math.sin(orb.pitch);
+    const want=[s.x+orb.dist*cp*Math.cos(orb.yaw),s.y+orb.dist*sp,s.z+orb.dist*cp*Math.sin(orb.yaw)];
+    const k=1-Math.exp(-dt*5);
+    cam.ex+=(want[0]-cam.ex)*k;cam.ey+=(want[1]-cam.ey)*k;cam.ez+=(want[2]-cam.ez)*k;
+    const dx=s.x-cam.ex,dy=s.y-cam.ey,dz=s.z-cam.ez;
+    cam.yaw=Math.atan2(dz,dx);
+    cam.pitch=Math.atan2(dy,Math.hypot(dx,dz));
+  }else{
+    const [f,r]=camBasis();
+    const sp=(keys.has("shift")?900:280)*dt;
+    if(keys.has("w")){cam.ex+=f[0]*sp;cam.ey+=f[1]*sp;cam.ez+=f[2]*sp;}
+    if(keys.has("s")){cam.ex-=f[0]*sp;cam.ey-=f[1]*sp;cam.ez-=f[2]*sp;}
+    if(keys.has("a")){cam.ex-=r[0]*sp;cam.ez-=r[2]*sp;}
+    if(keys.has("d")){cam.ex+=r[0]*sp;cam.ez+=r[2]*sp;}
+    if(keys.has("q"))cam.ey-=sp;
+    if(keys.has("e"))cam.ey+=sp;
+  }
+  const m=mat(),eye=[cam.ex,cam.ey,cam.ez];
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST);
+  /* stars */
+  gl.useProgram(starProg);
+  gl.uniformMatrix4fv(USvp,false,m);
+  gl.uniform3fv(USink,inkc);
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+  gl.bindVertexArray(starVao);
+  gl.drawArrays(gl.POINTS,0,starN);
+  gl.depthMask(true);gl.disable(gl.BLEND);
+  /* the combatants */
+  gl.useProgram(shipProg);
+  gl.uniformMatrix4fv(SU.vp,false,m);
+  gl.uniform3fv(SU.eye,eye);
+  gl.uniform3fv(SU.ink,inkc);
+  gl.uniform3fv(SU.bg,bgc);
+  gl.uniform1f(SU.fog,0.14/sceneR);
+  const T=now-warT0;
+  let alive=0;
+  for(const s of ships){
+    if(s.dead||!s.vao)continue;
+    const age=warT0===Infinity?-1:T-s.delay;
+    if(age<0)continue;
+    alive++;
+    const slide=SLIDE*Math.exp(-Math.max(0,age)*3.4);
+    const cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
+    gl.uniform3f(SU.pos,s.x-cy*slide,s.y,s.z-sy*slide);
+    gl.uniform2f(SU.yaw,cy,sy);
+    const pose=xPose(s,now);
+    gl.uniform4f(SU.rot,pose.ax[0],pose.ax[1],pose.ax[2],pose.ang);
+    gl.uniform1f(SU.inz,Math.min(1,age/0.3));
+    gl.uniform1f(SU.hurt,Math.max(0,Math.exp(-(now-s.hurtT)*7))*0.85);
+    gl.uniform1f(SU.tone,s.side?0.90:1.0);
+    gl.bindVertexArray(s.vao);
+    gl.drawElements(gl.TRIANGLES,s.icount,gl.UNSIGNED_INT,0);
+  }
+  /* the litter of the war: charred pieces adrift, tumbling where they
+     died — and beneath them the boneyard, every earlier piece kept */
+  gl.uniform1f(SU.inz,1.0);
+  gl.uniform1f(SU.hurt,0.0);
+  gl.uniform1f(SU.tone,0.42);
+  gl.uniform3f(SU.pos,0.0,0.0,0.0);
+  gl.uniform2f(SU.yaw,1.0,0.0);
+  gl.uniform4f(SU.rot,0.0,1.0,0.0,0.0);
+  for(const b of boneyard){
+    gl.bindVertexArray(b.vao);
+    gl.drawElements(gl.TRIANGLES,b.icount,gl.UNSIGNED_INT,0);
+  }
+  let anySettle=false;
+  for(const w of wrecks){
+    /* a piece coasts until she has genuinely stopped — flung fast, she
+       carries far; banged into the field, she loses her way and settles.
+       The age cap is only there to keep a massacre's worth of tumbling
+       pieces from outrunning the frame budget. */
+    /* no drag out here: a piece flies at the speed she was thrown at,
+       forever, unless she bangs into something that stops her */
+    if(w.shatter){
+      dustBurst(w.x,w.y,w.z,w.vx*3,w.vy*3,w.vz*3,9,now);
+      gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
+      w.baked=true;anySettle=true;continue;
+    }
+    const wsp=Math.hypot(w.vx,w.vy,w.vz);
+    if((wsp<5.0&&now-w.t0>2)||now-w.t0>30){settleWreck(w,now);w.baked=true;anySettle=true;continue;}
+    w.x+=w.vx*dt;w.y+=w.vy*dt;w.z+=w.vz*dt;
+    gl.uniform3f(SU.pos,w.x,w.y,w.z);
+    gl.uniform2f(SU.yaw,Math.cos(w.yaw),Math.sin(w.yaw));
+    const wr=xQAA(w.bax||[0,1,0],w.bang||0,w.ax,w.spin*(now-w.t0));
+    gl.uniform4f(SU.rot,wr.ax[0],wr.ax[1],wr.ax[2],wr.ang);
+    gl.bindVertexArray(w.vao);
+    gl.drawElements(gl.TRIANGLES,w.icount,gl.UNSIGNED_INT,0);
+  }
+  if(anySettle)wrecks=wrecks.filter(w=>!w.baked);
+  /* a massacre can flood the sky with tumbling pieces; past the budget,
+     the oldest (and slowest) settle early rather than the frame rate */
+  while(wrecks.length>600){settleWreck(wrecks[0],now);wrecks.shift();}
+  if(pendI.length&&(now-lastBake>3||pendI.length>500000)){lastBake=now;bakeBoneyard();}
+  /* beams */
+  if(beams.length){
+    gl.useProgram(beamProg);
+    gl.uniformMatrix4fv(BU.vp,false,m);
+    gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+    gl.bindVertexArray(beamVao);
+    for(const side of [0,1]){
+      const arr=[];
+      for(const b of beams)if(b.side===side&&!b.ion){
+        arr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
+        if(b.heavy){
+          arr.push(b.a[0],b.a[1]+1.1,b.a[2],b.b[0],b.b[1]+1.1,b.b[2]);
+          arr.push(b.a[0],b.a[1]-1.1,b.a[2],b.b[0],b.b[1]-1.1,b.b[2]);
+        }
+      }
+      if(arr.length){
+        gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(arr),gl.STREAM_DRAW);
+        const c=BEAMCOL[side];
+        gl.uniform4f(BU.col,c[0],c[1],c[2],0.55);
+        gl.drawArrays(gl.LINES,0,arr.length/3);
+      }
+      if(side===0){
+        /* explosion sparks: ember streaks, no faction colour */
+        const sarr=[];
+        for(const b of beams)if(b.spark)
+          sarr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
+        if(sarr.length){
+          gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+          gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(sarr),gl.STREAM_DRAW);
+          gl.uniform4f(BU.col,1.0,0.58,0.22,0.6);
+          gl.drawArrays(gl.LINES,0,sarr.length/3);
+        }
+      }
+      /* the ion lance: a fat bundle of lines that collapses as it dies,
+         faction-vivid around a white-hot core */
+      for(const b of beams){
+        if(b.side!==side||!b.ion)continue;
+        const k2=1-(now-b.t0)/0.9;
+        const dir=V.norm(V.sub(b.b,b.a));
+        const [bu,bv]=basis(dir);
+        const mk2=r2=>{
+          const a2=[];
+          for(let j=0;j<8;j++){
+            const an=j/8*6.283;
+            const off=V.add(V.mul(bu,Math.cos(an)*r2*k2),V.mul(bv,Math.sin(an)*r2*k2));
+            a2.push(b.a[0]+off[0],b.a[1]+off[1],b.a[2]+off[2],
+                    b.b[0]+off[0],b.b[1]+off[1],b.b[2]+off[2]);
+          }
+          return a2;
+        };
+        gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(mk2(4.2)),gl.STREAM_DRAW);
+        const ic=IONCOL[side];
+        gl.uniform4f(BU.col,ic[0],ic[1],ic[2],0.85*k2+0.1);
+        gl.drawArrays(gl.LINES,0,16);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(mk2(1.4)),gl.STREAM_DRAW);
+        gl.uniform4f(BU.col,1.0,1.0,1.0,0.9*k2+0.1);
+        gl.drawArrays(gl.LINES,0,16);
+        if(now-b.t0<0.18){
+          gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(mk2(9.0)),gl.STREAM_DRAW);
+          gl.uniform4f(BU.col,1.0,1.0,1.0,0.55);
+          gl.drawArrays(gl.LINES,0,16);
+        }
+      }
+      /* tracer fire: short bright rounds you can watch fly */
+      const trr=[];
+      for(const tr of tracers)if(tr.side===side)
+        trr.push(tr.x,tr.y,tr.z,tr.x-tr.vx*0.035,tr.y-tr.vy*0.035,tr.z-tr.vz*0.035);
+      if(trr.length){
+        gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(trr),gl.STREAM_DRAW);
+        const c=BEAMCOL[side];
+        gl.uniform4f(BU.col,(c[0]+1)/2,(c[1]+1)/2,(c[2]+1)/2,0.95);
+        gl.drawArrays(gl.LINES,0,trr.length/3);
+      }
+      /* seeker trails ride the same colour as their fleet's fire */
+      const tarr=[];
+      for(const ms of missiles)if(ms.side===side)
+        tarr.push(ms.x,ms.y,ms.z,ms.x-ms.vx*0.12,ms.y-ms.vy*0.12,ms.z-ms.vz*0.12);
+      if(tarr.length){
+        gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(tarr),gl.STREAM_DRAW);
+        const c=BEAMCOL[side];
+        gl.uniform4f(BU.col,c[0],c[1],c[2],0.7);
+        gl.drawArrays(gl.LINES,0,tarr.length/3);
+      }
+    }
+    /* mines and seeker heads: little lit points, pulsing on their own clocks */
+    gl.useProgram(starProg);
+    gl.uniformMatrix4fv(USvp,false,m);
+    for(const side of [0,1]){
+      const pa=[];
+      for(const mi of mines)if(mi.side===side)
+        pa.push(mi.x,mi.y,mi.z,3.0+Math.sin(now*4+mi.ph)*1.4);
+      for(const ms of missiles)if(ms.side===side)pa.push(ms.x,ms.y,ms.z,3.6);
+      if(pa.length){
+        gl.bindVertexArray(mmVao);
+        gl.bindBuffer(gl.ARRAY_BUFFER,mmVbo);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(pa),gl.STREAM_DRAW);
+        gl.uniform3fv(USink,BEAMCOL[side]);
+        gl.drawArrays(gl.POINTS,0,pa.length/4);
+      }
+    }
+    /* the dust of the dead: faint motes drifting off with the momentum */
+    if(dusts.length){
+      const da=[];
+      for(const du of dusts)
+        da.push(du.x,du.y,du.z,Math.max(0.6,2.4*(1-(now-du.t0)/4.5)));
+      gl.bindVertexArray(mmVao);
+      gl.bindBuffer(gl.ARRAY_BUFFER,mmVbo);
+      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(da),gl.STREAM_DRAW);
+      gl.uniform3f(USink,inkc[0]*0.7,inkc[1]*0.7,inkc[2]*0.7);
+      gl.drawArrays(gl.POINTS,0,da.length/4);
+    }
+    gl.depthMask(true);gl.disable(gl.BLEND);
+  }
+  /* flashes: arrivals, impacts, deaths */
+  if(flashes.length){
+    const live=[];
+    for(const f2 of flashes)if(now-f2.t0<0.8)live.push(f2);
+    flashes=live;
+    if(live.length){
+      const arr=new Float32Array(live.length*7);
+      for(let i=0;i<live.length;i++){
+        const f2=live[i];
+        arr[i*7]=f2.x;arr[i*7+1]=f2.y;arr[i*7+2]=f2.z;arr[i*7+3]=f2.t0;
+        arr[i*7+4]=f2.size;arr[i*7+5]=f2.c;arr[i*7+6]=f2.seed||0;
+      }
+      gl.useProgram(flashProg);
+      gl.uniformMatrix4fv(FU.vp,false,m);
+      gl.uniform1f(FU.t,now);
+      gl.uniform1f(FU.px,cvs.height*0.9);
+      gl.uniform3fv(FU.c0,BEAMCOL[0]);
+      gl.uniform3fv(FU.c1,BEAMCOL[1]);
+      gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+      gl.bindVertexArray(flVao);
+      gl.bindBuffer(gl.ARRAY_BUFFER,flVbo);
+      gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STREAM_DRAW);
+      gl.drawArrays(gl.POINTS,0,live.length);
+      gl.depthMask(true);gl.disable(gl.BLEND);
+    }
+  }
+  gl.bindVertexArray(null);
+  if(now-statT>0.25){
+    statT=now;
+    const st=document.getElementById("stat");
+    if(forged<total)st.textContent="FORGING THE FLEETS · "+forged+" / "+total;
+    else if(winner!=null)st.textContent=SIDE_NAME[winner]+" HOLDS THE SKY · N FOR THE NEXT WAR · "+Math.round(fpsA)+" FPS";
+    else st.textContent="WAR · "+alive+" SHIPS ENGAGED · "+Math.round(fpsA)+" FPS";
+    if(sel!=null&&ships[sel]&&ships[sel].meta){
+      const el=document.getElementById("chp");
+      if(el)el.textContent=Math.ceil(ships[sel].hp)+"/"+ships[sel].hpMax;
+    }
+  }
+}
+function roster(){
+  document.getElementById("roster").innerHTML=
+    "<div><span class=\"cnt\">"+SIDE_NAME[0]+"</span> · "+counts[0]+"</div>"+
+    "<div><span class=\"cnt\">"+SIDE_NAME[1]+"</span> · "+counts[1]+"</div>";
+}
+applyPal();resize();makeStars();
+toast("FLEETS INBOUND");
+startWar(true);
+requestAnimationFrame(frame);
+
+</script>
+</body>
+</html>

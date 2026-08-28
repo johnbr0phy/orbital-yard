@@ -64,3 +64,19 @@ her; the camera is free flight the rest of the time.
 | wheel / `W A S D Q E` | fly (`shift` boosts) |
 | `N` | new fleet |
 | `P` | palette |
+
+## The Shoal
+
+`armada-alien.html` re-binds the yard's forge to a hatchery: the same seeds,
+workers and drawing, but every vessel is grown — eight body plans of ribbed
+vertebral spines, membranes, scythes and tendrils, from plankton-small spore
+mines to hive queens trailing beards of hook tentacles.
+
+## The War
+
+`armada-war.html` puts both fleets in one sky. They hyperspace in from
+opposite sides and fight it out: squadrons dealt stratagems from Sun Tzu,
+crown ships with a turret per hull and spinal lances, ion cannons that
+charge before they speak, mines, seekers, gatling tracer, dogfights with
+misses, and wreckage that carries the dead ship's momentum and litters the
+field until the next war. The banner names the fleet that holds the sky.
