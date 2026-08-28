@@ -3100,7 +3100,7 @@ function startWar(fresh){
     ships.push({id,side,seed,
       x:(side?1:-1)*(680+R()*374),
       y:(R()-0.5)*300,z:(R()-0.5)*1150,
-      yaw:side?Math.PI:0,vy:0,v:0,roll:0,pitch:0,brUntil:0,
+      yaw:side?Math.PI:0,vy:0,v:0,yawV:0,roll:0,pitch:0,brUntil:0,
       hp:1,hpMax:1,cool:R()*2,squad:-1,grace:true,
       delay:0.4+R()*4.4,arr:false,hurtT:-9,dead:false,
       vao:null,vbo:null,ibo:null,icount:0,meta:null,
@@ -3528,8 +3528,9 @@ function megaStep(s,now,dt){
   const dx=ec[0]-s.x,dz=ec[2]-s.z;
   let dyaw=Math.atan2(dz,dx)-s.yaw;
   dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
-  const mx=s.turn*dt;
-  s.yaw+=Math.max(-mx,Math.min(mx,dyaw));
+  const wantR=Math.max(-s.turn,Math.min(s.turn,dyaw*1.6));
+  s.yawV=(s.yawV||0)+(wantR-s.yawV)*Math.min(1,dt*1.5);
+  s.yaw+=s.yawV*dt;
   if(Math.hypot(dx,dz)>185){s.x+=Math.cos(s.yaw)*s.spd*dt;s.z+=Math.sin(s.yaw)*s.spd*dt;}
   s.vy+=(Math.max(-8,Math.min(8,(ec[1]-s.y)*0.2))-s.vy)*Math.min(1,dt);
   s.y+=s.vy*dt;
@@ -3677,21 +3678,24 @@ function simStep(now,dt){
       const dx=goal[0]-s.x,dy=goal[1]-s.y,dz=goal[2]-s.z;
       let dyaw=Math.atan2(dz,dx)-s.yaw;
       dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
-      const mx=s.turn*dt*(1+0.5*(boost-1));
-      const ta=Math.max(-mx,Math.min(mx,dyaw));
-      s.yaw+=ta+Math.sin(now*0.6+s.wf)*0.04*dt;
-      /* under fire, a small hull jinks — the chase is the whole show */
-      if(now-s.hurtT<1.6)s.yaw+=Math.sin(now*3.1+s.wf*2.0)*s.turn*dt*1.4;
-      /* she banks into the turn, and a small hull being hunted will throw
-         a full barrel roll to shake the firing solution */
-      const bankT=Math.max(-1.15,Math.min(1.15,-(ta/(dt*Math.max(0.15,s.turn)))*0.9));
-      s.roll+=(bankT-s.roll)*Math.min(1,dt*3);
+      /* angular inertia: she rolls INTO the turn, peaks, and eases out —
+         the difference between a servo and a pilot. The jink and the
+         wander live in the desired RATE, so even evasion flows. */
+      const mx=s.turn*(1+0.5*(boost-1));
+      let wantRate=Math.max(-mx,Math.min(mx,dyaw*2.2));
+      wantRate+=Math.sin(now*0.6+s.wf)*0.03;
+      if(now-s.hurtT<1.6)wantRate+=Math.sin(now*2.2+s.wf*2.0)*s.turn*0.9;
+      s.yawV+=(wantRate-s.yawV)*Math.min(1,dt*3.2);
+      s.yaw+=s.yawV*dt;
+      /* the bank follows the real turn rate, so it sweeps rather than snaps */
+      const bankT=Math.max(-1.15,Math.min(1.15,-(s.yawV/Math.max(0.15,s.turn))*0.9));
+      s.roll+=(bankT-s.roll)*Math.min(1,dt*2.2);
       if(!s.hulls&&s.slen<52&&now>=s.brUntil&&
          ((now-s.hurtT<1.6&&Math.random()<dt*0.8)||Math.random()<dt*0.03))
         s.brUntil=now+0.9;
       const wv=Math.max(-s.spd*0.6,Math.min(s.spd*0.6,dy*0.5));
-      s.vy+=(wv-s.vy)*Math.min(1,dt*2.2);
-      s.pitch+=(Math.atan2(s.vy,Math.max(8,s.v))-s.pitch)*Math.min(1,dt*3);
+      s.vy+=(wv-s.vy)*Math.min(1,dt*1.6);
+      s.pitch+=(Math.atan2(s.vy,Math.max(8,s.v))-s.pitch)*Math.min(1,dt*2.2);
       const dist=Math.hypot(dx,dy,dz);
       /* a throttle, not a constant: surge in the open, ease off on the
          mark, breathe in the knife-fight, and floor it when burning */
