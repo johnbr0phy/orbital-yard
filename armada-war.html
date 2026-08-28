@@ -2710,7 +2710,7 @@ let ships=[],beams=[],flashes=[],squads=[],wrecks=[];
 /* the optimisation pass: same war, fewer wasted cycles. Foes are listed
    once per tick instead of six hundred times; stream buffers are pooled
    instead of reallocated; nothing off-screen costs a draw call. */
-let foeCache=[[],[]],simFrame=0;
+let foeCache=[[],[]],simFrame=0,plasmas=[];
 const flPool=new Float32Array(1600*7);
 const duPool=new Float32Array(8192*4);
 /* the graveyard is forever. A fresh piece tumbles on her own for a few
@@ -2932,7 +2932,7 @@ function disposeShips(){
   wrecks=[];
   for(const b of boneyard){gl.deleteVertexArray(b.vao);gl.deleteBuffer(b.vbo);gl.deleteBuffer(b.ibo);}
   boneyard=[];pendV=[];pendI=[];pendBase=0;lastBake=0;boneGrid=new Map();pendVX=0;pendVY=0;pendVZ=0;pendN=0;
-  mines=[];missiles=[];ionState=[null,null];ionNext=[Infinity,Infinity];tracers=[];dusts=[];
+  mines=[];missiles=[];ionState=[null,null];ionNext=[Infinity,Infinity];tracers=[];dusts=[];plasmas=[];
 }
 function startWar(fresh){
   genId++;disposeShips();
@@ -3063,10 +3063,12 @@ function onWorkerMsg(e){
       s.hpMax=s.hp=Math.max(1,Math.round(s.slen/(s.side?38:22)));
       s.spd=Math.min(70,Math.max(7,1400/s.slen));
       s.turn=Math.min(2.2,Math.max(0.12,34/s.slen));
-      /* the middleweights carry seeker racks; roughly one hull in seven
-         mounts a gatling battery and walks tracer instead of light */
+      /* the middleweights carry seeker racks — and the small arms locker
+         is diverse now: 15% gatling tracer, 10% arc lightning, 10% plasma
+         mortar, 8% railgun, 8% cutting beam, the rest classic lasers */
       s.msl=s.slen>48&&s.slen<130;
-      s.gat=((s.seed>>>4)%100)<15;
+      const wr2=(s.seed>>>4)%100;
+      s.wpn=wr2<15?1:wr2<25?2:wr2<35?3:wr2<43?4:wr2<51?5:0;
     }
     forged++;
   }
@@ -3481,25 +3483,96 @@ function simStep(now,dt){
       }
       if(!t)t=nearestFoeInRange(s,rng);
       if(t){
-        if(s.gat){
-          /* the gatling walks a stream of tracer onto a led target */
-          const nx=s.x+Math.cos(s.yaw)*s.nose,ny=s.y,nz=s.z+Math.sin(s.yaw)*s.nose;
+        const nx=s.x+Math.cos(s.yaw)*s.nose,ny=s.y,nz=s.z+Math.sin(s.yaw)*s.nose;
+        if(s.wpn===1){
+          /* GATLING: walks a dashed line of tracer onto a led target */
           const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
           const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/300;
-          for(let b3=0;b3<6;b3++){
+          for(let b3=0;b3<9;b3++){
             const ax3=t.x+tvx*lead-nx+(Math.random()-0.5)*t.slen*0.6;
             const ay3=t.y-ny+(Math.random()-0.5)*t.slen*0.35;
             const az3=t.z+tvz*lead-nz+(Math.random()-0.5)*t.slen*0.6;
             const il=1/Math.max(1,Math.hypot(ax3,ay3,az3));
-            tracers.push({x:nx-ax3*il*b3*9,y:ny-ay3*il*b3*9,z:nz-az3*il*b3*9,
+            tracers.push({x:nx-ax3*il*b3*14,y:ny-ay3*il*b3*14,z:nz-az3*il*b3*14,
               vx:ax3*il*300,vy:ay3*il*300,vz:az3*il*300,t0:now,side:s.side,dead:false});
           }
-          s.cool=1.2+Math.random()*0.6;
+          s.cool=1.3+Math.random()*0.6;
+        }else if(s.wpn===2){
+          /* ARC: short-reach lightning that jumps to a second victim */
+          const dd2=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
+          if(dd2<14400){
+            beams.push({a:[nx,ny,nz],b:[t.x,t.y,t.z],t0:now,side:s.side,arc:true});
+            t.hurtT=now;t.hp-=1;
+            let c3=null,cb=8100;
+            const foes8=foeCache[1-s.side];
+            for(let k8=0;k8<foes8.length;k8++){
+              const o=foes8[k8];
+              if(o===t)continue;
+              const e2=(o.x-t.x)*(o.x-t.x)+(o.y-t.y)*(o.y-t.y)+(o.z-t.z)*(o.z-t.z);
+              if(e2<cb){cb=e2;c3=o;}
+            }
+            if(c3){
+              beams.push({a:[t.x,t.y,t.z],b:[c3.x,c3.y,c3.z],t0:now,side:s.side,arc:true});
+              c3.hurtT=now;c3.hp-=0.5;
+              if(c3.hp<=0)kill(c3,now);
+            }
+            if(t.hp<=0)kill(t,now);
+            s.cool=1.1+Math.random()*0.5;
+          }
+        }else if(s.wpn===3){
+          /* PLASMA MORTAR: a slow fat bolt that bursts where it lands */
+          const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
+          const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/80;
+          const ax3=t.x+tvx*lead-nx,ay3=t.y-ny,az3=t.z+tvz*lead-nz;
+          const il=1/Math.max(1,Math.hypot(ax3,ay3,az3));
+          plasmas.push({x:nx,y:ny,z:nz,vx:ax3*il*80,vy:ay3*il*80,vz:az3*il*80,
+            t0:now,side:s.side,ph:Math.random()*6.283,dead:false});
+          s.cool=2.6+Math.random()*0.8;
+        }else if(s.wpn===4){
+          /* RAILGUN: a spear of light that goes through everything */
+          const ax3=t.x-nx,ay3=t.y-ny,az3=t.z-nz;
+          const rl2=Math.max(1,Math.hypot(ax3,ay3,az3));
+          const dx3=ax3/rl2,dy3=ay3/rl2,dz3=az3/rl2;
+          beams.push({a:[nx,ny,nz],b:[nx+dx3*420,ny+dy3*420,nz+dz3*420],
+            t0:now,side:s.side,rail:true});
+          const foes9=foeCache[1-s.side];
+          for(let k9=0;k9<foes9.length;k9++){
+            const o=foes9[k9];
+            const px=o.x-nx,py=o.y-ny,pz=o.z-nz;
+            const along=px*dx3+py*dy3+pz*dz3;
+            if(along<0||along>420)continue;
+            const ox2=px-along*dx3,oy2=py-along*dy3,oz2=pz-along*dz3;
+            if(ox2*ox2+oy2*oy2+oz2*oz2>Math.max(64,o.rad*o.rad*0.36))continue;
+            o.hurtT=now;o.hp-=2;
+            flash(o.x,o.y,o.z,now,Math.max(12,o.slen*0.4),2);
+            if(o.hp<=0)kill(o,now);
+          }
+          s.cool=3.6+Math.random()*1.6;
+        }else if(s.wpn===5){
+          /* CUTTER: lock the beam on and let it burn */
+          const dd2=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
+          if(dd2<25600){
+            s.cutUntil=now+1.2;s.cutTgt=t.id;
+            s.cool=3.2+Math.random()*0.8;
+          }
         }else{
           s.cool=(0.75+s.slen*0.006)*(0.7+Math.random()*0.6);
-          fireBeam(s,t,now,s.x+Math.cos(s.yaw)*s.nose,s.y,s.z+Math.sin(s.yaw)*s.nose);
+          fireBeam(s,t,now,nx,ny,nz);
         }
       }
+    }
+    /* the cutter's burn: a held beam that tracks and eats */
+    if(s.cutUntil&&now<s.cutUntil){
+      const ct=ships[s.cutTgt];
+      if(ct&&!ct.dead&&ct.vao&&!ct.grace){
+        const d2c=(ct.x-s.x)*(ct.x-s.x)+(ct.y-s.y)*(ct.y-s.y)+(ct.z-s.z)*(ct.z-s.z);
+        if(d2c<32400){
+          beams.push({a:[s.x+Math.cos(s.yaw)*s.nose,s.y,s.z+Math.sin(s.yaw)*s.nose],
+            b:[ct.x,ct.y,ct.z],t0:now,side:s.side,cut:true});
+          ct.hurtT=now;ct.hp-=dt*2.6;
+          if(ct.hp<=0){kill(ct,now);s.cutUntil=0;}
+        }else s.cutUntil=0;
+      }else s.cutUntil=0;
     }
     if(s.msl&&now>(s.mslT||0)&&missiles.length<140){
       const t2=(prefer>=0&&!ships[prefer].dead&&!ships[prefer].grace)?ships[prefer]
@@ -3512,6 +3585,33 @@ function simStep(now,dt){
       }
     }
   }
+  /* plasma bolts: slow, fat, and rude — they burst where they land */
+  for(const pl of plasmas){
+    if(pl.dead)continue;
+    if(now-pl.t0>6){pl.dead=true;continue;}
+    pl.x+=pl.vx*dt;pl.y+=pl.vy*dt;pl.z+=pl.vz*dt;
+    const foesA=foeCache[1-pl.side];
+    for(let kA=0;kA<foesA.length;kA++){
+      const o=foesA[kA];
+      const hrp=Math.max(12,o.rad*0.7);
+      const adx=o.x-pl.x;
+      if(adx>hrp||adx<-hrp)continue;
+      const d2=adx*adx+(o.y-pl.y)*(o.y-pl.y)+(o.z-pl.z)*(o.z-pl.z);
+      if(d2<hrp*hrp){
+        pl.dead=true;
+        flash(pl.x,pl.y,pl.z,now,70,2);
+        for(let kB=0;kB<foesA.length;kB++){
+          const v=foesA[kB];
+          const e2=(v.x-pl.x)*(v.x-pl.x)+(v.y-pl.y)*(v.y-pl.y)+(v.z-pl.z)*(v.z-pl.z);
+          if(e2>1600)continue;
+          v.hurtT=now;v.hp-=2;
+          if(v.hp<=0)kill(v,now);
+        }
+        break;
+      }
+    }
+  }
+  plasmas=plasmas.filter(pl=>!pl.dead);
   /* tracer rounds: dumb, fast, and honest — they hit whatever crosses */
   for(const tr of tracers){
     if(tr.dead)continue;
@@ -3596,7 +3696,7 @@ function simStep(now,dt){
   }
   mines=mines.filter(mi=>!mi.dead);
   if(simFrame&1)collide(now);
-  beams=beams.filter(b2=>now-b2.t0<(b2.ion?0.9:b2.spark?0.32:b2.heavy?0.42:0.13));
+  beams=beams.filter(b2=>now-b2.t0<(b2.ion?0.9:b2.rail?0.3:b2.arc?0.16:b2.spark?0.32:b2.heavy?0.42:0.13));
   if(flashes.length>1400)flashes.splice(0,flashes.length-1400);
 }
 /* ===================== stars ===================== */
@@ -3892,7 +3992,7 @@ function frame(nowMs){
     gl.bindVertexArray(beamVao);
     for(const side of [0,1]){
       const arr=[];
-      for(const b of beams)if(b.side===side&&!b.ion){
+      for(const b of beams)if(b.side===side&&!b.ion&&!b.arc&&!b.rail&&!b.cut){
         arr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
         if(b.heavy){
           arr.push(b.a[0],b.a[1]+1.1,b.a[2],b.b[0],b.b[1]+1.1,b.b[2]);
@@ -3949,6 +4049,50 @@ function frame(nowMs){
           gl.drawArrays(gl.LINES,0,16);
         }
       }
+      /* arc lightning: rebuilt jagged every frame, so it crackles */
+      const aarr=[];
+      for(const b of beams){
+        if(b.side!==side||!b.arc)continue;
+        let px=b.a[0],py=b.a[1],pz=b.a[2];
+        for(let j=1;j<=5;j++){
+          const u2=j/5;
+          const jx=b.a[0]+(b.b[0]-b.a[0])*u2+(j<5?(Math.random()-0.5)*9:0);
+          const jy=b.a[1]+(b.b[1]-b.a[1])*u2+(j<5?(Math.random()-0.5)*9:0);
+          const jz=b.a[2]+(b.b[2]-b.a[2])*u2+(j<5?(Math.random()-0.5)*9:0);
+          aarr.push(px,py,pz,jx,jy,jz);
+          px=jx;py=jy;pz=jz;
+        }
+      }
+      if(aarr.length){
+        gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(aarr),gl.STREAM_DRAW);
+        const c=BEAMCOL[side];
+        gl.uniform4f(BU.col,(c[0]+2)/3,(c[1]+2)/3,(c[2]+2)/3,0.95);
+        gl.drawArrays(gl.LINES,0,aarr.length/3);
+      }
+      /* railshots: a spear of white with the fleet's colour bleeding off it */
+      const rarr=[];
+      for(const b of beams)if(b.side===side&&b.rail){
+        rarr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
+        rarr.push(b.a[0],b.a[1]+0.9,b.a[2],b.b[0],b.b[1]+0.9,b.b[2]);
+      }
+      if(rarr.length){
+        gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(rarr),gl.STREAM_DRAW);
+        gl.uniform4f(BU.col,1.0,1.0,1.0,0.9);
+        gl.drawArrays(gl.LINES,0,rarr.length/3);
+      }
+      /* the cutter's held beam, bright and continuous */
+      const carr=[];
+      for(const b of beams)if(b.side===side&&b.cut)
+        carr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
+      if(carr.length){
+        gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(carr),gl.STREAM_DRAW);
+        const c=BEAMCOL[side];
+        gl.uniform4f(BU.col,(c[0]+1)/2,(c[1]+1)/2,(c[2]+1)/2,0.85);
+        gl.drawArrays(gl.LINES,0,carr.length/3);
+      }
       /* tracer fire: short bright rounds you can watch fly */
       const trr=[];
       for(const tr of tracers)if(tr.side===side)
@@ -3980,6 +4124,8 @@ function frame(nowMs){
       for(const mi of mines)if(mi.side===side)
         pa.push(mi.x,mi.y,mi.z,3.0+Math.sin(now*4+mi.ph)*1.4);
       for(const ms of missiles)if(ms.side===side)pa.push(ms.x,ms.y,ms.z,3.6);
+      for(const pl of plasmas)if(pl.side===side)
+        pa.push(pl.x,pl.y,pl.z,6.5+Math.sin(now*9+pl.ph)*1.8);
       if(pa.length){
         gl.bindVertexArray(mmVao);
         gl.bindBuffer(gl.ARRAY_BUFFER,mmVbo);
