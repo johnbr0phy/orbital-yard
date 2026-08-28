@@ -3,7 +3,7 @@
 A procedural starship general-arrangement drawing, generated in the browser from a
 seed. One self-contained HTML file, no build step, no dependencies.
 
-**[Open it →](https://johnbr0phy.github.io/orbital-yard/)**
+**[Open it →](https://johnbr0phy.github.io/orbital-yard/)** · by [@JohnBr0](https://x.com/JohnBr0)
 
 ## What it does
 
