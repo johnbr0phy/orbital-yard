@@ -2976,11 +2976,23 @@ function collide(now){
   for(const s of ships){
     if(s.dead||!s.vao||s.grace)continue;
     const sr=s.rad||8;
+    /* the caution ledger: every near thing this pass writes an offset the
+       pilot will steer around — fresh each pass, spent within a beat */
+    const avSee=(dx,dy,dz,d,k)=>{
+      if(s.avF!==simFrame){s.avF=simFrame;s.avx=0;s.avy=0;s.avz=0;}
+      s.avx+=dx/d*k;s.avy+=dy/d*k*1.6;s.avz+=dz/d*k;s.avT=now;
+    };
     /* the crowns are walls: nobody flies through a leviathan */
     for(const c2 of crowns){
       if(c2===s)continue;
       const dx=s.x-c2.x,dy=s.y-c2.y,dz=s.z-c2.z;
       const rb=sr+c2.rad,d2=dx*dx+dy*dy+dz*dz;
+      /* and walls are seen from far off: a small banks around the hull
+         long before her nose would find it */
+      if(!s.hulls&&d2<rb*rb*6.25&&d2>1e-6){
+        const d=Math.sqrt(d2);
+        avSee(dx,dy,dz,d,(1-d/(rb*2.5))*rb*1.1);
+      }
       if(d2>rb*rb||d2<1e-6)continue;
       const d=Math.sqrt(d2),pen=(rb-d)/d*(s.hulls?0.25:0.6);
       s.x+=dx*pen;s.y+=dy*pen;s.z+=dz*pen;
@@ -2994,6 +3006,14 @@ function collide(now){
         if(o.id<=s.id)continue;
         const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
         const rb=sr+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
+        /* strangers give way ahead of time — preferring over and under —
+           while squadmates fly close on purpose and only get the shove */
+        if(d2<rb*rb*10.24&&d2>1e-6&&(s.squad<0||s.squad!==o.squad)){
+          const d=Math.sqrt(d2),k=(1-d/(rb*3.2))*rb*0.5;
+          avSee(dx,dy,dz,d,k);
+          if(o.avF!==simFrame){o.avF=simFrame;o.avx=0;o.avy=0;o.avz=0;}
+          o.avx-=dx/d*k;o.avy-=dy/d*k*1.6;o.avz-=dz/d*k;o.avT=now;
+        }
         if(d2>rb*rb||d2<1e-6)continue;
         const d=Math.sqrt(d2),pen=rb-d,inv=1/d;
         s.x+=dx*inv*pen*0.45;s.y+=dy*inv*pen*0.45;s.z+=dz*inv*pen*0.45;
@@ -3006,6 +3026,11 @@ function collide(now){
           const o=wcell[k9];
           const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
           const rb=sr+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
+          /* drifting bone is seen and given room before it is touched */
+          if(d2<rb*rb*6.76&&d2>1e-6&&now-o.t0>1.2){
+            const d=Math.sqrt(d2);
+            avSee(dx,dy,dz,d,(1-d/(rb*2.6))*rb*0.55);
+          }
           if(d2>rb*rb||d2<1e-6)continue;
           const d=Math.sqrt(d2),inv=1/d;
           /* a newborn piece rides inside her own fireball: traffic cannot
@@ -3087,12 +3112,20 @@ function collide(now){
         if(d2>rb*rb||d2<1e-6)continue;
         const rvx=w.vx-o.vx,rvy=w.vy-o.vy,rvz=w.vz-o.vz;
         const rel=Math.hypot(rvx,rvy,rvz);
-        /* shove, don't teleport: a sliver of the overlap per pass, capped,
-           so deep penetration bleeds off over many frames invisibly */
+        /* shove, don't teleport: a sliver of the overlap per pass, and the
+           cap belongs to the PIECE, not the pair — a piece buried in a
+           pile takes many contacts a pass, and their sum stays a shove */
         const d=Math.sqrt(d2),inv2=1/d;
-        const pen=Math.min((rb-d)*0.5*0.30*ramp,0.9)*inv2;
-        w.x+=dx*pen;w.y+=dy*pen;w.z+=dz*pen;
-        o.x-=dx*pen;o.y-=dy*pen;o.z-=dz*pen;
+        if(w.pmF!==simFrame){w.pmF=simFrame;w.pmA=0;}
+        if(o.pmF!==simFrame){o.pmF=simFrame;o.pmA=0;}
+        const step=Math.min((rb-d)*0.5*0.30*ramp,0.9,
+          Math.max(0,1.1-w.pmA),Math.max(0,1.1-o.pmA));
+        if(step>0){
+          const pen=step*inv2;
+          w.x+=dx*pen;w.y+=dy*pen;w.z+=dz*pen;
+          o.x-=dx*pen;o.y-=dy*pen;o.z-=dz*pen;
+          w.pmA+=step;o.pmA+=step;
+        }
         /* smooth and inelastic: the two share momentum and part gently —
            no piece ever slams from flight to a standstill */
         const bl=0.16*ramp,sep=1.2*ramp;
@@ -3335,10 +3368,10 @@ function onWorkerMsg(e){
     s.fragData=rec.frags||null;
     s.rad=s.slen*0.32;
     if(s.hulls){
-      /* the crowns: six hit points to the hull, one cannon per hull —
+      /* the crowns: eight hit points to the hull, one cannon per hull —
          each cannon a turret at her own fixed station down the length,
          the same battery every war because it grows from her seed */
-      s.hpMax=s.hp=s.hulls*6;
+      s.hpMax=s.hp=s.hulls*8;
       s.spd=8.5;s.turn=0.12;
       const TR=mulberry32((s.seed^0xBEEF)>>>0);
       s.turrets=[];
@@ -3362,7 +3395,7 @@ function onWorkerMsg(e){
       /* chitin burns easier than hull plate; the small are quick — and
          every hull wears a little more shield now, so a war is a siege
          rather than a flash */
-      s.hpMax=s.hp=1+Math.max(1,Math.round(s.slen/(s.side?30:18)));
+      s.hpMax=s.hp=2+Math.max(1,Math.round(s.slen/(s.side?26:16)));
       s.spd=Math.min(70,Math.max(7,1400/s.slen));
       s.turn=Math.min(2.2,Math.max(0.12,34/s.slen));
       /* the middleweights carry seeker racks — and the small arms locker
@@ -3951,7 +3984,15 @@ function simStep(now,dt){
       if(nf){prefer=nf.id;goal=[nf.x,nf.y,nf.z];}
     }
     if(goal){
-      const dx=goal[0]-s.x,dy=goal[1]-s.y,dz=goal[2]-s.z;
+      let dx=goal[0]-s.x,dy=goal[1]-s.y,dz=goal[2]-s.z;
+      /* the cautious hand: traffic and drifting bone bend the flown line —
+         an offset laid on the goal, never a snap of the nose */
+      let avM=0;
+      if(s.avT&&now-s.avT<0.3){
+        avM=Math.hypot(s.avx,s.avy,s.avz);
+        const cl=avM>90?90/avM:1;
+        dx+=s.avx*cl;dy+=s.avy*cl;dz+=s.avz*cl;
+      }
       let dyaw=Math.atan2(dz,dx)-s.yaw;
       dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
       /* angular inertia: she rolls INTO the turn, peaks, and eases out —
@@ -3978,6 +4019,8 @@ function simStep(now,dt){
       let want=s.spd*boost;
       if(dist<26)want=s.spd*0.22;
       else if(prefer>=0&&dist<150)want=s.spd*(0.85+0.15*Math.sin(now*1.6+s.wf));
+      /* crowded pilots come off the throttle; burning ones do not */
+      if(avM>34)want=Math.min(want,s.spd*0.62);
       if(now-s.hurtT<1.6)want=Math.min(s.spd*1.3,want*1.5+8);
       s.v+=(want-s.v)*Math.min(1,dt*(1.0+24/s.slen));
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
