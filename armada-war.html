@@ -3284,10 +3284,10 @@ function onWorkerMsg(e){
     s.fragData=rec.frags||null;
     s.rad=s.slen*0.32;
     if(s.hulls){
-      /* the crowns: five hit points to the hull, one cannon per hull —
+      /* the crowns: six hit points to the hull, one cannon per hull —
          each cannon a turret at her own fixed station down the length,
          the same battery every war because it grows from her seed */
-      s.hpMax=s.hp=s.hulls*5;
+      s.hpMax=s.hp=s.hulls*6;
       s.spd=8.5;s.turn=0.12;
       const TR=mulberry32((s.seed^0xBEEF)>>>0);
       s.turrets=[];
@@ -3308,8 +3308,10 @@ function onWorkerMsg(e){
           cool:3+TR()*4});
       }
     }else{
-      /* chitin burns easier than hull plate; the small are quick */
-      s.hpMax=s.hp=Math.max(1,Math.round(s.slen/(s.side?38:22)));
+      /* chitin burns easier than hull plate; the small are quick — and
+         every hull wears a little more shield now, so a war is a siege
+         rather than a flash */
+      s.hpMax=s.hp=1+Math.max(1,Math.round(s.slen/(s.side?30:18)));
       s.spd=Math.min(70,Math.max(7,1400/s.slen));
       s.turn=Math.min(2.2,Math.max(0.12,34/s.slen));
       /* the middleweights carry seeker racks — and the small arms locker
@@ -3358,7 +3360,7 @@ function assignTactic(sq,now){
   let tot=0;for(const d of deck)tot+=d.w[sq.side];
   let r=Math.random()*tot,pick=deck[0];
   for(const d of deck){r-=d.w[sq.side];if(r<=0){pick=d;break;}}
-  sq.tac=pick.n;sq.until=now+9+Math.random()*7;sq.wp=null;sq.tgt=-1;sq.phase=1;sq.guard=-1;
+  sq.tac=pick.n;sq.until=now+12+Math.random()*8;sq.wp=null;sq.tgt=-1;sq.phase=1;sq.guard=-1;
   const nearestTo=p=>{
     let b=-1,bd=1e18;
     for(const t of foes){
@@ -3401,9 +3403,39 @@ function assignTactic(sq,now){
   }
 }
 function squadThink(now){
+  /* the crown calls for help: when she is opened below half, the nearest
+     free squadron drops whatever it was doing and falls back on her —
+     defence is an order now, not a card that may never be dealt */
+  if((simFrame&15)===0)for(const g of ships){
+    if(!g.hulls||g.dead||!g.vao||g.hp>g.hpMax*0.55)continue;
+    let guards=0;
+    for(const sq of squads)
+      if(sq.side===g.side&&sq.phase===2&&sq.guard===g.id&&sq.mem.length)guards++;
+    if(guards>=2)continue;
+    let best=null,bd=1e18;
+    for(const sq of squads){
+      if(sq.side!==g.side||!sq.mem.length||sq.phase===2)continue;
+      const c=centroidOf(sq.mem);if(!c)continue;
+      const d=(c[0]-g.x)*(c[0]-g.x)+(c[1]-g.y)*(c[1]-g.y)+(c[2]-g.z)*(c[2]-g.z);
+      if(d<bd){bd=d;best=sq;}
+    }
+    if(best){best.tac="SCREEN";best.guard=g.id;best.phase=2;
+      best.tgt=-1;best.wp=null;best.until=now+14+Math.random()*6;}
+  }
   for(const sq of squads){
     sq.mem=sq.mem.filter(id=>!ships[id].dead);
     if(!sq.mem.length)continue;
+    /* a squadron cut to a pair loses its stomach for the attack: the
+       survivors fall back and screen the fleet instead of pressing on */
+    if(sq.mem.length<=2&&sq.phase===1&&now>(sq.lock||0)){
+      const crowns=[];
+      for(const t of ships)if(t.side===sq.side&&t.hulls&&!t.dead)crowns.push(t);
+      if(crowns.length){
+        sq.tac="SCREEN";sq.guard=crowns[(Math.random()*crowns.length)|0].id;
+        sq.phase=2;sq.tgt=-1;sq.wp=null;sq.until=now+16;sq.lock=now+0.4;
+        continue;
+      }
+    }
     if((now>sq.until||(sq.phase===1&&(sq.tgt<0||ships[sq.tgt].dead)))&&now>(sq.lock||0)){
       sq.lock=now+0.4;                /* no re-dealing every tick of a massacre */
       assignTactic(sq,now);continue;
@@ -3649,7 +3681,7 @@ function fireIonFrom(g,side,now){
     let n=0;
     for(const o of foes){
       const dx=o.x-t.x,dy=o.y-t.y,dz=o.z-t.z;
-      if(dx*dx+dy*dy+dz*dz<8100)n++;
+      if(dx*dx+dy*dy+dz*dz<5625)n++;
     }
     if(n>bs){bs=n;best=t;}
   }
@@ -3662,8 +3694,8 @@ function fireIonFrom(g,side,now){
   flash(best.x,best.y,best.z,now,340,2);
   for(const t of foes){
     const dx=t.x-best.x,dy=t.y-best.y,dz=t.z-best.z;
-    if(dx*dx+dy*dy+dz*dz>8100)continue;
-    t.hurtT=now;t.hp-=6;
+    if(dx*dx+dy*dy+dz*dz>5625)continue;
+    t.hurtT=now;t.hp-=4;
     flash(t.x,t.y,t.z,now,Math.max(20,t.slen*0.6),2);
     if(t.hp<=0)kill(t,now);
   }
@@ -3686,7 +3718,7 @@ function megaStep(s,now,dt){
      the biggest thing she can see */
   const lcy=Math.cos(s.yaw),lsy=Math.sin(s.yaw);
   for(const la of s.lances){
-    la.cool-=dt;
+    la.cool-=dt*0.7;
     if(la.cool>0)continue;
     const rng=760;
     let best=null,bs=-1;
@@ -3706,7 +3738,7 @@ function megaStep(s,now,dt){
   /* the battery never speaks as one thunderclap: every turret keeps her
      own clock, so fire rolls up and down the ship as stations come ready */
   let ready=false;
-  for(const tu of s.turrets){tu.cool-=dt;if(tu.cool<=0)ready=true;}
+  for(const tu of s.turrets){tu.cool-=dt*0.7;if(tu.cool<=0)ready=true;}
   if(ready){
     const rng=260,cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
     const tgts=[];
@@ -3723,7 +3755,7 @@ function megaStep(s,now,dt){
         const t=tgts[ti%tgts.length];
         if(t.dead)continue;
         fireBeam(s,t,now,s.x+cy*tu.lx-sy*tu.lz,s.y+tu.ly,s.z+sy*tu.lx+cy*tu.lz);
-        tu.cool=1.6+Math.random()*1.2;
+        tu.cool=2.8+Math.random()*1.8;   /* the battery rolls, it does not mow */
       }
     }
   }
@@ -3761,7 +3793,7 @@ function simStep(now,dt){
                 8+prog*prog*g.slen*0.9,2);
         }
         if(now>=st.fire){
-          ionState[side]=null;ionNext[side]=now+10;
+          ionState[side]=null;ionNext[side]=now+13;
           fireIonFrom(g,side,now);
         }
       }
@@ -3777,11 +3809,33 @@ function simStep(now,dt){
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
       continue;
     }
-    s.cool-=dt;
+    s.cool-=dt*0.55;   /* the guns breathe: a longer war is a slower trigger */
     if(s.hulls){megaStep(s,now,dt);continue;}
     const sq=s.squad>=0?squads[s.squad]:null;
     let goal=null,boost=1,prefer=-1;
-    if(sq&&sq.mem.length){
+    /* fear: a pilot with her hull opened breaks for home and stands at
+       the crown's skirt until her nerve returns — courage is hit points */
+    if(s.hpMax>=2&&s.hp<=Math.max(1,s.hpMax*0.45)&&now-s.hurtT<2.0&&!s.fearT)
+      s.fearT=now+8+Math.random()*5;
+    if(s.fearT&&now>s.fearT)s.fearT=0;
+    if(s.fearT){
+      let g=null;
+      for(const c4 of ships)
+        if(c4.side===s.side&&c4.hulls&&!c4.dead&&c4.vao&&(!g||c4.slen>g.slen))g=c4;
+      if(g){
+        const a4=(s.id%12)/12*6.283+now*0.15;
+        const hr=150+g.slen*0.3;
+        goal=[g.x+Math.cos(a4)*hr,g.y+((s.id%3)-1)*50,g.z+Math.sin(a4)*hr];
+      }else{
+        const nf2=nearestFoeInRange(s,1e9);
+        if(nf2){
+          const aw=V.norm([s.x-nf2.x,0.001,s.z-nf2.z]);
+          goal=[s.x+aw[0]*400,s.y,s.z+aw[2]*400];
+        }
+      }
+      boost=1.35;
+    }
+    if(!goal&&sq&&sq.mem.length){
       const mi=Math.max(0,sq.mem.indexOf(s.id));
       if(sq.phase===0&&sq.wp){
         /* the run to station — "cleverness has never been seen
@@ -3806,10 +3860,34 @@ function simStep(now,dt){
         const t=(sq.tgt>=0&&!ships[sq.tgt].dead)?ships[sq.tgt]:null;
         if(t){
           prefer=t.id;
-          /* the squadron rings its mark rather than queueing behind it */
-          const a2=(mi/SQN)*6.283;
-          const hold=30+t.slen*0.5;
-          goal=[t.x+Math.cos(a2)*hold,t.y+((mi%3)-1)*30,t.z+Math.sin(a2)*hold];
+          /* the attack run: line up, bore in with guns hot, break past
+             her and extend to the flank, come about, and do it again —
+             a fighting pass with a vector, never a hover at the mark */
+          const ddx=t.x-s.x,ddy=t.y-s.y,ddz=t.z-s.z;
+          const dd=Math.hypot(ddx,ddy,ddz);
+          const brk=70+t.slen*0.55;
+          if(s.runP===1&&(now>(s.runT||0)||!s.runW||
+             Math.hypot(s.runW[0]-s.x,s.runW[1]-s.y,s.runW[2]-s.z)<70))s.runP=0;
+          if(s.runP===1){
+            goal=s.runW;boost=1.25;
+          }else if(dd<brk){
+            /* the break: past the mark and out to her flank */
+            s.runP=1;s.runT=now+2.6+Math.random()*1.4;
+            const il=1/Math.max(1,dd);
+            const px=-ddz*il,pz=ddx*il;
+            const sg=((s.id+mi)&1)?1:-1;
+            s.runW=[t.x+ddx*il*260+px*sg*(140+Math.random()*80),
+                    t.y+ddy*il*120+((mi%3)-1)*40,
+                    t.z+ddz*il*260+pz*sg*(140+Math.random()*80)];
+            goal=s.runW;boost=1.25;
+          }else{
+            /* bore in, every pilot on her own line, so the squadron
+               arrives as a fan and not a queue */
+            const il=1/Math.max(1,dd);
+            const px=-ddz*il,pz=ddx*il;
+            const off=((mi%4)-1.5)*46;
+            goal=[t.x+px*off,t.y+((mi%3)-1)*30,t.z+pz*off];
+          }
         }
       }
     }
@@ -3848,7 +3926,7 @@ function simStep(now,dt){
          mark, breathe in the knife-fight, and floor it when burning */
       let want=s.spd*boost;
       if(dist<26)want=s.spd*0.22;
-      else if(prefer>=0&&dist<150)want=s.spd*(0.55+0.45*Math.sin(now*1.6+s.wf));
+      else if(prefer>=0&&dist<150)want=s.spd*(0.85+0.15*Math.sin(now*1.6+s.wf));
       if(now-s.hurtT<1.6)want=Math.min(s.spd*1.3,want*1.5+8);
       s.v+=(want-s.v)*Math.min(1,dt*(1.0+24/s.slen));
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
@@ -3950,7 +4028,7 @@ function simStep(now,dt){
         if(d2c<32400){
           beams.push({a:[s.x+Math.cos(s.yaw)*s.nose,s.y,s.z+Math.sin(s.yaw)*s.nose],
             b:[ct.x,ct.y,ct.z],t0:now,side:s.side,cut:true});
-          ct.hurtT=now;ct.hp-=dt*2.6;
+          ct.hurtT=now;ct.hp-=dt*1.9;
           if(ct.hp<=0){kill(ct,now);s.cutUntil=0;}
         }else s.cutUntil=0;
       }else s.cutUntil=0;
@@ -3959,7 +4037,7 @@ function simStep(now,dt){
       const t2=(prefer>=0&&!ships[prefer].dead&&!ships[prefer].grace)?ships[prefer]
               :nearestFoeInRange(s,600);
       if(t2){
-        s.mslT=now+6+Math.random()*4;
+        s.mslT=now+8+Math.random()*5;
         missiles.push({x:s.x,y:s.y,z:s.z,
           vx:Math.cos(s.yaw)*40,vy:0,vz:Math.sin(s.yaw)*40,
           spd:95,side:s.side,tgt:t2.id,t0:now,dead:false});
@@ -4006,7 +4084,7 @@ function simStep(now,dt){
       if(adx>hr2||adx<-hr2)continue;
       const d2=adx*adx+(o.y-tr.y)*(o.y-tr.y)+(o.z-tr.z)*(o.z-tr.z);
       if(d2<hr2*hr2){
-        o.hurtT=now;o.hp-=0.4;
+        o.hurtT=now;o.hp-=0.3;
         flash(tr.x,tr.y,tr.z,now,8,tr.side);
         if(o.hp<=0)kill(o,now);
         tr.dead=true;break;
@@ -4068,7 +4146,7 @@ function simStep(now,dt){
           if(v.side===mi.side||v.dead||!v.vao||v.grace)continue;
           const e2=(v.x-mi.x)*(v.x-mi.x)+(v.y-mi.y)*(v.y-mi.y)+(v.z-mi.z)*(v.z-mi.z);
           if(e2>4900)continue;
-          v.hurtT=now;v.hp-=3;
+          v.hurtT=now;v.hp-=2.2;
           if(v.hp<=0)kill(v,now);
         }
         break;
