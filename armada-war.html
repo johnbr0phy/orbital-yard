@@ -3170,6 +3170,7 @@ function onWorkerMsg(e){
         spin:(0.3+Math.random()*1.4)*(Math.random()<0.5?-1:1),
         t0:performance.now()/1000,baked:false});
     }
+    if(s.vao){gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);s.vao=null;}
     return;
   }
   for(const rec of d.out){
@@ -3472,7 +3473,11 @@ function kill(t,now){
   t.dvx=Math.cos(t.yaw)*dv;t.dvy=t.vy||0;t.dvz=Math.sin(t.yaw)*dv;
   const dp=xPose(t,now);t.dax=dp.ax;t.dang=dp.ang;
   boom(t,now);
-  if(t.vao){gl.deleteVertexArray(t.vao);gl.deleteBuffer(t.vbo);gl.deleteBuffer(t.ibo);t.vao=null;}
+  /* the hull is NOT deleted here: she stays whole, adrift and tumbling,
+     until the worker delivers her pieces — the break-up is a swap at the
+     same spot in the same frame, never a blink of empty space */
+  t.deadT=now;
+  t.corpseSpin=(0.25+Math.random()*0.5)*(Math.random()<0.5?-1:1);
   if(workers.length)workers[t.id%workers.length].postMessage(
     {kind:"wreck",genId,id:t.id,seed:t.seed,f:t.side,hulls:t.hulls});
   counts[t.side]--;
@@ -4168,7 +4173,27 @@ function frame(nowMs){
   const T=now-warT0;
   let alive=0;
   for(const s of ships){
-    if(s.dead||!s.vao)continue;
+    if(!s.vao)continue;
+    if(s.dead){
+      /* a corpse: whole, dark, drifting on her death momentum */
+      if(now-(s.deadT||0)>4){
+        gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);s.vao=null;
+        continue;
+      }
+      s.x+=(s.dvx||0)*dt;s.y+=(s.dvy||0)*dt;s.z+=(s.dvz||0)*dt;
+      if(!sphereVis(FRP,s.x,s.y,s.z,s.slen*0.8))continue;
+      const dax=s.dax||[0,1,0];
+      gl.uniform3f(SU.pos,s.x,s.y,s.z);
+      gl.uniform2f(SU.yaw,Math.cos(s.yaw),Math.sin(s.yaw));
+      gl.uniform4f(SU.rot,dax[0],dax[1],dax[2],(s.dang||0)+(now-s.deadT)*(s.corpseSpin||0.4));
+      gl.uniform1f(SU.inz,1.0);
+      gl.uniform1f(SU.hurt,Math.max(0,1.2-(now-s.deadT))*0.5);
+      gl.uniform1f(SU.tone,0.6);
+      gl.uniform4f(SU.anim,0,0,1,0);
+      gl.bindVertexArray(s.vao);
+      gl.drawElements(gl.TRIANGLES,s.icount,gl.UNSIGNED_INT,0);
+      continue;
+    }
     const age=warT0===Infinity?-1:T-s.delay;
     if(age<0)continue;
     alive++;
