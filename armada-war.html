@@ -107,6 +107,19 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   #card{max-height:44vh}
   #card .story{max-height:3.4em}
 }
+/* ---- a thumb is not a mouse: bigger targets, no long-press callout,
+   no pull-to-refresh stealing a drag, no double-tap zooming the chrome */
+@media(pointer:coarse){
+  html,body{overscroll-behavior:none;-webkit-touch-callout:none}
+  #bar button{padding:11px 14px;font-size:12px;touch-action:manipulation}
+  #cardX{font-size:22px;padding:2px 6px}
+  #brand a,#card{touch-action:manipulation}
+}
+/* the victory banner was set for a desk; on a phone it ran off both edges */
+@media(max-width:820px){
+  #win{font-size:34px;letter-spacing:.09em;top:28%}
+  #win .sub{font-size:11px;letter-spacing:.14em;padding:0 14px}
+}
 #win{position:fixed;left:0;right:0;top:32%;text-align:center;display:none;pointer-events:none;
   font-family:"Saira Condensed",sans-serif;font-weight:700;font-size:64px;letter-spacing:0.12em;
   color:var(--ink);text-shadow:0 0 34px var(--bg),0 0 8px var(--bg)}
@@ -2367,7 +2380,11 @@ const PAL=[
 let palI=2, sceneR=1500;
 const BSTAND=680, SLIDE=320;
 const cvs=document.getElementById("gl");
-const gl=cvs.getContext("webgl2",{antialias:true,powerPreference:"high-performance"});
+/* a thumb is not a mouse: coarse pointers get finger-sized picking, pinch
+   zoom, a lighter default fleet, and no MSAA — the phone GPU spends its
+   fill rate on pixels instead of samples. Desktop feels none of this. */
+const COARSE=typeof matchMedia==="function"&&matchMedia("(pointer:coarse)").matches;
+const gl=cvs.getContext("webgl2",{antialias:!COARSE,powerPreference:"high-performance"});
 if(!gl){document.getElementById("stat").textContent="THIS SKY NEEDS WEBGL2";throw new Error("no webgl2");}
 function compile(vs,fs){
   const mk=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);
@@ -3122,7 +3139,10 @@ function bakeBoneyard(){
   }
   wrecks=wrecks.filter(w2=>!w2.gone);
 }
-let perFleet=300,warSeed=(Math.random()*4294967296)|0;
+/* a phone opens at 150 a side: the sim cost of 600 ships is real even
+   when the pixels are cheap. The buttons still offer the full war. */
+let perFleet=(typeof COARSE!=="undefined"&&COARSE&&Math.min(innerWidth,innerHeight)<820)?150:300;
+let warSeed=(Math.random()*4294967296)|0;
 let genId=0,forged=0,total=0,warT0=Infinity,winner=null;
 let counts=[0,0];
 const SIDE_NAME=["THE YARD FLEET","THE SHOAL"];
@@ -4225,7 +4245,8 @@ function sphereVis(P,x,y,z,r){
 }
 function pickShip(px,py){
   const m=mat(),rect=cvs.getBoundingClientRect();
-  let best=null,bd=28*28;
+  const pr=COARSE?44:28;   /* a fingertip casts a wider shadow than a cursor */
+  let best=null,bd=pr*pr;
   for(const s of ships){
     if(s.dead||!s.vao)continue;
     const x=s.x,y=s.y,z=s.z;
@@ -4252,12 +4273,36 @@ function card(id){
 function select(id){
   sel=id;orb=null;card(id);
 }
-/* pointer */
-let pdown=null,pmoved=false;
+/* pointer. One finger orbits and taps; two fingers pinch — the second
+   pointer used to overwrite the first, so a pinch read as a violent spin
+   and the promised zoom did not exist. A mouse is always one pointer, so
+   the desktop path through here is unchanged. */
+let pdown=null,pmoved=false,pinchD=0;
+const ptrs=new Map();
+const pinchDist=()=>{const a=[...ptrs.values()];
+  return Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);};
 cvs.addEventListener("pointerdown",e=>{
-  pdown=[e.clientX,e.clientY];pmoved=false;cvs.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+  cvs.setPointerCapture(e.pointerId);
+  if(ptrs.size===1){pdown=[e.clientX,e.clientY];pmoved=false;}
+  else{pdown=null;pmoved=true;pinchD=pinchDist();}
 });
 cvs.addEventListener("pointermove",e=>{
+  if(!ptrs.has(e.pointerId))return;
+  ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptrs.size>=2){
+    const d=pinchDist();
+    if(pinchD>0&&d>2){
+      if(sel!=null&&orb)
+        orb.dist=Math.max(12,Math.min(sceneR*2,orb.dist*pinchD/d));
+      else{
+        const [f]=camBasis(),k=(d-pinchD)*1.6;
+        cam.ex+=f[0]*k;cam.ey+=f[1]*k;cam.ez+=f[2]*k;
+      }
+    }
+    pinchD=d;
+    return;
+  }
   if(!pdown)return;
   const dx=e.clientX-pdown[0],dy=e.clientY-pdown[1];
   if(Math.abs(dx)+Math.abs(dy)>4)pmoved=true;
@@ -4266,10 +4311,18 @@ cvs.addEventListener("pointermove",e=>{
   else{cam.yaw+=dx*0.0035;cam.pitch=Math.max(-1.45,Math.min(1.45,cam.pitch-dy*0.0035));}
   pdown=[e.clientX,e.clientY];
 });
-cvs.addEventListener("pointerup",e=>{
-  if(pdown&&!pmoved)select(pickShip(e.clientX,e.clientY));
-  pdown=null;
-});
+const ptrEnd=e=>{
+  ptrs.delete(e.pointerId);
+  if(ptrs.size===1){
+    /* the surviving finger resumes the orbit without a jump */
+    pdown=[...ptrs.values()][0].slice();pmoved=true;pinchD=0;
+  }else if(ptrs.size===0){
+    if(e.type==="pointerup"&&pdown&&!pmoved)select(pickShip(e.clientX,e.clientY));
+    pdown=null;pinchD=0;
+  }
+};
+cvs.addEventListener("pointerup",ptrEnd);
+cvs.addEventListener("pointercancel",ptrEnd);
 cvs.addEventListener("wheel",e=>{
   e.preventDefault();
   if(sel!=null&&orb)orb.dist=Math.max(12,Math.min(sceneR*2,orb.dist*Math.exp(e.deltaY*0.0012)));
@@ -4286,6 +4339,10 @@ addEventListener("keydown",e=>{
   if(e.key==="Escape")select(null);
 });
 addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
+/* the lit button tells the truth about the fleet actually fielded — a
+   phone opens at 150, and the chrome says so */
+document.querySelectorAll("#bar button[data-n]")
+  .forEach(x=>x.classList.toggle("on",+x.dataset.n===perFleet));
 document.querySelectorAll("#bar button[data-n]").forEach(b=>{
   b.addEventListener("click",()=>{
     document.querySelectorAll("#bar button[data-n]").forEach(x=>x.classList.remove("on"));
@@ -4298,8 +4355,8 @@ document.getElementById("bNew").addEventListener("click",()=>{toast("FLEETS INBO
 document.getElementById("bPal").addEventListener("click",()=>{palI=(palI+1)%PAL.length;applyPal();});
 function toast(t){
   const el=document.getElementById("toast");
-  el.textContent=t;el.classList.add("show");
-  clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),2600);
+  el.textContent=t;el.classList.add("on");
+  clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("on"),2600);
 }
 /* ===================== dynamic buffers ===================== */
 const beamVao=gl.createVertexArray(),beamVbo=gl.createBuffer();
