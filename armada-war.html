@@ -2938,15 +2938,15 @@ function collide(now){
              dust or is batted away at speed — she only takes the scuff */
           if(now-(o.kickT||0)>0.25){
             o.kickT=now;
-            if(Math.random()<0.45)o.shatter=true;
-            else{
-              const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
-              const kick=Math.max(30,(s.v||10)*1.6);
-              o.vx=-dx*inv*kick*0.7+svx*0.9;
-              o.vy=-dy*inv*kick*0.5+(Math.random()-0.5)*10;
-              o.vz=-dz*inv*kick*0.7+svz*0.9;
-              o.spin*=2.2;
-            }
+            const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
+            const kick=Math.max(30,(s.v||10)*1.6);
+            o.vx=-dx*inv*kick*0.7+svx*0.9;
+            o.vy=-dy*inv*kick*0.5+(Math.random()-0.5)*10;
+            o.vz=-dz*inv*kick*0.7+svz*0.9;
+            o.spin*=2.2;
+            o.integ=(o.integ||2)-(((s.v||10)>30)?2:1);
+            dustBurst((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,o.vx*0.5,o.vy*0.5,o.vz*0.5,3,now);
+            if(o.integ<=0)o.shatter=true;
           }
           if(now-(s.bumpT||0)>0.6){
             s.bumpT=now;s.hurtT=now;
@@ -2989,21 +2989,29 @@ function collide(now){
         const dx=w.x-o.x,dy=w.y-o.y,dz=w.z-o.z;
         const rb=(w.rad||6)+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
         if(d2>rb*rb||d2<1e-6)continue;
-        const d=Math.sqrt(d2),pen=(rb-d)/d*0.5;
+        const rvx=w.vx-o.vx,rvy=w.vy-o.vy,rvz=w.vz-o.vz;
+        const rel=Math.hypot(rvx,rvy,rvz);
+        const d=Math.sqrt(d2),pen=(rb-d)/d*0.5,inv2=1/d;
         w.x+=dx*pen;w.y+=dy*pen;w.z+=dz*pen;
         o.x-=dx*pen;o.y-=dy*pen;o.z-=dz*pen;
-        w.vx*=0.1;w.vy*=0.1;w.vz*=0.1;
-        o.vx*=0.1;o.vy*=0.1;o.vz*=0.1;
-        w.spin*=0.55;o.spin*=0.55;
-        for(const q3 of [w,o]){
-          const qs=Math.hypot(q3.vx,q3.vy,q3.vz);
-          if(qs<1.5){
-            if(qs>0.05){const f3=1.5/qs;q3.vx*=f3;q3.vy*=f3;q3.vz*=f3;}
-            else{const a3=Math.random()*6.283;
-              q3.vx=Math.cos(a3)*1.5;q3.vy=(Math.random()-0.5)*1.0;q3.vz=Math.sin(a3)*1.5;}
-          }
+        /* smooth and inelastic: the two share momentum and part gently —
+           no piece ever slams from flight to a standstill */
+        const avx=(w.vx+o.vx)*0.5,avy=(w.vy+o.vy)*0.5,avz=(w.vz+o.vz)*0.5;
+        w.vx+=(avx-w.vx)*0.55+dx*inv2*1.5;
+        w.vy+=(avy-w.vy)*0.55+dy*inv2*1.5;
+        w.vz+=(avz-w.vz)*0.55+dz*inv2*1.5;
+        o.vx+=(avx-o.vx)*0.55-dx*inv2*1.5;
+        o.vy+=(avy-o.vy)*0.55-dy*inv2*1.5;
+        o.vz+=(avz-o.vz)*0.55-dz*inv2*1.5;
+        w.spin*=0.85;o.spin*=0.85;
+        /* a hard knock chips the smaller piece; enough chips and she
+           crumbles — downward, into dust, never into nothing */
+        if(rel>22){
+          const sm=(w.rad<o.rad)?w:o;
+          sm.integ=(sm.integ||2)-1;
+          dustBurst((w.x+o.x)*0.5,(w.y+o.y)*0.5,(w.z+o.z)*0.5,avx,avy,avz,3,now);
+          if(sm.integ<=0)sm.shatter=true;
         }
-        if(Math.random()<0.25)((w.rad<o.rad)?w:o).shatter=true;
       }
     }
   }
@@ -3168,7 +3176,7 @@ function onWorkerMsg(e){
         vx:fvx,vy:fvy,vz:fvz,
         ax:V.norm([Math.random()-0.5,Math.random()-0.5,Math.random()-0.5]),
         spin:(0.3+Math.random()*1.4)*(Math.random()<0.5?-1:1),
-        t0:performance.now()/1000,baked:false});
+        t0:performance.now()/1000,integ:2+((Math.random()*2)|0),life:32+Math.random()*16,baked:false});
     }
     if(s.vao){gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);s.vao=null;}
     return;
@@ -4235,20 +4243,18 @@ function frame(nowMs){
          here: she flies at the speed she was thrown at, forever, unless
          she bangs into something that stops her */
       if(w.shatter){
-        dustBurst(w.x,w.y,w.z,w.vx*3,w.vy*3,w.vz*3,9,now);
+        dustBurst(w.x,w.y,w.z,w.vx,w.vy,w.vz,14,now);
         gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
         w.gone=true;anyGone=true;continue;
       }
       const wsp=Math.hypot(w.vx,w.vy,w.vz);
-      if((wsp<2.6&&now-w.t0>2)||now-w.t0>30)settleWreck(w,now);
-      else{
-        if(wsp<1.2){
-          if(wsp>0.05){const f3=1.2/wsp;w.vx*=f3;w.vy*=f3;w.vz*=f3;}
-          else{const a5=Math.random()*6.283;
-            w.vx=Math.cos(a5)*1.2;w.vy=(Math.random()-0.5)*0.8;w.vz=Math.sin(a5)*1.2;}
-        }
-        w.x+=w.vx*dt;w.y+=w.vy*dt;w.z+=w.vz*dt;
+      if(now-w.t0>(w.life||38))w.shatter=true;   /* old bones become mist */
+      if(wsp<1.2){
+        if(wsp>0.05){const f3=1.2/wsp;w.vx*=f3;w.vy*=f3;w.vz*=f3;}
+        else{const a5=Math.random()*6.283;
+          w.vx=Math.cos(a5)*1.2;w.vy=(Math.random()-0.5)*0.8;w.vz=Math.sin(a5)*1.2;}
       }
+      w.x+=w.vx*dt;w.y+=w.vy*dt;w.z+=w.vz*dt;
     }
     if(!sphereVis(FRP,w.x,w.y,w.z,(w.rad||6)*1.6))continue;
     gl.uniform3f(SU.pos,w.x,w.y,w.z);
@@ -4267,8 +4273,8 @@ function frame(nowMs){
   let liveW=0;
   for(const w of wrecks)if(!w.pending&&!w.gone)liveW++;
   if(liveW>600)for(const w of wrecks){
-    if(w.pending||w.gone)continue;
-    settleWreck(w,now);
+    if(w.pending||w.gone||w.shatter)continue;
+    w.shatter=true;
     if(--liveW<=600)break;
   }
   if(pendI.length&&(now-lastBake>1.6||pendI.length>500000)){lastBake=now;bakeBoneyard();}
