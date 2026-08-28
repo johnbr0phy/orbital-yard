@@ -2383,9 +2383,28 @@ function compile(vs,fs){
 const shipProg=compile(`#version 300 es
 layout(location=0) in vec3 aP;
 uniform mat4 uVP;uniform vec3 uPos;uniform vec2 uYaw;uniform vec4 uRot;
+uniform vec4 uAnim;uniform float uT;
 out vec3 vW;out float vGrain;
 void main(){
   vec3 p=aP;
+  /* the shoal is alive in the flesh: wings beat hardest at the tips, the
+     body swims a travelling wave nose to tail, and the whole hide
+     breathes — the yard's machines stay rigid, which is the point */
+  if(uAnim.x>0.0){
+    float S=uAnim.z;
+    float t=uT*uAnim.w+uAnim.y;
+    float zn=clamp(abs(p.z)/S,0.0,1.6);
+    p.y+=sin(t)*zn*zn*S*0.20*uAnim.x;
+    p.y+=sin(p.x/S*3.2-t*1.7)*S*0.05*uAnim.x;
+    /* and the tentacles waggle: a serpentine wave that grows toward any
+       extremity, so trailing arms whip as she swims */
+    float rn=length(p)/S;
+    float wag=max(0.0,rn-0.45);
+    p.z+=sin(t*1.9+rn*7.0+p.x/S*2.0)*wag*wag*S*0.15*uAnim.x;
+    p.y+=cos(t*1.6+rn*6.0)*wag*wag*S*0.09*uAnim.x;
+    float br=1.0+0.045*uAnim.x*sin(t*0.9+p.x/S*2.2);
+    p.y*=br;p.z*=br;
+  }
   /* wreckage tumbles about its own heart; a living ship passes w=0 */
   if(uRot.w!=0.0){
     vec3 ax=uRot.xyz;
@@ -2416,10 +2435,10 @@ void main(){
   float fog=1.0-exp(-length(uEye-vW)*uFog);
   o=vec4(mix(col,uBg,fog*0.85),1.0);
 }`);
-const SU={vp:0,pos:0,yaw:0,rot:0,eye:0,ink:0,bg:0,fog:0,inz:0,hurt:0,tone:0};
+const SU={vp:0,pos:0,yaw:0,rot:0,anim:0,t:0,eye:0,ink:0,bg:0,fog:0,inz:0,hurt:0,tone:0};
 for(const k of Object.keys(SU))SU[k]=gl.getUniformLocation(shipProg,
-  {vp:"uVP",pos:"uPos",yaw:"uYaw",rot:"uRot",eye:"uEye",ink:"uInk",bg:"uBg",fog:"uFog",
-   inz:"uIn",hurt:"uHurt",tone:"uTone"}[k]);
+  {vp:"uVP",pos:"uPos",yaw:"uYaw",rot:"uRot",anim:"uAnim",t:"uT",eye:"uEye",ink:"uInk",
+   bg:"uBg",fog:"uFog",inz:"uIn",hurt:"uHurt",tone:"uTone"}[k]);
 const beamProg=compile(`#version 300 es
 layout(location=0) in vec3 aP;
 uniform mat4 uVP;
@@ -3733,6 +3752,7 @@ function frame(nowMs){
   gl.uniform3fv(SU.ink,inkc);
   gl.uniform3fv(SU.bg,bgc);
   gl.uniform1f(SU.fog,0.14/sceneR);
+  gl.uniform1f(SU.t,now);
   const T=now-warT0;
   let alive=0;
   for(const s of ships){
@@ -3746,6 +3766,9 @@ function frame(nowMs){
     gl.uniform2f(SU.yaw,cy,sy);
     const pose=xPose(s,now);
     gl.uniform4f(SU.rot,pose.ax[0],pose.ax[1],pose.ax[2],pose.ang);
+    if(s.side)gl.uniform4f(SU.anim,1.0,s.wf,Math.max(4,s.slen*0.35),
+      Math.min(6,1.3+30/s.slen));
+    else gl.uniform4f(SU.anim,0,0,1,0);
     gl.uniform1f(SU.inz,Math.min(1,age/0.3));
     gl.uniform1f(SU.hurt,Math.max(0,Math.exp(-(now-s.hurtT)*7))*0.85);
     gl.uniform1f(SU.tone,s.side?0.90:1.0);
@@ -3759,6 +3782,7 @@ function frame(nowMs){
   gl.uniform1f(SU.tone,0.42);
   gl.uniform2f(SU.yaw,1.0,0.0);
   gl.uniform4f(SU.rot,0.0,1.0,0.0,0.0);
+  gl.uniform4f(SU.anim,0,0,1,0);
   for(const b of boneyard){
     const bt=now-(b.t0||now);
     gl.uniform3f(SU.pos,(b.dvx||0)*bt,(b.dvy||0)*bt,(b.dvz||0)*bt);
