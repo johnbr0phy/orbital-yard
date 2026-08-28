@@ -2293,7 +2293,10 @@ const P={fuse:0.5,detail:0.35,line:1};
    obeys the same three rules: one keel with her engines kept clear astern,
    strict port-and-starboard symmetry with the SAME build on both sides, and
    sister hulls that really are sisters — one composition, berthed many
-   times — because a fleet yard casts a class, not fifty one-offs. */
+   times — because a fleet yard casts a class, not fifty one-offs. But a
+   working ship is never showroom-clean: berths sit a little off their marks,
+   and the odd slot holds a stray hull of some other class entirely —
+   requisitioned, salvaged, or simply older than her sisters. */
 const MEGA_ROLE={50:["LV","LEVIATHAN"],25:["DN","DREADNOUGHT"],10:["AK","ARK CARRIER"]};
 function buildMegaShip(seed,nH){
   const R=mulberry32(seed|0),rr=(a,b)=>a+(b-a)*R();
@@ -2316,24 +2319,27 @@ function buildMegaShip(seed,nH){
        abreast and two deep at even stations down the keel like containers,
        the aft third of the keel left clear for her engines. */
     const rp=r0*rr(0.50,0.58),Lp=rp*rr(6.0,7.5);
-    const POD=build(Lp,rp);
+    const POD=build(Lp,rp),POD2=build(rp*rr(4.5,7.0),rp*rr(0.78,1.10));
     const zo=(r0+rp)*rr(1.08,1.20),yo=rp*rr(1.15,1.30);
     const rows=pairs>2?[yo,-yo]:[0];
     for(let k=0,i=0;k<pairs;i++)
       for(let rj=0;rj<rows.length&&k<pairs;rj++,k++)
-        pair(POD,-L0*0.06-i*Lp*1.15,rows[rj],zo);
+        pair(R()<0.70?POD:POD2,-L0*0.06-i*Lp*1.15+rr(-0.4,0.4)*rp,
+             rows[rj]*rr(0.90,1.10),zo*rr(0.96,1.08));
   }else if(nH<=25){
     /* DREADNOUGHT: an armoured citadel. Two walls of sister hulls flank the
        keel in ranked rows, the outer rank lighter and stepped astern, the
        whole broadside deepest amidships — a slab with a waterline. */
     const rp=r0*rr(0.40,0.46);
-    const B1=build(rp*rr(7,9),rp),B2=build(rp*0.85*rr(7,9),rp*0.85);
+    const B1=build(rp*rr(7,9),rp),B2=build(rp*0.85*rr(7,9),rp*0.85),
+          B3=build(rp*rr(5.5,8.0),rp*rr(0.62,0.78));
     const zo=(r0+rp)*rr(1.10,1.18),sp2=rp*rr(2.3,2.5);
     const rows=Math.ceil(pairs/2);
     for(let k=0;k<pairs;k++){
       const ci=k%2,ri=(k-ci)/2,yc=ri-(rows-1)/2;
-      pair(ci?B2:B1,-L0*0.04-Math.abs(yc)*r0*0.7-ci*r0*1.5,
-           yc*sp2,zo+ci*sp2);
+      pair(R()<0.24?B3:(ci?B2:B1),
+           -L0*0.04-Math.abs(yc)*r0*0.7-ci*r0*1.5+rr(-0.7,0.7)*r0,
+           yc*sp2+rr(-0.16,0.16)*sp2,(zo+ci*sp2)*rr(0.96,1.05));
     }
   }else{
     /* LEVIATHAN: a city in rings. Concentric rings of sister hulls around
@@ -2344,12 +2350,14 @@ function buildMegaShip(seed,nH){
       let m=Math.min(rem,8*ringI);if(m%2)m--;
       const rp=r0*Math.max(0.22,0.58/(1+0.30*(ringI-1)));
       const Rr=edge+rp*1.35;
-      const B=build(rp*rr(7,9),rp);
+      const Ba=build(rp*rr(7,9),rp),Bb=build(rp*rr(5.5,8.5),rp*rr(0.72,1.02));
       const xN=-L0*0.10-(ringI-1)*r0*1.9;
       const off=(ringI%2)?Math.PI/m:0;
       for(let k=0;k<m;k++){
-        const a=off+k/m*Math.PI*2;
-        place(B,xN,Math.sin(a)*Rr*0.8,Math.cos(a)*Rr);
+        const a=off+(k+rr(-0.16,0.16))/m*Math.PI*2;
+        const Rk=Rr*rr(0.93,1.07);
+        place(R()<0.65?Ba:Bb,xN+rr(-0.9,0.9)*r0,
+              Math.sin(a)*Rk*0.8,Math.cos(a)*Rk);
       }
       rem-=m;edge=Rr+rp;ringI++;
     }
