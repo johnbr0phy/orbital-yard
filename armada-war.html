@@ -2898,7 +2898,7 @@ function collide(now){
   };
   const crowns=[];
   for(const s of ships)if(!s.dead&&s.vao&&!s.grace){if(s.hulls)crowns.push(s);else put2(sgrid,s);}
-  for(const w of wrecks)put2(wgrid,w);
+  for(const w of wrecks)if(!w.pending&&!w.gone)put2(wgrid,w);
   for(const s of ships){
     if(s.dead||!s.vao||s.grace)continue;
     const sr=s.rad||8;
@@ -2973,6 +2973,7 @@ function collide(now){
   /* debris bangs into debris at quarter rate — a shove, and most of the
      speed is gone; no eye can tell the cadence */
   if((simFrame&3)===1)for(const w of wrecks){
+    if(w.pending||w.gone)continue;
     const ix=Math.floor(w.x/COLC),iy=Math.floor(w.y/COLC),iz=Math.floor(w.z/COLC);
     for(let ax2=-1;ax2<=1;ax2++)for(let ay=-1;ay<=1;ay++)for(let az=-1;az<=1;az++){
       const cell=wgrid.get(gkey(ix+ax2,iy+ay,iz+az));
@@ -3024,7 +3025,9 @@ function settleWreck(w,now){
   /* a pile of bone is one obstacle: past a dozen colliders in a cell,
      more pieces add spectacle but no physics */
   if(ba.length<14)ba.push({x:w.x,y:w.y,z:w.z,rad:w.rad});
-  gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
+  /* she keeps drawing, frozen at exactly this pose, until the chunk that
+     contains her actually exists — no piece ever blinks out of the sky */
+  w.pending=true;w.fAx=q0.ax;w.fAng=q0.ang;
 }
 function bakeBoneyard(){
   if(!pendI.length)return;
@@ -3048,6 +3051,11 @@ function bakeBoneyard(){
   boneyard.push({vao,vbo,ibo,icount:pendI.length,
     t0:performance.now()/1000,dvx:ax,dvy:ay,dvz:az});
   pendV=[];pendI=[];pendBase=0;pendVX=0;pendVY=0;pendVZ=0;pendN=0;
+  for(const w2 of wrecks)if(w2.pending){
+    gl.deleteVertexArray(w2.vao);gl.deleteBuffer(w2.vbo);gl.deleteBuffer(w2.ibo);
+    w2.gone=true;
+  }
+  wrecks=wrecks.filter(w2=>!w2.gone);
 }
 let perFleet=300,warSeed=(Math.random()*4294967296)|0;
 let genId=0,forged=0,total=0,warT0=Infinity,winner=null;
@@ -4109,40 +4117,51 @@ function frame(nowMs){
     gl.bindVertexArray(b.vao);
     gl.drawElements(gl.TRIANGLES,b.icount,gl.UNSIGNED_INT,0);
   }
-  let anySettle=false;
+  let anyGone=false;
   for(const w of wrecks){
-    /* a piece coasts until she has genuinely stopped — flung fast, she
-       carries far; banged into the field, she loses her way and settles.
-       The age cap is only there to keep a massacre's worth of tumbling
-       pieces from outrunning the frame budget. */
-    /* no drag out here: a piece flies at the speed she was thrown at,
-       forever, unless she bangs into something that stops her */
-    if(w.shatter){
-      dustBurst(w.x,w.y,w.z,w.vx*3,w.vy*3,w.vz*3,9,now);
-      gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
-      w.baked=true;anySettle=true;continue;
+    if(w.gone)continue;
+    if(!w.pending){
+      /* a piece coasts until she has genuinely stopped — no drag out
+         here: she flies at the speed she was thrown at, forever, unless
+         she bangs into something that stops her */
+      if(w.shatter){
+        dustBurst(w.x,w.y,w.z,w.vx*3,w.vy*3,w.vz*3,9,now);
+        gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
+        w.gone=true;anyGone=true;continue;
+      }
+      const wsp=Math.hypot(w.vx,w.vy,w.vz);
+      if((wsp<2.6&&now-w.t0>2)||now-w.t0>30)settleWreck(w,now);
+      else{
+        if(wsp<1.2){
+          if(wsp>0.05){const f3=1.2/wsp;w.vx*=f3;w.vy*=f3;w.vz*=f3;}
+          else{const a5=Math.random()*6.283;
+            w.vx=Math.cos(a5)*1.2;w.vy=(Math.random()-0.5)*0.8;w.vz=Math.sin(a5)*1.2;}
+        }
+        w.x+=w.vx*dt;w.y+=w.vy*dt;w.z+=w.vz*dt;
+      }
     }
-    const wsp=Math.hypot(w.vx,w.vy,w.vz);
-    if((wsp<2.6&&now-w.t0>2)||now-w.t0>30){settleWreck(w,now);w.baked=true;anySettle=true;continue;}
-    if(wsp<1.2){
-      if(wsp>0.05){const f3=1.2/wsp;w.vx*=f3;w.vy*=f3;w.vz*=f3;}
-      else{const a5=Math.random()*6.283;
-        w.vx=Math.cos(a5)*1.2;w.vy=(Math.random()-0.5)*0.8;w.vz=Math.sin(a5)*1.2;}
-    }
-    w.x+=w.vx*dt;w.y+=w.vy*dt;w.z+=w.vz*dt;
     if(!sphereVis(FRP,w.x,w.y,w.z,(w.rad||6)*1.6))continue;
     gl.uniform3f(SU.pos,w.x,w.y,w.z);
     gl.uniform2f(SU.yaw,Math.cos(w.yaw),Math.sin(w.yaw));
-    const wr=xQAA(w.bax||[0,1,0],w.bang||0,w.ax,w.spin*(now-w.t0));
-    gl.uniform4f(SU.rot,wr.ax[0],wr.ax[1],wr.ax[2],wr.ang);
+    if(w.pending)gl.uniform4f(SU.rot,w.fAx[0],w.fAx[1],w.fAx[2],w.fAng);
+    else{
+      const wr=xQAA(w.bax||[0,1,0],w.bang||0,w.ax,w.spin*(now-w.t0));
+      gl.uniform4f(SU.rot,wr.ax[0],wr.ax[1],wr.ax[2],wr.ang);
+    }
     gl.bindVertexArray(w.vao);
     gl.drawElements(gl.TRIANGLES,w.icount,gl.UNSIGNED_INT,0);
   }
-  if(anySettle)wrecks=wrecks.filter(w=>!w.baked);
+  if(anyGone)wrecks=wrecks.filter(w=>!w.gone);
   /* a massacre can flood the sky with tumbling pieces; past the budget,
-     the oldest (and slowest) settle early rather than the frame rate */
-  while(wrecks.length>600){settleWreck(wrecks[0],now);wrecks.shift();}
-  if(pendI.length&&(now-lastBake>3||pendI.length>500000)){lastBake=now;bakeBoneyard();}
+     the oldest flyers settle early rather than the frame rate */
+  let liveW=0;
+  for(const w of wrecks)if(!w.pending&&!w.gone)liveW++;
+  if(liveW>600)for(const w of wrecks){
+    if(w.pending||w.gone)continue;
+    settleWreck(w,now);
+    if(--liveW<=600)break;
+  }
+  if(pendI.length&&(now-lastBake>1.6||pendI.length>500000)){lastBake=now;bakeBoneyard();}
   /* beams */
   if(beams.length){
     gl.useProgram(beamProg);
