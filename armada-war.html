@@ -2964,26 +2964,33 @@ function collide(now){
              touch her until the cloud has opened — this was the mystery
              half-second jerk, squadmates sweeping through fresh debris */
           if(now-o.t0<1.8)continue;
+          /* the law arrives gently even for traffic: the ram eases in over
+             the second after the grace, so a squadmate overlapping a piece
+             at expiry shoves her aside — never detonates her */
+          const ramW=Math.min(1,(now-o.t0-1.8)/1.0);
           /* physical ramming: an impulse along the closing velocity, ADDED
              to what the piece already carries — a graze nudges, a head-on
              ram sends it flying, and nothing ever snaps to a new vector */
           const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
           const appr=(svx-o.vx)*(-dx*inv)+(0-o.vy)*(-dy*inv)+(svz-o.vz)*(-dz*inv);
-          if(appr>4&&now-(o.kickT||0)>0.3){
-            o.kickT=now;
-            const imp=appr*0.9;
-            o.vx+=-dx*inv*imp+svx*0.15;
+          if(appr>4){
+            /* the shove is continuous: a small kick every contact tick
+               instead of one big one every 0.3 s — same momentum flow,
+               never a sampled jolt */
+            const imp=appr*0.12*ramW;
+            o.vx+=-dx*inv*imp+svx*0.02*ramW;
             o.vy+=-dy*inv*imp*0.6;
-            o.vz+=-dz*inv*imp+svz*0.15;
-            o.spin*=1.6;
-            if(appr>14){
-              o.integ=(o.integ||2)-(appr>30?2:1);
+            o.vz+=-dz*inv*imp+svz*0.02*ramW;
+            o.spin*=1+0.06*ramW;
+            if(appr*ramW>18&&now-(o.kickT||0)>0.3){
+              o.kickT=now;
+              o.integ=(o.integ||2)-(appr*ramW>34?2:1);
               dustBurst((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,
                 o.vx*0.5,o.vy*0.5,o.vz*0.5,3,now);
               if(o.integ<=0)o.shatter=true;
             }
           }
-          if(now-(s.bumpT||0)>0.6){
+          if(ramW>0.3&&now-(s.bumpT||0)>0.6){
             s.bumpT=now;s.hurtT=now;
             s.hp-=0.06;
             flash((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,now,7,2);
@@ -3020,28 +3027,40 @@ function collide(now){
       for(let k9=0;k9<wn;k9++){
         const o=cell[k9];
         if(o.uid>=w.uid)continue;
-        if(now-w.t0<2.4||now-o.t0<2.4)continue;
+        /* sisters never bang: pieces of one hull were born overlapping and
+           are already flying apart — banging them would snap the cluster */
+        if(w.src!=null&&w.src===o.src)continue;
+        const age=Math.min(now-w.t0,now-o.t0);
+        if(age<2.4)continue;
+        /* the law eases in over a second so its arrival is never a snap */
+        const ramp=Math.min(1,(age-2.4)/1.2);
         const dx=w.x-o.x,dy=w.y-o.y,dz=w.z-o.z;
         const rb=(w.rad||6)+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
         if(d2>rb*rb||d2<1e-6)continue;
         const rvx=w.vx-o.vx,rvy=w.vy-o.vy,rvz=w.vz-o.vz;
         const rel=Math.hypot(rvx,rvy,rvz);
-        const d=Math.sqrt(d2),pen=(rb-d)/d*0.5,inv2=1/d;
+        /* shove, don't teleport: a sliver of the overlap per pass, capped,
+           so deep penetration bleeds off over many frames invisibly */
+        const d=Math.sqrt(d2),inv2=1/d;
+        const pen=Math.min((rb-d)*0.5*0.30*ramp,0.9)*inv2;
         w.x+=dx*pen;w.y+=dy*pen;w.z+=dz*pen;
         o.x-=dx*pen;o.y-=dy*pen;o.z-=dz*pen;
         /* smooth and inelastic: the two share momentum and part gently —
            no piece ever slams from flight to a standstill */
+        const bl=0.16*ramp,sep=1.2*ramp;
         const avx=(w.vx+o.vx)*0.5,avy=(w.vy+o.vy)*0.5,avz=(w.vz+o.vz)*0.5;
-        w.vx+=(avx-w.vx)*0.55+dx*inv2*1.5;
-        w.vy+=(avy-w.vy)*0.55+dy*inv2*1.5;
-        w.vz+=(avz-w.vz)*0.55+dz*inv2*1.5;
-        o.vx+=(avx-o.vx)*0.55-dx*inv2*1.5;
-        o.vy+=(avy-o.vy)*0.55-dy*inv2*1.5;
-        o.vz+=(avz-o.vz)*0.55-dz*inv2*1.5;
-        w.spin*=0.85;o.spin*=0.85;
+        w.vx+=(avx-w.vx)*bl+dx*inv2*sep;
+        w.vy+=(avy-w.vy)*bl+dy*inv2*sep;
+        w.vz+=(avz-w.vz)*bl+dz*inv2*sep;
+        o.vx+=(avx-o.vx)*bl-dx*inv2*sep;
+        o.vy+=(avy-o.vy)*bl-dy*inv2*sep;
+        o.vz+=(avz-o.vz)*bl-dz*inv2*sep;
+        const sd=1-0.05*ramp;w.spin*=sd;o.spin*=sd;
         /* a hard knock chips the smaller piece; enough chips and she
-           crumbles — downward, into dust, never into nothing */
-        if(rel>22){
+           crumbles — downward, into dust, never into nothing. The chip
+           obeys the same ramp: no piece crumbles the instant the law
+           arrives */
+        if(rel*ramp>22){
           const sm=(w.rad<o.rad)?w:o;
           sm.integ=(sm.integ||2)-1;
           dustBurst((w.x+o.x)*0.5,(w.y+o.y)*0.5,(w.z+o.z)*0.5,avx,avy,avz,3,now);
@@ -3052,7 +3071,7 @@ function collide(now){
   }
 }
 function settleWreck(w,now){
-  const q0=xQAA(w.bax||[0,1,0],w.bang||0,w.ax,w.spin*(now-w.t0));
+  const q0=xQAA(w.bax||[0,1,0],w.bang||0,w.ax,w.ang!=null?w.ang:w.spin*(now-w.t0));
   const an=q0.ang,c=Math.cos(an),s2=Math.sin(an),ax=q0.ax;
   const cy=Math.cos(w.yaw),sy=Math.sin(w.yaw),v=w.v;
   for(let i=0;i<v.length;i+=3){
@@ -3244,7 +3263,7 @@ function onWorkerMsg(e){
         spin:(s.corpseSpin||0)*0.8
              +(0.15+Math.random()*0.5)*Math.min(1,14/Math.sqrt((f2.r||6)+4))
               *(Math.random()<0.5?-1:1),
-        t0:performance.now()/1000,integ:2+((Math.random()*2)|0),life:32+Math.random()*16,baked:false});
+        t0:performance.now()/1000,integ:2+((Math.random()*2)|0)+((f2.r||6)>10?1:0),life:32+Math.random()*16,baked:false});
     }
     if(s.vao){gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);s.vao=null;}
     return;
@@ -3583,14 +3602,14 @@ function spawnBreakup(s,now){
     gl.bindVertexArray(null);
     wrecks.push({vao,vbo,ibo,icount:f2.i.length,v:f2.v,i:f2.i,rad:Math.max(3,f2.r||6),
       x:s.x+wox,y:s.y+woy,z:s.z+woz,yaw:s.yaw,
-      bax:[dax[0],dax[1],dax[2]],bang:angT,uid:wreckUid++,
+      bax:[dax[0],dax[1],dax[2]],bang:angT,uid:wreckUid++,src:s.id,ang:0,
       vx:fvx,vy:fvy,vz:fvz,
       ax:V.norm([dax[0]+(Math.random()-0.5)*0.7,
                  dax[1]+(Math.random()-0.5)*0.7,
                  dax[2]+(Math.random()-0.5)*0.7]),
       spin:sp3*0.6+(0.15+Math.random()*0.5)
             *Math.min(1,14/Math.sqrt((f2.r||6)+4))*(Math.random()<0.5?-1:1),
-      t0:performance.now()/1000,integ:2+((Math.random()*2)|0),
+      t0:performance.now()/1000,integ:2+((Math.random()*2)|0)+((f2.r||6)>10?1:0),
       life:32+Math.random()*16,baked:false});
   }
 }
@@ -4371,13 +4390,17 @@ function frame(nowMs){
           w.vx=Math.cos(a5)*1.2;w.vy=(Math.random()-0.5)*0.8;w.vz=Math.sin(a5)*1.2;}
       }
       w.x+=w.vx*dt;w.y+=w.vy*dt;w.z+=w.vz*dt;
+      /* tumble rides the same clamped clock as travel: a hitch (death
+         frames upload 2-6 fresh meshes) can no longer lurch the spin
+         ahead of the drift */
+      if(w.ang!=null)w.ang+=w.spin*dt;
     }
     if(!sphereVis(FRP,w.x,w.y,w.z,(w.rad||6)*1.6))continue;
     gl.uniform3f(SU.pos,w.x,w.y,w.z);
     gl.uniform2f(SU.yaw,Math.cos(w.yaw),Math.sin(w.yaw));
     if(w.pending)gl.uniform4f(SU.rot,w.fAx[0],w.fAx[1],w.fAx[2],w.fAng);
     else{
-      const wr=xQAA(w.bax||[0,1,0],w.bang||0,w.ax,w.spin*(now-w.t0));
+      const wr=xQAA(w.bax||[0,1,0],w.bang||0,w.ax,w.ang!=null?w.ang:w.spin*(now-w.t0));
       gl.uniform4f(SU.rot,wr.ax[0],wr.ax[1],wr.ax[2],wr.ang);
     }
     gl.bindVertexArray(w.vao);
@@ -4388,11 +4411,11 @@ function frame(nowMs){
      the oldest flyers settle early rather than the frame rate */
   let liveW=0;
   for(const w of wrecks)if(!w.pending&&!w.gone)liveW++;
-  if(liveW>600)for(const w of wrecks){
+  if(liveW>600){let marks=0;for(const w of wrecks){
     if(w.pending||w.gone||w.shatter)continue;
     w.shatter=true;
-    if(--liveW<=600)break;
-  }
+    if(--liveW<=600||++marks>=3)break;
+  }}
   if(pendI.length&&(now-lastBake>1.6||pendI.length>500000)){lastBake=now;bakeBoneyard();}
   /* beams */
   if(beams.length){
