@@ -2352,6 +2352,17 @@ var buildXenoMega=function(seed,nH){
         V.norm([rr(0.3,0.8),-1,Math.sin(a9)*0.5]),
         L*rr(0.15,0.30),hr*rr(0.05,0.09),{a:rr(0,6.283),k:rr(0.8,1.6)},0.06);
     }
+    /* and arms wherever the flesh will bear them: sprouting from back,
+       flank and belly down her whole length, not only around the mouth */
+    const nbody=Math.round(nH*0.34);
+    for(let i=0;i<nbody;i++){
+      const bx=L*rr(-0.42,0.30),az=rr(0,6.283);
+      const yc=bx>L*0.05?0:-droop*0.5*(L*0.05-bx)/(L*0.40);
+      const br=Rm*rr(0.55,0.85);
+      G.tent([bx,yc+Math.sin(az)*br,Math.cos(az)*br],
+        V.norm([rr(-0.6,-0.1),Math.sin(az)*0.9,Math.cos(az)*0.9]),
+        L*rr(0.10,0.28),Rm*rr(0.04,0.09),{a:rr(0,6.283),k:rr(0.6,1.4)},0.06);
+    }
     const nl=Math.max(2,Math.round(nH*0.08));
     for(let i=0;i<nl;i++){
       const bx=L*rr(-0.10,0.16);
@@ -2413,6 +2424,14 @@ var buildXenoMega=function(seed,nH){
         V.norm([rr(-0.4,0.3),-1,Math.sin(a9)*0.4]),
         L*rr(0.12,0.26),hr*rr(0.06,0.10),{a:rr(0,6.283),k:rr(0.7,1.5)},0.06);
     }
+    /* arms sprout from any segment, not only under the jaw */
+    const nbT=Math.round(nH*0.30);
+    for(let i=0;i<nbT;i++){
+      const f=FR[(R()*FR.length)|0],az=rr(0,6.283);
+      G.tent(V.add(f.c,[0,Math.sin(az)*f.r*0.8,Math.cos(az)*f.r*0.8]),
+        V.norm([rr(-0.5,-0.1),Math.sin(az),Math.cos(az)]),
+        L*rr(0.08,0.22),f.r*rr(0.10,0.18),{a:rr(0,6.283),k:rr(0.6,1.4)},0.06);
+    }
     const nspk=Math.max(4,Math.round(nH*0.14));
     for(let i=0;i<nspk;i++){
       const f=FR[(R()*FR.length)|0];
@@ -2449,6 +2468,15 @@ var buildXenoMega=function(seed,nH){
       G.tent([cx+Math.cos(a9)*Rb*rr(0.3,0.55),Hb*0.55-Hb,Math.sin(a9)*Rb*rr(0.3,0.55)],
         V.norm([Math.cos(a9)*0.15,-1,Math.sin(a9)*0.15]),
         L*rr(0.16,0.30),Rb*rr(0.03,0.06),{a:rr(0,6.283),k:rr(0.5,1.2)},0.05);
+    }
+    /* and a few arms escape the dome itself, high above the skirt */
+    const ndm=Math.round(nH*0.12);
+    for(let i=0;i<ndm;i++){
+      const az=rr(0,6.283),u=rr(0.25,0.8);
+      const rrad=Rb*Math.sin(Math.min(1.35,u*1.5));
+      G.tent([cx+Math.cos(az)*rrad*0.9,Hb*0.55-Hb*u,Math.sin(az)*rrad*0.9],
+        V.norm([Math.cos(az),rr(-0.3,0.4),Math.sin(az)]),
+        L*rr(0.10,0.22),Rb*rr(0.03,0.06),{a:rr(0,6.283),k:rr(0.6,1.4)},0.06);
     }
     const nee=5+((R()*4)|0);
     for(let i=0;i<nee;i++){
@@ -2496,9 +2524,15 @@ var buildXenoMega=function(seed,nH){
     /* the belly fringe streams behind her as she banks */
     const nbf=Math.round(nH*0.16);
     for(let i=0;i<nbf;i++)
-      G.tent([L*rr(-0.25,0.2),-Rm*rr(0.8,1.2),rr(-0.6,0.6)*Rm],
+      G.tent([L*rr(-0.30,0.35),-Rm*rr(0.8,1.2),rr(-0.7,0.7)*Rm],
         V.norm([rr(-0.6,-0.2),-1,rr(-0.3,0.3)]),L*rr(0.10,0.22),Rm*rr(0.05,0.09),
         {a:rr(0,6.283),k:rr(0.6,1.3)},0.06);
+    /* arms off the back as well as the belly */
+    const ndr=Math.round(nH*0.10);
+    for(let i=0;i<ndr;i++)
+      G.tent([L*rr(-0.25,0.3),Rm*rr(0.7,1.0),rr(-0.7,0.7)*Rm],
+        V.norm([rr(-0.5,-0.1),rr(0.4,1),rr(-0.4,0.4)]),
+        L*rr(0.08,0.18),Rm*rr(0.05,0.08),{a:rr(0,6.283),k:rr(0.6,1.3)},0.06);
     const nsp3=Math.max(3,Math.round(nH*0.10));
     for(let i=0;i<nsp3;i++)G.spk([L*rr(-0.2,0.25),Rm*rr(0.6,0.9),rr(-0.4,0.4)*Rm],
       V.norm([rr(-0.3,0.1),1,rr(-0.2,0.2)]),Rm*rr(1.0,2.0),Rm*rr(0.08,0.13));
