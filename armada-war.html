@@ -3283,7 +3283,18 @@ function startWar(fresh){
     for(let i=0;i<sm.length;i+=SQN){
       const mem=sm.slice(i,i+SQN).map(s=>s.id);
       for(const id of mem)ships[id].squad=squads.length;
-      squads.push({side,mem,tac:"CHARGE",phase:1,wp:null,tgt:-1,until:0,guard:-1});
+      squads.push({id:squads.length,side,mem,tac:"CHARGE",phase:1,wp:null,tgt:-1,tgtSq:-1,until:0,guard:-1});
+    }
+  }
+  /* each squadron musters TOGETHER: a cluster anchor per squad across a
+     wide front, members in loose formation around it — the war opens as
+     formations converging on formations, not two shuffled walls */
+  for(const q of squads){
+    const az=(R()-0.5)*1900,ay=(R()-0.5)*460;
+    for(const id of q.mem){
+      const s2=ships[id];
+      s2.z=az+(R()-0.5)*150;
+      s2.y=ay+(R()-0.5)*90;
     }
   }
   counts=[perFleet,perFleet];
@@ -3404,9 +3415,9 @@ function onWorkerMsg(e){
       /* chitin burns easier than hull plate; the small are quick — and
          every hull wears a little more shield now, so a war is a siege
          rather than a flash */
-      s.hpMax=s.hp=2+Math.max(1,Math.round(s.slen/(s.side?26:15)));
-      s.spd=Math.min(70,Math.max(7,1400/s.slen));
-      s.turn=Math.min(2.2,Math.max(0.12,34/s.slen));
+      s.hpMax=s.hp=2+Math.max(1,Math.round(s.slen/(s.side?26:14)));
+      s.spd=Math.min(70,Math.max(7,(s.side?1400:1640)/s.slen));   /* machined drives out-burn grown flesh */
+      s.turn=Math.min(2.2,Math.max(0.12,(s.side?34:40)/s.slen));
       /* the middleweights carry seeker racks — and the small arms locker
          is diverse now: 15% gatling tracer, 10% arc lightning, 10% plasma
          mortar, 8% railgun, 8% cutting beam, the rest classic lasers */
@@ -3453,14 +3464,44 @@ function assignTactic(sq,now){
   let tot=0;for(const d of deck)tot+=d.w[sq.side];
   let r=Math.random()*tot,pick=deck[0];
   for(const d of deck){r-=d.w[sq.side];if(r<=0){pick=d;break;}}
-  sq.tac=pick.n;sq.until=now+12+Math.random()*8;sq.wp=null;sq.tgt=-1;sq.phase=1;sq.guard=-1;
+  sq.tac=pick.n;sq.until=now+12+Math.random()*8;sq.wp=null;sq.tgt=-1;sq.tgtSq=-1;sq.phase=1;sq.guard=-1;
   const nearestTo=p=>{
     let b=-1,bd=1e18;
     for(const t of foes){
       const d=(t.x-p[0])*(t.x-p[0])+(t.y-p[1])*(t.y-p[1])+(t.z-p[2])*(t.z-p[2]);
       if(d<bd){bd=d;b=t.id;}}
     return b;};
-  if(pick.n==="CHARGE")sq.tgt=nearestTo(c);
+  /* squads fight SQUADS now: each picks an enemy squadron, preferring one
+     nobody else has claimed — so the war spreads into a sky of separate
+     engagements, eight on eight thinning to three on three and one on one,
+     instead of one mob grinding through another */
+  const heat=new Map();
+  for(const q of squads)
+    if(q.side===sq.side&&q!==sq&&q.tgtSq>=0)heat.set(q.tgtSq,(heat.get(q.tgtSq)||0)+1);
+  const pickFoeSquad=()=>{
+    let best=null,bs=1e18;
+    for(const q of squads){
+      if(q.side===sq.side||!q.mem.length)continue;
+      const qc=centroidOf(q.mem);if(!qc)continue;
+      const d=Math.hypot(qc[0]-c[0],qc[1]-c[1],qc[2]-c[2])+(heat.get(q.id)||0)*700;
+      if(d<bs){bs=d;best=q;}
+    }
+    return best;
+  };
+  const squadMark=q=>{
+    let b=-1,bd=1e18;
+    for(const id of q.mem){
+      const t=ships[id];
+      const d=(t.x-c[0])*(t.x-c[0])+(t.y-c[1])*(t.y-c[1])+(t.z-c[2])*(t.z-c[2]);
+      if(d<bd){bd=d;b=id;}
+    }
+    return b;
+  };
+  if(pick.n==="CHARGE"){
+    const q=pickFoeSquad();
+    if(q){sq.tgtSq=q.id;sq.tgt=squadMark(q);}
+    else sq.tgt=nearestTo(c);
+  }
   else if(pick.n==="SWARM"){
     let b=-1,bs=1e9;
     for(const t of foes){
@@ -3471,12 +3512,32 @@ function assignTactic(sq,now){
     const crowns=foes.filter(t=>t.hulls);
     sq.tgt=crowns.length?crowns[(Math.random()*crowns.length)|0].id:nearestTo(c);
   }else if(pick.n==="FLANK"){
-    const sg=Math.random()<0.5?1:-1;
-    sq.wp=[ec[0],ec[1]+(Math.random()-0.5)*120,ec[2]+sg*(430+Math.random()*260)];
+    /* a real flank: come at the CHOSEN squadron from its three or nine
+       o'clock — read their heading, swing wide of it, then fall on them
+       from the side they are not looking at */
+    const q=pickFoeSquad();
+    if(q){
+      sq.tgtSq=q.id;
+      const qc=centroidOf(q.mem)||ec;
+      const h=ships[q.mem[0]].yaw,sg=Math.random()<0.5?1:-1;
+      const R2=380+Math.random()*200;
+      sq.wp=[qc[0]-Math.sin(h)*sg*R2,qc[1]+(Math.random()-0.5)*120,qc[2]+Math.cos(h)*sg*R2];
+    }else{
+      const sg=Math.random()<0.5?1:-1;
+      sq.wp=[ec[0],ec[1]+(Math.random()-0.5)*120,ec[2]+sg*(430+Math.random()*260)];
+    }
     sq.phase=0;
   }else if(pick.n==="ENVELOP"){
+    /* envelopment picks its squadron too, and comes over its top or
+       under its keel — "appear where you are not expected" */
+    const q=pickFoeSquad();
     const sg=Math.random()<0.5?1:-1;
-    sq.wp=[ec[0],ec[1]+sg*(300+Math.random()*160),ec[2]+(Math.random()-0.5)*220];
+    if(q){
+      sq.tgtSq=q.id;
+      const qc=centroidOf(q.mem)||ec;
+      sq.wp=[qc[0]+(Math.random()-0.5)*200,qc[1]+sg*(300+Math.random()*160),qc[2]+(Math.random()-0.5)*200];
+    }else
+      sq.wp=[ec[0],ec[1]+sg*(300+Math.random()*160),ec[2]+(Math.random()-0.5)*220];
     sq.phase=0;
   }else if(pick.n==="SCREEN"){
     const crowns=[];
@@ -3513,7 +3574,7 @@ function squadThink(now){
       if(d<bd){bd=d;best=sq;}
     }
     if(best){best.tac="SCREEN";best.guard=g.id;best.phase=2;
-      best.tgt=-1;best.wp=null;best.until=now+14+Math.random()*6;}
+      best.tgt=-1;best.tgtSq=-1;best.wp=null;best.until=now+14+Math.random()*6;}
   }
   for(const sq of squads){
     sq.mem=sq.mem.filter(id=>!ships[id].dead);
@@ -3525,9 +3586,17 @@ function squadThink(now){
       for(const t of ships)if(t.side===sq.side&&t.hulls&&!t.dead)crowns.push(t);
       if(crowns.length){
         sq.tac="SCREEN";sq.guard=crowns[(Math.random()*crowns.length)|0].id;
-        sq.phase=2;sq.tgt=-1;sq.wp=null;sq.until=now+16;sq.lock=now+0.4;
+        sq.phase=2;sq.tgt=-1;sq.tgtSq=-1;sq.wp=null;sq.until=now+16;sq.lock=now+0.4;
         continue;
       }
+    }
+    /* the engagement outlives any single mark: while the chosen enemy
+       squadron still flies, a dead mark is replaced from their number */
+    if(sq.phase===1&&sq.tgtSq>=0){
+      const eq=squads[sq.tgtSq];
+      if(eq&&eq.mem.length){
+        if(sq.tgt<0||ships[sq.tgt].dead)sq.tgt=eq.mem[0];
+      }else sq.tgtSq=-1;
     }
     if((now>sq.until||(sq.phase===1&&(sq.tgt<0||ships[sq.tgt].dead)))&&now>(sq.lock||0)){
       sq.lock=now+0.4;                /* no re-dealing every tick of a massacre */
@@ -3536,13 +3605,19 @@ function squadThink(now){
     if(sq.phase===0&&sq.wp){
       const c=centroidOf(sq.mem);
       if(c&&Math.hypot(c[0]-sq.wp[0],c[1]-sq.wp[1],c[2]-sq.wp[2])<130){
-        /* on station: fall on whatever is nearest the ambush point */
+        /* on station: fall on the squadron this run was flown FOR, and
+           only failing that on whatever is nearest the ambush point */
         sq.phase=1;
-        let b=-1,bd=1e18;
-        for(const t of foeCache[1-sq.side]){
-          const d=(t.x-sq.wp[0])*(t.x-sq.wp[0])+(t.y-sq.wp[1])*(t.y-sq.wp[1])+(t.z-sq.wp[2])*(t.z-sq.wp[2]);
-          if(d<bd){bd=d;b=t.id;}}
-        sq.tgt=b;
+        const eq=sq.tgtSq>=0?squads[sq.tgtSq]:null;
+        if(eq&&eq.mem.length){sq.tgt=eq.mem[0];}
+        else{
+          sq.tgtSq=-1;
+          let b=-1,bd=1e18;
+          for(const t of foeCache[1-sq.side]){
+            const d=(t.x-sq.wp[0])*(t.x-sq.wp[0])+(t.y-sq.wp[1])*(t.y-sq.wp[1])+(t.z-sq.wp[2])*(t.z-sq.wp[2]);
+            if(d<bd){bd=d;b=t.id;}}
+          sq.tgt=b;
+        }
       }
     }
     if(sq.phase===2&&(sq.guard<0||ships[sq.guard].dead))assignTactic(sq,now);
@@ -3976,7 +4051,17 @@ function simStep(now,dt){
             z:s.z+(Math.random()-0.5)*20,side:s.side,ph:Math.random()*6.28,dead:false});
         }
       }else{
-        const t=(sq.tgt>=0&&!ships[sq.tgt].dead)?ships[sq.tgt]:null;
+        let t=(sq.tgt>=0&&!ships[sq.tgt].dead)?ships[sq.tgt]:null;
+        /* inside a squadron engagement every pilot takes her opposite
+           number — eight on eight becomes eight dogfights, and as the
+           squadrons thin, the sky is left with threes, pairs, and ones */
+        if(sq.tgtSq>=0){
+          const eq=squads[sq.tgtSq];
+          if(eq&&eq.mem.length){
+            const pm=ships[eq.mem[mi%eq.mem.length]];
+            if(pm&&!pm.dead)t=pm;
+          }
+        }
         if(t){
           prefer=t.id;
           /* the attack run: line up, bore in with guns hot, break past
