@@ -3416,7 +3416,7 @@ function onWorkerMsg(e){
          every hull wears a little more shield now, so a war is a siege
          rather than a flash */
       s.hpMax=s.hp=2+Math.max(1,Math.round(s.slen/(s.side?26:14)));
-      s.spd=Math.min(70,Math.max(7,(s.side?1400:1640)/s.slen));   /* machined drives out-burn grown flesh */
+      s.spd=Math.min(77,Math.max(7,(s.side?1540:1804)/s.slen));   /* machined drives out-burn grown flesh; every small runs a tenth hotter */
       s.turn=Math.min(2.2,Math.max(0.12,(s.side?34:40)/s.slen));
       /* the middleweights carry seeker racks — and the small arms locker
          is diverse now: 15% gatling tracer, 10% arc lightning, 10% plasma
