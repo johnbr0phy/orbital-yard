@@ -2306,238 +2306,154 @@ var buildXenoMega=function(seed,nH){
     for(const p of tmp){parts.push(p);parts.push(xMirZ(p));}
   };
   const XMROLE={50:["HQ","HIVE QUEEN"],25:["BH","BEHEMOTH"],10:["BR","BROODMOTHER"]};
-  /* the great ones no longer share one anatomy: four mega body plans now,
-     drawn from the seed like everything else — the hive whale, the
-     lindwurm, the bell, and the ray. Two broodmothers in one war will
-     usually be two different animals. */
-  const arch=(R()*4)|0;
-  if(arch===0){
-    const L=140+nH*rr(1.2,2.2);
-    const Rm=L*rr(0.075,0.10);
-    const droop=Rm*rr(0.3,0.8);
-    G.seg2([L*0.44,0,0],[L*0.12,0,0],Rm*rr(0.58,0.70),rr(0.85,1.0),0.5);
-    G.seg2([L*0.20,0,0],[-L*0.30,-droop*0.5,0],Rm,rr(0.80,0.95),0.45);
-    const tpts=[[-L*0.24,-droop*0.5,0],[-L*0.36,-droop*0.75,0],
-                [-L*0.46,-droop*0.95,0],[-L*0.54,-droop*1.1,0]];
-    const TFR=G.spine(tpts,u=>Rm*(0.35-u*0.24),rr(0.85,1.0),{pw:0.5,ov:0.7});
-    G.frill(TFR,0,TFR.length,[0,1,0]);
+  /* THE CHIMERA — rethought: a queen is not one animal, and no longer
+     even one body plan. She is a colony that fused. A core is grown —
+     whale-flesh, wurm-spine, or bell — and then berth after berth down
+     her length takes a different organ from the whole shoal's anatomy:
+     bells, worm-chains, boned wings, arm-bursts, eye-clusters,
+     scythe-racks, fins, boils. Organs mirror or grow alone as the seed
+     pleases, so no two queens ever assemble alike. */
+  const L=150+nH*rr(1.3,2.0);
+  const Rm=L*rr(0.05,0.075);
+  const stations=[];
+  const coreKind=(R()*3)|0;
+  if(coreKind===0){
+    /* whale-flesh: two fat lathes and a slow droop */
+    const droop=Rm*rr(0.3,0.9);
+    G.seg2([L*0.45,0,0],[L*0.12,0,0],Rm*rr(0.6,0.75),rr(0.85,1.0),0.5);
+    G.seg2([L*0.20,0,0],[-L*0.32,-droop*0.5,0],Rm,rr(0.8,0.95),0.45);
+    for(let i=0;i<9;i++){
+      const u=i/8;
+      stations.push({c:[L*(0.42-0.80*u),-droop*0.5*Math.max(0,u-0.35)/0.65,0],
+        r:Rm*(0.95-0.3*u)});
+    }
     G.rib([L*0.16,0,0],[1,0,0],Rm*0.68,1.6);
-    G.rib([-L*0.26,-droop*0.55,0],[1,0,0],Rm*0.38,1.5);
-    const nh2=2+((R()*2)|0);
-    for(let i=0;i<nh2;i++){
-      const x0=L*rr(-0.14,0.10);
-      G.seg2([x0+L*0.14,Rm*0.42,0],[x0-L*0.14,Rm*0.38,0],
-             Rm*rr(0.55,0.72),rr(0.5,0.68),0.5);
-    }
-    const cx=L*rr(-0.05,0.10),ch=Rm*rr(0.6,1.1);
-    G.put({k:"panel",n:[0,0,1],th:Rm*0.09,pts:[
-      [cx+L*0.18,Rm*0.55,0],[cx+L*0.05,Rm*0.75+ch,0],
-      [cx-L*0.08,Rm*0.72+ch*0.8,0],[cx-L*0.18,Rm*0.5,0]]});
-    const head=[L*0.44,0,0],hr=Rm*0.66;
-    G.spk(head,[1,rr(-0.10,0.05),0],L*rr(0.10,0.16),hr*0.38);
-    limb(g=>{g.scy(V.add(head,[0,-hr*0.28,hr*0.45]),V.norm([0.6,-0.7,0.35]),
-      L*rr(0.08,0.14),hr*rr(0.16,0.24),{a:rr(0,6.283),k:rr(0.9,1.6)});});
-    const nt=Math.min(58,Math.round(nH*0.7));
-    for(let i=0;i<nt;i++){
-      const a2=(i+0.5)/nt*6.283;
-      G.tent(V.add(head,[hr*0.3,Math.sin(a2)*hr*0.55,Math.cos(a2)*hr*0.55]),
-             V.norm([1,Math.sin(a2)*0.6-0.25,Math.cos(a2)*0.6]),
-             L*rr(0.24,0.55),hr*rr(0.08,0.13),{a:rr(0,6.283),k:rr(0.8,1.6)},0.05);
-    }
-    /* and below the mouth-ring, a beard: at fifty hulls she is a forest */
-    const nbd0=Math.round(nH*0.3);
-    for(let i=0;i<nbd0;i++){
-      const a9=rr(0,6.283);
-      G.tent(V.add(head,[hr*0.1,-hr*rr(0.3,0.6),Math.sin(a9)*hr*0.4]),
-        V.norm([rr(0.3,0.8),-1,Math.sin(a9)*0.5]),
-        L*rr(0.15,0.30),hr*rr(0.05,0.09),{a:rr(0,6.283),k:rr(0.8,1.6)},0.06);
-    }
-    /* and arms wherever the flesh will bear them: sprouting from back,
-       flank and belly down her whole length, not only around the mouth */
-    const nbody=Math.round(nH*0.34);
-    for(let i=0;i<nbody;i++){
-      const bx=L*rr(-0.42,0.30),az=rr(0,6.283);
-      const yc=bx>L*0.05?0:-droop*0.5*(L*0.05-bx)/(L*0.40);
-      const br=Rm*rr(0.55,0.85);
-      G.tent([bx,yc+Math.sin(az)*br,Math.cos(az)*br],
-        V.norm([rr(-0.6,-0.1),Math.sin(az)*0.9,Math.cos(az)*0.9]),
-        L*rr(0.10,0.28),Rm*rr(0.04,0.09),{a:rr(0,6.283),k:rr(0.6,1.4)},0.06);
-    }
-    const nl=Math.max(2,Math.round(nH*0.08));
-    for(let i=0;i<nl;i++){
-      const bx=L*rr(-0.10,0.16);
-      limb(g=>{g.scy([bx,0,Rm*0.7],
-        V.norm([rr(0.4,0.9),rr(-0.1,0.7),rr(0.9,1.5)]),
-        L*rr(0.25,0.45),Rm*rr(0.16,0.24),{a:rr(0,6.283),k:rr(0.9,1.7)});});
-    }
-    const ns=Math.max(4,Math.round(nH*0.12));
-    for(let i=0;i<ns;i++){
-      const bx=L*rr(-0.25,0.15);
-      G.spk([bx,Rm*rr(0.55,0.75),0],V.norm([rr(-0.3,0.1),1,rr(-0.1,0.1)]),
-            Rm*rr(0.7,1.4),Rm*rr(0.06,0.10));
-    }
-    const npu=2+((R()*3)|0);
-    for(let i=0;i<npu;i++)
-      G.pust([L*rr(-0.28,0.10),Rm*rr(-0.4,0.5),Rm*rr(-0.7,0.7)],Rm*rr(0.30,0.50),4+((R()*5)|0));
-    for(let i=0;i<nH;i++){
-      const bx=L*rr(-0.30,0.12);
-      G.put(SPH([bx,-Rm*rr(0.65,0.95)-Math.max(0,-bx/L-0.2)*droop,rr(-0.5,0.5)*Rm*0.7],
-                Rm*rr(0.10,0.18)));
-    }
-    const ne=3+((R()*4)|0);
-    for(let i=0;i<ne;i++)limb(g=>{
-      g.put(SPH(V.add(head,[hr*rr(0.1,0.5),hr*rr(0.2,0.5),hr*rr(0.15,0.5)]),
-                hr*rr(0.08,0.13)));});
-    G.scy(tpts[3],V.norm([-1,rr(-0.3,0.0),0]),L*rr(0.10,0.18),Rm*0.20,
-          {a:rr(0,6.283),k:rr(0.6,1.2)});
-    xTilt(parts,rr(-0.15,0.15),rr(-0.05,0.05));
-  }else if(arch===1){
-    /* THE LINDWURM: a river of flesh — swelling segment after segment
-       down a sinuous curve, ribbed and maned, scythes at the head and a
-       tail that goes on after the body has given up */
-    const L=150+nH*rr(1.3,2.0);
-    const Rm=L*rr(0.055,0.075);
+  }else if(coreKind===1){
+    /* wurm-spine: a sinuous river of segments */
     const ph1=rr(0,6.283),ph2=rr(0,6.283);
-    const nSeg=8+((R()*4)|0);
-    const pts=[];
+    const nSeg=7+((R()*4)|0),pts=[];
     for(let i=0;i<=nSeg;i++){
       const u=i/nSeg;
-      pts.push([L*(0.48-0.96*u),
-                Math.sin(u*rr(2.2,3.4)+ph1)*Rm*rr(1.2,2.0),
-                Math.sin(u*rr(1.6,2.6)+ph2)*Rm*rr(0.8,1.6)]);
+      pts.push([L*(0.45-0.9*u),
+        Math.sin(u*rr(2.0,3.2)+ph1)*Rm*rr(1.0,1.8),
+        Math.sin(u*rr(1.5,2.4)+ph2)*Rm*rr(0.7,1.4)]);
     }
-    const FR=G.spine(pts,u=>Rm*(0.55+0.55*Math.sin(u*3.14)),rr(0.85,1.05),{pw:0.55,ov:0.85});
-    for(let i=1;i<FR.length;i+=2)G.rib(FR[i].c,FR[i].t,FR[i].r,1.4);
-    G.frill(FR,1,Math.min(FR.length,4+((R()*3)|0)),[0,1,0]);
-    const hd=pts[0],hr=Rm*1.1;
-    limb(g=>{g.scy(V.add(hd,[0,-hr*0.2,hr*0.5]),V.norm([0.8,-0.4,0.5]),
-      L*rr(0.10,0.16),hr*rr(0.2,0.3),{a:rr(0,6.283),k:rr(0.9,1.6)});});
-    G.spk(hd,[1,rr(-0.1,0.15),0],L*rr(0.08,0.14),hr*0.4);
-    const ne=2+((R()*3)|0);
-    for(let i=0;i<ne;i++)limb(g=>{g.put(SPH(V.add(hd,
-      [hr*rr(0.1,0.4),hr*rr(0.1,0.4),hr*rr(0.15,0.45)]),hr*rr(0.08,0.14)));});
-    /* the beard: arms trailing from under her jaw, more the greater she is */
-    const nbd1=Math.round(nH*0.22);
-    for(let i=0;i<nbd1;i++){
-      const a9=rr(0,6.283);
-      G.tent(V.add(hd,[-hr*rr(0,0.6),-hr*0.5,Math.sin(a9)*hr*0.5]),
-        V.norm([rr(-0.4,0.3),-1,Math.sin(a9)*0.4]),
-        L*rr(0.12,0.26),hr*rr(0.06,0.10),{a:rr(0,6.283),k:rr(0.7,1.5)},0.06);
-    }
-    /* arms sprout from any segment, not only under the jaw */
-    const nbT=Math.round(nH*0.30);
-    for(let i=0;i<nbT;i++){
-      const f=FR[(R()*FR.length)|0],az=rr(0,6.283);
-      G.tent(V.add(f.c,[0,Math.sin(az)*f.r*0.8,Math.cos(az)*f.r*0.8]),
-        V.norm([rr(-0.5,-0.1),Math.sin(az),Math.cos(az)]),
-        L*rr(0.08,0.22),f.r*rr(0.10,0.18),{a:rr(0,6.283),k:rr(0.6,1.4)},0.06);
-    }
-    const nspk=Math.max(4,Math.round(nH*0.14));
-    for(let i=0;i<nspk;i++){
-      const f=FR[(R()*FR.length)|0];
-      G.spk(V.add(f.c,[0,f.r*0.8,0]),V.norm([rr(-0.3,0.1),1,rr(-0.2,0.2)]),
-        f.r*rr(1.2,2.2),f.r*rr(0.10,0.16));
-    }
-    G.tent(pts[nSeg],V.norm([-1,rr(-0.3,0.1),rr(-0.2,0.2)]),
-      L*rr(0.25,0.42),Rm*rr(0.25,0.4),{a:rr(0,6.283),k:rr(0.7,1.4)},0.05);
-    xTilt(parts,rr(-0.2,0.2),rr(-0.06,0.06));
-  }else if(arch===2){
-    /* THE BELL: the medusa grown to cathedral size — a dome with a deep
-       rim, a skirt of hanging arms, and eyes all the way around */
-    const L=150+nH*rr(1.3,2.0);
-    const Rb=L*rr(0.16,0.22),Hb=Rb*rr(0.85,1.6);
-    const cx=Rb*0.2;
-    const prof=[[0,0.001]];
-    for(let i=1;i<=7;i++){
-      const u=i/7;
-      prof.push([Hb*u,Rb*Math.sin(Math.min(1.35,u*1.5))]);
-    }
-    G.put({k:"lathe",c:[cx,Hb*0.55,0],axis:[0,-1,0],prof,ell:[rr(1.3,1.6),1]});
-    G.put(DSC([cx,Hb*0.55-Hb,0],[0,-1,0],Rb*1.04,Rb*0.8));
-    const nt2=Math.min(64,6+Math.round(nH*0.75));
-    for(let i=0;i<nt2;i++){
-      const a2=(i+0.5)/nt2*6.283;
-      G.tent([cx+Math.cos(a2)*Rb*0.8,Hb*0.55-Hb,Math.sin(a2)*Rb*0.8],
-        V.norm([Math.cos(a2)*0.25,-1,Math.sin(a2)*0.25]),
-        L*rr(0.3,0.55),Rb*rr(0.05,0.09),{a:rr(0,6.283),k:rr(0.6,1.4)},0.05);
-    }
-    /* an inner curtain of shorter arms inside the great skirt */
-    const nt3=Math.round(nH*0.35);
-    for(let i=0;i<nt3;i++){
-      const a9=rr(0,6.283);
-      G.tent([cx+Math.cos(a9)*Rb*rr(0.3,0.55),Hb*0.55-Hb,Math.sin(a9)*Rb*rr(0.3,0.55)],
-        V.norm([Math.cos(a9)*0.15,-1,Math.sin(a9)*0.15]),
-        L*rr(0.16,0.30),Rb*rr(0.03,0.06),{a:rr(0,6.283),k:rr(0.5,1.2)},0.05);
-    }
-    /* and a few arms escape the dome itself, high above the skirt */
-    const ndm=Math.round(nH*0.12);
-    for(let i=0;i<ndm;i++){
-      const az=rr(0,6.283),u=rr(0.25,0.8);
-      const rrad=Rb*Math.sin(Math.min(1.35,u*1.5));
-      G.tent([cx+Math.cos(az)*rrad*0.9,Hb*0.55-Hb*u,Math.sin(az)*rrad*0.9],
-        V.norm([Math.cos(az),rr(-0.3,0.4),Math.sin(az)]),
-        L*rr(0.10,0.22),Rb*rr(0.03,0.06),{a:rr(0,6.283),k:rr(0.6,1.4)},0.06);
-    }
-    const nee=5+((R()*4)|0);
-    for(let i=0;i<nee;i++){
-      const a2=rr(0,6.283);
-      G.put(SPH([cx+Math.cos(a2)*Rb*0.95,Hb*0.55-Hb*0.85,Math.sin(a2)*Rb*0.95],
-        Rb*rr(0.06,0.11)));
-    }
-    G.spk([cx,Hb*0.6,0],[rr(-0.2,0.2),1,rr(-0.2,0.2)],Hb*rr(0.4,0.8),Rb*0.12);
-    G.pust([cx,Hb*0.1,0],Rb*0.5,4+((R()*4)|0));
-    xTilt(parts,rr(-0.15,0.15),rr(-0.05,0.05));
+    const FR=G.spine(pts,u=>Rm*(0.55+0.5*Math.sin(u*3.14)),rr(0.85,1.05),{pw:0.55,ov:0.85});
+    for(const f of FR)stations.push({c:f.c,r:f.r});
+    for(let i=1;i<FR.length;i+=3)G.rib(FR[i].c,FR[i].t,FR[i].r,1.4);
   }else{
-    /* THE RAY: a broad wing of flesh — flattened body, two great webbed
-       wings trailing feelers, and a whip of a tail */
-    const L=150+nH*rr(1.3,2.0);
-    const Rm=L*rr(0.06,0.08);
-    G.seg2([L*0.42,0,0],[-L*0.30,0,0],Rm*rr(1.6,2.0),rr(0.42,0.55),0.5);
-    const wspan=L*rr(0.30,0.42);
-    limb(g=>{
-      /* a manta wing is a hand: bones fanned out from the shoulder, the
-         membrane stretched panel by panel between the fingers, each
-         finger raking further aft and drooping deeper — never one slab */
-      const sh=[L*rr(0.16,0.22),Rm*0.2,Rm*0.9];
-      const nF=4+((R()*2)|0);
-      let prev=null;
-      for(let i=0;i<nF;i++){
-        const u=i/(nF-1);
-        const tip=[sh[0]-u*u*L*rr(0.45,0.6),
-                   sh[1]-Rm*(0.2+u*1.3),
-                   sh[2]+wspan*(1-0.55*u*u)];
-        g.put(TUB(sh,tip,Rm*rr(0.16,0.22)*(1-u*0.4),Rm*0.03));
-        if(prev)g.put({k:"panel",n:[0,1,0],th:Rm*0.07,pts:[sh,prev,tip]});
-        prev=tip;
-      }
-      g.tent(prev,V.norm([-1,rr(-0.3,0),rr(0,0.2)]),
-        L*rr(0.12,0.2),Rm*rr(0.07,0.11),{a:rr(0,6.283),k:rr(0.6,1.2)},0.06);
-    });
-    limb(g=>{g.scy([L*0.40,-Rm*0.3,Rm*0.35],V.norm([0.7,-0.5,0.3]),
-      L*rr(0.09,0.14),Rm*rr(0.18,0.28),{a:rr(0,6.283),k:rr(0.9,1.6)});});
-    const nee2=2+((R()*3)|0);
-    for(let i=0;i<nee2;i++)limb(g=>{g.put(SPH(
-      [L*rr(0.30,0.40),Rm*rr(0.2,0.5),Rm*rr(0.2,0.5)],Rm*rr(0.10,0.16)));});
-    G.tent([-L*0.30,0,0],V.norm([-1,rr(-0.15,0.1),rr(-0.1,0.1)]),
-      L*rr(0.35,0.55),Rm*rr(0.18,0.28),{a:rr(0,6.283),k:rr(0.5,1.1)},0.04);
-    G.pust([L*rr(-0.1,0.1),Rm*0.6,0],Rm*rr(0.7,1.1),4+((R()*5)|0));
-    /* the belly fringe streams behind her as she banks */
-    const nbf=Math.round(nH*0.16);
-    for(let i=0;i<nbf;i++)
-      G.tent([L*rr(-0.30,0.35),-Rm*rr(0.8,1.2),rr(-0.7,0.7)*Rm],
-        V.norm([rr(-0.6,-0.2),-1,rr(-0.3,0.3)]),L*rr(0.10,0.22),Rm*rr(0.05,0.09),
-        {a:rr(0,6.283),k:rr(0.6,1.3)},0.06);
-    /* arms off the back as well as the belly */
-    const ndr=Math.round(nH*0.10);
-    for(let i=0;i<ndr;i++)
-      G.tent([L*rr(-0.25,0.3),Rm*rr(0.7,1.0),rr(-0.7,0.7)*Rm],
-        V.norm([rr(-0.5,-0.1),rr(0.4,1),rr(-0.4,0.4)]),
-        L*rr(0.08,0.18),Rm*rr(0.05,0.08),{a:rr(0,6.283),k:rr(0.6,1.3)},0.06);
-    const nsp3=Math.max(3,Math.round(nH*0.10));
-    for(let i=0;i<nsp3;i++)G.spk([L*rr(-0.2,0.25),Rm*rr(0.6,0.9),rr(-0.4,0.4)*Rm],
-      V.norm([rr(-0.3,0.1),1,rr(-0.2,0.2)]),Rm*rr(1.0,2.0),Rm*rr(0.08,0.13));
-    xTilt(parts,rr(-0.15,0.15),rr(-0.05,0.05));
+    /* bell core: the dome, and stations climbing it */
+    const Rb=L*rr(0.13,0.19),Hb=Rb*rr(0.9,1.5),cx=Rb*0.2;
+    const prof=[[0,0.001]];
+    for(let i=1;i<=7;i++){const u=i/7;prof.push([Hb*u,Rb*Math.sin(Math.min(1.35,u*1.5))]);}
+    G.put({k:"lathe",c:[cx,Hb*0.55,0],axis:[0,-1,0],prof,ell:[rr(1.2,1.6),1]});
+    G.put(DSC([cx,Hb*0.55-Hb,0],[0,-1,0],Rb*1.04,Rb*0.8));
+    for(let i=0;i<10;i++){
+      const a9=i/10*6.283;
+      stations.push({c:[cx+Math.cos(a9)*Rb*rr(0.4,0.9),
+        Hb*0.55-Hb*rr(0.35,1.0),Math.sin(a9)*Rb*rr(0.4,0.9)],r:Rb*0.55});
+    }
   }
+  /* the organ library: every organ grows at an anchor, reaching out */
+  const oBell=(g,c,d,sc)=>{
+    const rb=Rm*sc*rr(0.6,1.0),hb=rb*rr(0.9,1.3);
+    const prof=[[0,0.001]];
+    for(let i2=1;i2<=5;i2++){const u=i2/5;prof.push([hb*u,rb*Math.sin(Math.min(1.35,u*1.5))]);}
+    g.put({k:"lathe",c:V.add(c,V.mul(d,hb)),axis:[-d[0],-d[1],-d[2]],prof,ell:[1,1]});
+    const bu=basis(d),nt9=3+((R()*4)|0);
+    for(let i2=0;i2<nt9;i2++){
+      const a9=rr(0,6.283);
+      const rim=V.add(c,V.add(V.mul(bu[0],Math.cos(a9)*rb*0.8),V.mul(bu[1],Math.sin(a9)*rb*0.8)));
+      g.tent(rim,V.norm([d[0]*-0.3+rr(-0.4,0.4),-0.6,d[2]*-0.3+rr(-0.4,0.4)]),
+        L*rr(0.06,0.14),rb*rr(0.10,0.18),{a:rr(0,6.283),k:rr(0.6,1.4)},0.06);
+    }
+  };
+  const oChain=(g,c,d,sc)=>{
+    const n9=3+((R()*3)|0),pts=[];
+    let pp=c.slice(),dd=V.norm(d);
+    for(let i2=0;i2<=n9;i2++){
+      pts.push(pp.slice());
+      dd=V.norm(V.add(dd,[rr(-0.3,0.3),rr(-0.3,0.1),rr(-0.3,0.3)]));
+      pp=V.add(pp,V.mul(dd,Rm*sc*rr(0.7,1.1)));
+    }
+    g.spine(pts,u=>Rm*sc*Math.max(0.12,0.42-0.26*u+0.18*Math.sin(u*6)),rr(0.8,1.0),{pw:0.55,ov:0.8});
+  };
+  const oWing=(g,c,d,sc)=>{
+    const dn=V.norm(d),span=L*sc*rr(0.14,0.24),bu=basis(dn);
+    const nF=3+((R()*2)|0);
+    let prev=null;
+    for(let i2=0;i2<nF;i2++){
+      const u=i2/(nF-1);
+      const tip=V.add(c,V.add(V.mul(dn,span*(1-0.5*u*u)),
+        V.add(V.mul(bu[0],-span*u*rr(0.5,0.8)),V.mul(bu[1],span*0.15*u))));
+      g.put(TUB(c,tip,Rm*sc*rr(0.10,0.14)*(1-u*0.4),Rm*0.02));
+      if(prev)g.put({k:"panel",n:bu[1],th:Rm*sc*0.05,pts:[c.slice(),prev,tip]});
+      prev=tip;
+    }
+  };
+  const oArms=(g,c,d,sc)=>{
+    const dn=V.norm(d),n9=4+((R()*5)|0);
+    for(let i2=0;i2<n9;i2++)
+      g.tent(c,V.norm(V.add(dn,[rr(-0.6,0.6),rr(-0.6,0.6),rr(-0.6,0.6)])),
+        L*sc*rr(0.10,0.26),Rm*sc*rr(0.05,0.10),{a:rr(0,6.283),k:rr(0.6,1.5)},0.06);
+  };
+  const oEyes=(g,c,d,sc)=>{
+    const dn=V.norm(d),n9=3+((R()*4)|0);
+    for(let i2=0;i2<n9;i2++)
+      g.put(SPH(V.add(c,V.mul(V.norm(V.add(dn,[rr(-0.5,0.5),rr(-0.5,0.5),rr(-0.5,0.5)])),
+        Rm*sc*rr(0.1,0.5))),Rm*sc*rr(0.10,0.20)));
+  };
+  const oScy=(g,c,d,sc)=>{
+    const dn=V.norm(d),n9=2+((R()*2)|0);
+    for(let i2=0;i2<n9;i2++)
+      g.scy(c,V.norm(V.add(dn,[rr(-0.4,0.4),rr(-0.4,0.4),rr(-0.4,0.4)])),
+        L*sc*rr(0.08,0.16),Rm*sc*rr(0.16,0.26),{a:rr(0,6.283),k:rr(0.9,1.7)});
+  };
+  const oFin=(g,c,d,sc)=>{
+    const dn=V.norm(d),bu=basis(dn),h9=Rm*sc*rr(1.0,1.8);
+    for(let i2=0;i2<3;i2++){
+      const off=V.mul(bu[0],-Rm*sc*0.5*i2);
+      g.put({k:"panel",n:bu[1],th:Rm*sc*0.06,pts:[
+        V.add(c,off),
+        V.add(V.add(c,off),V.add(V.mul(dn,h9),V.mul(bu[0],-h9*0.4))),
+        V.add(V.add(c,off),V.add(V.mul(dn,h9*0.5),V.mul(bu[0],-h9*0.8)))]});
+    }
+  };
+  const oBoil=(g,c,d,sc)=>{
+    const dn=V.norm(d);
+    g.pust(c,Rm*sc*rr(0.35,0.6),4+((R()*5)|0));
+    const n9=2+((R()*3)|0);
+    for(let i2=0;i2<n9;i2++)
+      g.spk(c,V.norm(V.add(dn,[rr(-0.5,0.5),rr(-0.5,0.5),rr(-0.5,0.5)])),
+        Rm*sc*rr(0.8,1.6),Rm*sc*rr(0.08,0.14));
+  };
+  const organs=[oBell,oChain,oWing,oArms,oEyes,oScy,oFin,oBoil];
+  const nMod=6+Math.round(nH*rr(0.16,0.24));
+  for(let i=0;i<nMod;i++){
+    const st=stations[(R()*stations.length)|0];
+    const az=rr(0,6.283);
+    const c9=[st.c[0],st.c[1]+Math.sin(az)*st.r*0.75,st.c[2]+Math.cos(az)*st.r*0.75];
+    const d9=V.norm([rr(-0.5,0.2),Math.sin(az),Math.cos(az)]);
+    const organ=organs[(R()*organs.length)|0];
+    const sc=rr(0.7,1.5);
+    if(R()<0.45&&Math.abs(c9[2])>Rm*0.15)limb(g=>organ(g,c9,d9,sc));
+    else organ(G,c9,d9,sc);
+  }
+  /* she is still an animal: a face at the bow, a wake astern */
+  const hd=stations[0].c,hr=Math.max(stations[0].r,Rm*0.5);
+  const nt0=Math.round(nH*rr(0.3,0.5));
+  for(let i=0;i<nt0;i++){
+    const a9=rr(0,6.283);
+    G.tent(V.add(hd,[hr*0.3,Math.sin(a9)*hr*0.6,Math.cos(a9)*hr*0.6]),
+      V.norm([1,Math.sin(a9)*0.6-0.2,Math.cos(a9)*0.6]),
+      L*rr(0.18,0.45),hr*rr(0.07,0.12),{a:rr(0,6.283),k:rr(0.8,1.6)},0.05);
+  }
+  limb(g=>{g.scy(V.add(hd,[0,-hr*0.25,hr*0.45]),V.norm([0.7,-0.5,0.4]),
+    L*rr(0.09,0.15),hr*rr(0.18,0.28),{a:rr(0,6.283),k:rr(0.9,1.6)});});
+  const tl=stations[stations.length-1];
+  G.tent(tl.c,V.norm([-1,rr(-0.3,0.1),rr(-0.2,0.2)]),L*rr(0.25,0.45),
+    Math.max(tl.r,Rm*0.4)*rr(0.4,0.7),{a:rr(0,6.283),k:rr(0.6,1.3)},0.05);
+  xTilt(parts,rr(-0.2,0.2),rr(-0.06,0.06));
   const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
   for(const p of parts)for(const e2 of partExtents(p)){
     const q=e2[0],r=e2[1];
