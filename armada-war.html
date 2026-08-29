@@ -3070,23 +3070,28 @@ function collide(now){
       if(s.avF!==simFrame){s.avF=simFrame;s.avx=0;s.avy=0;s.avz=0;}
       s.avx+=dx/d*k;s.avy+=dy/d*k*1.6;s.avz+=dz/d*k;s.avT=now;
     };
-    /* the crowns are walls: nobody flies through a leviathan */
+    /* the crowns are walls — and a wall is a HULL, not a bubble:
+       distance is measured to her keel line, so nothing nests in her
+       midships the way a centre-sphere used to allow */
     for(const c2 of crowns){
       if(c2===s)continue;
-      const dx=s.x-c2.x,dy=s.y-c2.y,dz=s.z-c2.z;
-      const rb=sr+c2.rad,d2=dx*dx+dy*dy+dz*dz;
-      /* and ENEMY walls are seen from far off: a small banks around the
-         hostile hull long before her nose would find it. Her own crown is
-         home — screen and frightened shelter at the skirt unshoved. And a
-         pilot whose MARK is that very crown presses home through the wall:
-         a wall you may never approach is a wall you may never kill. */
+      const cyw=Math.cos(c2.yaw),syw=Math.sin(c2.yaw);
+      let t9=(s.x-c2.x)*cyw+(s.z-c2.z)*syw;
+      t9=Math.max(-c2.slen*0.45,Math.min(c2.slen*0.45,t9));
+      const dx=s.x-(c2.x+cyw*t9),dy=s.y-c2.y,dz=s.z-(c2.z+syw*t9);
+      const sw=s.hulls?s.slen*0.22:sr;
+      const rb=sw+c2.slen*0.22,d2=dx*dx+dy*dy+dz*dz;
+      /* ENEMY walls are seen from far off; her own crown is home; and a
+         pilot whose MARK is that very crown presses home through the
+         wall — a wall you may never approach is a wall you may never
+         kill */
       const hunting=(s.squad>=0&&squads[s.squad].tgt===c2.id)||s.fbT===c2;
       if(!s.hulls&&s.side!==c2.side&&!hunting&&d2<rb*rb*6.25&&d2>1e-6){
         const d=Math.sqrt(d2);
         avSee(dx,dy,dz,d,(1-d/(rb*2.5))*60);
       }
       if(d2>rb*rb||d2<1e-6)continue;
-      const d=Math.sqrt(d2),pen=(rb-d)/d*(s.hulls?0.25:0.6);
+      const d=Math.sqrt(d2),pen=(rb-d)/d*(s.hulls?0.4:0.6);
       s.x+=dx*pen;s.y+=dy*pen;s.z+=dz*pen;
     }
     if(s.hulls)continue;
@@ -3388,6 +3393,16 @@ function startWar(fresh){
       const s2=ships[id];
       s2.z=az+(R()-0.5)*150;
       s2.y=ay+(R()-0.5)*90;
+    }
+  }
+  /* the crowns take stations line abreast, sea-room between sisters —
+     three great hulls no longer arrive stacked into one another */
+  for(const side of [0,1]){
+    const cr=[];
+    for(const t of ships)if(t.side===side&&t.hulls)cr.push(t);
+    for(let i=0;i<cr.length;i++){
+      cr[i].z=(i-(cr.length-1)/2)*680+(R()-0.5)*140;
+      cr[i].y=(R()-0.5)*140;
     }
   }
   counts=[perFleet,perFleet];
@@ -3994,6 +4009,16 @@ function megaStep(s,now,dt){
     }
     if(ncd<430*430)want=Math.atan2(s.z-ncz,s.x-ncx)+s.brSgn*0.5;
   }
+  /* and she keeps sea-room from her sisters: friendly crowns hold the
+     line abreast — the crowded one gives way, none of them raft up */
+  let fcd=1e18,fx2=0,fz2=0,fr2=0;
+  for(const t of ships){
+    if(t===s||!t.hulls||t.dead||!t.vao||t.side!==s.side)continue;
+    const e2=(t.x-s.x)*(t.x-s.x)+(t.z-s.z)*(t.z-s.z);
+    if(e2<fcd){fcd=e2;fx2=t.x;fz2=t.z;fr2=t.slen;}
+  }
+  const keep=(s.slen+fr2)*0.55;
+  if(fcd<keep*keep)want=Math.atan2(s.z-fz2,s.x-fx2)+s.brSgn*0.4;
   let dyaw=want-s.yaw;
   dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
   const wantR=Math.max(-s.turn,Math.min(s.turn,dyaw*1.6));
@@ -4216,17 +4241,25 @@ function simStep(now,dt){
          wander live in the desired RATE, so even evasion flows. */
       const mx=s.turn*(1+0.5*(boost-1));
       let wantRate=Math.max(-mx,Math.min(mx,dyaw*2.2));
-      wantRate+=Math.sin(now*0.6+s.wf)*0.03;
+      /* hands on the stick: nobody holds a perfect line. Three slow sines
+         at odd ratios per pilot lay a constant weave of micro-corrections
+         into rate, bank and climb — the wings are never dead level, and a
+         turn grows out of the weave instead of switching on */
+      const h1=Math.sin(now*0.9+s.wf)+0.5*Math.sin(now*2.1+s.wf*2.3);
+      const h2=Math.sin(now*0.7+s.wf*1.7)+0.5*Math.sin(now*1.9+s.wf*0.6);
+      const h3=Math.sin(now*0.5+s.wf*2.9)+0.5*Math.sin(now*1.3+s.wf*1.4);
+      wantRate+=h1*s.turn*0.055;
       if(now-s.hurtT<1.6)wantRate+=Math.sin(now*2.2+s.wf*2.0)*s.turn*0.9;
       s.yawV+=(wantRate-s.yawV)*Math.min(1,dt*3.2);
       s.yaw+=s.yawV*dt;
-      /* the bank follows the real turn rate, so it sweeps rather than snaps */
-      const bankT=Math.max(-1.15,Math.min(1.15,-(s.yawV/Math.max(0.15,s.turn))*0.9));
+      /* the bank follows the real turn rate, plus the pilot's own weave */
+      const bankT=Math.max(-1.15,Math.min(1.15,
+        -(s.yawV/Math.max(0.15,s.turn))*0.9+h2*0.13));
       s.roll+=(bankT-s.roll)*Math.min(1,dt*2.2);
       if(!s.hulls&&s.slen<52&&now>=s.brUntil&&
          ((now-s.hurtT<1.6&&Math.random()<dt*0.8)||Math.random()<dt*0.03))
         s.brUntil=now+0.9;
-      const wv=Math.max(-s.spd*0.6,Math.min(s.spd*0.6,dy*0.5));
+      const wv=Math.max(-s.spd*0.65,Math.min(s.spd*0.65,dy*0.5+h3*s.spd*0.05));
       s.vy+=(wv-s.vy)*Math.min(1,dt*1.6);
       s.pitch+=(Math.atan2(s.vy,Math.max(8,s.v))-s.pitch)*Math.min(1,dt*2.2);
       const dist=Math.hypot(dx,dy,dz);
