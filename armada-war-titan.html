@@ -2929,7 +2929,7 @@ onmessage=e=>{
       const a=Math.floor(k*n/K),b=Math.floor((k+1)*n/K);
       const sub=ship.parts.slice(a,b);
       if(!sub.length)continue;
-      const m=packMesh({parts:sub,bb:ship.bb},c,0.30);
+      const m=packMesh({parts:sub,bb:ship.bb},c,d.hulls?0.22:0.30);
       if(!m.i.length)continue;
       let ox=0,oy=0,oz=0,cnt=0;
       for(const p2 of sub){const q2=partCentroid(p2);ox+=q2[0];oy+=q2[1];oz+=q2[2];cnt++;}
@@ -2960,7 +2960,7 @@ onmessage=e=>{
       const a=Math.floor(k*n/K),b=Math.floor((k+1)*n/K);
       const sub=ship.parts.slice(a,b);
       if(!sub.length)continue;
-      const fm=packMesh({parts:sub,bb:ship.bb},c,0.30);
+      const fm=packMesh({parts:sub,bb:ship.bb},c,j.hulls?0.22:0.30);
       if(!fm.i.length)continue;
       let ox=0,oy=0,oz=0,cnt=0;
       for(const p2 of sub){const q2=partCentroid(p2);ox+=q2[0];oy+=q2[1];oz+=q2[2];cnt++;}
@@ -3390,8 +3390,11 @@ function startWar(fresh){
      monsters is a war of monsters */
   const crownH=46+((R()*40)|0);
   for(const side of [0,1]){
-    mk(side,crownH);mk(side,10);mk(side,10);  /* each fleet brings her crowns */
-    for(let i=3;i<perFleet;i++)mk(side,0);
+    /* a real battle line: the flagship, two dreadnoughts, three carriers —
+       the sky carries six capitals a side now, not three */
+    mk(side,crownH);mk(side,25);mk(side,25);
+    mk(side,10);mk(side,10);mk(side,10);
+    for(let i=6;i<perFleet;i++)mk(side,0);
   }
   /* squadrons of eight, dealt from each fleet's small craft */
   for(const side of [0,1]){
@@ -3420,7 +3423,7 @@ function startWar(fresh){
     for(const t of ships)if(t.side===side&&t.hulls)cr.push(t);
     for(let i=0;i<cr.length;i++){
       cr[i].x=(side?1:-1)*(2400+R()*600);
-      cr[i].z=(i-(cr.length-1)/2)*1750+(R()-0.5)*300;
+      cr[i].z=(i-(cr.length-1)/2)*1250+(R()-0.5)*300;
       cr[i].y=(R()-0.5)*140;
     }
   }

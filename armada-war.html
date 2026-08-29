@@ -2929,7 +2929,7 @@ onmessage=e=>{
       const a=Math.floor(k*n/K),b=Math.floor((k+1)*n/K);
       const sub=ship.parts.slice(a,b);
       if(!sub.length)continue;
-      const m=packMesh({parts:sub,bb:ship.bb},c,0.30);
+      const m=packMesh({parts:sub,bb:ship.bb},c,d.hulls?0.22:0.30);
       if(!m.i.length)continue;
       let ox=0,oy=0,oz=0,cnt=0;
       for(const p2 of sub){const q2=partCentroid(p2);ox+=q2[0];oy+=q2[1];oz+=q2[2];cnt++;}
@@ -2960,7 +2960,7 @@ onmessage=e=>{
       const a=Math.floor(k*n/K),b=Math.floor((k+1)*n/K);
       const sub=ship.parts.slice(a,b);
       if(!sub.length)continue;
-      const fm=packMesh({parts:sub,bb:ship.bb},c,0.30);
+      const fm=packMesh({parts:sub,bb:ship.bb},c,j.hulls?0.22:0.30);
       if(!fm.i.length)continue;
       let ox=0,oy=0,oz=0,cnt=0;
       for(const p2 of sub){const q2=partCentroid(p2);ox+=q2[0];oy+=q2[1];oz+=q2[2];cnt++;}
