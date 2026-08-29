@@ -4026,37 +4026,39 @@ function fireIonFrom(g,side,now){
   }
 }
 function megaStep(s,now,dt){
-  /* a crown fights at her own range. She advances to the reach of her
-     lances, wheels her broadside across the mark and walks the line;
-     wounded, she opens the distance and lets the screen earn its name;
-     and she never lays herself bow-to-bow against the enemy's crown —
-     that is a brawl, and a crown does not brawl until the mop-up. */
-  const ec=fleetCentroid(1-s.side);
-  const dx=ec[0]-s.x,dz=ec[2]-s.z;
-  const dist=Math.hypot(dx,dz);
+  /* a capital does not chase points in a cloud. She keeps the LANE she
+     arrived on, advances on the enemy line — the nearest enemy capital,
+     not a centroid — to her class's fighting range, and there she lies
+     broadside-on with steerage way: a ship of the line, not a moth.
+     Carriers stand a full league behind the gun line. */
+  if(s.lane===undefined)s.lane=s.z;
   const foes5=foeCache[1-s.side];
   const mopup=foes5.length<=6;
   const hurt=s.hp<s.hpMax*0.4;
-  let hold=s.hulls>=50?1350:1750;    /* the queen leads; the carriers hang back */
-  if(hurt)hold=2300;
-  if(mopup)hold=400;
-  if(!s.brSgn)s.brSgn=(s.id&1)?1:-1;
-  const bear=Math.atan2(dz,dx);
-  let want;
-  if(dist>hold+90)want=bear;                          /* make range */
-  else if(dist<hold-90)want=bear+Math.PI;             /* open range */
-  else want=bear+s.brSgn*Math.PI/2;                   /* the broadside walk */
-  /* the enemy crown is a wall of guns: slide off her, never onto her */
-  if(!mopup){
-    let ncd=1e18,ncx=0,ncz=0;
-    for(const t of foes5)if(t.hulls){
-      const e2=(t.x-s.x)*(t.x-s.x)+(t.z-s.z)*(t.z-s.z);
-      if(e2<ncd){ncd=e2;ncx=t.x;ncz=t.z;}
-    }
-    if(ncd<1150*1150)want=Math.atan2(s.z-ncz,s.x-ncx)+s.brSgn*0.5;
+  let ex=0,ey=0,ez=0,found=false,bd=1e18;
+  for(const t of foes5)if(t.hulls){
+    const e2=(t.x-s.x)*(t.x-s.x)+(t.z-s.z)*(t.z-s.z);
+    if(e2<bd){bd=e2;ex=t.x;ey=t.y;ez=t.z;found=true;}
   }
-  /* and she keeps sea-room from her sisters: friendly crowns hold the
-     line abreast — the crowded one gives way, none of them raft up */
+  if(!found){const ec=fleetCentroid(1-s.side);ex=ec[0];ey=ec[1];ez=ec[2];}
+  let hold=s.hulls>=40?1350:(s.hulls>=20?1650:2500);
+  if(hurt)hold=2700;
+  if(mopup)hold=400;
+  const adv=s.side?-1:1;
+  /* the station: her lane, at her range off the enemy line — the lane
+     bends only slowly toward the fight, so the line stays a line */
+  const tx=ex-adv*hold;
+  const tz=s.lane*0.85+ez*0.15;
+  const ddx=tx-s.x,ddz=tz-s.z;
+  const dd=Math.hypot(ddx,ddz);
+  if(!s.brSgn)s.brSgn=(s.id&1)?1:-1;
+  let want;
+  if(dd>s.slen*0.5)want=Math.atan2(ddz,ddx);          /* make for station */
+  else want=Math.atan2(ez-s.z,ex-s.x)+s.brSgn*Math.PI/2;  /* lie broadside */
+  /* the enemy crown is a wall of guns: slide off her, never onto her */
+  if(!mopup&&found&&bd<1150*1150)
+    want=Math.atan2(s.z-ez,s.x-ex)+s.brSgn*0.5;
+  /* and she keeps sea-room from her sisters: the crowded one gives way */
   let fcd=1e18,fx2=0,fz2=0,fr2=0;
   for(const t of ships){
     if(t===s||!t.hulls||t.dead||!t.vao||t.side!==s.side)continue;
@@ -4070,9 +4072,9 @@ function megaStep(s,now,dt){
   const wantR=Math.max(-s.turn,Math.min(s.turn,dyaw*1.6));
   s.yawV=(s.yawV||0)+(wantR-s.yawV)*Math.min(1,dt*1.5);
   s.yaw+=s.yawV*dt;
-  const sp=(dist>hold+90||dist<hold-90)?s.spd:s.spd*0.55;
+  const sp=dd>s.slen?s.spd:s.spd*0.45;
   s.x+=Math.cos(s.yaw)*sp*dt;s.z+=Math.sin(s.yaw)*sp*dt;
-  s.vy+=(Math.max(-8,Math.min(8,(ec[1]-s.y)*0.2))-s.vy)*Math.min(1,dt);
+  s.vy+=(Math.max(-8,Math.min(8,(ey-s.y)*0.2))-s.vy)*Math.min(1,dt);
   s.y+=s.vy*dt;
   /* the lances speak first: ranged far beyond the battery, they open the
      bombardment while the fleets are still closing, and each one hunts
@@ -4261,6 +4263,45 @@ function simStep(now,dt){
             goal=[t.x+px*off,t.y+((mi%3)-1)*30,t.z+pz*off];
           }
         }
+      }
+    }
+    if(!goal&&s.sc>1.5&&!s.fearT){
+      /* the middle classes fight as a line, not as moths. A frigate
+         seeks her own weight class and holds a gun-range station on it;
+         a corvette rides herd on the nearest crown's approaches and cuts
+         off whatever slips through. Neither tail-chases a fighter. */
+      if(s.sc>4){
+        let t9=null,b9=1e18;
+        for(const t of foeCache[1-s.side]){
+          if(t.slen<100)continue;
+          const e2=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
+          if(e2<b9){b9=e2;t9=t;}
+        }
+        if(t9){
+          prefer=t9.id;
+          const dd9=Math.sqrt(b9),hold9=140+t9.slen*0.4;
+          if(dd9>hold9)goal=[t9.x,t9.y,t9.z];
+          else{
+            const a9=Math.atan2(s.z-t9.z,s.x-t9.x)+0.25*((s.id&1)?1:-1);
+            goal=[t9.x+Math.cos(a9)*hold9,t9.y+((s.id%3)-1)*40,t9.z+Math.sin(a9)*hold9];
+          }
+        }
+      }else{
+        let g9=null,gb=1e18;
+        for(const t of ships){
+          if(t.side!==s.side||!t.hulls||t.dead||!t.vao)continue;
+          const e2=(t.x-s.x)*(t.x-s.x)+(t.z-s.z)*(t.z-s.z);
+          if(e2<gb){gb=e2;g9=t;}
+        }
+        const nf9=nearestFoeInRange(s,1e9);
+        if(nf9&&g9&&Math.hypot(nf9.x-g9.x,nf9.z-g9.z)<2200){
+          prefer=nf9.id;goal=[nf9.x,nf9.y,nf9.z];   /* intruder: intercept */
+        }else if(g9){
+          const a9=(s.id%9)/9*6.283+now*0.05;
+          const gr9=g9.slen*0.55+220;
+          goal=[g9.x+Math.cos(a9)*gr9+(s.side?-1:1)*g9.slen*0.3,
+                g9.y+((s.id%3)-1)*60,g9.z+Math.sin(a9)*gr9];
+        }else if(nf9){prefer=nf9.id;goal=[nf9.x,nf9.y,nf9.z];}
       }
     }
     if(!goal){
