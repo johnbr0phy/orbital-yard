@@ -2973,7 +2973,19 @@ onmessage=e=>{
       frags.push({v:fm.v,i:fm.i,ox,oy,oz,r:Math.sqrt(rr2)});
       tr.push(fm.v.buffer,fm.i.buffer);
     }
-    out.push({id:j.id,mesh:m,nose:ship.bb[1][0]-c[0],frags,
+    /* the middle classes: same anatomy, larger cloth — a frigate is a
+       small ship's body cut at five times the size */
+    let nsc=1;
+    if(j.tl&&ship.meta.length>1){
+      const k9=nsc=j.tl/ship.meta.length;   /* cut to the class's measure */
+      for(let i=0;i<m.v.length;i++)m.v[i]*=k9;
+      for(const f9 of frags){
+        for(let i=0;i<f9.v.length;i++)f9.v[i]*=k9;
+        f9.ox*=k9;f9.oy*=k9;f9.oz*=k9;f9.r*=k9;
+      }
+      ship.meta.length*=k9;
+    }
+    out.push({id:j.id,mesh:m,nose:(ship.bb[1][0]-c[0])*nsc,frags,
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length}});
     tr.push(m.v.buffer,m.i.buffer);
   }
@@ -3371,9 +3383,10 @@ function startWar(fresh){
   forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
   document.getElementById("win").style.display="none";
   const jobs=[];
-  const mk=(side,hulls)=>{
+  const mk=(side,hulls,tl)=>{
     const id=ships.length;
     const seed=(R()*4294967296)|0;
+    const sc=tl?(tl>220?6:2.6):1;   /* tier flag: 6 frigate, 2.6 corvette */
     ships.push({id,side,seed,
       x:(side?1:-1)*(1500+R()*520),
       y:(R()-0.5)*300,z:(R()-0.5)*1150,
@@ -3381,8 +3394,8 @@ function startWar(fresh){
       hp:1,hpMax:1,cool:R()*2,squad:-1,grace:true,
       delay:0.4+R()*4.4,arr:false,hurtT:-9,dead:false,
       vao:null,vbo:null,ibo:null,icount:0,meta:null,
-      hulls:hulls||0,slen:20,nose:9,spd:25,turn:1,wf:R()*6.283});
-    jobs.push({id,seed,f:side,hulls:hulls||0});
+      hulls:hulls||0,sc:sc||1,slen:20,nose:9,spd:25,turn:1,wf:R()*6.283});
+    jobs.push({id,seed,f:side,hulls:hulls||0,tl:tl||0});
     total++;
   };
   /* the crown's bulk is dealt fresh every war — the same draw for both
@@ -3390,15 +3403,21 @@ function startWar(fresh){
      monsters is a war of monsters */
   const crownH=46+((R()*40)|0);
   for(const side of [0,1]){
-    /* a real battle line: the flagship, two dreadnoughts, three carriers —
-       the sky carries six capitals a side now, not three */
+    /* the rebel pyramid: one command ship, cruisers, then a graduated
+       middle the fleet never had — frigates at three hundred metres,
+       corvettes at a hundred and fifty — and under all of it the swarm */
     mk(side,crownH);mk(side,25);mk(side,25);
     mk(side,10);mk(side,10);mk(side,10);
-    for(let i=6;i<perFleet;i++)mk(side,0);
+    let fielded=6;
+    const nFr=5+((R()*3)|0);
+    for(let i=0;i<nFr;i++,fielded++)mk(side,0,280+R()*90);
+    const nCv=11+((R()*5)|0);
+    for(let i=0;i<nCv;i++,fielded++)mk(side,0,120+R()*50);
+    for(let i=fielded;i<perFleet;i++)mk(side,0);
   }
   /* squadrons of eight, dealt from each fleet's small craft */
   for(const side of [0,1]){
-    const sm=ships.filter(s=>s.side===side&&!s.hulls);
+    const sm=ships.filter(s=>s.side===side&&!s.hulls&&(s.sc||1)<1.5);
     for(let i=0;i<sm.length;i+=SQN){
       const mem=sm.slice(i,i+SQN).map(s=>s.id);
       for(const id of mem)ships[id].squad=squads.length;
@@ -3552,7 +3571,12 @@ function onWorkerMsg(e){
       /* the middleweights carry seeker racks — and the small arms locker
          is diverse now: 15% gatling tracer, 10% arc lightning, 10% plasma
          mortar, 8% railgun, 8% cutting beam, the rest classic lasers */
-      s.msl=s.slen>48&&s.slen<130;
+      /* the middle classes fly their class: a corvette runs like a
+         blockade runner, a frigate keeps way on — neither crawls the way
+         her sheer length would price it */
+      if(s.sc>4){s.spd=Math.max(s.spd,11);s.turn=Math.max(s.turn,0.16);}
+      else if(s.sc>1.5){s.spd=Math.max(s.spd,30);s.turn=Math.max(s.turn,0.5);}
+      s.msl=(s.slen>48&&s.slen<130)||s.sc>1.5;
       const wr2=(s.seed>>>4)%100;
       s.wpn=wr2<15?1:wr2<25?2:wr2<35?3:wr2<43?4:wr2<51?5:0;
     }
