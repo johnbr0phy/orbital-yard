@@ -2987,11 +2987,15 @@ function collide(now){
       if(c2===s)continue;
       const dx=s.x-c2.x,dy=s.y-c2.y,dz=s.z-c2.z;
       const rb=sr+c2.rad,d2=dx*dx+dy*dy+dz*dz;
-      /* and walls are seen from far off: a small banks around the hull
-         long before her nose would find it */
-      if(!s.hulls&&d2<rb*rb*6.25&&d2>1e-6){
+      /* and ENEMY walls are seen from far off: a small banks around the
+         hostile hull long before her nose would find it. Her own crown is
+         home — screen and frightened shelter at the skirt unshoved. And a
+         pilot whose MARK is that very crown presses home through the wall:
+         a wall you may never approach is a wall you may never kill. */
+      const hunting=(s.squad>=0&&squads[s.squad].tgt===c2.id)||s.fbT===c2;
+      if(!s.hulls&&s.side!==c2.side&&!hunting&&d2<rb*rb*6.25&&d2>1e-6){
         const d=Math.sqrt(d2);
-        avSee(dx,dy,dz,d,(1-d/(rb*2.5))*rb*1.1);
+        avSee(dx,dy,dz,d,(1-d/(rb*2.5))*60);
       }
       if(d2>rb*rb||d2<1e-6)continue;
       const d=Math.sqrt(d2),pen=(rb-d)/d*(s.hulls?0.25:0.6);
@@ -3006,10 +3010,13 @@ function collide(now){
         if(o.id<=s.id)continue;
         const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
         const rb=sr+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
-        /* strangers give way ahead of time — preferring over and under —
-           while squadmates fly close on purpose and only get the shove */
-        if(d2<rb*rb*10.24&&d2>1e-6&&(s.squad<0||s.squad!==o.squad)){
-          const d=Math.sqrt(d2),k=(1-d/(rb*3.2))*rb*0.5;
+        /* FRIENDLY strangers give way ahead of time — preferring over and
+           under — while squadmates fly close on purpose. Enemies get no
+           such courtesy: a hostile small is a target or a threat, and the
+           attack run, the jink and the contact shove already own that
+           chaos. Courtesy toward the enemy turned out to lose wars. */
+        if(d2<rb*rb*10.24&&d2>1e-6&&s.side===o.side&&s.squad!==o.squad){
+          const d=Math.sqrt(d2),k=(1-d/(rb*3.2))*20;
           avSee(dx,dy,dz,d,k);
           if(o.avF!==simFrame){o.avF=simFrame;o.avx=0;o.avy=0;o.avz=0;}
           o.avx-=dx/d*k;o.avy-=dy/d*k*1.6;o.avz-=dz/d*k;o.avT=now;
@@ -3026,10 +3033,12 @@ function collide(now){
           const o=wcell[k9];
           const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
           const rb=sr+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
-          /* drifting bone is seen and given room before it is touched */
-          if(d2<rb*rb*6.76&&d2>1e-6&&now-o.t0>1.2){
+          /* drifting bone is seen and given room before it is touched —
+             but only just: a pilot who detours around every dead thing
+             abandons the exact ground the war is fought over */
+          if(d2<rb*rb*3.24&&d2>1e-6&&now-o.t0>1.2){
             const d=Math.sqrt(d2);
-            avSee(dx,dy,dz,d,(1-d/(rb*2.6))*rb*0.55);
+            avSee(dx,dy,dz,d,(1-d/(rb*1.8))*10);
           }
           if(d2>rb*rb||d2<1e-6)continue;
           const d=Math.sqrt(d2),inv=1/d;
@@ -3395,7 +3404,7 @@ function onWorkerMsg(e){
       /* chitin burns easier than hull plate; the small are quick — and
          every hull wears a little more shield now, so a war is a siege
          rather than a flash */
-      s.hpMax=s.hp=2+Math.max(1,Math.round(s.slen/(s.side?26:16)));
+      s.hpMax=s.hp=2+Math.max(1,Math.round(s.slen/(s.side?26:15)));
       s.spd=Math.min(70,Math.max(7,1400/s.slen));
       s.turn=Math.min(2.2,Math.max(0.12,34/s.slen));
       /* the middleweights carry seeker racks — and the small arms locker
@@ -3785,16 +3794,42 @@ function fireIonFrom(g,side,now){
   }
 }
 function megaStep(s,now,dt){
-  /* a crown ship advances on the enemy's heart, and answers with a
-     broadside from every hull she has */
+  /* a crown fights at her own range. She advances to the reach of her
+     lances, wheels her broadside across the mark and walks the line;
+     wounded, she opens the distance and lets the screen earn its name;
+     and she never lays herself bow-to-bow against the enemy's crown —
+     that is a brawl, and a crown does not brawl until the mop-up. */
   const ec=fleetCentroid(1-s.side);
   const dx=ec[0]-s.x,dz=ec[2]-s.z;
-  let dyaw=Math.atan2(dz,dx)-s.yaw;
+  const dist=Math.hypot(dx,dz);
+  const foes5=foeCache[1-s.side];
+  const mopup=foes5.length<=6;
+  const hurt=s.hp<s.hpMax*0.4;
+  let hold=s.hulls>=50?520:660;      /* the queen leads; the carriers hang back */
+  if(hurt)hold=860;
+  if(mopup)hold=150;
+  if(!s.brSgn)s.brSgn=(s.id&1)?1:-1;
+  const bear=Math.atan2(dz,dx);
+  let want;
+  if(dist>hold+90)want=bear;                          /* make range */
+  else if(dist<hold-90)want=bear+Math.PI;             /* open range */
+  else want=bear+s.brSgn*Math.PI/2;                   /* the broadside walk */
+  /* the enemy crown is a wall of guns: slide off her, never onto her */
+  if(!mopup){
+    let ncd=1e18,ncx=0,ncz=0;
+    for(const t of foes5)if(t.hulls){
+      const e2=(t.x-s.x)*(t.x-s.x)+(t.z-s.z)*(t.z-s.z);
+      if(e2<ncd){ncd=e2;ncx=t.x;ncz=t.z;}
+    }
+    if(ncd<430*430)want=Math.atan2(s.z-ncz,s.x-ncx)+s.brSgn*0.5;
+  }
+  let dyaw=want-s.yaw;
   dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
   const wantR=Math.max(-s.turn,Math.min(s.turn,dyaw*1.6));
   s.yawV=(s.yawV||0)+(wantR-s.yawV)*Math.min(1,dt*1.5);
   s.yaw+=s.yawV*dt;
-  if(Math.hypot(dx,dz)>185){s.x+=Math.cos(s.yaw)*s.spd*dt;s.z+=Math.sin(s.yaw)*s.spd*dt;}
+  const sp=(dist>hold+90||dist<hold-90)?s.spd:s.spd*0.55;
+  s.x+=Math.cos(s.yaw)*sp*dt;s.z+=Math.sin(s.yaw)*sp*dt;
   s.vy+=(Math.max(-8,Math.min(8,(ec[1]-s.y)*0.2))-s.vy)*Math.min(1,dt);
   s.y+=s.vy*dt;
   /* the lances speak first: ranged far beyond the battery, they open the
@@ -4020,7 +4055,7 @@ function simStep(now,dt){
       if(dist<26)want=s.spd*0.22;
       else if(prefer>=0&&dist<150)want=s.spd*(0.85+0.15*Math.sin(now*1.6+s.wf));
       /* crowded pilots come off the throttle; burning ones do not */
-      if(avM>34)want=Math.min(want,s.spd*0.62);
+      if(avM>48)want=Math.min(want,s.spd*0.66);
       if(now-s.hurtT<1.6)want=Math.min(s.spd*1.3,want*1.5+8);
       s.v+=(want-s.v)*Math.min(1,dt*(1.0+24/s.slen));
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
