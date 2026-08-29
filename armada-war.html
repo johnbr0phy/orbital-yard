@@ -2306,66 +2306,168 @@ var buildXenoMega=function(seed,nH){
     for(const p of tmp){parts.push(p);parts.push(xMirZ(p));}
   };
   const XMROLE={50:["HQ","HIVE QUEEN"],25:["BH","BEHEMOTH"],10:["BR","BROODMOTHER"]};
-  const L=140+nH*rr(1.2,2.2);
-  const Rm=L*rr(0.075,0.10);
-  const droop=Rm*rr(0.3,0.8);
-  G.seg2([L*0.44,0,0],[L*0.12,0,0],Rm*rr(0.58,0.70),rr(0.85,1.0),0.5);
-  G.seg2([L*0.20,0,0],[-L*0.30,-droop*0.5,0],Rm,rr(0.80,0.95),0.45);
-  const tpts=[[-L*0.24,-droop*0.5,0],[-L*0.36,-droop*0.75,0],
-              [-L*0.46,-droop*0.95,0],[-L*0.54,-droop*1.1,0]];
-  const TFR=G.spine(tpts,u=>Rm*(0.35-u*0.24),rr(0.85,1.0),{pw:0.5,ov:0.7});
-  G.frill(TFR,0,TFR.length,[0,1,0]);
-  G.rib([L*0.16,0,0],[1,0,0],Rm*0.68,1.6);
-  G.rib([-L*0.26,-droop*0.55,0],[1,0,0],Rm*0.38,1.5);
-  const nh2=2+((R()*2)|0);
-  for(let i=0;i<nh2;i++){
-    const x0=L*rr(-0.14,0.10);
-    G.seg2([x0+L*0.14,Rm*0.42,0],[x0-L*0.14,Rm*0.38,0],
-           Rm*rr(0.55,0.72),rr(0.5,0.68),0.5);
+  /* the great ones no longer share one anatomy: four mega body plans now,
+     drawn from the seed like everything else — the hive whale, the
+     lindwurm, the bell, and the ray. Two broodmothers in one war will
+     usually be two different animals. */
+  const arch=(R()*4)|0;
+  if(arch===0){
+    const L=140+nH*rr(1.2,2.2);
+    const Rm=L*rr(0.075,0.10);
+    const droop=Rm*rr(0.3,0.8);
+    G.seg2([L*0.44,0,0],[L*0.12,0,0],Rm*rr(0.58,0.70),rr(0.85,1.0),0.5);
+    G.seg2([L*0.20,0,0],[-L*0.30,-droop*0.5,0],Rm,rr(0.80,0.95),0.45);
+    const tpts=[[-L*0.24,-droop*0.5,0],[-L*0.36,-droop*0.75,0],
+                [-L*0.46,-droop*0.95,0],[-L*0.54,-droop*1.1,0]];
+    const TFR=G.spine(tpts,u=>Rm*(0.35-u*0.24),rr(0.85,1.0),{pw:0.5,ov:0.7});
+    G.frill(TFR,0,TFR.length,[0,1,0]);
+    G.rib([L*0.16,0,0],[1,0,0],Rm*0.68,1.6);
+    G.rib([-L*0.26,-droop*0.55,0],[1,0,0],Rm*0.38,1.5);
+    const nh2=2+((R()*2)|0);
+    for(let i=0;i<nh2;i++){
+      const x0=L*rr(-0.14,0.10);
+      G.seg2([x0+L*0.14,Rm*0.42,0],[x0-L*0.14,Rm*0.38,0],
+             Rm*rr(0.55,0.72),rr(0.5,0.68),0.5);
+    }
+    const cx=L*rr(-0.05,0.10),ch=Rm*rr(0.6,1.1);
+    G.put({k:"panel",n:[0,0,1],th:Rm*0.09,pts:[
+      [cx+L*0.18,Rm*0.55,0],[cx+L*0.05,Rm*0.75+ch,0],
+      [cx-L*0.08,Rm*0.72+ch*0.8,0],[cx-L*0.18,Rm*0.5,0]]});
+    const head=[L*0.44,0,0],hr=Rm*0.66;
+    G.spk(head,[1,rr(-0.10,0.05),0],L*rr(0.10,0.16),hr*0.38);
+    limb(g=>{g.scy(V.add(head,[0,-hr*0.28,hr*0.45]),V.norm([0.6,-0.7,0.35]),
+      L*rr(0.08,0.14),hr*rr(0.16,0.24),{a:rr(0,6.283),k:rr(0.9,1.6)});});
+    const nt=Math.min(22,Math.round(nH*0.4));
+    for(let i=0;i<nt;i++){
+      const a2=(i+0.5)/nt*6.283;
+      G.tent(V.add(head,[hr*0.3,Math.sin(a2)*hr*0.55,Math.cos(a2)*hr*0.55]),
+             V.norm([1,Math.sin(a2)*0.6-0.25,Math.cos(a2)*0.6]),
+             L*rr(0.22,0.42),hr*rr(0.08,0.13),{a:rr(0,6.283),k:rr(0.8,1.6)},0.05);
+    }
+    const nl=Math.max(2,Math.round(nH*0.08));
+    for(let i=0;i<nl;i++){
+      const bx=L*rr(-0.10,0.16);
+      limb(g=>{g.scy([bx,0,Rm*0.7],
+        V.norm([rr(0.4,0.9),rr(-0.1,0.7),rr(0.9,1.5)]),
+        L*rr(0.25,0.45),Rm*rr(0.16,0.24),{a:rr(0,6.283),k:rr(0.9,1.7)});});
+    }
+    const ns=Math.max(4,Math.round(nH*0.12));
+    for(let i=0;i<ns;i++){
+      const bx=L*rr(-0.25,0.15);
+      G.spk([bx,Rm*rr(0.55,0.75),0],V.norm([rr(-0.3,0.1),1,rr(-0.1,0.1)]),
+            Rm*rr(0.7,1.4),Rm*rr(0.06,0.10));
+    }
+    const npu=2+((R()*3)|0);
+    for(let i=0;i<npu;i++)
+      G.pust([L*rr(-0.28,0.10),Rm*rr(-0.4,0.5),Rm*rr(-0.7,0.7)],Rm*rr(0.30,0.50),4+((R()*5)|0));
+    for(let i=0;i<nH;i++){
+      const bx=L*rr(-0.30,0.12);
+      G.put(SPH([bx,-Rm*rr(0.65,0.95)-Math.max(0,-bx/L-0.2)*droop,rr(-0.5,0.5)*Rm*0.7],
+                Rm*rr(0.10,0.18)));
+    }
+    const ne=3+((R()*4)|0);
+    for(let i=0;i<ne;i++)limb(g=>{
+      g.put(SPH(V.add(head,[hr*rr(0.1,0.5),hr*rr(0.2,0.5),hr*rr(0.15,0.5)]),
+                hr*rr(0.08,0.13)));});
+    G.scy(tpts[3],V.norm([-1,rr(-0.3,0.0),0]),L*rr(0.10,0.18),Rm*0.20,
+          {a:rr(0,6.283),k:rr(0.6,1.2)});
+    xTilt(parts,rr(-0.15,0.15),rr(-0.05,0.05));
+  }else if(arch===1){
+    /* THE LINDWURM: a river of flesh — swelling segment after segment
+       down a sinuous curve, ribbed and maned, scythes at the head and a
+       tail that goes on after the body has given up */
+    const L=150+nH*rr(1.3,2.0);
+    const Rm=L*rr(0.055,0.075);
+    const ph1=rr(0,6.283),ph2=rr(0,6.283);
+    const nSeg=8+((R()*4)|0);
+    const pts=[];
+    for(let i=0;i<=nSeg;i++){
+      const u=i/nSeg;
+      pts.push([L*(0.48-0.96*u),
+                Math.sin(u*rr(2.2,3.4)+ph1)*Rm*rr(1.2,2.0),
+                Math.sin(u*rr(1.6,2.6)+ph2)*Rm*rr(0.8,1.6)]);
+    }
+    const FR=G.spine(pts,u=>Rm*(0.55+0.55*Math.sin(u*3.14)),rr(0.85,1.05),{pw:0.55,ov:0.85});
+    for(let i=1;i<FR.length;i+=2)G.rib(FR[i].c,FR[i].t,FR[i].r,1.4);
+    G.frill(FR,1,Math.min(FR.length,4+((R()*3)|0)),[0,1,0]);
+    const hd=pts[0],hr=Rm*1.1;
+    limb(g=>{g.scy(V.add(hd,[0,-hr*0.2,hr*0.5]),V.norm([0.8,-0.4,0.5]),
+      L*rr(0.10,0.16),hr*rr(0.2,0.3),{a:rr(0,6.283),k:rr(0.9,1.6)});});
+    G.spk(hd,[1,rr(-0.1,0.15),0],L*rr(0.08,0.14),hr*0.4);
+    const ne=2+((R()*3)|0);
+    for(let i=0;i<ne;i++)limb(g=>{g.put(SPH(V.add(hd,
+      [hr*rr(0.1,0.4),hr*rr(0.1,0.4),hr*rr(0.15,0.45)]),hr*rr(0.08,0.14)));});
+    const nspk=Math.max(4,Math.round(nH*0.14));
+    for(let i=0;i<nspk;i++){
+      const f=FR[(R()*FR.length)|0];
+      G.spk(V.add(f.c,[0,f.r*0.8,0]),V.norm([rr(-0.3,0.1),1,rr(-0.2,0.2)]),
+        f.r*rr(1.2,2.2),f.r*rr(0.10,0.16));
+    }
+    G.tent(pts[nSeg],V.norm([-1,rr(-0.3,0.1),rr(-0.2,0.2)]),
+      L*rr(0.25,0.42),Rm*rr(0.25,0.4),{a:rr(0,6.283),k:rr(0.7,1.4)},0.05);
+    xTilt(parts,rr(-0.2,0.2),rr(-0.06,0.06));
+  }else if(arch===2){
+    /* THE BELL: the medusa grown to cathedral size — a dome with a deep
+       rim, a skirt of hanging arms, and eyes all the way around */
+    const L=150+nH*rr(1.3,2.0);
+    const Rb=L*rr(0.16,0.22),Hb=Rb*rr(1.0,1.4);
+    const cx=Rb*0.2;
+    const prof=[[0,0.001]];
+    for(let i=1;i<=7;i++){
+      const u=i/7;
+      prof.push([Hb*u,Rb*Math.sin(Math.min(1.35,u*1.5))]);
+    }
+    G.put({k:"lathe",c:[cx,Hb*0.55,0],axis:[0,-1,0],prof,ell:[rr(1.3,1.6),1]});
+    G.put(DSC([cx,Hb*0.55-Hb,0],[0,-1,0],Rb*1.04,Rb*0.8));
+    const nt2=Math.min(26,6+Math.round(nH*0.4));
+    for(let i=0;i<nt2;i++){
+      const a2=(i+0.5)/nt2*6.283;
+      G.tent([cx+Math.cos(a2)*Rb*0.8,Hb*0.55-Hb,Math.sin(a2)*Rb*0.8],
+        V.norm([Math.cos(a2)*0.25,-1,Math.sin(a2)*0.25]),
+        L*rr(0.3,0.55),Rb*rr(0.05,0.09),{a:rr(0,6.283),k:rr(0.6,1.4)},0.05);
+    }
+    const nee=5+((R()*4)|0);
+    for(let i=0;i<nee;i++){
+      const a2=rr(0,6.283);
+      G.put(SPH([cx+Math.cos(a2)*Rb*0.95,Hb*0.55-Hb*0.85,Math.sin(a2)*Rb*0.95],
+        Rb*rr(0.06,0.11)));
+    }
+    G.spk([cx,Hb*0.6,0],[rr(-0.2,0.2),1,rr(-0.2,0.2)],Hb*rr(0.4,0.8),Rb*0.12);
+    G.pust([cx,Hb*0.1,0],Rb*0.5,4+((R()*4)|0));
+    xTilt(parts,rr(-0.15,0.15),rr(-0.05,0.05));
+  }else{
+    /* THE RAY: a broad wing of flesh — flattened body, two great webbed
+       wings trailing feelers, and a whip of a tail */
+    const L=150+nH*rr(1.3,2.0);
+    const Rm=L*rr(0.06,0.08);
+    G.seg2([L*0.42,0,0],[-L*0.30,0,0],Rm*rr(1.6,2.0),rr(0.42,0.55),0.5);
+    const wspan=L*rr(0.34,0.5),swp=L*rr(0.2,0.3);
+    limb(g=>{
+      /* a swept delta, drooping at the tip — a wing, not a barge deck */
+      const tip=[-L*0.05-swp,-Rm*0.55,Rm*0.5+wspan];
+      g.put({k:"panel",n:[0,1,0],th:Rm*0.14,pts:[
+        [L*0.30,Rm*0.1,Rm*0.5],
+        tip,
+        [-L*0.28,-Rm*0.15,Rm*0.45]]});
+      g.put(TUB([L*0.28,Rm*0.1,Rm*0.5],tip,Rm*0.22,Rm*0.05));
+      for(let i=0;i<3;i++)
+        g.tent([L*(-0.02-i*0.10)-swp*(0.55-i*0.15),-Rm*(0.3+i*0.08),Rm*0.5+wspan*(0.8-i*0.22)],
+          V.norm([-1,rr(-0.2,0.1),rr(0.0,0.3)]),L*rr(0.14,0.24),Rm*rr(0.08,0.14),
+          {a:rr(0,6.283),k:rr(0.6,1.2)},0.06);
+    });
+    limb(g=>{g.scy([L*0.40,-Rm*0.3,Rm*0.35],V.norm([0.7,-0.5,0.3]),
+      L*rr(0.09,0.14),Rm*rr(0.18,0.28),{a:rr(0,6.283),k:rr(0.9,1.6)});});
+    const nee2=2+((R()*3)|0);
+    for(let i=0;i<nee2;i++)limb(g=>{g.put(SPH(
+      [L*rr(0.30,0.40),Rm*rr(0.2,0.5),Rm*rr(0.2,0.5)],Rm*rr(0.10,0.16)));});
+    G.tent([-L*0.30,0,0],V.norm([-1,rr(-0.15,0.1),rr(-0.1,0.1)]),
+      L*rr(0.35,0.55),Rm*rr(0.18,0.28),{a:rr(0,6.283),k:rr(0.5,1.1)},0.04);
+    G.pust([L*rr(-0.1,0.1),Rm*0.6,0],Rm*rr(0.7,1.1),4+((R()*5)|0));
+    const nsp3=Math.max(3,Math.round(nH*0.10));
+    for(let i=0;i<nsp3;i++)G.spk([L*rr(-0.2,0.25),Rm*rr(0.6,0.9),rr(-0.4,0.4)*Rm],
+      V.norm([rr(-0.3,0.1),1,rr(-0.2,0.2)]),Rm*rr(1.0,2.0),Rm*rr(0.08,0.13));
+    xTilt(parts,rr(-0.15,0.15),rr(-0.05,0.05));
   }
-  const cx=L*rr(-0.05,0.10),ch=Rm*rr(0.6,1.1);
-  G.put({k:"panel",n:[0,0,1],th:Rm*0.09,pts:[
-    [cx+L*0.18,Rm*0.55,0],[cx+L*0.05,Rm*0.75+ch,0],
-    [cx-L*0.08,Rm*0.72+ch*0.8,0],[cx-L*0.18,Rm*0.5,0]]});
-  const head=[L*0.44,0,0],hr=Rm*0.66;
-  G.spk(head,[1,rr(-0.10,0.05),0],L*rr(0.10,0.16),hr*0.38);
-  limb(g=>{g.scy(V.add(head,[0,-hr*0.28,hr*0.45]),V.norm([0.6,-0.7,0.35]),
-    L*rr(0.08,0.14),hr*rr(0.16,0.24),{a:rr(0,6.283),k:rr(0.9,1.6)});});
-  const nt=Math.min(22,Math.round(nH*0.4));
-  for(let i=0;i<nt;i++){
-    const a2=(i+0.5)/nt*6.283;
-    G.tent(V.add(head,[hr*0.3,Math.sin(a2)*hr*0.55,Math.cos(a2)*hr*0.55]),
-           V.norm([1,Math.sin(a2)*0.6-0.25,Math.cos(a2)*0.6]),
-           L*rr(0.22,0.42),hr*rr(0.08,0.13),{a:rr(0,6.283),k:rr(0.8,1.6)},0.05);
-  }
-  const nl=Math.max(2,Math.round(nH*0.08));
-  for(let i=0;i<nl;i++){
-    const bx=L*rr(-0.10,0.16);
-    limb(g=>{g.scy([bx,0,Rm*0.7],
-      V.norm([rr(0.4,0.9),rr(-0.1,0.7),rr(0.9,1.5)]),
-      L*rr(0.25,0.45),Rm*rr(0.16,0.24),{a:rr(0,6.283),k:rr(0.9,1.7)});});
-  }
-  const ns=Math.max(4,Math.round(nH*0.12));
-  for(let i=0;i<ns;i++){
-    const bx=L*rr(-0.25,0.15);
-    G.spk([bx,Rm*rr(0.55,0.75),0],V.norm([rr(-0.3,0.1),1,rr(-0.1,0.1)]),
-          Rm*rr(0.7,1.4),Rm*rr(0.06,0.10));
-  }
-  const npu=2+((R()*3)|0);
-  for(let i=0;i<npu;i++)
-    G.pust([L*rr(-0.28,0.10),Rm*rr(-0.4,0.5),Rm*rr(-0.7,0.7)],Rm*rr(0.30,0.50),4+((R()*5)|0));
-  for(let i=0;i<nH;i++){
-    const bx=L*rr(-0.30,0.12);
-    G.put(SPH([bx,-Rm*rr(0.65,0.95)-Math.max(0,-bx/L-0.2)*droop,rr(-0.5,0.5)*Rm*0.7],
-              Rm*rr(0.10,0.18)));
-  }
-  const ne=3+((R()*4)|0);
-  for(let i=0;i<ne;i++)limb(g=>{
-    g.put(SPH(V.add(head,[hr*rr(0.1,0.5),hr*rr(0.2,0.5),hr*rr(0.15,0.5)]),
-              hr*rr(0.08,0.13)));});
-  G.scy(tpts[3],V.norm([-1,rr(-0.3,0.0),0]),L*rr(0.10,0.18),Rm*0.20,
-        {a:rr(0,6.283),k:rr(0.6,1.2)});
-  xTilt(parts,rr(-0.15,0.15),rr(-0.05,0.05));
   const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
   for(const p of parts)for(const e2 of partExtents(p)){
     const q=e2[0],r=e2[1];
