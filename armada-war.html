@@ -2337,12 +2337,20 @@ var buildXenoMega=function(seed,nH){
     G.spk(head,[1,rr(-0.10,0.05),0],L*rr(0.10,0.16),hr*0.38);
     limb(g=>{g.scy(V.add(head,[0,-hr*0.28,hr*0.45]),V.norm([0.6,-0.7,0.35]),
       L*rr(0.08,0.14),hr*rr(0.16,0.24),{a:rr(0,6.283),k:rr(0.9,1.6)});});
-    const nt=Math.min(22,Math.round(nH*0.4));
+    const nt=Math.min(40,Math.round(nH*0.7));
     for(let i=0;i<nt;i++){
       const a2=(i+0.5)/nt*6.283;
       G.tent(V.add(head,[hr*0.3,Math.sin(a2)*hr*0.55,Math.cos(a2)*hr*0.55]),
              V.norm([1,Math.sin(a2)*0.6-0.25,Math.cos(a2)*0.6]),
-             L*rr(0.22,0.42),hr*rr(0.08,0.13),{a:rr(0,6.283),k:rr(0.8,1.6)},0.05);
+             L*rr(0.24,0.55),hr*rr(0.08,0.13),{a:rr(0,6.283),k:rr(0.8,1.6)},0.05);
+    }
+    /* and below the mouth-ring, a beard: at fifty hulls she is a forest */
+    const nbd0=Math.round(nH*0.3);
+    for(let i=0;i<nbd0;i++){
+      const a9=rr(0,6.283);
+      G.tent(V.add(head,[hr*0.1,-hr*rr(0.3,0.6),Math.sin(a9)*hr*0.4]),
+        V.norm([rr(0.3,0.8),-1,Math.sin(a9)*0.5]),
+        L*rr(0.15,0.30),hr*rr(0.05,0.09),{a:rr(0,6.283),k:rr(0.8,1.6)},0.06);
     }
     const nl=Math.max(2,Math.round(nH*0.08));
     for(let i=0;i<nl;i++){
@@ -2397,6 +2405,14 @@ var buildXenoMega=function(seed,nH){
     const ne=2+((R()*3)|0);
     for(let i=0;i<ne;i++)limb(g=>{g.put(SPH(V.add(hd,
       [hr*rr(0.1,0.4),hr*rr(0.1,0.4),hr*rr(0.15,0.45)]),hr*rr(0.08,0.14)));});
+    /* the beard: arms trailing from under her jaw, more the greater she is */
+    const nbd1=Math.round(nH*0.22);
+    for(let i=0;i<nbd1;i++){
+      const a9=rr(0,6.283);
+      G.tent(V.add(hd,[-hr*rr(0,0.6),-hr*0.5,Math.sin(a9)*hr*0.5]),
+        V.norm([rr(-0.4,0.3),-1,Math.sin(a9)*0.4]),
+        L*rr(0.12,0.26),hr*rr(0.06,0.10),{a:rr(0,6.283),k:rr(0.7,1.5)},0.06);
+    }
     const nspk=Math.max(4,Math.round(nH*0.14));
     for(let i=0;i<nspk;i++){
       const f=FR[(R()*FR.length)|0];
@@ -2410,7 +2426,7 @@ var buildXenoMega=function(seed,nH){
     /* THE BELL: the medusa grown to cathedral size — a dome with a deep
        rim, a skirt of hanging arms, and eyes all the way around */
     const L=150+nH*rr(1.3,2.0);
-    const Rb=L*rr(0.16,0.22),Hb=Rb*rr(1.0,1.4);
+    const Rb=L*rr(0.16,0.22),Hb=Rb*rr(0.85,1.6);
     const cx=Rb*0.2;
     const prof=[[0,0.001]];
     for(let i=1;i<=7;i++){
@@ -2419,12 +2435,20 @@ var buildXenoMega=function(seed,nH){
     }
     G.put({k:"lathe",c:[cx,Hb*0.55,0],axis:[0,-1,0],prof,ell:[rr(1.3,1.6),1]});
     G.put(DSC([cx,Hb*0.55-Hb,0],[0,-1,0],Rb*1.04,Rb*0.8));
-    const nt2=Math.min(26,6+Math.round(nH*0.4));
+    const nt2=Math.min(44,6+Math.round(nH*0.75));
     for(let i=0;i<nt2;i++){
       const a2=(i+0.5)/nt2*6.283;
       G.tent([cx+Math.cos(a2)*Rb*0.8,Hb*0.55-Hb,Math.sin(a2)*Rb*0.8],
         V.norm([Math.cos(a2)*0.25,-1,Math.sin(a2)*0.25]),
         L*rr(0.3,0.55),Rb*rr(0.05,0.09),{a:rr(0,6.283),k:rr(0.6,1.4)},0.05);
+    }
+    /* an inner curtain of shorter arms inside the great skirt */
+    const nt3=Math.round(nH*0.35);
+    for(let i=0;i<nt3;i++){
+      const a9=rr(0,6.283);
+      G.tent([cx+Math.cos(a9)*Rb*rr(0.3,0.55),Hb*0.55-Hb,Math.sin(a9)*Rb*rr(0.3,0.55)],
+        V.norm([Math.cos(a9)*0.15,-1,Math.sin(a9)*0.15]),
+        L*rr(0.16,0.30),Rb*rr(0.03,0.06),{a:rr(0,6.283),k:rr(0.5,1.2)},0.05);
     }
     const nee=5+((R()*4)|0);
     for(let i=0;i<nee;i++){
@@ -2441,19 +2465,25 @@ var buildXenoMega=function(seed,nH){
     const L=150+nH*rr(1.3,2.0);
     const Rm=L*rr(0.06,0.08);
     G.seg2([L*0.42,0,0],[-L*0.30,0,0],Rm*rr(1.6,2.0),rr(0.42,0.55),0.5);
-    const wspan=L*rr(0.34,0.5),swp=L*rr(0.2,0.3);
+    const wspan=L*rr(0.30,0.42);
     limb(g=>{
-      /* a swept delta, drooping at the tip — a wing, not a barge deck */
-      const tip=[-L*0.05-swp,-Rm*0.55,Rm*0.5+wspan];
-      g.put({k:"panel",n:[0,1,0],th:Rm*0.14,pts:[
-        [L*0.30,Rm*0.1,Rm*0.5],
-        tip,
-        [-L*0.28,-Rm*0.15,Rm*0.45]]});
-      g.put(TUB([L*0.28,Rm*0.1,Rm*0.5],tip,Rm*0.22,Rm*0.05));
-      for(let i=0;i<3;i++)
-        g.tent([L*(-0.02-i*0.10)-swp*(0.55-i*0.15),-Rm*(0.3+i*0.08),Rm*0.5+wspan*(0.8-i*0.22)],
-          V.norm([-1,rr(-0.2,0.1),rr(0.0,0.3)]),L*rr(0.14,0.24),Rm*rr(0.08,0.14),
-          {a:rr(0,6.283),k:rr(0.6,1.2)},0.06);
+      /* a manta wing is a hand: bones fanned out from the shoulder, the
+         membrane stretched panel by panel between the fingers, each
+         finger raking further aft and drooping deeper — never one slab */
+      const sh=[L*rr(0.16,0.22),Rm*0.2,Rm*0.9];
+      const nF=4+((R()*2)|0);
+      let prev=null;
+      for(let i=0;i<nF;i++){
+        const u=i/(nF-1);
+        const tip=[sh[0]-u*u*L*rr(0.45,0.6),
+                   sh[1]-Rm*(0.2+u*1.3),
+                   sh[2]+wspan*(1-0.55*u*u)];
+        g.put(TUB(sh,tip,Rm*rr(0.16,0.22)*(1-u*0.4),Rm*0.03));
+        if(prev)g.put({k:"panel",n:[0,1,0],th:Rm*0.07,pts:[sh,prev,tip]});
+        prev=tip;
+      }
+      g.tent(prev,V.norm([-1,rr(-0.3,0),rr(0,0.2)]),
+        L*rr(0.12,0.2),Rm*rr(0.07,0.11),{a:rr(0,6.283),k:rr(0.6,1.2)},0.06);
     });
     limb(g=>{g.scy([L*0.40,-Rm*0.3,Rm*0.35],V.norm([0.7,-0.5,0.3]),
       L*rr(0.09,0.14),Rm*rr(0.18,0.28),{a:rr(0,6.283),k:rr(0.9,1.6)});});
@@ -2463,6 +2493,12 @@ var buildXenoMega=function(seed,nH){
     G.tent([-L*0.30,0,0],V.norm([-1,rr(-0.15,0.1),rr(-0.1,0.1)]),
       L*rr(0.35,0.55),Rm*rr(0.18,0.28),{a:rr(0,6.283),k:rr(0.5,1.1)},0.04);
     G.pust([L*rr(-0.1,0.1),Rm*0.6,0],Rm*rr(0.7,1.1),4+((R()*5)|0));
+    /* the belly fringe streams behind her as she banks */
+    const nbf=Math.round(nH*0.16);
+    for(let i=0;i<nbf;i++)
+      G.tent([L*rr(-0.25,0.2),-Rm*rr(0.8,1.2),rr(-0.6,0.6)*Rm],
+        V.norm([rr(-0.6,-0.2),-1,rr(-0.3,0.3)]),L*rr(0.10,0.22),Rm*rr(0.05,0.09),
+        {a:rr(0,6.283),k:rr(0.6,1.3)},0.06);
     const nsp3=Math.max(3,Math.round(nH*0.10));
     for(let i=0;i<nsp3;i++)G.spk([L*rr(-0.2,0.25),Rm*rr(0.6,0.9),rr(-0.4,0.4)*Rm],
       V.norm([rr(-0.3,0.1),1,rr(-0.2,0.2)]),Rm*rr(1.0,2.0),Rm*rr(0.08,0.13));
@@ -3255,7 +3291,8 @@ function collide(now){
         if(rel*ramp>22){
           const sm=(w.rad<o.rad)?w:o;
           sm.integ=(sm.integ||2)-1;
-          dustBurst((w.x+o.x)*0.5,(w.y+o.y)*0.5,(w.z+o.z)*0.5,avx,avy,avz,3,now);
+          dustBurst((w.x+o.x)*0.5,(w.y+o.y)*0.5,(w.z+o.z)*0.5,avx,avy,avz,
+            Math.min(10,Math.round(2+(sm.rad||6)*0.2)),now,4+(sm.rad||6)*0.5);
           if(sm.integ<=0)sm.shatter=true;
         }
       }
@@ -3736,11 +3773,13 @@ function nearestFoeInRange(s,rng){
   return b;
 }
 function flash(x,y,z,t0,size,c){flashes.push({x,y,z,t0,size,c,seed:Math.random()});}
-function dustBurst(x,y,z,vx,vy,vz,n,t0){
+function dustBurst(x,y,z,vx,vy,vz,n,t0,sp){
+  /* the cloud wears the size of the thing that died: sp is its breadth */
+  const s9=sp||10;
   for(let i=0;i<n;i++)
-    dusts.push({x:x+(Math.random()-0.5)*10,y:y+(Math.random()-0.5)*10,z:z+(Math.random()-0.5)*10,
-      vx:vx*0.5+(Math.random()-0.5)*8,vy:vy*0.5+(Math.random()-0.5)*8,
-      vz:vz*0.5+(Math.random()-0.5)*8,t0});
+    dusts.push({x:x+(Math.random()-0.5)*s9,y:y+(Math.random()-0.5)*s9,z:z+(Math.random()-0.5)*s9,
+      vx:vx*0.5+(Math.random()-0.5)*s9*0.8,vy:vy*0.5+(Math.random()-0.5)*s9*0.8,
+      vz:vz*0.5+(Math.random()-0.5)*s9*0.8,t0});
 }
 function boom(t,now){
   /* ten ways to die. The recipe is drawn fresh for every death, so no two
@@ -4834,7 +4873,11 @@ function frame(nowMs){
          here: she flies at the speed she was thrown at, forever, unless
          she bangs into something that stops her */
       if(w.shatter){
-        dustBurst(w.x,w.y,w.z,w.vx,w.vy,w.vz,14,now);
+        /* a great slab of hull crumbles into a great cloud; a chip into
+           a puff — the mist inherits the size of the bone */
+        const wr9=w.rad||6;
+        dustBurst(w.x,w.y,w.z,w.vx,w.vy,w.vz,
+          Math.min(44,Math.round(5+wr9*1.0)),now,6+wr9*1.1);
         gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
         w.gone=true;anyGone=true;continue;
       }
