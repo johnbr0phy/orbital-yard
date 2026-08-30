@@ -72,6 +72,14 @@ workers and drawing, but every vessel is grown — eight body plans of ribbed
 vertebral spines, membranes, scythes and tendrils, from plankton-small spore
 mines to hive queens trailing beards of hook tentacles.
 
+## The Tribute War
+
+**[Fight it →](https://johnbr0phy.github.io/orbital-yard/armada-war-tribute.html)**
+
+`armada-war-tribute.html` is every fleet we grew up with in one sky: Imperial,
+Rebel, Minbari, Shadows, EarthForce, Starfleet, Klingon, Borg and more. Pick
+two, click a ship to chase her, and read what she is thinking as the war turns.
+
 ## The War
 
 `armada-war.html` puts both fleets in one sky. They hyperspace in from
