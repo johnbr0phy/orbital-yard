@@ -11785,14 +11785,21 @@ function collide(now){
         const rb=sr+Math.max(o.rad||6,hullBerth(o)*0.38),d2=dx*dx+dy*dy+dz*dz;
         /* FRIENDLY strangers give way ahead of time — preferring over
            and under — while squadmates fly close on purpose */
+        const swarm=s.side===o.side&&(RACE_DEFS[s.race]||{}).fire==="slicer"
+          &&(RACE_DEFS[o.race]||{}).fire==="slicer";
         if(d2<rb*rb*10.24&&d2>1e-6&&s.side===o.side&&s.squad!==o.squad){
-          const d=Math.sqrt(d2),k=(1-d/(rb*3.2))*20;
+          const d=Math.sqrt(d2),k=(1-d/(rb*3.2))*(swarm?5:20);
           avSee(dx,dy,dz,d,k);
           if(o.avF!==simFrame){o.avF=simFrame;o.avx=0;o.avy=0;o.avz=0;}
           o.avx-=dx/d*k;o.avy-=dy/d*k*1.6;o.avz-=dz/d*k;o.avT=now;
         }
         if(d2>rb*rb||d2<1e-6)continue;
         const d=Math.sqrt(d2),pen=rb-d,inv=1/d;
+        if(swarm){
+          s.x+=dx*inv*pen*0.16;s.y+=dy*inv*pen*0.16;s.z+=dz*inv*pen*0.16;
+          o.x-=dx*inv*pen*0.16;o.y-=dy*inv*pen*0.16;o.z-=dz*inv*pen*0.16;
+          continue;
+        }
         /* a little keel that rams a much larger one comes apart */
         const small=s.slen<=o.slen?s:o,big=small===s?o:s;
         if(!small.grace&&!small.hulls&&!small.hero&&big.side!==small.side&&
@@ -12031,7 +12038,7 @@ const RACE_DEFS=[
    wpn:[[8,1],[14,2],[20,3],[40,4],[70,5]],
    fire:"neutron",boom:"crystal",msl:false,
    doct:{CHARGE:1,FLANK:5,ENVELOP:2,SWARM:1,HUNT:4,SCREEN:1,FEIGN:3,MINE:1}},
-  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.85,0.10,0.05],form:"swarm",fleetK:0.95,hold:380,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:1,tone:0.55,dust:0.8,
+  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.85,0.10,0.05],form:"swarm",fleetK:0.95,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:1,tone:0.55,dust:0.8,spdCap:88,
    hpdiv:15,spdK:1600,spdCap:80,turnK:41,
    wpn:[[6,1],[10,2],[14,3],[22,4],[80,5]],
    fire:"slicer",boom:"dissolve",msl:false,
@@ -12284,7 +12291,13 @@ function setShipPace(s){
   const cap=RD.spdCap||70;
   const pace=s.pace||1,hot=s.hot||1;
   let cruise,dash;
-  if(RD.unique&&s.hulls){
+  if(RD.fire==="slicer"){
+    /* Shadows are not a wall. They are a scream: a 1,500 m crab
+       still outruns a fighter, because the hull is a thought */
+    cruise=(62+18*(hot-0.8))*pace;
+    cruise=Math.max(54,Math.min(92,cruise));
+    dash=cruise*(1.38+0.28*hot);
+  }else if(RD.unique&&s.hulls){
     cruise=Math.min(26,Math.max(11,2200/Math.sqrt(L)))*pace;
     dash=cruise*(1.18+0.22*hot);
   }else if(s.hulls){
@@ -12446,6 +12459,36 @@ function spreadMuster(){
         if(a.stn){a.stn[0]=a.x;a.stn[1]=a.y;a.stn[2]=a.z;}
         if(b.stn){b.stn[0]=b.x;b.stn[1]=b.y;b.stn[2]=b.z;}
       }
+    }
+  }
+}
+function scatterShadows(){
+  /* they must not arrive as a grape of 1,500 m bodies on a TIE screen.
+     A Shadow navy is a 3D scream: packs already pointing at the foe,
+     sea-room between the spines, no two crabs sharing a point of air. */
+  for(const side of [0,1]){
+    const crabs=[];
+    for(const s of ships){
+      if(s.dead||!s.vao||s.hero||s.side!==side)continue;
+      if((RACE_DEFS[s.race]||{}).fire!=="slicer")continue;
+      crabs.push(s);
+    }
+    if(crabs.length<3)continue;
+    const sx=side?1:-1;
+    const n=crabs.length;
+    const cols=Math.max(3,Math.ceil(Math.sqrt(n*0.85)));
+    const gapZ=620,gapY=480,gapX=520;
+    for(let i=0;i<n;i++){
+      const s=crabs[i];
+      const col=i%cols,row=(i/cols)|0;
+      const layer=(row/4)|0;
+      const z=(col-(cols-1)*0.5)*gapZ+((row&1)?90:-90);
+      const y=((row%6)-2.5)*gapY+((col&1)?70:-70);
+      const x=sx*(2100+layer*gapX+(i%7)*80);
+      s.x=x;s.y=y;s.z=z;
+      s.yaw=side?Math.PI:0;
+      s.v=s.spd||60;
+      if(s.stn){s.stn[0]=x;s.stn[1]=y;s.stn[2]=z;}
     }
   }
 }
@@ -13086,7 +13129,7 @@ function onWorkerMsg(e){
     if(fightsAsCrown(s)){
       if(!s.hulls){
         s.hpMax=s.hp=Math.max(s.hpMax||1,36+Math.round(s.slen*0.05));
-        s.turn=Math.min(s.turn||0.2,0.18);
+        s.turn=Math.max(s.turn||0.2,0.72);
       }
       const TR=mulberry32((s.seed^0xBEEF)>>>0);
       const nGun=Math.max(4,s.hulls||6);
@@ -13162,6 +13205,7 @@ function onWorkerMsg(e){
   if(forged>=total&&warT0===Infinity){
     parkTheCrowns();
     spreadMuster();
+    scatterShadows();
     spaceTheFleets();
     frameTheWar();
     warT0=performance.now()/1000+0.4;
@@ -14160,65 +14204,105 @@ function megaStep(s,now,dt){
   const mopup=foes5.length<=6;
   const hurt=s.hp<s.hpMax*0.4;
   const RD=RACE_DEFS[s.race]||RACE_DEFS[0];
-  let hold=RD.hold||560;
-  if(s.hulls>=50)hold*=0.88;
-  else if(s.hulls<=10)hold*=1.18;
-  if(hurt)hold*=1.45;
-  if(mopup)hold=150;
-  hold*=0.92+0.16*((s.seed>>>11)&7)/7;
-  hold=Math.max(hold,(s.slen||40)*0.48+220);
-  if(!s.brSgn)s.brSgn=((s.seed>>>3)&1)?1:-1;
-  const bear=Math.atan2(dz,dx);
-  let want;
-  const inbound=(now-warT0-(s.delay||0))<4.0||!foes5.length;
-  s.mood=hurt?"DEFEND":mopup?"HUNT":"ATTACK";
-  if((RACE_DEFS[s.race]||{}).unique)s.mood=hurt?"DEFEND":"HUNT";
-  if(inbound)want=s.yaw;
-  else if(dist>hold+90)want=bear;
-  else if(dist<hold-90)want=bear+Math.PI;
-  else want=bear+s.brSgn*Math.PI/2;
-  if(!mopup){
-    let ncd=1e18,ncx=0,ncz=0;
-    for(const t of foes5)if(t.hulls){
-      const e2=(t.x-s.x)*(t.x-s.x)+(t.z-s.z)*(t.z-s.z);
-      if(e2<ncd){ncd=e2;ncx=t.x;ncz=t.z;}
+  const slicer=RD.fire==="slicer"||RD.fire==="cutter";
+  if(slicer){
+    /* they do not hold a gun line. Each crab picks a mark and RUNS —
+       a scream, not a wall. The swarm opens because no two keels
+       chase the same point of air. */
+    s.mood=hurt?"HUNT":"ATTACK";
+    let mark=null;
+    if(foes5.length){
+      const nPick=Math.min(foes5.length,8);
+      const ranked=[];
+      for(let i=0;i<foes5.length;i++){
+        const t=foes5[i];
+        const d=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
+        ranked.push({t,sc:d*(t.hulls?0.32:1)*(t.slen>90?0.65:1)});
+      }
+      ranked.sort((a,b)=>a.sc-b.sc);
+      mark=ranked[(s.seed>>>5)%nPick].t;
     }
-    if(ncd<(s.slen*0.55+240)*(s.slen*0.55+240))want=Math.atan2(s.z-ncz,s.x-ncx)+s.brSgn*0.5;
+    const ax=mark?mark.x:ec[0],ay=mark?mark.y:ec[1],az=mark?mark.z:ec[2];
+    const wx=ax-s.x,wy=ay-s.y,wz=az-s.z;
+    const wd=Math.hypot(wx,wz)||1;
+    if(mark)s.mark=mark.id;
+    let want=Math.atan2(wz,wx);
+    want+=Math.sin(now*(s.wfx||0.9)+(s.wf||0))*0.42
+         +((s.seed&15)/15-0.5)*0.55;
+    let dyaw=want-s.yaw;
+    dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+    const mx=Math.max(0.55,s.turn||0.7);
+    let wantR=Math.max(-mx,Math.min(mx,dyaw*2.4));
+    s.yawV=(s.yawV||0)+(wantR-s.yawV)*Math.min(1,dt*3.2);
+    s.yaw+=s.yawV*dt;
+    const dash=s.spdMax||s.spd*1.35;
+    let sp=wd<260?s.spd*0.82:dash;
+    if(!(s.v>1))s.v=sp;
+    s.v+=(sp-s.v)*Math.min(1,dt*2.4);
+    s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
+    const climb=Math.max(-s.spd*0.55,Math.min(s.spd*0.55,wy*0.45));
+    s.vy+=(climb-s.vy)*Math.min(1,dt*1.8);
+    s.y+=s.vy*dt;
+  }else{
+    let hold=RD.hold||560;
+    if(s.hulls>=50)hold*=0.88;
+    else if(s.hulls<=10)hold*=1.18;
+    if(hurt)hold*=1.45;
+    if(mopup)hold=150;
+    hold*=0.92+0.16*((s.seed>>>11)&7)/7;
+    hold=Math.max(hold,(s.slen||40)*0.48+220);
+    if(!s.brSgn)s.brSgn=((s.seed>>>3)&1)?1:-1;
+    const bear=Math.atan2(dz,dx);
+    let want;
+    const inbound=(now-warT0-(s.delay||0))<4.0||!foes5.length;
+    s.mood=hurt?"DEFEND":mopup?"HUNT":"ATTACK";
+    if((RACE_DEFS[s.race]||{}).unique)s.mood=hurt?"DEFEND":"HUNT";
+    if(inbound)want=s.yaw;
+    else if(dist>hold+90)want=bear;
+    else if(dist<hold-90)want=bear+Math.PI;
+    else want=bear+s.brSgn*Math.PI/2;
+    if(!mopup){
+      let ncd=1e18,ncx=0,ncz=0;
+      for(const t of foes5)if(t.hulls){
+        const e2=(t.x-s.x)*(t.x-s.x)+(t.z-s.z)*(t.z-s.z);
+        if(e2<ncd){ncd=e2;ncx=t.x;ncz=t.z;}
+      }
+      if(ncd<(s.slen*0.55+240)*(s.slen*0.55+240))want=Math.atan2(s.z-ncz,s.x-ncx)+s.brSgn*0.5;
+    }
+    let fcd=1e18,fx2=0,fz2=0,fr2=0;
+    for(const t of ships){
+      if(t===s||!t.hulls||t.dead||!t.vao||t.side!==s.side)continue;
+      const e2=(t.x-s.x)*(t.x-s.x)+(t.z-s.z)*(t.z-s.z);
+      if(e2<fcd){fcd=e2;fx2=t.x;fz2=t.z;fr2=t.slen;}
+    }
+    const keep=(s.slen+fr2)*0.55;
+    if(fcd<keep*keep)want=Math.atan2(s.z-fz2,s.x-fx2)+s.brSgn*0.4;
+    let dyaw=want-s.yaw;
+    dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+    let wantR=Math.max(-s.turn,Math.min(s.turn,dyaw*1.6));
+    if(Math.abs(dyaw)<0.07){wantR=0;s.yawV=(s.yawV||0)*Math.max(0,1-dt*4);}
+    s.yawV=(s.yawV||0)+(wantR-s.yawV)*Math.min(1,dt*(1.15+0.7*(s.hot||1)));
+    s.yaw+=s.yawV*dt;
+    let k=0.78;
+    if(inbound)k=1.14;
+    else if(dist>hold+90)k=1.08;
+    else if(dist<hold-90)k=hurt?1.12:0.92;
+    if(mopup)k=1.18;
+    if(hurt&&dist>hold)k*=0.82;
+    k*=0.88+0.24*((s.seed>>>5)&7)/7;
+    k*=0.92+0.14*(s.hot||1);
+    const dash=s.spdMax||s.spd*1.12;
+    let sp=Math.max(s.spd*0.42,Math.min(dash,s.spd*k));
+    s.v=(s.v||sp)+(sp-(s.v||sp))*Math.min(1,dt*0.7);
+    sp=s.v;
+    s.x+=Math.cos(s.yaw)*sp*dt;s.z+=Math.sin(s.yaw)*sp*dt;
+    s.vy+=(Math.max(-8,Math.min(8,(ec[1]-s.y)*0.2))-s.vy)*Math.min(1,dt);
+    s.y+=s.vy*dt;
   }
-  let fcd=1e18,fx2=0,fz2=0,fr2=0;
-  for(const t of ships){
-    if(t===s||!t.hulls||t.dead||!t.vao||t.side!==s.side)continue;
-    const e2=(t.x-s.x)*(t.x-s.x)+(t.z-s.z)*(t.z-s.z);
-    if(e2<fcd){fcd=e2;fx2=t.x;fz2=t.z;fr2=t.slen;}
-  }
-  const keep=(s.slen+fr2)*0.55;
-  if(fcd<keep*keep)want=Math.atan2(s.z-fz2,s.x-fx2)+s.brSgn*0.4;
-  let dyaw=want-s.yaw;
-  dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
-  let wantR=Math.max(-s.turn,Math.min(s.turn,dyaw*1.6));
-  if(Math.abs(dyaw)<0.07){wantR=0;s.yawV=(s.yawV||0)*Math.max(0,1-dt*4);}
-  s.yawV=(s.yawV||0)+(wantR-s.yawV)*Math.min(1,dt*(1.15+0.7*(s.hot||1)));
-  s.yaw+=s.yawV*dt;
-  let k=0.78;
-  if(inbound)k=1.14;
-  else if(dist>hold+90)k=1.08;
-  else if(dist<hold-90)k=hurt?1.12:0.92;
-  if(mopup)k=1.18;
-  if(hurt&&dist>hold)k*=0.82;
-  k*=0.88+0.24*((s.seed>>>5)&7)/7;
-  k*=0.92+0.14*(s.hot||1);
-  const dash=s.spdMax||s.spd*1.12;
-  let sp=Math.max(s.spd*0.42,Math.min(dash,s.spd*k));
-  s.v=(s.v||sp)+(sp-(s.v||sp))*Math.min(1,dt*0.7);
-  sp=s.v;
-  s.x+=Math.cos(s.yaw)*sp*dt;s.z+=Math.sin(s.yaw)*sp*dt;
-  s.vy+=(Math.max(-8,Math.min(8,(ec[1]-s.y)*0.2))-s.vy)*Math.min(1,dt);
-  s.y+=s.vy*dt;
   if((RACE_DEFS[s.race]||{}).unique){foSpeak(s,now,dt);return;}
   /* the lances speak first: ranged far beyond the battery, they open the
      bombardment while the fleets are still closing, and each one hunts
      the biggest thing she can see */
-  const slicer=RD.fire==="slicer"||RD.fire==="cutter";
   for(const la of (s.lances||[])){
     la.cool-=dt*0.7;
     if(la.cool>0)continue;
