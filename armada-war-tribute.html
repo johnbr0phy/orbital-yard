@@ -163,7 +163,7 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   #card{max-height:44vh}
   #card .story{max-height:3.4em}
 }
-/* ---- the muster: pick your two fleets before the sky is let slip ---- */
+/* ---- the muster: pick your two fleets before the war begins ---- */
 #pick{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
   background:color-mix(in srgb,var(--bg) 82%,black);overflow-y:auto}
 #pick.on{display:flex}
@@ -243,7 +243,7 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
     <button type="button" data-n="300">300</button>
     <button type="button" data-n="600" class="on">600</button>
   </div>
-  <div class="go"><button id="pickGo">LET SLIP</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
+  <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
 <script>
 "use strict";
@@ -15933,7 +15933,7 @@ addEventListener("keydown",e=>{
   }
 });
 addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
-/* five seconds parked after the sky is let slip; the first flight key ends it.
+/* five seconds parked after the war begins; the first flight key ends it.
    Tribute opens on the muster sheet, so the clock does not start on load. */
 const wasdHint=(()=>{
   const coarse=typeof matchMedia==="function"&&matchMedia("(pointer:coarse)").matches;
