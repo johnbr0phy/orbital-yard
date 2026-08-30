@@ -11867,8 +11867,9 @@ function collide(now){
         if(d2>rb*rb||d2<1e-6)continue;
         const d=Math.sqrt(d2),pen=rb-d,inv=1/d;
         if(swarm){
-          s.x+=dx*inv*pen*0.16;s.y+=dy*inv*pen*0.16;s.z+=dz*inv*pen*0.16;
-          o.x-=dx*inv*pen*0.16;o.y-=dy*inv*pen*0.16;o.z-=dz*inv*pen*0.16;
+          const k=Math.min(0.82,0.28+pen/(rb+1)*0.45);
+          s.x+=dx*inv*pen*k;s.y+=dy*inv*pen*k;s.z+=dz*inv*pen*k;
+          o.x-=dx*inv*pen*k;o.y-=dy*inv*pen*k;o.z-=dz*inv*pen*k;
           continue;
         }
         /* a little keel that rams a much larger one comes apart */
@@ -12109,7 +12110,7 @@ const RACE_DEFS=[
    wpn:[[8,1],[14,2],[20,3],[40,4],[70,5]],
    fire:"neutron",boom:"crystal",msl:false,
    doct:{CHARGE:1,FLANK:5,ENVELOP:2,SWARM:1,HUNT:4,SCREEN:1,FEIGN:3,MINE:1}},
-  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.85,0.10,0.05],form:"swarm",fleetK:0.95,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:1,tone:0.55,dust:0.8,spdCap:88,
+  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.85,0.10,0.05],form:"swarm",fleetK:0.95,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:1,tone:0.55,dust:0.8,spdCap:170,
    hpdiv:15,spdK:1600,spdCap:80,turnK:41,
    wpn:[[6,1],[10,2],[14,3],[22,4],[80,5]],
    fire:"slicer",boom:"dissolve",msl:false,
@@ -12366,9 +12367,10 @@ function setShipPace(s){
   if(RD.fire==="slicer"){
     /* Shadows are not a wall. They are a scream: a 1,500 m crab
        still outruns a fighter, because the hull is a thought */
-    cruise=(62+18*(hot-0.8))*pace;
-    cruise=Math.max(54,Math.min(92,cruise));
-    dash=cruise*(1.38+0.28*hot);
+    cruise=(118+48*(hot-0.8))*pace;
+    cruise=Math.max(102,Math.min(176,cruise));
+    dash=cruise*(1.58+0.38*hot);
+    s.turn=Math.max(s.turn||0,1.05);
   }else if(RD.unique&&s.hulls){
     cruise=Math.min(26,Math.max(11,2200/Math.sqrt(L)))*pace;
     dash=cruise*(1.18+0.22*hot);
@@ -12523,6 +12525,8 @@ function pickFoe(s,rng,now){
 function spreadRad(s){
   /* a dagger's personal space is her beam, not a ball of her keel —
      length is parked astern, not shoved sideways through the screen */
+  if((RACE_DEFS[s.race]||{}).fire==="slicer")
+    return Math.max(1100,hullBerth(s)*0.78);
   if((s.hulls||0)>=25){
     const B=(s.meta&&s.meta.beam)||(s.exZ?s.exZ*2:s.slen*0.32);
     const H=(s.meta&&s.meta.height)||(s.exY?s.exY*2:s.slen*0.12);
@@ -12572,27 +12576,51 @@ function scatterShadows(){
   for(const side of [0,1]){
     const crabs=[];
     for(const s of ships){
-      if(s.dead||!s.vao||s.hero||s.side!==side)continue;
+      if(s.dead||!s.vao||s.side!==side)continue;
       if((RACE_DEFS[s.race]||{}).fire!=="slicer")continue;
+      if(s.hero)continue;
       crabs.push(s);
     }
-    if(crabs.length<3)continue;
+    if(crabs.length<2)continue;
     const sx=side?1:-1;
     const n=crabs.length;
-    const cols=Math.max(3,Math.ceil(Math.sqrt(n*0.85)));
-    const gapZ=620,gapY=480,gapX=520;
+    let berth=1600;
+    for(const s of crabs)berth=Math.max(berth,hullBerth(s));
+    const gap=berth*1.28+420;
+    const nx=Math.max(3,Math.round(Math.cbrt(n*0.55)));
+    const nz=Math.max(4,Math.round(Math.sqrt(n/nx*1.35)));
+    const ny=Math.max(3,Math.ceil(n/(nx*nz)));
     for(let i=0;i<n;i++){
       const s=crabs[i];
-      const col=i%cols,row=(i/cols)|0;
-      const layer=(row/4)|0;
-      const z=(col-(cols-1)*0.5)*gapZ+((row&1)?90:-90);
-      const y=((row%6)-2.5)*gapY+((col&1)?70:-70);
-      const x=sx*(2100+layer*gapX+(i%7)*80);
-      s.x=x;s.y=y;s.z=z;
-      s.yaw=side?Math.PI:0;
-      s.v=s.spd||60;
-      if(s.stn){s.stn[0]=x;s.stn[1]=y;s.stn[2]=z;}
+      const ix=i%nx;
+      const iz=((i/nx)|0)%nz;
+      const iy=(i/(nx*nz))|0;
+      const jx=((s.seed>>>3)&31)/31-0.5;
+      const jy=((s.seed>>>8)&31)/31-0.5;
+      const jz=((s.seed>>>13)&31)/31-0.5;
+      s.x=sx*(2600+ix*gap*0.78+jx*gap*0.16);
+      s.y=(iy-(ny-1)*0.5)*gap*0.82+jy*gap*0.20;
+      s.z=(iz-(nz-1)*0.5)*gap+jz*gap*0.20;
+      s.yaw=(side?Math.PI:0)+jx*0.20;
+      s.v=s.spdMax||s.spd||130;
+      if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
     }
+    for(let t=0;t<10;t++){
+      for(let i=0;i<n;i++){
+        const a=crabs[i];
+        for(let j=i+1;j<n;j++){
+          const b=crabs[j];
+          const dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z;
+          const d=Math.hypot(dx,dy,dz)||0.001;
+          const need=gap*0.92;
+          if(d>=need)continue;
+          const k=(need-d)*0.5/d;
+          a.x+=dx*k;a.y+=dy*k;a.z+=dz*k;
+          b.x-=dx*k;b.y-=dy*k;b.z-=dz*k;
+        }
+      }
+    }
+    for(const s of crabs)if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
   }
 }
 function spaceTheFleets(){
@@ -14504,22 +14532,25 @@ function megaStep(s,now,dt){
     const wx=ax-s.x,wy=ay-s.y,wz=az-s.z;
     const wd=Math.hypot(wx,wz)||1;
     if(mark)s.mark=mark.id;
-    let want=Math.atan2(wz,wx);
-    want+=Math.sin(now*(s.wfx||0.9)+(s.wf||0))*0.42
-         +((s.seed&15)/15-0.5)*0.55;
+    const ox=(((s.seed>>>9)&31)/31-0.5)*220;
+    const oz=(((s.seed>>>14)&31)/31-0.5)*280;
+    let want=Math.atan2(wz+oz,wx+ox);
+    want+=Math.sin(now*(s.wfx||0.9)+(s.wf||0))*0.10
+         +((s.seed&15)/15-0.5)*0.16;
     let dyaw=want-s.yaw;
     dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
-    const mx=Math.max(0.55,s.turn||0.7);
-    let wantR=Math.max(-mx,Math.min(mx,dyaw*2.4));
-    s.yawV=(s.yawV||0)+(wantR-s.yawV)*Math.min(1,dt*3.2);
+    const mx=Math.max(1.05,s.turn||0.9);
+    let wantR=Math.max(-mx,Math.min(mx,dyaw*2.8));
+    s.yawV=(s.yawV||0)+(wantR-s.yawV)*Math.min(1,dt*3.8);
     s.yaw+=s.yawV*dt;
-    const dash=s.spdMax||s.spd*1.35;
-    let sp=wd<260?s.spd*0.82:dash;
-    if(!(s.v>1))s.v=sp;
-    s.v+=(sp-s.v)*Math.min(1,dt*2.4);
+    const dash=s.spdMax||s.spd*1.55;
+    const gap=Math.max(0,Math.hypot(wx,wy,wz)-(s.slen||400)*0.35);
+    let sp=gap<280?s.spd*0.90:dash;
+    if(!(s.v>8))s.v=sp;
+    s.v+=(sp-s.v)*Math.min(1,dt*3.8);
     s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
-    const climb=Math.max(-s.spd*0.55,Math.min(s.spd*0.55,wy*0.45));
-    s.vy+=(climb-s.vy)*Math.min(1,dt*1.8);
+    const climb=Math.max(-dash*0.55,Math.min(dash*0.55,wy*0.55));
+    s.vy+=(climb-s.vy)*Math.min(1,dt*2.2);
     s.y+=s.vy*dt;
   }else if(isLeviathan(s)){
     /* overconfident: a 19 km blade does not spin out of the jump and
@@ -14783,13 +14814,13 @@ function maybeCallAlly(now){
       total++;counts[side]++;spawned[side]++;
       return id;
     };
-    const slotAt=(g,i,n,wide,deep)=>{
+    const slotAt=(g,i,n,wide,deep,yStep)=>{
       const c=Math.cos(g.yaw),s=Math.sin(g.yaw),px=-s,pz=c;
       const cols=Math.max(1,Math.min(n,6));
       const col=i%cols,row=(i/cols)|0;
       const lat=(col-(cols-1)/2)*wide;
       return [g.p[0]-c*row*deep+px*lat,
-              clampY(g.p[1]+((i%5)-2)*170),
+              clampY(g.p[1]+((i%5)-2)*(yStep||170)),
               g.p[2]-s*row*deep+pz*lat];
     };
     const gH=gates.hammer;
@@ -14816,7 +14847,8 @@ function maybeCallAlly(now){
     const ftrByGate={hammer:[],relief:[],cut:[]};
     const escByGate={hammer:[],relief:[],cut:[]};
     const slotN={hammer:0,relief:0,cut:0};
-    const wideOf=b=>b===2?220:b===1?160:110;
+    const sliceAlly=(RACE_DEFS[ally]||{}).fire==="slicer";
+    const wideOf=b=>sliceAlly?2400:b===2?220:b===1?160:110;
     for(let i2=0;i2<nSm;i2++){
       const u=i2/Math.max(1,nSm);
       const band=u<amix[0]?0:u<amix[0]+amix[1]?1:2;
@@ -14825,7 +14857,7 @@ function maybeCallAlly(now){
         :(u<0.50?"hammer":u<0.78?"relief":"cut");
       const g=gates[gn];
       const k=slotN[gn]++;
-      const p=slotAt(g,k,8,wideOf(band),110);
+      const p=slotAt(g,k,8,wideOf(band),sliceAlly?1900:110,sliceAlly?820:170);
       const id=mkA(0,p[0],p[1],p[2],2.4+g.dly+k*0.06,band,g.yaw);
       if(band===0)ftrByGate[gn].push(id);
       else if(band===1)escByGate[gn].push(id);
@@ -14920,15 +14952,16 @@ function simStep(now,dt){
     if(age<(s.shed||1.0)){
       /* shedding the jump: a fighter burns onto her heading. A crown
          is already on station — she does not lunge, and a leviathan
-         does not spin. */
-      if(s.hulls){
+         does not spin. Shadows scream out of the jump with the rest. */
+      const sliceJump=(RACE_DEFS[s.race]||{}).fire==="slicer";
+      if(s.hulls&&!sliceJump){
         s.yawV=0;s.roll=0;s.pitch=0;s.vy=0;
         if(isLeviathan(s)){s.v=0;continue;}
         s.v=Math.min(s.v||0,(s.spd||8)*0.16);
         s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
         continue;
       }
-      s.v=s.spd*(1.2+0.55*(s.hot||1))*(s.goK||1);
+      s.v=Math.max(s.v||0,(s.spdMax||s.spd)*(sliceJump?1.05:1.2+0.55*(s.hot||1))*(s.goK||1));
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
       continue;
     }
