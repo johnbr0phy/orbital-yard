@@ -12643,64 +12643,148 @@ function nameOf(t){
   if(t.hulls)return t.meta.klass||"the crown";
   return t.meta.klass||t.meta.desig||"a keel";
 }
-function craftThought(s,now){
-  /* one living sentence: nerve, duty, the squadron's order, the mark.
-     Rewritten every beat from the keel's own state — it changes as
-     the war does. */
+function sqAlive(sq){
+  if(!sq||!sq.mem)return 0;
+  let n=0;for(const id of sq.mem){const t=ships[id];if(t&&!t.dead)n++;}
+  return n;
+}
+function ownFlag(s){
+  let g=null;
+  for(const c of ships)
+    if(c.side===s.side&&c.hulls&&!c.dead&&c.vao&&(!g||c.slen>g.slen))g=c;
+  return g;
+}
+function warSky(s){
+  /* how the war looks from this keel — not a scoreboard, the feeling
+     in the cockpit as the counts turn */
+  if(winner!=null)return winner===s.side?"WON":"LOST";
+  const us=Math.max(0,counts[s.side]),them=Math.max(0,counts[1-s.side]);
+  const us0=Math.max(1,spawned[s.side]),them0=Math.max(1,spawned[1-s.side]);
+  const usR=us/us0,themR=them/them0;
+  if(us<=3||usR<0.12)return "LAST";
+  if(usR<0.55||themR-usR>0.15)return "THIN";
+  if(themR<0.55||usR-themR>0.15)return "PRESS";
+  return "EVEN";
+}
+function glue(a,b){
+  if(!a)return b;
+  const stem=a.toLowerCase().replace(/\.\s*$/,"").trim();
+  if(stem&&b.toLowerCase().indexOf(stem)>=0)return b;
+  return a+b;
+}
+function thoughtLine(s,now){
+  /* one living sentence: the sky, the nerve, the order, the mark.
+     Built from the keel's own state every beat — it turns with the war. */
   if(!s||s.dead)return "gone.";
   if(warT0===Infinity)return "waiting for the sky.";
   const age=now-warT0-(s.delay||0);
   if(age<0)return "in hyperspace. jump in "+Math.max(0,-age).toFixed(1)+"s.";
   if(s.grace||age<(s.shed||1))return "shedding the jump. burning onto her heading.";
+  if(winner!=null){
+    const k=s.kills||0;
+    if(winner===s.side){
+      if(s.hulls)return "the sky is ours. battery silent. the line holds.";
+      if(s.hero)return "the sky is ours."+(k?" "+k+" kill"+(k===1?"":"s")+".":"")+" guns cooling.";
+      return "the sky is ours. guns cooling.";
+    }
+    if(s.hulls)return "the sky is lost. the hull still speaks.";
+    return "the sky is lost. going down with the line.";
+  }
+  if(s.cloaked)return "silent. cloak holding. the first shot burns it away.";
   const mark=(s.mark>=0&&ships[s.mark]&&!ships[s.mark].dead)?ships[s.mark]:null;
   const mn=nameOf(mark);
   const hpR=s.hp/Math.max(1,s.hpMax);
   const sq=s.squad>=0?squads[s.squad]:null;
-  if(s.cloaked)return "silent. cloak holding. the first shot burns it away.";
+  const sky=warSky(s);
+  const sqN=sqAlive(sq);
+  const flag=ownFlag(s);
+  const flagN=nameOf(flag);
+  const ally=s.race!==sideRace[s.side];
+  const t=now-warT0;
+  let skyBit="";
+  if(sky==="LAST")skyBit="last of us. ";
+  else if(sky==="THIN")skyBit="we're thinning. ";
+  else if(sky==="PRESS")skyBit="they're breaking. ";
+  else if(ally)skyBit="answering the call. ";
+  else if(allyCalled[s.side]&&allyRace[s.side]>=0&&sky!=="PRESS")
+    skyBit="relief on the scope. ";
+  else if(t<10)skyBit="crossing the void. ";
+  else if(t<22)skyBit="the lines have met. ";
+  const pack=(!s.hulls&&!s.hero&&sqN>0&&sqN<=2)?"squadron down to "+sqN+". ":"";
+  const k=s.kills||0;
+  const kb=(s.hero&&k>=3)?" "+k+" kills.":"";
   if(s.mood==="FEAR"||s.mood==="FLEE"){
-    if(hpR<0.22)return "she's opened. running for the crown's skirt.";
-    return "nerve gone. breaking off. the crown is home.";
+    if(hpR<0.22)return glue(skyBit,flagN?"she's opened. running for "+flagN+"'s skirt.":"she's opened. running.");
+    return glue(skyBit,"nerve gone. breaking off"+(flagN?" for "+flagN:"")+".");
   }
   if(s.hulls){
-    if(hpR<0.4)return "the hull is opened. holding the range. battery still speaking.";
-    if((now-warT0-(s.delay||0))<4||!foeCache[1-s.side].length)
-      return "advancing the gun line. lances hunting the biggest thing she can see.";
-    if(mn)return "broadside on the line. "+mn+" is in the battery.";
-    return "walking the gun line. covering the fleet.";
+    if(sky==="LAST")return "last of the line. battery still speaking"+(mn?" on "+mn:"")+".";
+    if(hpR<0.4)return glue(skyBit,"the hull is opened. holding the range. battery still speaking.");
+    if(age<4||!foeCache[1-s.side].length)
+      return glue(skyBit,"advancing the gun line. lances hunting the biggest thing she can see.");
+    if(mn)return glue(skyBit,"broadside on the line. "+mn+" is in the battery.");
+    return glue(skyBit,"walking the gun line. covering the fleet.");
   }
   if(s.hero){
-    if(s.runP===1)return "break and extend. coming about"+(mn?" on "+mn:"")+".";
-    if(mn)return "hunting the screen. "+mn+" is marked.";
-    return "hunting. she wants a kill.";
+    if(s.runP===1)return glue(skyBit,"break and extend. coming about"+(mn?" on "+mn:"")+"."+kb);
+    if(mn)return glue(skyBit,"hunting the screen. "+mn+" is marked."+kb);
+    return glue(skyBit,"hunting. she wants a kill."+kb);
   }
   if(isGunboat(s)){
-    if(mn)return "patrolling the lane. guns on "+mn+". covering the screen.";
-    return "patrolling the lane. covering the fighters.";
+    if(sky==="LAST")return "the screen is gone. holding the lane"+(mn?". guns on "+mn+".":".");
+    if(mn)return glue(skyBit,"patrolling the lane. guns on "+mn+". covering the screen.");
+    return glue(skyBit,"patrolling the lane. covering the fighters.");
   }
   if(s.mood==="DEFEND"){
-    const g=sq&&sq.guard>=0?ships[sq.guard]:null;
+    const g=sq&&sq.guard>=0&&ships[sq.guard]&&!ships[sq.guard].dead?ships[sq.guard]:flag;
     const gn=nameOf(g);
-    return "screening"+(gn?" "+gn:" the crown")+". nothing gets through.";
+    if(sky==="LAST")return "last screen. nothing gets through"+(gn?" to "+gn:"")+".";
+    return glue(skyBit,"screening"+(gn?" "+gn:" the crown")+". nothing gets through.");
   }
   if(sq&&sq.tac){
     const tac=sq.tac;
-    if(sq.adv||tac==="ADVANCE")return "crossing the void in formation.";
-    if(sq.phase===0)return "squadron "+tac+". running to station.";
+    if(sq.adv||tac==="ADVANCE")
+      return t<12?pack+"crossing the void in formation.":glue(skyBit,pack+"holding formation on the approach.");
+    if(sq.phase===0)return glue(skyBit,pack+"squadron "+tac+". running to station.");
     if(tac==="CHARGE"){
-      if(s.runP===1)return "squadron CHARGE. break past"+(mn?" "+mn:" the mark")+".";
-      return "squadron CHARGE."+(mn?" opposite number "+mn+".":" boring in.");
+      if(s.runP===1)return glue(skyBit,pack+"squadron CHARGE. break past"+(mn?" "+mn:" the mark")+".");
+      return glue(skyBit,pack+"squadron CHARGE."+(mn?" opposite number "+mn+".":" boring in."));
     }
-    if(tac==="FLANK")return "squadron FLANK. coming in off their three.";
-    if(tac==="ENVELOP")return "squadron ENVELOP. over the top.";
-    if(tac==="SWARM")return "squadron SWARM."+(mn?" piling on "+mn+".":" the wounded.");
-    if(tac==="HUNT")return "squadron HUNT."+(mn?" "+mn+" is the crown-mark.":" the crown is the mark.");
-    if(tac==="SCREEN")return "squadron SCREEN. standing the skirt.";
-    if(tac==="FEIGN")return "squadron FEIGN. pretending weakness.";
-    if(tac==="MINE")return "squadron MINE. seeding the water.";
+    if(tac==="FLANK")return glue(skyBit,pack+"squadron FLANK. coming in off their three"+(mn?" on "+mn:"")+".");
+    if(tac==="ENVELOP")return glue(skyBit,pack+"squadron ENVELOP. over the top"+(mn?" of "+mn:"")+".");
+    if(tac==="SWARM")return glue(skyBit,pack+"squadron SWARM."+(mn?" piling on "+mn+".":" the wounded."));
+    if(tac==="HUNT")return glue(skyBit,pack+"squadron HUNT."+(mn?" "+mn+" is the crown-mark.":" the crown is the mark."));
+    if(tac==="SCREEN")return glue(skyBit,pack+"squadron SCREEN. standing the skirt.");
+    if(tac==="FEIGN")return glue(skyBit,pack+"squadron FEIGN. pretending weakness.");
+    if(tac==="MINE")return glue(skyBit,pack+"squadron MINE. seeding the water.");
   }
-  if(now-s.hurtT<1.6)return "hit. jinking."+(mn?" still on "+mn+".":"");
-  if(mn)return "guns on "+mn+".";
-  return "looking for a fight.";
+  if(now-(s.hurtT||0)<1.6)return glue(skyBit,pack+"hit. jinking."+(mn?" still on "+mn+".":""));
+  if(mn)return glue(skyBit,pack+"guns on "+mn+".");
+  return glue(skyBit,pack+"looking for a fight.");
+}
+function thoughtHard(s,now){
+  const age=now-warT0-(s.delay||0);
+  const jump=age<0?0:(s.grace||age<(s.shed||1))?1:2;
+  return [jump,s.mood||"",warSky(s),s.cloaked?1:0,winner==null?"":String(winner)].join("|");
+}
+function thoughtKey(s,now){
+  const mark=(s.mark>=0&&ships[s.mark]&&!ships[s.mark].dead)?s.mark:-1;
+  const sq=s.squad>=0?squads[s.squad]:null;
+  const hpR=s.hp/Math.max(1,s.hpMax);
+  const hpB=hpR<0.22?0:hpR<0.4?1:hpR<0.7?2:3;
+  return thoughtHard(s,now)+"|"+(sq&&sq.tac||"")+"|"+mark+"|"+hpB+"|"+(s.runP||0)+"|"+sqAlive(sq)+"|"+(s.kills||0);
+}
+function craftThought(s,now){
+  /* hold a line so it reads as a mind, not a telemetry dump — but the
+     hard turns (mood, the sky, jump, the war's end) rewrite at once */
+  if(!s||s.dead)return "gone.";
+  const line=thoughtLine(s,now);
+  const hard=thoughtHard(s,now);
+  const key=thoughtKey(s,now);
+  if(s.thLine&&s.thHard===hard&&now-(s.thAt||0)<1.6)return s.thLine;
+  if(s.thLine&&s.thKey===key&&now-(s.thAt||0)<3.0)return s.thLine;
+  s.thLine=line;s.thKey=key;s.thHard=hard;s.thAt=now;
+  return line;
 }
 function flash(x,y,z,t0,size,c){flashes.push({x,y,z,t0,size,c,seed:Math.random()});}
 function dustBurst(x,y,z,vx,vy,vz,n,t0){
@@ -13135,6 +13219,7 @@ function megaStep(s,now,dt){
   const bear=Math.atan2(dz,dx);
   let want;
   const inbound=(now-warT0-(s.delay||0))<4.0||!foes5.length;
+  s.mood=hurt?"DEFEND":mopup?"HUNT":"ATTACK";
   if(inbound)want=s.yaw;
   else if(dist>hold+90)want=bear;
   else if(dist<hold-90)want=bear+Math.PI;
@@ -13945,9 +14030,10 @@ function card(id){
   if(id==null||!ships[id]||!ships[id].meta){el.style.display="none";return;}
   const s=ships[id];
   el.style.display="block";
+  s.thAt=0;s.thLine=null;
   el.innerHTML="<h2>"+(s.hero?"★ ":"")+s.meta.desig+"</h2><div class=\"k\">"+s.meta.klass+
     (s.hero?" · HERO":"")+
-    (s.mood?" · "+s.mood:"")+
+    " · <span id=\"cmd\">"+(s.mood||"")+"</span>"+
     " · "+RACE_DEFS[s.race].name+(s.race!==sideRace[s.side]?" · ANSWERING "+SIDE_NAME[s.side]+"'S CALL":"")+
     "</div><div class=\"k\">"+Math.round(s.slen)+
     " m · INTEGRITY <span id=\"chp\">"+Math.ceil(s.hp)+"/"+s.hpMax+"</span>"+
@@ -14528,6 +14614,8 @@ function frame(nowMs){
       if(el)el.textContent=Math.ceil(ships[sel].hp)+"/"+ships[sel].hpMax;
       const kl=document.getElementById("ckl");
       if(kl)kl.textContent=String(ships[sel].kills||0);
+      const md=document.getElementById("cmd");
+      if(md)md.textContent=ships[sel].mood||"";
       const th=document.getElementById("cth");
       if(th)th.textContent=craftThought(ships[sel],now);
     }
