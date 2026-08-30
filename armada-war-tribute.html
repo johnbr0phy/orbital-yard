@@ -147,15 +147,6 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   #card .role{min-width:72px}
   #win{font-size:34px;top:26%}
   #win .sub{font-size:12px}
-  #pick{align-items:stretch;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
-  #pick .panel{width:calc(100vw - 16px);margin:8px auto;max-height:none}
-  #pick .race{padding:10px 10px;min-height:44px}
-  #pick .ally{display:flex;flex-direction:column;gap:6px;align-items:stretch}
-  #pick .ally select{margin-left:0;max-width:none;width:100%;min-height:40px}
-  #pick .go{flex-direction:column}
-  #pick .go button{width:100%;padding:14px 16px;min-height:44px}
-  #pick .sizes{justify-content:space-between}
-  #pick .sizes button{flex:1;min-height:40px}
 }
 /* ---- and where the short axis is really short, the readout goes ---- */
 @media(max-height:520px){
@@ -198,9 +189,31 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   color:var(--ink);background:transparent;border:1px solid var(--ink);border-radius:2px;
   padding:6px 10px;cursor:pointer;opacity:.6}
 #pick .sizes button.on{opacity:1;background:var(--ink);color:var(--bg)}
-@media(max-width:820px){#pick .cols{flex-direction:column;gap:12px}
-  #pick .panel{padding:14px 14px 12px;margin:12px 0}
-  #pick .race{padding:6px 8px}}
+/* after the base muster so these win the cascade: a phone sheet, not a
+   document of 44 px rows stacked twice as tall as the screen */
+@media(max-width:820px),(max-height:620px){
+  #pick{align-items:stretch;justify-content:stretch;padding:0;overflow:hidden}
+  #pick .panel{width:100%;max-width:none;height:100%;margin:0;border:0;
+    display:flex;flex-direction:column;min-height:0;overflow:hidden;
+    padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));
+    padding-top:calc(10px + env(safe-area-inset-top,0px))}
+  #pick h1{font-size:18px;letter-spacing:.10em;flex:0 0 auto}
+  #pick .sub{display:none}
+  #pick .cols{flex:1 1 auto;min-height:0;gap:10px;overflow:hidden}
+  #pick .col{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+  #pick .col h2{flex:0 0 auto;margin:0 0 4px;padding:2px 0;font-size:9.5px}
+  #pick .col h2 + div{flex:1 1 auto;min-height:0;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  #pick .race{padding:5px 6px;font-size:10px;line-height:1.25}
+  #pick .race .fr{display:none}
+  #pick .ally{flex:0 0 auto;margin-top:8px;display:flex;flex-direction:column;
+    gap:4px;align-items:stretch}
+  #pick .ally select{margin-left:0;max-width:none;width:100%;min-height:36px}
+  #pick .sizes{flex:0 0 auto;margin-top:10px;justify-content:space-between}
+  #pick .sizes button{flex:1;min-height:36px}
+  #pick .go{flex:0 0 auto;flex-direction:column;margin-top:10px;gap:8px}
+  #pick .go button{width:100%;padding:12px 14px;min-height:44px}
+}
 #win{position:fixed;left:0;right:0;top:32%;text-align:center;display:none;pointer-events:none;
   font-family:"Saira Condensed",sans-serif;font-weight:700;font-size:64px;letter-spacing:0.12em;
   color:var(--ink);text-shadow:0 0 34px var(--bg),0 0 8px var(--bg)}
