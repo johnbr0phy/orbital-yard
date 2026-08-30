@@ -12520,7 +12520,8 @@ function craftMood(s,now){
   if((RACE_DEFS[s.race]||{}).unique)return "HUNT";
   if(s.hero){
     const sq=s.squad>=0?squads[s.squad]:null;
-    if(sq&&(sq.adv||!heroDuelOpen(now)))return "ATTACK";
+    /* the other ace is off-limits until the lines meet. The screen is not. */
+    if(sq&&sq.adv)return "ATTACK";
     return "HUNT";
   }
   if(s.fearT&&now<s.fearT)return "FEAR";
@@ -12585,8 +12586,13 @@ function setShipPace(s){
     else dash=cruise*(1.12+0.12*hot);
   }
   if(s.hero&&!s.hulls){
-    cruise*=1.55;
-    dash=Math.max(dash*1.22,cruise*1.38);
+    /* a named keel flies like the fighters she leads, not like her
+       metre-count. A 258 m White Star that crawls at 25 m/s never kills. */
+    const aceL=Math.min(L,42);
+    const ace=cap*(0.12+0.78*40/(aceL+35))*pace;
+    cruise=Math.max(cruise*1.35,ace*1.72);
+    dash=Math.max(dash*1.22,cruise*1.52);
+    s.turn=Math.max(s.turn||0,2.45);
   }
   s.spd=cruise;
   s.spdMax=Math.max(dash,cruise*1.06);
@@ -13592,7 +13598,7 @@ function onWorkerMsg(e){
       }
       /* the middleweights carry seeker racks — and each race deals its
          own small-arms locker from the same seed bits */
-      s.msl=RD.msl!==false&&s.slen>48&&s.slen<130;
+      s.msl=RD.msl!==false&&(s.hero||(s.slen>48&&s.slen<130));
       const wr2=(s.seed>>>4)%100;
       s.wpn=0;
       for(const q of RD.wpn)if(wr2<q[0]){s.wpn=q[1];break;}
@@ -14425,8 +14431,9 @@ function raceFire(s,t,now,nx,ny,nz){
     return;
   }
   if(fx==="pulse"){
-    fireBeam(s,t,now,nx,ny,nz,0.85,s.slen>70);
-    s.cool=0.55+Math.random()*0.35;
+    const ace=!!s.hero;
+    fireBeam(s,t,now,nx,ny,nz,ace?2.35:0.85,ace||s.slen>70);
+    s.cool=(ace?0.38:0.55)+Math.random()*(ace?0.14:0.35);
     return;
   }
   if(fx==="phaser"||fx==="song"){
@@ -15387,7 +15394,7 @@ function simStep(now,dt){
       const skipHull=t=>t.hulls&&!(RACE_DEFS[t.race]||{}).unique;
       let nf=(s.fbT&&!s.fbT.dead&&s.fbT.vao&&!skipHull(s.fbT)&&!(s.fbT.hero&&!heroDuelOpen(now)))?s.fbT:null;
       if(!nf||now>(s.fbUntil||0)){
-        nf=pickFoe(s,1400,now);
+        nf=pickFoe(s,Math.max(1800,900+(s.slen||40)),now);
         if(!nf||skipHull(nf)||(nf.hero&&!heroDuelOpen(now))){
           let b=null,bs=1e18;
           const arr=foeCache[1-s.side];
@@ -15405,8 +15412,8 @@ function simStep(now,dt){
       }
       if(nf){
         prefer=nf.id;
-        const run=goalAttackRun(s,nf,now,Math.max(36,hullBerth(s)*0.8),
-          [0,(s.err?s.err[1]:0)*0.5,0],0.45);
+        const run=goalAttackRun(s,nf,now,Math.max(36,Math.min(64,hullBerth(s)*0.35)),
+          [0,(s.err?s.err[1]:0)*0.5,0],0.28);
         goal=run.goal;boost=Math.max(run.boost,1.45);
       }
     }
@@ -15593,7 +15600,7 @@ function simStep(now,dt){
     /* fire at the squadron's mark first, else whatever crosses the sights.
        Range is to the skin, so a White Star on a First One can actually shoot. */
     if(s.cool<=0){
-      let rng=s.hero?290:isGunboat(s)?340:s.slen>90?210:175;
+      let rng=s.hero?Math.max(640,(s.slen||40)*0.7+380):isGunboat(s)?340:s.slen>90?210:175;
       const fx0=(RACE_DEFS[s.race]||{}).fire;
       if(fx0==="slicer"||fx0==="cutter")rng=Math.max(rng,cutRange(s));
       const markT=prefer>=0?ships[prefer]:null;
