@@ -11764,7 +11764,7 @@ function collide(now){
       const q2=nx2*nx2+ny2*ny2+nz2*nz2;
       if(q2>=1||q2<1e-9)continue;
       const q=Math.sqrt(q2);
-      if(!s.hulls&&!s.grace&&q2<(s.side===c2.side?0.42:0.78)){
+      if(!s.hulls&&!s.grace&&!s.hero&&q2<(s.side===c2.side?0.42:0.78)){
         s.lastHit=c2.side!==s.side?c2.id:null;
         kill(s,now);
         break;
@@ -11795,7 +11795,7 @@ function collide(now){
         const d=Math.sqrt(d2),pen=rb-d,inv=1/d;
         /* a little keel that rams a much larger one comes apart */
         const small=s.slen<=o.slen?s:o,big=small===s?o:s;
-        if(!small.grace&&!small.hulls&&big.side!==small.side&&
+        if(!small.grace&&!small.hulls&&!small.hero&&big.side!==small.side&&
            big.slen>small.slen*2.15&&big.slen>64){
           small.lastHit=big.id;
           kill(small,now);
@@ -11853,9 +11853,8 @@ function collide(now){
             s.bumpT=now;s.hurtT=now;
             const bigBit=(o.rad||6)>Math.max(10,sr*0.7);
             flash((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,now,bigBit?16:7,2);
-            if(bigBit&&!s.hulls){kill(s,now);break;}
-            s.hp-=bigBit?1.2:0.22;
-            if(s.hp<=0)kill(s,now);
+            if(bigBit&&!s.hulls&&!s.hero){kill(s,now);break;}
+            wound(s,bigBit?1.2:0.22,null,now);
           }
         }
       }
@@ -11871,9 +11870,8 @@ function collide(now){
           s.bumpT=now;s.hurtT=now;
           const bigBit=o.rad>Math.max(10,sr*0.7);
           flash((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,now,bigBit?16:7,2);
-          if(bigBit&&!s.hulls){kill(s,now);break;}
-          s.hp-=bigBit?1.2:0.22;
-          if(s.hp<=0)kill(s,now);
+          if(bigBit&&!s.hulls&&!s.hero){kill(s,now);break;}
+          wound(s,bigBit?1.2:0.22,null,now);
         }
       }
     }
@@ -12230,11 +12228,38 @@ function looseSlot(s,now,br,slot){
     slot[2]+e[2]+Math.cos(now*wfz+wf)*br*0.52*hand
   ];
 }
+function heroDuelOpen(now){
+  /* the aces do not go for each other until the lines have met and
+     the screen has already paid — a truce so the opening is a war,
+     not two named keels vanishing in the first pass */
+  return (now||0)-warT0>32;
+}
+function wound(t,raw,from,now){
+  /* one door for every hit: a named keel soaks, and during the truce
+     the other ace's fire does not count */
+  if(!t||t.dead)return;
+  let k=raw;
+  const src=from==null?null:(typeof from==="object"?from:ships[from]);
+  if(t.hero){
+    if(src&&src.hero&&!heroDuelOpen(now))k=0;
+    else k*=0.40;
+  }
+  if(src&&src.hero)k*=3.4;
+  t.hp-=k;
+  t.hurtT=now;
+  if(src)t.lastHit=src.id;
+  if(t.hp<=0)kill(t,now);
+}
 function craftMood(s,now){
   /* a keel thinks for herself first: nerve, then duty, then the plan.
      The squadron's stratagem is an order she may refuse if she is
      opened or if a crown is dying under her wing. Heroes never break. */
-  if(s.hero||(RACE_DEFS[s.race]||{}).unique)return "HUNT";
+  if((RACE_DEFS[s.race]||{}).unique)return "HUNT";
+  if(s.hero){
+    const sq=s.squad>=0?squads[s.squad]:null;
+    if(sq&&(sq.adv||!heroDuelOpen(now)))return "ATTACK";
+    return "HUNT";
+  }
   if(s.fearT&&now<s.fearT)return "FEAR";
   const hpR=s.hp/Math.max(1,s.hpMax);
   if(hpR<=0.28&&now-s.hurtT<2.4){
@@ -12358,13 +12383,16 @@ function goalAttackRun(s,t,now,br,o,tight){
     t.y+(o?o[1]:0)+(s.err?s.err[1]:0)+Math.sin(now*(s.wfy||0.6)+(s.wf2||0))*18,
     t.z+pz*off],boost:1};
 }
-function pickFoe(s,rng){
-  /* a hero hunts the wounded and the small; anyone else takes the nearest */
+function pickFoe(s,rng,now){
+  /* a hero hunts the wounded and the small; anyone else takes the nearest.
+     Until the truce lifts, the other ace is not a mark. */
   let b=null,bs=1e18;
   const arr=foeCache[1-s.side];
   const r2=rng*rng;
+  const duel=heroDuelOpen(now!=null?now:performance.now()/1000);
   for(let i=0;i<arr.length;i++){
     const t=arr[i];
+    if(t.hero&&!duel)continue;
     const d=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
     if(d>r2)continue;
     let sc=d;
@@ -12915,13 +12943,35 @@ function startWar(fresh){
       squads.push({id:squads.length,side,race:sideRace[side],mem,tac:"ADVANCE",phase:0,adv:true,
         wp:[f0.x+(side?-1:1)*2000,f0.y,f0.z],tgt:-1,tgtSq:-1,until:Infinity,guard:-1,lead:mem[0]});
     }
-    /* one named hero per navy — proud of the screen, hunting on her own,
-       dropped with the screen she came in with, not a fixed mark */
-    const hx=M.ftr.length?M.ftr[(M.ftr.length*0.45)|0]:M.esc[0]||M.cap[0];
-    const hid=mk(side,0,[hx[0],hx[1]+90,hx[2],0.2],0,{hero:true});
-    ships[hid].squad=squads.length;
-    squads.push({id:squads.length,side,race:sideRace[side],mem:[hid],tac:"HUNT",
-      phase:1,adv:false,wp:null,tgt:-1,tgtSq:-1,until:0,guard:-1});
+    /* one named hero per navy: she LEADS a flight of the screen, parked
+       on her own flank so the two aces are not on a collision heading
+       the moment the jump sheds */
+    let wingSq=null;
+    for(let i=squads.length-1;i>=0;i--){
+      const q=squads[i];
+      if(q.side===side&&q.mem.length===SQN){wingSq=q;break;}
+    }
+    const w0=wingSq?ships[wingSq.mem[0]]:null;
+    const flank=side?1:-1;
+    const hx=w0
+      ?[w0.x,w0.y+flank*150,w0.z+flank*420,0.45]
+      :(M.ftr.length?M.ftr[(M.ftr.length*0.45)|0]:M.esc[0]||M.cap[0]);
+    const hid=mk(side,0,hx,0,{hero:true});
+    if(wingSq){
+      wingSq.mem.unshift(hid);
+      ships[hid].squad=wingSq.id;
+      wingSq.lead=hid;
+      wingSq.hero=true;
+      wingSq.tac="ADVANCE";
+      wingSq.phase=0;
+      wingSq.adv=true;
+      wingSq.wp=[ships[hid].x+(side?-1:1)*2400,ships[hid].y,ships[hid].z];
+    }else{
+      ships[hid].squad=squads.length;
+      squads.push({id:squads.length,side,race:sideRace[side],mem:[hid],tac:"ADVANCE",
+        phase:0,adv:true,wp:[ships[hid].x+(side?-1:1)*2400,ships[hid].y,ships[hid].z],
+        tgt:-1,tgtSq:-1,until:Infinity,guard:-1,lead:hid,hero:true});
+    }
     built[side]=3+nFtr+nCap+nEsc+1;
   }
   counts=[built[0],built[1]];
@@ -13094,10 +13144,9 @@ function onWorkerMsg(e){
     if(s.meta&&s.meta.klass==="BABYLON 5")
       s.hpMax=s.hp=Math.round(s.hpMax*1.35);
     if(s.hero&&!s.hulls){
-      /* a named keel: enough plate to stay on the screen, enough
-         legs to be seen leaving the pack behind — even a freighter
-         that is a hero outruns the fighters she grew up with */
-      s.hpMax=s.hp=Math.max(s.hpMax+16,Math.round(s.hpMax*4.6));
+      /* a named keel: enough plate to stay on the screen through the
+         opening, enough legs to be seen leaving the pack behind */
+      s.hpMax=s.hp=Math.max(s.hpMax+36,Math.round(s.hpMax*9.2));
       s.turn=Math.min(3.6,Math.max(s.turn*1.85,2.6));
     }
     setShipPace(s);
@@ -13268,7 +13317,23 @@ function squadThink(now){
       sq.phase=0;sq.tac="ADVANCE";
       const dx=sq.wp[0]-c[0],dz=sq.wp[2]-c[2];
       if(dx*dx+dz*dz>60)sq.hdg=Math.atan2(dz,dx);
-      if(gap<640||now-warT0>48){sq.adv=false;assignTactic(sq,now);}
+      if(gap<640||now-warT0>48){
+        sq.adv=false;
+        if(!sq.hero)assignTactic(sq,now);
+      }
+      continue;
+    }
+    /* a hero's flight stays a flight: after the crossing they hold
+       station on her, they do not peel off into a private dogfight */
+    if(sq.hero){
+      let h=-1;
+      for(const id of sq.mem){
+        const s=ships[id];if(s&&s.hero&&!s.dead){h=id;break;}
+      }
+      if(h>=0)sq.lead=h;
+      sq.tac="HUNT";sq.phase=1;sq.tgt=-1;sq.tgtSq=-1;sq.wp=null;
+      const lead=sqLeader(sq);
+      if(lead)sq.hdg=lead.yaw;
       continue;
     }
     const aimH=sqAim(sq),cH=centroidOf(sq.mem);
@@ -13452,9 +13517,13 @@ function thoughtLine(s,now){
     return glue(skyBit,"walking the gun line. covering the fleet.");
   }
   if(s.hero){
-    if(s.runP===1)return glue(skyBit,"break and extend. coming about"+(mn?" on "+mn:"")+"."+kb);
-    if(mn)return glue(skyBit,"hunting the screen. "+mn+" is marked."+kb);
-    return glue(skyBit,"hunting. she wants a kill."+kb);
+    const wingN=sq?sq.mem.filter(id=>ships[id]&&!ships[id].dead).length:1;
+    const wing=wingN>1?" flight of "+wingN+".":"";
+    if(!heroDuelOpen(now)||(sq&&sq.adv))
+      return glue(skyBit,"holding the flank with the flight."+wing+(heroDuelOpen(now)?"":" the other ace can wait."));
+    if(s.runP===1)return glue(skyBit,"break and extend. coming about"+(mn?" on "+mn:"")+"."+kb+wing);
+    if(mn)return glue(skyBit,"hunting the screen. "+mn+" is marked."+kb+wing);
+    return glue(skyBit,"hunting. she wants a kill."+kb+wing);
   }
   if(isGunboat(s)){
     if(sky==="LAST")return "the screen is gone. holding the lane"+(mn?". guns on "+mn+".":".");
@@ -13708,10 +13777,7 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
     disruptor:fx==="disruptor",
     col:fx==="laser"?[1.0,0.22,0.16]:null});
   flash(t.x,t.y,t.z,now,Math.max(heavy?16:9,t.slen*(heavy?0.5:0.3)),s.side);
-  t.hurtT=now;
-  t.lastHit=s.id;
-  t.hp-=(dmg||1)*(s.hero?3.4:1);
-  if(t.hp<=0)kill(t,now);
+  wound(t,dmg||1,s,now);
 }
 function raceFire(s,t,now,nx,ny,nz){
   /* each navy's own hand: not a random locker, the weapons she was
@@ -13720,7 +13786,6 @@ function raceFire(s,t,now,nx,ny,nz){
   let fx=RD.fire||"bolt";
   if(fx==="turbo"&&s.slen<38)fx="laser";   /* TIEs spit red, the wall spits green */
   s.lastFire=now;
-  const hm=s.hero?3.4:1;
   if(fx==="smart"||fx==="junk"){
     const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
     const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/300;
@@ -13776,9 +13841,8 @@ function raceFire(s,t,now,nx,ny,nz){
       if(along<0||along>380)continue;
       const ox2=px-along*dx3,oy2=py-along*dy3,oz2=pz-along*dz3;
       if(ox2*ox2+oy2*oy2+oz2*oz2>Math.max(64,o.rad*o.rad*0.36))continue;
-      o.hurtT=now;o.lastHit=s.id;o.hp-=1.6*hm;
+      wound(o,1.6,s,now);
       flash(o.x,o.y,o.z,now,Math.max(10,o.slen*0.35),2);
-      if(o.hp<=0)kill(o,now);
     }
     s.cool=2.8+Math.random()*1.1;
     return;
@@ -13824,9 +13888,8 @@ function foBolt(s,t,now,col,dmg,opt){
   const m=opt.m||nextMuzzle(s,now);
   beams.push({a:m,b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,
     fo:true,col:col,heavy:!!opt.heavy,ion:!!opt.ion,arc:!!opt.arc,rail:!!opt.rail});
-  t.hurtT=now;t.lastHit=s.id;t.hp-=dmg;
+  wound(t,dmg,s,now);
   flash(t.x,t.y,t.z,now,Math.max(18,t.slen*0.55),s.side);
-  if(t.hp<=0)kill(t,now);
   s.lastFire=now;s.mark=t.id;
 }
 function foSpeak(s,now,dt){
@@ -13866,8 +13929,7 @@ function foSpeak(s,now,dt){
       if(d>680)continue;
       const k=Math.min(42,28/d*18);
       o.x+=dx/d*k;o.y+=dy/d*k*0.4;o.z+=dz/d*k;
-      o.hurtT=now;o.lastHit=s.id;o.hp-=1.3;
-      if(o.hp<=0)kill(o,now);
+      wound(o,1.3,s,now);
     }
     s.foCool=5.6+Math.random()*1.5;
   }else if(w===2){
@@ -13878,9 +13940,8 @@ function foSpeak(s,now,dt){
       const o=arr[i];if(o.dead)continue;
       const d=Math.hypot(o.x-s.x,o.y-s.y,o.z-s.z);
       if(d>1100)continue;
-      o.hurtT=now;o.lastHit=s.id;o.hp-=3.8*(1-d/1100);
+      wound(o,3.8*(1-d/1100),s,now);
       flash(o.x,o.y,o.z,now,Math.max(12,o.slen*0.4),s.side);
-      if(o.hp<=0)kill(o,now);
     }
     s.lastFire=now;s.foCool=7.8+Math.random()*1.6;
   }else if(w===3){
@@ -13905,9 +13966,8 @@ function foSpeak(s,now,dt){
     const t=foPick(s,3000);if(!t)return;
     const m=nextMuzzle(s,now);
     beams.push({a:m,b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,fo:true,heavy:true,col:[0.72,1.0,0.55]});
-    t.hurtT=now;t.lastHit=s.id;t.hp-=14;
+    wound(t,14,s,now);
     flash(t.x,t.y,t.z,now,Math.max(40,t.slen*0.9),2);
-    if(t.hp<=0)kill(t,now);
     s.lastFire=now;s.mark=t.id;s.foCool=8.2+Math.random()*1.8;
   }else if(w===6){
     /* Vorlon discharge: two organic lightnings off the eyes */
@@ -14044,9 +14104,8 @@ function fireIonFrom(g,side,now){
   for(const t of foes){
     const dx=t.x-best.x,dy=t.y-best.y,dz=t.z-best.z;
     if(dx*dx+dy*dy+dz*dz>5625)continue;
-    t.hurtT=now;t.hp-=4;
+    wound(t,4,g,now);
     flash(t.x,t.y,t.z,now,Math.max(20,t.slen*0.6),2);
-    if(t.hp<=0)kill(t,now);
   }
 }
 function megaStep(s,now,dt){
@@ -14482,17 +14541,18 @@ function simStep(now,dt){
         if(nfD)prefer=nfD.id;
       }
     }
-    /* a named ace thinks for herself: she hunts the screen, not the
-       crown. The squadron's HUNT card is for the rest of the flight. */
-    if(!goal&&s.hero){
-      let nf=(s.fbT&&!s.fbT.dead&&s.fbT.vao&&!s.fbT.hulls)?s.fbT:null;
+    /* a named ace thinks for herself once the truce lifts: she hunts
+       the screen, not the crown, and not the other ace until then. */
+    if(!goal&&s.hero&&mood==="HUNT"){
+      let nf=(s.fbT&&!s.fbT.dead&&s.fbT.vao&&!s.fbT.hulls&&!(s.fbT.hero&&!heroDuelOpen(now)))?s.fbT:null;
       if(!nf||now>(s.fbUntil||0)){
-        nf=pickFoe(s,1400);
-        if(!nf||nf.hulls){
+        nf=pickFoe(s,1400,now);
+        if(!nf||nf.hulls||(nf.hero&&!heroDuelOpen(now))){
           let b=null,bs=1e18;
           const arr=foeCache[1-s.side];
+          const duel=heroDuelOpen(now);
           for(let i=0;i<arr.length;i++){
-            const t=arr[i];if(t.hulls)continue;
+            const t=arr[i];if(t.hulls||(t.hero&&!duel))continue;
             const d=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
             const sc=d*(0.2+0.8*(t.hp/Math.max(1,t.hpMax)))*(t.slen>70?1.7:0.5);
             if(sc<bs){bs=sc;b=t;}
@@ -14520,7 +14580,8 @@ function simStep(now,dt){
          as eight private dogfights is why nobody could see a squadron */
       const inForm=mood!=="FEAR"&&mood!=="FLEE"&&(
         sq.adv||sq.phase===0||sq.phase===2||sq.phase===3||sq.phase===4
-        ||(sq.phase===1&&merge>220));
+        ||(sq.phase===1&&merge>220)
+        ||(sq.hero&&!s.hero));
       if(inForm){
         s.form=true;
         if(sq.tgt>=0&&ships[sq.tgt]&&!ships[sq.tgt].dead)prefer=sq.tgt;
@@ -14593,10 +14654,24 @@ function simStep(now,dt){
       goal=gunboatGoal(s,now);
       boost=cover?1.05+0.12*(s.goK||1):0.72+0.14*(s.goK||1);
     }
+    if(s.hero&&!heroDuelOpen(now)){
+      const arrH=foeCache[1-s.side];
+      for(let iH=0;iH<arrH.length;iH++){
+        const tH=arrH[iH];if(!tH.hero||tH.dead)continue;
+        const dxH=s.x-tH.x,dyH=s.y-tH.y,dzH=s.z-tH.z;
+        const dH=Math.hypot(dxH,dyH,dzH);
+        if(dH>1100||dH<1)continue;
+        const ilH=1/dH,kH=Math.max(0,(1100-dH)/1100)*420;
+        if(!goal)goal=[s.x,s.y,s.z];
+        goal=[goal[0]+dxH*ilH*kH,goal[1]+dyH*ilH*kH*0.55+(s.side?90:-90),goal[2]+dzH*ilH*kH];
+        boost=Math.max(boost,1.28);
+      }
+    }
     if(!goal){
-      let nf=(s.fbT&&!s.fbT.dead&&s.fbT.vao)?s.fbT:null;
+      let nf=(s.fbT&&!s.fbT.dead&&s.fbT.vao&&!(s.fbT.hero&&!heroDuelOpen(now)))?s.fbT:null;
       if(!nf||now>(s.fbUntil||0)){
         nf=nearestFoeInRange(s,1e9);
+        if(nf&&nf.hero&&!heroDuelOpen(now))nf=pickFoe(s,1e9,now);
         s.fbT=nf;s.fbUntil=now+0.5+Math.random()*0.4;
       }
       if(nf){
@@ -14677,10 +14752,11 @@ function simStep(now,dt){
       let t=null;
       if(prefer>=0){
         const c2=ships[prefer];
-        if(!c2.dead&&!c2.grace&&
+        if(c2&&!c2.dead&&!c2.grace&&!(c2.hero&&!heroDuelOpen(now))&&
            (c2.x-s.x)*(c2.x-s.x)+(c2.y-s.y)*(c2.y-s.y)+(c2.z-s.z)*(c2.z-s.z)<rng*rng)t=c2;
       }
       if(!t)t=nearestFoeInRange(s,rng);
+      if(t&&t.hero&&!heroDuelOpen(now))t=pickFoe(s,rng,now);
       if(t){
         if(!(s.mark>=0))s.mark=t.id;
         const m=nextMuzzle(s,now);
@@ -14696,8 +14772,8 @@ function simStep(now,dt){
         if(d2c<32400){
           const cm=nextMuzzle(s,now);
           beams.push({a:cm,b:[ct.x,ct.y,ct.z],t0:now,side:s.side,race:s.race,cut:true});
-          ct.hurtT=now;ct.lastHit=s.id;ct.hp-=dt*1.9*(s.hero?3.4:1);
-          if(ct.hp<=0){kill(ct,now);s.cutUntil=0;}
+          wound(ct,dt*1.9,s,now);
+          if(ct.dead){s.cutUntil=0;}
         }else s.cutUntil=0;
       }else s.cutUntil=0;
     }
@@ -14732,8 +14808,7 @@ function simStep(now,dt){
           const v=foesA[kB];
           const e2=(v.x-pl.x)*(v.x-pl.x)+(v.y-pl.y)*(v.y-pl.y)+(v.z-pl.z)*(v.z-pl.z);
           if(e2>1600)continue;
-          v.hurtT=now;v.lastHit=pl.from;v.hp-=2*(pl.hero?3.4:1);
-          if(v.hp<=0)kill(v,now);
+          wound(v,2,pl.from,now);
         }
         break;
       }
@@ -14753,9 +14828,8 @@ function simStep(now,dt){
       if(adx>hr2||adx<-hr2)continue;
       const d2=adx*adx+(o.y-tr.y)*(o.y-tr.y)+(o.z-tr.z)*(o.z-tr.z);
       if(d2<hr2*hr2){
-        o.hurtT=now;o.lastHit=tr.from;o.hp-=0.3*(tr.hero?3.4:1);
+        wound(o,0.3,tr.from,now);
         flash(tr.x,tr.y,tr.z,now,8,tr.side);
-        if(o.hp<=0)kill(o,now);
         tr.dead=true;break;
       }
     }
@@ -14781,9 +14855,8 @@ function simStep(now,dt){
     const dx=t.x-ms.x,dy=t.y-ms.y,dz=t.z-ms.z;
     const d=Math.hypot(dx,dy,dz);
     if(d<Math.max(12,t.rad*0.6)){
-      t.hurtT=now;t.lastHit=ms.from;t.hp-=2*(ms.hero?3.4:1);
+      wound(t,2,ms.from,now);
       flash(t.x,t.y,t.z,now,Math.max(26,t.slen*0.4),2);
-      if(t.hp<=0)kill(t,now);
       ms.dead=true;continue;
     }
     const inv=1/d,k3=Math.min(1,dt*2.4);
@@ -14815,8 +14888,7 @@ function simStep(now,dt){
           if(v.side===mi.side||v.dead||!v.vao||v.grace)continue;
           const e2=(v.x-mi.x)*(v.x-mi.x)+(v.y-mi.y)*(v.y-mi.y)+(v.z-mi.z)*(v.z-mi.z);
           if(e2>4900)continue;
-          v.hurtT=now;v.hp-=2.2;
-          if(v.hp<=0)kill(v,now);
+          wound(v,2.2,null,now);
         }
         break;
       }
