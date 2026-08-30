@@ -239,8 +239,8 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   <label id="camCtl" title="Wheel, pinch and fly speed — lower is more precise">ZOOM
     <input id="camLook" type="range" min="1" max="7" value="2">
   </label>
-  <button id="bHero" title="Cycle heroes (H)">HEROES</button>
-  <button id="bNew">NEW WAR</button>
+  <button id="bRand" title="Deal two fleets at once (R)">RANDOM WAR</button>
+  <button id="bCurate" title="Pick the navies yourself (N)">CURATE WAR</button>
   <button id="bPal">PALETTE</button>
 </div>
 <div id="card"></div>
@@ -16375,6 +16375,7 @@ addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
   keys.add(k);
   if(k==="n")openPicker();
+  if(k==="r")randomWar();
   if(k==="p"){palI=(palI+1)%PAL.length;applyPal();}
   if(k==="h")followHero();
   if(k==="[")setCamGear(camGear-1);
@@ -16429,9 +16430,14 @@ function setCamGear(n){
   const el=document.getElementById("camLook");
   if(el){el.value=String(camGear);el.addEventListener("input",()=>setCamGear(+el.value));}
 })();
-document.getElementById("bNew").addEventListener("click",()=>openPicker());
+function randomWar(){
+  pickMain=[-1,-1];pickAlly=[-2,-2];buildPicker();
+  document.getElementById("pick").classList.remove("on");
+  toast("FLEETS INBOUND");startWar(true);
+}
+document.getElementById("bRand").addEventListener("click",()=>randomWar());
+document.getElementById("bCurate").addEventListener("click",()=>openPicker());
 document.getElementById("bPal").addEventListener("click",()=>{palI=(palI+1)%PAL.length;applyPal();});
-document.getElementById("bHero").addEventListener("click",()=>followHero());
 document.getElementById("card").addEventListener("click",e=>{
   if(e.target&&e.target.id==="cardX")select(null);
 });
@@ -16475,11 +16481,7 @@ document.getElementById("pickGo").addEventListener("click",()=>{
   document.getElementById("pick").classList.remove("on");
   toast("FLEETS INBOUND");startWar(true);
 });
-document.getElementById("pickFate").addEventListener("click",()=>{
-  pickMain=[-1,-1];pickAlly=[-2,-2];buildPicker();
-  document.getElementById("pick").classList.remove("on");
-  toast("FLEETS INBOUND");startWar(true);
-});
+document.getElementById("pickFate").addEventListener("click",()=>randomWar());
 function toast(t){
   const el=document.getElementById("toast");
   el.textContent=t;el.classList.add("on");
