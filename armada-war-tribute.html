@@ -13082,7 +13082,14 @@ function onWorkerMsg(e){
          the same battery every war because it grows from her seed */
       s.hpMax=s.hp=s.hulls*6;
       s.turn=0.12;
+    }
+    if(fightsAsCrown(s)){
+      if(!s.hulls){
+        s.hpMax=s.hp=Math.max(s.hpMax||1,36+Math.round(s.slen*0.05));
+        s.turn=Math.min(s.turn||0.2,0.18);
+      }
       const TR=mulberry32((s.seed^0xBEEF)>>>0);
+      const nGun=Math.max(4,s.hulls||6);
       s.turrets=[];
       if(s.guns&&s.guns.length){
         for(let i=0;i<s.guns.length;i++){
@@ -13090,8 +13097,8 @@ function onWorkerMsg(e){
           s.turrets.push({lx:g[0],ly:g[1],lz:g[2],cool:TR()*2.2});
         }
       }else{
-        for(let i=0;i<s.hulls;i++){
-          const u=s.hulls>1?i/(s.hulls-1):0.5;
+        for(let i=0;i<nGun;i++){
+          const u=nGun>1?i/(nGun-1):0.5;
           s.turrets.push({
             lx:(u-0.5)*s.slen*0.86,
             ly:(TR()-0.35)*s.slen*0.16,
@@ -13101,7 +13108,7 @@ function onWorkerMsg(e){
       }
       /* and the lances: one per five hulls, from the forward-most mounts */
       s.lances=[];
-      const nL=Math.max(1,Math.round(s.hulls/5));
+      const nL=Math.max(1,Math.round(nGun/5));
       const src=(s.guns&&s.guns.length)?s.guns.slice().sort((a,b)=>b[0]-a[0]):null;
       for(let i=0;i<nL;i++){
         if(src&&src[i])s.lances.push({lx:src[i][0],ly:src[i][1],lz:src[i][2],cool:3+TR()*4});
@@ -13391,7 +13398,32 @@ function nearestFoeInRange(s,rng){
 function isGunboat(s){
   /* frigates, corvettes, transports: they patrol and cover the screen,
      they do not dogfight and they do not nod on the spot */
-  return !s.hulls&&!s.hero&&(s.slen||0)>=80;
+  return !s.hulls&&!s.hero&&(s.slen||0)>=80&&(RACE_DEFS[s.race]||{}).fire!=="slicer";
+}
+function fightsAsCrown(s){
+  /* a Shadow battlecrab is 1,500 m of night even when the muster
+     filed her as a fighter — she still fights as a crab */
+  const RD=RACE_DEFS[s.race]||{};
+  return !!(s.hulls||(RD.fire==="slicer"&&(s.slen||0)>180&&!s.hero));
+}
+function cutRange(s){
+  /* the molecular slicer is a lance, not a knife: it speaks at a
+     crab's own length, not 180 m in front of a 1,500 m hull */
+  return Math.max(720,(s.slen||40)*0.78+360);
+}
+function cutHold(s,now,dt){
+  if(!(s.cutUntil&&now<s.cutUntil))return;
+  const ct=ships[s.cutTgt];
+  const cutR=cutRange(s);
+  if(ct&&!ct.dead&&ct.vao&&!ct.grace){
+    const d2c=(ct.x-s.x)*(ct.x-s.x)+(ct.y-s.y)*(ct.y-s.y)+(ct.z-s.z)*(ct.z-s.z);
+    if(d2c<cutR*cutR){
+      const cm=nextMuzzle(s,now);
+      beams.push({a:cm,b:[ct.x,ct.y,ct.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true});
+      wound(ct,dt*2.6,s,now);
+      if(ct.dead)s.cutUntil=0;
+    }else s.cutUntil=0;
+  }else s.cutUntil=0;
 }
 function pickPatrol(s,now){
   const fc=fleetCentroid(s.side),ec=fleetCentroid(1-s.side);
@@ -13508,12 +13540,13 @@ function thoughtLine(s,now){
     if(hpR<0.22)return glue(skyBit,flagN?"she's opened. running for "+flagN+"'s skirt.":"she's opened. running.");
     return glue(skyBit,"nerve gone. breaking off"+(flagN?" for "+flagN:"")+".");
   }
-  if(s.hulls){
+  if(s.hulls||(fightsAsCrown(s)&&!s.hero)){
+    const slice=(RACE_DEFS[s.race]||{}).fire==="slicer";
     if(sky==="LAST")return "last of the line. battery still speaking"+(mn?" on "+mn:"")+".";
     if(hpR<0.4)return glue(skyBit,"the hull is opened. holding the range. battery still speaking.");
     if(age<4||!foeCache[1-s.side].length)
       return glue(skyBit,"advancing the gun line. lances hunting the biggest thing she can see.");
-    if(mn)return glue(skyBit,"broadside on the line. "+mn+" is in the battery.");
+    if(mn)return glue(skyBit,(slice?"the slicer is on ":"broadside on the line. ")+mn+(slice?".":" is in the battery."));
     return glue(skyBit,"walking the gun line. covering the fleet.");
   }
   if(s.hero){
@@ -13803,8 +13836,15 @@ function raceFire(s,t,now,nx,ny,nz){
     return;
   }
   if(fx==="slicer"||fx==="cutter"){
+    const cutR=cutRange(s);
     const dd2=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
-    if(dd2<32400){s.cutUntil=now+(fx==="slicer"?1.6:1.15);s.cutTgt=t.id;s.cool=2.6+Math.random()*0.7;}
+    if(dd2<cutR*cutR){
+      s.cutUntil=now+(fx==="slicer"?2.4:1.4);
+      s.cutTgt=t.id;
+      s.cool=2.0+Math.random()*0.7;
+      beams.push({a:[nx,ny,nz],b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true});
+      wound(t,fx==="slicer"?2.6:1.7,s,now);
+    }else s.cool=0.28;
     return;
   }
   if(fx==="neutron"){
@@ -14178,10 +14218,12 @@ function megaStep(s,now,dt){
   /* the lances speak first: ranged far beyond the battery, they open the
      bombardment while the fleets are still closing, and each one hunts
      the biggest thing she can see */
-  for(const la of s.lances){
+  const slicer=RD.fire==="slicer"||RD.fire==="cutter";
+  for(const la of (s.lances||[])){
     la.cool-=dt*0.7;
     if(la.cool>0)continue;
-    const rng=(RACE_DEFS[s.race]||{}).unique?Math.max(2800,s.slen*1.15):760;
+    const rng=slicer?Math.max(1600,s.slen*1.05)
+      :((RACE_DEFS[s.race]||{}).unique?Math.max(2800,s.slen*1.15):760);
     let best=null,bs=-1;
     const foes7=foeCache[1-s.side];
     for(let k7=0;k7<foes7.length;k7++){
@@ -14194,16 +14236,23 @@ function megaStep(s,now,dt){
     if(best){
       s.mark=best.id;
       const m=gunWorld(s,[la.lx,la.ly,la.lz],now);
-      fireBeam(s,best,now,m[0],m[1],m[2],3,true);
-      la.cool=5.5+Math.random()*3;
+      if(slicer){
+        s.cutUntil=now+2.6;s.cutTgt=best.id;s.lastFire=now;
+        beams.push({a:m,b:[best.x,best.y,best.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true});
+        wound(best,4.5,s,now);
+        la.cool=3.2+Math.random()*1.8;
+      }else{
+        fireBeam(s,best,now,m[0],m[1],m[2],3,true);
+        la.cool=5.5+Math.random()*3;
+      }
     }
   }
   /* the battery never speaks as one thunderclap: every turret keeps her
      own clock, so fire rolls up and down the ship as stations come ready */
   let ready=false;
-  for(const tu of s.turrets){tu.cool-=dt*0.7;if(tu.cool<=0)ready=true;}
+  for(const tu of (s.turrets||[])){tu.cool-=dt*0.7;if(tu.cool<=0)ready=true;}
   if(ready){
-    const rng=260;
+    const rng=slicer?Math.max(900,s.slen*0.55):260;
     const tgts=[];
     const foes6=foeCache[1-s.side];
     for(let k6=0;k6<foes6.length;k6++){
@@ -14212,17 +14261,22 @@ function megaStep(s,now,dt){
       tgts.push(t);
     }
     if(tgts.length){
-      for(let ti=0;ti<s.turrets.length;ti++){
+      for(let ti=0;ti<(s.turrets||[]).length;ti++){
         const tu=s.turrets[ti];
         if(tu.cool>0)continue;
         const t=tgts[ti%tgts.length];
         if(t.dead)continue;
         const m=gunWorld(s,[tu.lx,tu.ly,tu.lz],now);
-        fireBeam(s,t,now,m[0],m[1],m[2]);
+        if(slicer){
+          s.cutUntil=now+1.8;s.cutTgt=t.id;s.lastFire=now;
+          beams.push({a:m,b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true});
+          wound(t,2.2,s,now);
+        }else fireBeam(s,t,now,m[0],m[1],m[2]);
         tu.cool=2.8+Math.random()*1.8;   /* the battery rolls, it does not mow */
       }
     }
   }
+  cutHold(s,now,dt);
 }
 /* ===================== the call for help =====================
    A fleet bled past half her strength swallows her pride and opens the
@@ -14496,7 +14550,7 @@ function simStep(now,dt){
       s.err[1]=Math.max(-36,Math.min(36,s.err[1]+Math.sin(now*0.09+(s.wf2||0))*dt*8));
       s.err[2]=Math.max(-58,Math.min(58,s.err[2]+Math.cos(now*0.11+(s.wf||1))*dt*11));
     }
-    if(s.hulls){megaStep(s,now,dt);continue;}
+    if(fightsAsCrown(s)){megaStep(s,now,dt);continue;}
     const sq=s.squad>=0?squads[s.squad]:null;
     s.form=false;
     let goal=null,boost=1,prefer=-1;
@@ -14748,7 +14802,9 @@ function simStep(now,dt){
     s.mark=prefer>=0?prefer:-1;
     /* fire at the squadron's mark first, else whatever crosses the sights */
     if(s.cool<=0){
-      const rng=s.hero?290:isGunboat(s)?340:s.slen>90?210:175;
+      let rng=s.hero?290:isGunboat(s)?340:s.slen>90?210:175;
+      const fx0=(RACE_DEFS[s.race]||{}).fire;
+      if(fx0==="slicer"||fx0==="cutter")rng=Math.max(rng,cutRange(s));
       let t=null;
       if(prefer>=0){
         const c2=ships[prefer];
@@ -14765,18 +14821,7 @@ function simStep(now,dt){
       }
     }
     /* the cutter's burn: a held beam that tracks and eats */
-    if(s.cutUntil&&now<s.cutUntil){
-      const ct=ships[s.cutTgt];
-      if(ct&&!ct.dead&&ct.vao&&!ct.grace){
-        const d2c=(ct.x-s.x)*(ct.x-s.x)+(ct.y-s.y)*(ct.y-s.y)+(ct.z-s.z)*(ct.z-s.z);
-        if(d2c<32400){
-          const cm=nextMuzzle(s,now);
-          beams.push({a:cm,b:[ct.x,ct.y,ct.z],t0:now,side:s.side,race:s.race,cut:true});
-          wound(ct,dt*1.9,s,now);
-          if(ct.dead){s.cutUntil=0;}
-        }else s.cutUntil=0;
-      }else s.cutUntil=0;
-    }
+    cutHold(s,now,dt);
     if(s.msl&&now>(s.mslT||0)&&missiles.length<140){
       const t2=(prefer>=0&&!ships[prefer].dead&&!ships[prefer].grace)?ships[prefer]
               :nearestFoeInRange(s,600);
@@ -14896,7 +14941,7 @@ function simStep(now,dt){
   }
   mines=mines.filter(mi=>!mi.dead);
   collide(now);
-  beams=beams.filter(b2=>now-b2.t0<(b2.ion?0.9:b2.rail?0.3:b2.arc?0.16:b2.spark?0.32:b2.phaser?0.44:b2.turbo?0.24:b2.pulse?0.16:b2.heavy?0.42:0.13));
+  beams=beams.filter(b2=>now-b2.t0<(b2.ion?0.9:b2.rail?0.3:b2.arc?0.16:b2.spark?0.32:b2.phaser?0.44:b2.cut?0.55:b2.turbo?0.24:b2.pulse?0.16:b2.heavy?0.42:0.13));
   if(flashes.length>1400)flashes.splice(0,flashes.length-1400);
 }
 /* ===================== stars ===================== */
@@ -15460,15 +15505,20 @@ function frame(nowMs){
         gl.uniform4f(BU.col,1.0,1.0,1.0,0.9);
         gl.drawArrays(gl.LINES,0,rarr.length/3);
       }
-      /* the cutter's held beam, bright and continuous */
+      /* the cutter's held beam: a fat violet lance, not a hairline */
       const carr=[];
-      for(const b of beams)if(b.race===rc&&b.cut)
+      for(const b of beams)if(b.race===rc&&b.cut){
         carr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
+        carr.push(b.a[0],b.a[1]+2.4,b.a[2],b.b[0],b.b[1]+2.4,b.b[2]);
+        carr.push(b.a[0],b.a[1]-2.4,b.a[2],b.b[0],b.b[1]-2.4,b.b[2]);
+        carr.push(b.a[0]+2.0,b.a[1],b.a[2],b.b[0]+2.0,b.b[1],b.b[2]);
+        carr.push(b.a[0]-2.0,b.a[1],b.a[2],b.b[0]-2.0,b.b[1],b.b[2]);
+      }
       if(carr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
         gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(carr),gl.STREAM_DRAW);
         const c=RACE_DEFS[rc].beam;
-        gl.uniform4f(BU.col,(c[0]+1)/2,(c[1]+1)/2,(c[2]+1)/2,0.85);
+        gl.uniform4f(BU.col,Math.min(1,(c[0]+1)*0.55),Math.min(1,(c[1]+0.4)*0.7),Math.min(1,(c[2]+1)*0.55),0.95);
         gl.drawArrays(gl.LINES,0,carr.length/3);
       }
       /* First One ink: each ancient her own colour, not a fleet dye */
