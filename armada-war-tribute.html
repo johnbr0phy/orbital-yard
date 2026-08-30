@@ -13804,6 +13804,8 @@ function onWorkerMsg(e){
       s.mines=!s.hero&&!unique&&wrN<((RD.doct&&RD.doct.MINE||0)*8+18);
     }
     s.hero=s.hero||!!rec.hero||!!(rec.meta&&rec.meta.hero);
+    if(s.heroTag&&s.meta&&s.meta.desig&&s.meta.desig.indexOf(s.heroTag)<0)
+      s.meta.desig=s.meta.desig+s.heroTag;
     if(s.hero||(RACE_DEFS[s.race]||{}).unique)s.wpn=0;
     if(s.meta&&s.meta.klass==="BABYLON 5")
       s.hpMax=s.hp=Math.round(s.hpMax*1.35);
@@ -15487,19 +15489,21 @@ function maybeCallAlly(now){
     }
 
     const jobs=[];
-    const mkA=(hulls,x,y,z,dly,band,yaw)=>{
+    const mkA=(hulls,x,y,z,dly,band,yaw,opt)=>{
       const id=ships.length;
       const seed=(Math.random()*4294967296)|0;
+      const hero=!!(opt&&opt.hero);
       ships.push({id,side,race:ally,seed,
         x,y,z,yaw,vy:0,v:0,yawV:0,roll:0,pitch:0,brUntil:0,
         hp:1,hpMax:1,cool:Math.random()*2,squad:-1,grace:true,band:hulls?null:band,kills:0,
         delay:(now-warT0)+dly+Math.random()*1.6,arr:false,hurtT:-9,dead:false,
-        vao:null,vbo:null,ibo:null,icount:0,meta:null,stn:null,
+        vao:null,vbo:null,ibo:null,icount:0,meta:null,stn:null,hero,
+        heroTag:opt&&opt.heroTag||null,
         hulls:hulls||0,slen:20,nose:9,spd:25,turn:1,wf:Math.random()*6.283});
       pilotSeed(ships[id],Math.random);
       ships[id].delay+=ships[id].lag;
       if(!hulls)ships[id].yaw+=(ships[id].crab||0)*0.45;
-      jobs.push({id,seed,f:ally,hulls:hulls||0,band:hulls?null:band});
+      jobs.push({id,seed,f:ally,hulls:hulls||0,band:hulls?null:band,hero});
       total++;counts[side]++;spawned[side]++;
       return id;
     };
@@ -15616,6 +15620,37 @@ function maybeCallAlly(now){
         gn==="cut"?"CHARGE":null,gn==="relief"?"CHARGE":null,"FLANK");
       dealGate(escByGate[gn],ESCN,
         gn==="cut"?"CHARGE":null,gn==="relief"?"CHARGE":null,"FLANK");
+    }
+    /* two named keels jump with the battalion — hammer and cut, each
+       leading a flight so the relief is not a faceless wall */
+    const heroGates=["hammer","cut"];
+    const heroTags=[" II"," III"];
+    for(let hi=0;hi<2;hi++){
+      const gn=heroGates[hi];
+      const g=gates[gn];
+      const cy=Math.cos(g.yaw),sy=Math.sin(g.yaw);
+      const px=-sy,pz=cy;
+      const flank=hi?1:-1;
+      const p=[g.p[0]+px*flank*280,clampY(g.p[1]+flank*120),g.p[2]+pz*flank*280];
+      const hid=mkA(0,p[0],p[1],p[2],1.5+g.dly,0,g.yaw,{hero:true,heroTag:heroTags[hi]});
+      const pool=ftrByGate[gn]||[];
+      let wing=null;
+      for(let qi=squads.length-1;qi>=0;qi--){
+        const q=squads[qi];
+        if(q.side!==side||q.hero||q.mem.length!==SQN)continue;
+        if(pool.length&&pool.indexOf(q.mem[0])<0&&pool.indexOf(q.mem[q.mem.length-1])<0)continue;
+        wing=q;break;
+      }
+      if(wing){
+        wing.mem.unshift(hid);
+        ships[hid].squad=wing.id;
+        wing.lead=hid;wing.hero=true;
+      }else{
+        ships[hid].squad=squads.length;
+        squads.push({id:squads.length,side,race:ally,mem:[hid],tac:"CHARGE",
+          phase:1,adv:false,wp:null,tgt:gn==="cut"?cutTgt:reliefTgt,tgtSq:-1,
+          until:now+14,guard:-1,lead:hid,hero:true});
+      }
     }
     }
     const nw=workers.length;
