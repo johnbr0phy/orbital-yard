@@ -3566,7 +3566,7 @@ var buildBorg=function(seed){
     klass="ASSIMILATED VESSEL ("+(raptor?"RAPTOR":"RING")+"-PATTERN)";
     desig="RECLAIMED HULL "+num(id,3)+uni;
     mf=0.22;cf=Math.round(L*5);
-  }else if(t<0.76){
+  }else if(t<0.88){
     /* THE DIAMOND: the one hull that refuses the cube. Cut facets,
        austere, near-bare — the Queen does not decorate. It does not
        shed greeble when it dies; it fractures clean through the stone. */
@@ -12130,8 +12130,8 @@ const RACE_DEFS=[
    wpn:[[30,1],[38,2],[52,3],[62,4],[68,5]],
    fire:"disruptor",boom:"cookoff",msl:true,
    doct:{CHARGE:5,FLANK:2,ENVELOP:1,SWARM:2,HUNT:3,SCREEN:1,FEIGN:4,MINE:1}},
-  {name:"THE BORG COLLECTIVE",fr:"star trek",mix:[0.06,0.34,0.60],form:"lattice",fleetK:0.3,hold:350,beam:[0.40,1.00,0.35],ion:[0.50,1.00,0.45],anim:0,tone:0.78,dust:0.2,
-   hpdiv:11,spdK:1200,spdCap:56,turnK:14,
+  {name:"THE BORG COLLECTIVE",fr:"star trek",mix:[0.22,0.66,0.12],form:"lattice",fleetK:0.28,hold:350,beam:[0.40,1.00,0.35],ion:[0.50,1.00,0.45],anim:0,tone:0.78,dust:0.2,
+   hpdiv:11,spdK:1200,spdCap:96,turnK:22,
    wpn:[[5,1],[35,2],[40,3],[48,4],[85,5]],
    fire:"cutter",boom:"cleave",msl:false,
    doct:{CHARGE:4,FLANK:1,ENVELOP:5,SWARM:1,HUNT:3,SCREEN:1,FEIGN:0,MINE:1}},
@@ -12371,6 +12371,11 @@ function setShipPace(s){
     cruise=Math.max(102,Math.min(176,cruise));
     dash=cruise*(1.58+0.38*hot);
     s.turn=Math.max(s.turn||0,1.05);
+  }else if(RD.fire==="cutter"&&!s.hulls){
+    /* Borg spheres and probes: the cube's errands, not parked geometry */
+    cruise=Math.max(52,Math.min(96,(88-L*0.04)*pace*(0.85+0.32*hot)));
+    dash=cruise*(1.50+0.30*hot);
+    s.turn=Math.max(s.turn||0,0.88);
   }else if(RD.unique&&s.hulls){
     cruise=Math.min(26,Math.max(11,2200/Math.sqrt(L)))*pace;
     dash=cruise*(1.18+0.22*hot);
@@ -13331,6 +13336,7 @@ function onWorkerMsg(e){
       s.hpMax=s.hp=Math.max(s.hpMax+36,Math.round(s.hpMax*9.2));
       s.turn=Math.min(3.6,Math.max(s.turn*1.85,2.6));
     }
+    if((RACE_DEFS[s.race]||{}).fire==="cutter"&&s.hulls)borgArm(s);
     setShipPace(s);
     forged++;
   }
@@ -13585,7 +13591,38 @@ function nearestFoeInRange(s,rng){
 function isGunboat(s){
   /* frigates, corvettes, transports: they patrol and cover the screen,
      they do not dogfight and they do not nod on the spot */
-  return !s.hulls&&!s.hero&&(s.slen||0)>=80&&(RACE_DEFS[s.race]||{}).fire!=="slicer";
+  const fx=(RACE_DEFS[s.race]||{}).fire;
+  return !s.hulls&&!s.hero&&(s.slen||0)>=80&&fx!=="slicer"&&fx!=="cutter";
+}
+function borgArm(s){
+  /* the cube is a battery: every face speaks. Do not leave her with
+     the handful of tubes the forge happened to harvest. */
+  const L=s.slen||400;
+  const H=(s.exY||L*0.42)*2,B=(s.exZ||L*0.42)*2;
+  const TR=mulberry32((s.seed^0xB00)>>>0);
+  const n=s.hulls>=50?42:s.hulls>=10?18:10;
+  s.turrets=s.turrets||[];
+  while(s.turrets.length<n){
+    const face=s.turrets.length%6,u=TR()*0.72-0.36,v=TR()*0.72-0.36;
+    let lx,ly,lz;
+    if(face===0){lx=L*0.48;ly=u*H;lz=v*B;}
+    else if(face===1){lx=-L*0.46;ly=u*H;lz=v*B;}
+    else if(face===2){lx=u*L;ly=H*0.48;lz=v*B;}
+    else if(face===3){lx=u*L;ly=-H*0.48;lz=v*B;}
+    else if(face===4){lx=u*L;ly=v*H;lz=B*0.48;}
+    else{lx=u*L;ly=v*H;lz=-B*0.48;}
+    s.turrets.push({lx,ly,lz,cool:TR()*0.35});
+  }
+  s.lances=s.lances||[];
+  const nL=s.hulls>=50?14:6;
+  while(s.lances.length<nL){
+    const i=s.lances.length;
+    s.lances.push({
+      lx:L*((i%2)?0.47:-0.42),
+      ly:((i%5)-2)*H*0.14,
+      lz:((i%3)-1)*B*0.18,
+      cool:TR()*0.6});
+  }
 }
 function fightsAsCrown(s){
   /* a Shadow battlecrab is 1,500 m of night even when the muster
@@ -14511,6 +14548,7 @@ function megaStep(s,now,dt){
   const hurt=s.hp<s.hpMax*0.4;
   const RD=RACE_DEFS[s.race]||RACE_DEFS[0];
   const slicer=RD.fire==="slicer"||RD.fire==="cutter";
+  const borgGun=RD.fire==="cutter"&&!!s.hulls;
   if(slicer){
     /* they do not hold a gun line. Each crab picks a mark and RUNS —
        a scream, not a wall. The swarm opens because no two keels
@@ -14631,7 +14669,8 @@ function megaStep(s,now,dt){
   for(const la of (s.lances||[])){
     la.cool-=dt*0.7;
     if(la.cool>0)continue;
-    const rng=slicer?Math.max(1600,s.slen*1.05)
+    const rng=borgGun?Math.max(1800,s.slen*0.85)
+      :slicer?Math.max(1600,s.slen*1.05)
       :((RACE_DEFS[s.race]||{}).unique?Math.max(2800,s.slen*1.15):760);
     let best=null,bs=-1;
     const foes7=foeCache[1-s.side];
@@ -14645,7 +14684,10 @@ function megaStep(s,now,dt){
     if(best){
       s.mark=best.id;
       const m=gunWorld(s,[la.lx,la.ly,la.lz],now);
-      if(slicer){
+      if(borgGun){
+        fireBeam(s,best,now,m[0],m[1],m[2],2.4,true);
+        la.cool=0.45+Math.random()*0.35;
+      }else if(slicer){
         s.cutUntil=now+2.6;s.cutTgt=best.id;s.lastFire=now;
         beams.push({a:m,b:aimSkin(s,best),t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
         wound(best,4.5,s,now);
@@ -14661,7 +14703,7 @@ function megaStep(s,now,dt){
   let ready=false;
   for(const tu of (s.turrets||[])){tu.cool-=dt*0.7;if(tu.cool<=0)ready=true;}
   if(ready){
-    const rng=slicer?Math.max(900,s.slen*0.55):260;
+    const rng=borgGun?Math.max(1400,s.slen*0.72):slicer?Math.max(900,s.slen*0.55):260;
     const tgts=[];
     const foes6=foeCache[1-s.side];
     for(let k6=0;k6<foes6.length;k6++){
@@ -14676,12 +14718,18 @@ function megaStep(s,now,dt){
         const t=tgts[ti%tgts.length];
         if(t.dead)continue;
         const m=gunWorld(s,[tu.lx,tu.ly,tu.lz],now);
-        if(slicer){
+        if(borgGun){
+          fireBeam(s,t,now,m[0],m[1],m[2],1.15,true);
+          tu.cool=0.14+Math.random()*0.20;
+        }else if(slicer){
           s.cutUntil=now+1.8;s.cutTgt=t.id;s.lastFire=now;
           beams.push({a:m,b:aimSkin(s,t),t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
           wound(t,2.2,s,now);
-        }else fireBeam(s,t,now,m[0],m[1],m[2]);
-        tu.cool=2.8+Math.random()*1.8;   /* the battery rolls, it does not mow */
+          tu.cool=2.8+Math.random()*1.8;
+        }else{
+          fireBeam(s,t,now,m[0],m[1],m[2]);
+          tu.cool=2.8+Math.random()*1.8;
+        }
       }
     }
   }
