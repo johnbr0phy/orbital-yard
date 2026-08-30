@@ -14145,9 +14145,13 @@ function cutHold(s,now,dt){
   const cutR=holdCutRange(s);
   if(ct&&!ct.dead&&ct.vao&&!ct.grace){
     if(gapTo(s,ct)<cutR){
-      const cm=nextMuzzle(s,now);
+      const muz=fireLocal(s);
+      const cm=gunWorld(s,muz,now);
       const hit=aimSkin(s,ct);
-      beams.push({a:cm,b:hit,t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
+      for(const e of fanHits(cm,hit,3,0.018)){
+        beams.push({a:[cm[0],cm[1],cm[2]],b:e,t0:now,side:s.side,race:s.race,
+          from:s.id,muz,cut:true,heavy:true,wid:beamWid(s,true)});
+      }
       wound(ct,dt*(s.wpn===5?1.9:2.6),s,now);
       if(ct.dead)s.cutUntil=0;
     }else s.cutUntil=0;
@@ -14538,47 +14542,86 @@ function gunWorld(s,g,now){
   return [s.x+cy*x-sy*z,s.y+y,s.z+sy*x+cy*z];
 }
 function nextMuzzle(s,now){
-  const gs=s.guns;
-  if(!gs||!gs.length){
-    const cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
-    return [s.x+cy*s.nose,s.y,s.z+sy*s.nose];
-  }
-  s.gunI=((s.gunI||0)+1)%gs.length;
-  return gunWorld(s,gs[s.gunI],now);
+  return fireWorld(s,now);
 }
-function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
+function fireLocal(s){
+  /* one emitter per keel. Lasers do not hop from cheek to spine. */
+  if(s.fireL)return s.fireL;
+  const gs=s.guns;
+  if(gs&&gs.length){
+    let best=gs[0];
+    for(let i=1;i<gs.length;i++)if(gs[i][0]>best[0])best=gs[i];
+    s.fireL=[best[0],best[1],best[2]];
+  }else s.fireL=[s.nose||(s.slen||20)*0.48,0,0];
+  return s.fireL;
+}
+function fireWorld(s,now){
+  return gunWorld(s,fireLocal(s),now);
+}
+function fanHits(o,hit,n,spread){
+  const dx=hit[0]-o[0],dy=hit[1]-o[1],dz=hit[2]-o[2];
+  const dist=Math.max(12,Math.hypot(dx,dy,dz));
+  const dir=V.norm([dx,dy,dz]);
+  const [u,v]=basis(dir);
+  const out=[];n=Math.max(1,n||3);
+  for(let i=0;i<n;i++){
+    const k=n<=1?0:i-(n-1)*0.5;
+    const ang=k*spread,wob=(Math.random()-0.5)*spread*0.28;
+    const d=V.norm([
+      dir[0]+u[0]*Math.sin(ang+wob)+v[0]*Math.sin(ang*0.42),
+      dir[1]+u[1]*Math.sin(ang+wob)+v[1]*Math.sin(ang*0.42),
+      dir[2]+u[2]*Math.sin(ang+wob)+v[2]*Math.sin(ang*0.42)
+    ]);
+    const L=dist*(0.97+Math.random()*0.06);
+    out.push([o[0]+d[0]*L,o[1]+d[1]*L,o[2]+d[2]*L]);
+  }
+  return out;
+}
+function pinBeams(now){
+  /* the muzzle is a mount on the hull, not a point left in the dark */
+  for(const b of beams){
+    if(!b.muz||b.from==null||b.spark)continue;
+    const s=ships[b.from];
+    if(!s||s.dead||!s.vao)continue;
+    b.a=gunWorld(s,b.muz,now);
+  }
+}
+function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
   s.lastFire=now;
+  muz=muz||fireLocal(s);
+  const o=gunWorld(s,muz,now);
   const hit=aimSkin(s,t);
-  const ddx=hit[0]-ox,ddy=hit[1]-oy,ddz=hit[2]-oz;
+  const ddx=hit[0]-o[0],ddy=hit[1]-o[1],ddz=hit[2]-o[2];
   const dist=Math.hypot(ddx,ddy,ddz);
   let p=0.95-(t.spd/70)*0.5-dist*0.0006;
   if(now-t.hurtT<1.6)p-=0.12;              /* she is jinking */
   if(t.hulls)p=0.97;                       /* you do not miss a crown */
   if(s.hero)p=Math.max(p,0.88);            /* an ace does not spray the dark */
   const jit=Math.max(8,Math.min(42,t.slen*0.03));
-  if(Math.random()>Math.max(0.25,p)){
-    /* a clean miss: the bolt streaks past her and dies in the dark */
-    const mo=Math.max(14,jit*2.2);
-    beams.push({a:[ox,oy,oz],
-      b:[hit[0]+(Math.random()-0.5)*mo*2.4,
-         hit[1]+(Math.random()-0.5)*mo*1.2,
-         hit[2]+(Math.random()-0.5)*mo*2.4],t0:now,side:s.side,race:s.race,heavy:!!heavy,
-      wid:beamWid(s,heavy)});
-    return;
-  }
+  const miss=Math.random()>Math.max(0.25,p);
   let fx=(RACE_DEFS[s.race]||{}).fire;
   if(fx==="turbo"&&s.slen<38)fx="laser";
   const wid=beamWid(s,heavy);
-  beams.push({a:[ox,oy,oz],
-    b:[hit[0]+(Math.random()-0.5)*jit,
-       hit[1]+(Math.random()-0.5)*jit*0.5,
-       hit[2]+(Math.random()-0.5)*jit],t0:now,side:s.side,race:s.race,heavy:!!heavy,
-    phaser:fx==="phaser"||fx==="song",
-    turbo:fx==="turbo"||!!heavy,
-    pulse:fx==="pulse",
-    disruptor:fx==="disruptor",
-    wid,
-    col:fx==="laser"?[1.0,0.22,0.16]:null});
+  const nFan=heavy||s.hulls?4:3;
+  const spread=heavy?0.020:0.032;
+  let aim=hit;
+  if(miss){
+    const mo=Math.max(14,jit*2.2);
+    aim=[hit[0]+(Math.random()-0.5)*mo*2.4,
+         hit[1]+(Math.random()-0.5)*mo*1.2,
+         hit[2]+(Math.random()-0.5)*mo*2.4];
+  }
+  const ends=fanHits(o,aim,nFan,spread);
+  for(const e of ends){
+    beams.push({a:[o[0],o[1],o[2]],b:e,t0:now,side:s.side,race:s.race,
+      from:s.id,muz,heavy:!!heavy,wid,
+      phaser:fx==="phaser"||fx==="song",
+      turbo:fx==="turbo"||!!heavy,
+      pulse:fx==="pulse",
+      disruptor:fx==="disruptor",
+      col:fx==="laser"?[1.0,0.22,0.16]:null});
+  }
+  if(miss)return;
   flash(hit[0],hit[1],hit[2],now,Math.max(heavy?48:12,Math.min(90,t.slen*(heavy?0.08:0.04))),heavy?3:s.side);
   wound(t,dmg||1,s,now);
   if(heavy){
@@ -14586,11 +14629,11 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
     const s2=splash*splash;
     const foes=foeCache[1-s.side];
     for(let i=0;i<foes.length;i++){
-      const o=foes[i];if(o===t||o.hulls||o.dead)continue;
-      const dx=o.x-hit[0],dy=o.y-hit[1],dz=o.z-hit[2];
+      const o2=foes[i];if(o2===t||o2.hulls||o2.dead)continue;
+      const dx=o2.x-hit[0],dy=o2.y-hit[1],dz=o2.z-hit[2];
       if(dx*dx+dy*dy+dz*dz>s2)continue;
-      wound(o,2.4,s,now);
-      flash(o.x,o.y,o.z,now,Math.max(18,o.slen*0.7),2);
+      wound(o2,2.4,s,now);
+      flash(o2.x,o2.y,o2.z,now,Math.max(18,o2.slen*0.7),2);
     }
   }
 }
@@ -14601,7 +14644,13 @@ function raceFire(s,t,now,nx,ny,nz){
   const RD=RACE_DEFS[s.race]||{};
   const w=s.wpn||0;
   s.lastFire=now;
+  const muz0=fireLocal(s);
+  const o0=gunWorld(s,muz0,now);
+  nx=o0[0];ny=o0[1];nz=o0[2];
   if(w===1){
+    const muz=fireLocal(s);
+    const o=gunWorld(s,muz,now);
+    nx=o[0];ny=o[1];nz=o[2];
     const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
     const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/300;
     for(let b3=0;b3<9;b3++){
@@ -14609,7 +14658,7 @@ function raceFire(s,t,now,nx,ny,nz){
       const ay3=t.y-ny+(Math.random()-0.5)*t.slen*0.35;
       const az3=t.z+tvz*lead-nz+(Math.random()-0.5)*t.slen*0.6;
       const il=1/Math.max(1,Math.hypot(ax3,ay3,az3));
-      tracers.push({x:nx-ax3*il*b3*14,y:ny-ay3*il*b3*14,z:nz-az3*il*b3*14,
+      tracers.push({x:nx,y:ny,z:nz,
         vx:ax3*il*300,vy:ay3*il*300,vz:az3*il*300,
         t0:now,side:s.side,race:s.race,dead:false,from:s.id,hero:!!s.hero});
     }
@@ -14618,8 +14667,11 @@ function raceFire(s,t,now,nx,ny,nz){
   }
   if(w===2){
     if(gapTo(s,t)<200){
+      const muz=fireLocal(s);
+      const o=gunWorld(s,muz,now);
+      nx=o[0];ny=o[1];nz=o[2];
       const hit=aimSkin(s,t);
-      beams.push({a:[nx,ny,nz],b:hit,t0:now,side:s.side,race:s.race,arc:true});
+      beams.push({a:[nx,ny,nz],b:hit,t0:now,side:s.side,race:s.race,arc:true,from:s.id,muz});
       wound(t,1,s,now);
       let c3=null,cb=8100;
       const foes8=foeCache[1-s.side];
@@ -14649,11 +14701,14 @@ function raceFire(s,t,now,nx,ny,nz){
     return;
   }
   if(w===4){
+    const muz=fireLocal(s);
+    const o=gunWorld(s,muz,now);
+    nx=o[0];ny=o[1];nz=o[2];
     const ax3=t.x-nx,ay3=t.y-ny,az3=t.z-nz;
     const rl2=Math.max(1,Math.hypot(ax3,ay3,az3));
     const dx3=ax3/rl2,dy3=ay3/rl2,dz3=az3/rl2;
     beams.push({a:[nx,ny,nz],b:[nx+dx3*420,ny+dy3*420,nz+dz3*420],
-      t0:now,side:s.side,race:s.race,rail:true});
+      t0:now,side:s.side,race:s.race,rail:true,from:s.id,muz});
     const foes9=foeCache[1-s.side];
     for(let k9=0;k9<foes9.length;k9++){
       const o=foes9[k9];
@@ -14678,8 +14733,11 @@ function raceFire(s,t,now,nx,ny,nz){
   }
   if(w===6){
     if(gapTo(s,t)<280){
+      const muz=fireLocal(s);
+      const o=gunWorld(s,muz,now);
+      nx=o[0];ny=o[1];nz=o[2];
       const hit=aimSkin(s,t);
-      beams.push({a:[nx,ny,nz],b:hit,t0:now,side:s.side,race:s.race,stun:true,wid:6});
+      beams.push({a:[nx,ny,nz],b:hit,t0:now,side:s.side,race:s.race,stun:true,wid:6,from:s.id,muz});
       t.stunT=Math.max(t.stunT||0,now+2.6);
       wound(t,0.35,s,now);
       flash(hit[0],hit[1],hit[2],now,Math.max(14,t.slen*0.18),4);
@@ -14698,7 +14756,7 @@ function raceFire(s,t,now,nx,ny,nz){
       const ay3=t.y-ny+(Math.random()-0.5)*t.slen*0.35;
       const az3=t.z+tvz*lead-nz+(Math.random()-0.5)*t.slen*0.6;
       const il=1/Math.max(1,Math.hypot(ax3,ay3,az3));
-      tracers.push({x:nx-ax3*il*b3*12,y:ny-ay3*il*b3*12,z:nz-az3*il*b3*12,
+      tracers.push({x:nx,y:ny,z:nz,
         vx:ax3*il*(fx==="smart"?340:280),vy:ay3*il*(fx==="smart"?340:280),vz:az3*il*(fx==="smart"?340:280),
         t0:now,side:s.side,race:s.race,dead:false,from:s.id,hero:!!s.hero});
     }
@@ -14712,7 +14770,10 @@ function raceFire(s,t,now,nx,ny,nz){
       s.cutTgt=t.id;
       s.cool=2.0+Math.random()*0.7;
       const hit=aimSkin(s,t);
-      beams.push({a:[nx,ny,nz],b:hit,t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
+      for(const e of fanHits([nx,ny,nz],hit,3,0.018)){
+        beams.push({a:[nx,ny,nz],b:e,t0:now,side:s.side,race:s.race,cut:true,heavy:true,
+          wid:beamWid(s,true),from:s.id,muz:muz0});
+      }
       wound(t,fx==="slicer"?2.6:1.7,s,now);
     }else s.cool=0.28;
     return;
@@ -14741,7 +14802,7 @@ function raceFire(s,t,now,nx,ny,nz){
     const rl2=Math.max(1,Math.hypot(ax3,ay3,az3));
     const dx3=ax3/rl2,dy3=ay3/rl2,dz3=az3/rl2;
     beams.push({a:[nx,ny,nz],b:[nx+dx3*380,ny+dy3*380,nz+dz3*380],
-      t0:now,side:s.side,race:s.race,rail:true});
+      t0:now,side:s.side,race:s.race,rail:true,from:s.id,muz:muz0});
     const foes9=foeCache[1-s.side];
     for(let k9=0;k9<foes9.length;k9++){
       const o=foes9[k9];
@@ -15130,18 +15191,19 @@ function fireIonFrom(g,side,now){
     if(n>bs){bs=n;best=t;}
   }
   if(!best)return;
-  let mz;
+  let mz,muzG;
   if(g.guns&&g.guns.length){
     let bestG=g.guns[0],by=-1e9;
     for(const gn of g.guns)if(gn[1]>by){by=gn[1];bestG=gn;}
+    muzG=bestG;
     mz=gunWorld(g,bestG,now);
   }else{
-    const cy=Math.cos(g.yaw),sy=Math.sin(g.yaw);
-    mz=[g.x+cy*g.slen*0.48,g.y+g.slen*0.02,g.z+sy*g.slen*0.48];
+    muzG=fireLocal(g);
+    mz=gunWorld(g,muzG,now);
   }
   const blast=Math.max(340,Math.min(820,g.slen*0.048));
   const wid=Math.max(28,Math.min(110,g.slen*0.008));
-  beams.push({a:mz,b:[best.x,best.y,best.z],t0:now,side,race:g.race,ion:true,wid});
+  beams.push({a:mz,b:[best.x,best.y,best.z],t0:now,side,race:g.race,ion:true,wid,from:g.id,muz:muzG});
   flash(mz[0],mz[1],mz[2],now,Math.max(220,g.slen*0.08),4);
   flash(best.x,best.y,best.z,now,Math.max(420,blast*1.4),4);
   flash(best.x,best.y,best.z,now+0.12,blast*0.9,4);
@@ -15328,15 +15390,20 @@ function megaStep(s,now,dt){
       s.mark=best.id;
       const m=gunWorld(s,[la.lx,la.ly,la.lz],now);
       if(borgGun){
-        fireBeam(s,best,now,m[0],m[1],m[2],2.4,true);
+        fireBeam(s,best,now,m[0],m[1],m[2],2.4,true,[la.lx,la.ly,la.lz]);
         la.cool=0.45+Math.random()*0.35;
       }else if(slicer){
         s.cutUntil=now+2.6;s.cutTgt=best.id;s.lastFire=now;
-        beams.push({a:m,b:aimSkin(s,best),t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
+        const muzL=[la.lx,la.ly,la.lz];
+        const hitL=aimSkin(s,best);
+        for(const e of fanHits(m,hitL,3,0.016)){
+          beams.push({a:[m[0],m[1],m[2]],b:e,t0:now,side:s.side,race:s.race,cut:true,heavy:true,
+            wid:beamWid(s,true),from:s.id,muz:muzL});
+        }
         wound(best,4.5,s,now);
         la.cool=3.2+Math.random()*1.8;
       }else{
-        fireBeam(s,best,now,m[0],m[1],m[2],3,true);
+        fireBeam(s,best,now,m[0],m[1],m[2],3,true,[la.lx,la.ly,la.lz]);
         la.cool=5.5+Math.random()*3;
       }
     }
@@ -15362,15 +15429,20 @@ function megaStep(s,now,dt){
         if(t.dead)continue;
         const m=gunWorld(s,[tu.lx,tu.ly,tu.lz],now);
         if(borgGun){
-          fireBeam(s,t,now,m[0],m[1],m[2],1.15,true);
+          fireBeam(s,t,now,m[0],m[1],m[2],1.15,true,[tu.lx,tu.ly,tu.lz]);
           tu.cool=0.14+Math.random()*0.20;
         }else if(slicer){
           s.cutUntil=now+1.8;s.cutTgt=t.id;s.lastFire=now;
-          beams.push({a:m,b:aimSkin(s,t),t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
+          const muzT=[tu.lx,tu.ly,tu.lz];
+          const hitT=aimSkin(s,t);
+          for(const e of fanHits(m,hitT,3,0.016)){
+            beams.push({a:[m[0],m[1],m[2]],b:e,t0:now,side:s.side,race:s.race,cut:true,heavy:true,
+              wid:beamWid(s,true),from:s.id,muz:muzT});
+          }
           wound(t,2.2,s,now);
           tu.cool=2.8+Math.random()*1.8;
         }else{
-          fireBeam(s,t,now,m[0],m[1],m[2]);
+          fireBeam(s,t,now,m[0],m[1],m[2],1,false,[tu.lx,tu.ly,tu.lz]);
           tu.cool=2.8+Math.random()*1.8;
         }
       }
@@ -16720,6 +16792,7 @@ function frame(nowMs){
     gl.uniformMatrix4fv(BU.vp,false,m);
     gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
     gl.bindVertexArray(beamVao);
+    pinBeams(now);
     /* explosion sparks: ember streaks, no faction colour */
     {
       const sarr=[];
