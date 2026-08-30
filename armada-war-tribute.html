@@ -14966,15 +14966,37 @@ function maybeCallAlly(now){
     const gH=gates.hammer;
     const cpos=slotAt(gH,0,1,0,0);
     if(RACE_DEFS[ally].unique){
-      const sx=side?1:-1;
+      /* they do not dump into the merge. Each ancient her own jump,
+         off the caller's far flank, spaced by her true keel — not a
+         20 m placeholder stacked on her sisters. */
+      const sx=side?1:-1,yaw=side?Math.PI:0;
+      const ids=[];
       for(let i=0;i<8;i++){
         const L=(FO_KLASS[i]&&FO_KLASS[i].L)||2000;
-        const id=mkA(FO_HULLS[i],
-          fc[0]+sx*(3600+L*0.5),
-          clampY(fc[1]+((i%4)-1.5)*780),
-          fc[2]+((i>>2)-0.5)*2400,
-          5+i*9.0,null,side?Math.PI:0);
+        const col=i%4,layer=(i/4)|0;
+        const x=fc[0]+sx*(5200+L*0.72+layer*4000);
+        const y=clampY(fc[1]+((i%2)?1:-1)*820+((col&2)?360:-180));
+        const z=fc[2]+(col-1.5)*5600;
+        const p=clearGate(x,y,z,Math.max(3000,L*0.95));
+        const id=mkA(FO_HULLS[i],p[0],p[1],p[2],4.2+i*8.0,null,yaw);
         ships[id].fo=i;
+        ships[id].slen=L;
+        ids.push(id);
+      }
+      for(let t=0;t<12;t++){
+        for(let i=0;i<ids.length;i++){
+          const a=ships[ids[i]],La=(FO_KLASS[i]&&FO_KLASS[i].L)||2000;
+          for(let j=i+1;j<ids.length;j++){
+            const b=ships[ids[j]],Lb=(FO_KLASS[j]&&FO_KLASS[j].L)||2000;
+            const dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z;
+            const d=Math.hypot(dx,dy,dz)||0.001;
+            const need=(La+Lb)*0.72+1000;
+            if(d>=need)continue;
+            const k=(need-d)*0.5/d;
+            a.x+=dx*k;a.y=clampY(a.y+dy*k);a.z+=dz*k;
+            b.x-=dx*k;b.y=clampY(b.y-dy*k);b.z-=dz*k;
+          }
+        }
       }
     }else{
     mkA(10,cpos[0],cpos[1]+36,cpos[2],2.2+gH.dly,null,gH.yaw);
