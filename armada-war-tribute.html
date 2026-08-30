@@ -13032,53 +13032,103 @@ function spaceTheFleets(){
   }
 }
 function frameTheWar(){
-  /* the opening shot is the WHOLE war: both lines, every keel, in
-     one look. A portrait of the longest hull left the rest off-stage. */
-  let n=0;
-  const mn=[1e18,1e18,1e18],mx=[-1e18,-1e18,-1e18];
+  /* sit on a fighter wing looking at the merge, close enough that
+     keels read as ships. Fitting every crown and First One into one
+     portrait is how the opening became eighteen kilometres of specks. */
+  const line=[];
   for(const s of ships){
     if(s.dead)continue;
-    if((RACE_DEFS[s.race]||{}).unique&&(s.delay||0)>2)continue;
-    const hx=Math.max(s.exL||0,(s.slen||20)*0.5);
-    const hy=Math.max(s.exY||0,((s.meta&&s.meta.height)||s.slen*0.3)*0.5);
-    const hz=Math.max(s.exZ||0,((s.meta&&s.meta.beam)||s.slen*0.3)*0.5);
-    if(s.x-hx<mn[0])mn[0]=s.x-hx;if(s.x+hx>mx[0])mx[0]=s.x+hx;
-    if(s.y-hy<mn[1])mn[1]=s.y-hy;if(s.y+hy>mx[1])mx[1]=s.y+hy;
-    if(s.z-hz<mn[2])mn[2]=s.z-hz;if(s.z+hz>mx[2])mx[2]=s.z+hz;
-    n++;
+    if((RACE_DEFS[s.race]||{}).unique)continue;
+    if(s.hulls)continue;
+    if(s.band===2)continue;
+    line.push(s);
   }
-  if(!n){
-    cam.ex=0;cam.ey=5200;cam.ez=18000;cam.yaw=-Math.PI/2;cam.pitch=-0.16;
+  if(line.length<6){
+    for(const s of ships){
+      if(s.dead||(RACE_DEFS[s.race]||{}).unique||(s.hulls||0)>=50)continue;
+      if(line.indexOf(s)<0)line.push(s);
+    }
+  }
+  const frontOf=side=>{
+    const a=line.filter(s=>s.side===side);
+    if(!a.length)return null;
+    let nose=side===0?-1e18:1e18;
+    for(const s of a){
+      if(side===0){if(s.x>nose)nose=s.x;}
+      else if(s.x<nose)nose=s.x;
+    }
+    const near=a.filter(s=>side===0?s.x>nose-560:s.x<nose+560);
+    const src=near.length>=4?near:a;
+    let x=0,y=0,z=0;
+    for(const s of src){x+=s.x;y+=s.y;z+=s.z;}
+    const n=src.length;
+    return {x:x/n,y:y/n,z:z/n,n,src,side};
+  };
+  const a=frontOf(0),b=frontOf(1);
+  const home=(!a)?b:(!b)?a:(a.n>=b.n?a:b);
+  if(!home){
+    let s0=null;
+    for(const s of ships)if(!s.dead){s0=s;break;}
+    if(!s0){
+      cam.ex=0;cam.ey=420;cam.ez=1100;cam.yaw=-Math.PI/2;cam.pitch=-0.22;
+      return;
+    }
+    const L=s0.slen||400;
+    cam.ex=s0.x;cam.ey=s0.y+Math.max(180,L*0.08);cam.ez=s0.z+Math.max(420,L*0.18);
+    cam.yaw=Math.atan2(s0.z-cam.ez,s0.x-cam.ex);
+    cam.pitch=Math.atan2(s0.y-cam.ey,Math.hypot(s0.x-cam.ex,s0.z-cam.ez));
     return;
   }
-  const c=[(mn[0]+mx[0])*0.5,(mn[1]+mx[1])*0.5,(mn[2]+mx[2])*0.5];
-  const rad=Math.hypot(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2])*0.5||800;
-  const ar=Math.max(0.55,(cvs.width||1280)/(cvs.height||800));
-  const halfY=0.44,halfX=Math.atan(Math.tan(halfY)*ar);
-  const half=Math.min(halfY,halfX);
-  let dist=Math.max(2800,rad/Math.sin(half)*1.18);
-  /* from the +Z quarter, a little above: the two lines sit left-right
-     with the decks readable, not a knife-edge on the horizon */
-  cam.yaw=-Math.PI/2;cam.pitch=-0.26;
-  const place=()=>{
-    const cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);
-    const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);
-    const f=[cy*cp,sp,sy*cp];
-    cam.ex=c[0]-f[0]*dist;cam.ey=c[1]-f[1]*dist;cam.ez=c[2]-f[2]*dist;
-  };
-  place();
-  for(let k=0;k<6;k++){
-    const P=frustumPlanes(mat());
-    let ok=true;
-    for(const s of ships){
-      if(s.dead)continue;
-      const r=Math.max(s.rad||0,(s.exL||0),(s.slen||20)*0.45);
-      if(!sphereVis(P,s.x,s.y,s.z,r)){ok=false;break;}
-    }
-    if(ok)break;
-    dist*=1.22;place();
+  const foe=home===a?b:a;
+  let lx=home.side===0?1:-1,lz=0;
+  if(foe){
+    lx=foe.x-home.x;lz=foe.z-home.z;
+    const L=Math.hypot(lx,lz)||1;lx/=L;lz/=L;
   }
-  if(dist>sceneR*0.55)sceneR=dist*1.85;
+  let zMax=-1e18,yMax=-1e18;
+  for(const s of home.src){
+    const hz=Math.max(s.exZ||0,(s.slen||20)*0.22);
+    const hy=Math.max(s.exY||0,(s.slen||20)*0.16);
+    if(s.z+hz>zMax)zMax=s.z+hz;
+    if(s.y+hy>yMax)yMax=s.y+hy;
+  }
+  const lookX=home.x+lx*140;
+  const lookY=home.y+18;
+  const lookZ=zMax-70;
+  cam.ex=home.x-lx*220;
+  cam.ey=Math.max(home.y+150,yMax+110);
+  cam.ez=zMax+300;
+  let dx=lookX-cam.ex,dy=lookY-cam.ey,dz=lookZ-cam.ez;
+  let dist=Math.hypot(dx,dy,dz)||1;
+  const MIN=240,MAX=620;
+  if(dist>MAX||dist<MIN){
+    const k=(dist>MAX?MAX:MIN)/dist;
+    cam.ex=lookX-dx*k;cam.ey=lookY-dy*k;cam.ez=lookZ-dz*k;
+    dx=lookX-cam.ex;dy=lookY-cam.ey;dz=lookZ-cam.ez;
+  }
+  for(let k=0;k<5;k++){
+    let hit=false;
+    for(const s of home.src){
+      const d=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez);
+      const need=Math.max(70,(s.slen||20)*0.45)+50;
+      if(d>=need)continue;
+      const il=1/Math.max(1,d);
+      const p=need-d;
+      cam.ex+=(cam.ex-s.x)*il*p;
+      cam.ey+=(cam.ey-s.y)*il*p;
+      cam.ez+=(cam.ez-s.z)*il*p;
+      hit=true;
+    }
+    if(!hit)break;
+  }
+  dx=lookX-cam.ex;dy=lookY-cam.ey;dz=lookZ-cam.ez;
+  dist=Math.hypot(dx,dy,dz)||1;
+  if(dist>760){
+    const k=760/dist;
+    cam.ex=lookX-dx*k;cam.ey=lookY-dy*k;cam.ez=lookZ-dz*k;
+  }
+  cam.yaw=Math.atan2(lookZ-cam.ez,lookX-cam.ex);
+  cam.pitch=Math.atan2(lookY-cam.ey,Math.hypot(lookX-cam.ex,lookZ-cam.ez));
 }
 const DOCTRINE=[
   {n:"CHARGE", w:[3,2]},
@@ -13461,16 +13511,7 @@ function startWar(fresh){
   BEAMCOL=[RACE_DEFS[ra].beam,RACE_DEFS[rb].beam];
   IONCOL=[RACE_DEFS[ra].ion,RACE_DEFS[rb].ion];
   makeCelestial(mulberry32((warSeed^0xC0FFEE)>>>0));
-  /* when the sky has company, the war opens facing it */
-  if(celes.length){
-    const c0=celes[0];
-    const L0=Math.hypot(c0.x,c0.y,c0.z)||1;
-    cam.ex=-c0.x/L0*14000;cam.ey=-c0.y/L0*14000+2600;cam.ez=-c0.z/L0*14000;
-    cam.yaw=Math.atan2(c0.z-cam.ez,c0.x-cam.ex);
-    cam.pitch=Math.atan2(c0.y-cam.ey,Math.hypot(c0.x-cam.ex,c0.z-cam.ez));
-  }else{
-    cam.ex=0;cam.ey=5200;cam.ez=18000;cam.yaw=-Math.PI/2;cam.pitch=-0.16;
-  }
+  cam.ex=0;cam.ey=420;cam.ez=1100;cam.yaw=-Math.PI/2;cam.pitch=-0.22;
   forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
   const bH=document.getElementById("bHero");if(bH){bH.classList.remove("on");bH.textContent="HEROES";}
   document.getElementById("win").style.display="none";
@@ -16041,7 +16082,7 @@ function makeStars(){
   gl.bindVertexArray(null);
 }
 /* ===================== camera ===================== */
-const cam={yaw:-Math.PI/2,pitch:-0.16,ex:0,ey:5200,ez:18000};
+const cam={yaw:-Math.PI/2,pitch:-0.22,ex:0,ey:420,ez:1100};
 let dpr=Math.min(devicePixelRatio||1,2);
 let sel=null,orb=null;
 const keys=new Set();
