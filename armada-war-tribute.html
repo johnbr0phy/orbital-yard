@@ -15628,18 +15628,14 @@ function maybeCallAlly(now){
       dealGate(escByGate[gn],ESCN,
         gn==="cut"?"CHARGE":null,gn==="relief"?"CHARGE":null,"FLANK");
     }
-    /* two named keels jump with the battalion — hammer and cut, each
-       leading a flight so the relief is not a faceless wall */
-    const heroGates=["hammer","cut"];
-    const heroTags=[" II"," III"];
-    for(let hi=0;hi<2;hi++){
-      const gn=heroGates[hi];
+    /* one named keel jumps with the battalion, leading a hammer flight */
+    {
+      const gn="hammer";
       const g=gates[gn];
       const cy=Math.cos(g.yaw),sy=Math.sin(g.yaw);
       const px=-sy,pz=cy;
-      const flank=hi?1:-1;
-      const p=[g.p[0]+px*flank*280,clampY(g.p[1]+flank*120),g.p[2]+pz*flank*280];
-      const hid=mkA(0,p[0],p[1],p[2],1.5+g.dly,0,g.yaw,{hero:true,heroTag:heroTags[hi]});
+      const p=[g.p[0]-px*280,clampY(g.p[1]-120),g.p[2]-pz*280];
+      const hid=mkA(0,p[0],p[1],p[2],1.5+g.dly,0,g.yaw,{hero:true,heroTag:" II"});
       const pool=ftrByGate[gn]||[];
       let wing=null;
       for(let qi=squads.length-1;qi>=0;qi--){
@@ -15655,7 +15651,7 @@ function maybeCallAlly(now){
       }else{
         ships[hid].squad=squads.length;
         squads.push({id:squads.length,side,race:ally,mem:[hid],tac:"CHARGE",
-          phase:1,adv:false,wp:null,tgt:gn==="cut"?cutTgt:reliefTgt,tgtSq:-1,
+          phase:1,adv:false,wp:null,tgt:reliefTgt,tgtSq:-1,
           until:now+14,guard:-1,lead:hid,hero:true});
       }
     }
