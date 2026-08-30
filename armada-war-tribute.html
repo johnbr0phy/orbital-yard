@@ -1455,6 +1455,46 @@ function surfaceOf(p,R){
       ok:(u,v)=>inPoly(poly,x0+(x1-x0)*u,y0+(y1-y0)*v),
       at:(u,v)=>({q:V.add(o,V.add(V.mul(bu,x0+(x1-x0)*u),V.mul(bv,y0+(y1-y0)*v))),n})};
   }
+  if(p.k==="lathe"&&p.prof&&p.prof.length>=2){
+    const ax=V.norm(p.axis||[1,0,0]),[bu,bv]=basis(ax),pr=p.prof;
+    const t0=pr[0][0],t1=pr[pr.length-1][0],eu=(p.ell&&p.ell[0])||1,ev=(p.ell&&p.ell[1])||1;
+    const rAt=t=>{
+      let r=pr[0][1];
+      for(let i=1;i<pr.length;i++)if(t<=pr[i][0]){
+        const f=(t-pr[i-1][0])/((pr[i][0]-pr[i-1][0])||1);
+        r=pr[i-1][1]+(pr[i][1]-pr[i-1][1])*f;break;
+      }
+      return r;
+    };
+    return {span:Math.abs(t1-t0),curv:1,at:(u,v)=>{
+      const t=t0+(t1-t0)*v,r=rAt(t),th=u*Math.PI*2;
+      const rad=V.add(V.mul(bu,Math.cos(th)*r*eu),V.mul(bv,Math.sin(th)*r*ev));
+      const n=V.norm(rad);
+      return {q:V.add(V.add(p.c,V.mul(ax,t)),rad),n};
+    }};
+  }
+  if(p.k==="loft"&&p.sec&&p.sec.length>=2){
+    const S=p.sec;
+    let n=S[0].pts.length;
+    for(const s of S)if(s.pts.length<n)n=s.pts.length;
+    if(n<3)return null;
+    let cen=[0,0,0],cnt=0;
+    for(const s of S)for(const q of s.pts){cen=V.add(cen,q);cnt++;}
+    cen=V.mul(cen,1/Math.max(1,cnt));
+    return {span:1,at:(u,v)=>{
+      const t=Math.max(0,Math.min(S.length-1-1e-6,v*(S.length-1)));
+      const i=t|0,f=t-i;
+      const j=((u*n)|0)%n,j2=(j+1)%n;
+      const A=S[i].pts,B=S[i+1].pts;
+      const lerp=(p,q,t)=>[p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t,p[2]+(q[2]-p[2])*t];
+      const q0=lerp(A[j],B[j],f),q1=lerp(A[j2],B[j2],f);
+      const along=V.sub(B[j],A[j]),around=V.sub(q1,q0);
+      let nrm=V.norm(V.cross(along,around));
+      if(V.len(nrm)<1e-6)nrm=V.norm(V.sub(q0,cen));
+      if(V.dot(nrm,V.sub(q0,cen))<0)nrm=V.mul(nrm,-1);
+      return {q:q0,n:nrm};
+    }};
+  }
   return null;
 }
 function fitOut(parts,R,rr,P,sr){
@@ -3902,56 +3942,81 @@ var fleetKit=function(parts,seed,o){
   if(!fighter&&L>90)n+=1+((R()*3)|0);
   if(scrap&&L>70)n+=2;
   if(smooth)n=Math.max(1,n-1);
-  const cy=(bb[0][1]+bb[1][1])/2;
-  const xAt=()=>bb[0][0]+L*rr(0.16,0.82);
-  const yD=()=>bb[1][1]-H*rr(0.01,0.08);
-  const yV=()=>bb[0][1]+H*rr(0.01,0.08);
-  const zF=()=>B*rr(0.26,0.44);
+  const mid=[(bb[0][0]+bb[1][0])/2,(bb[0][1]+bb[1][1])/2,(bb[0][2]+bb[1][2])/2];
+  const hostSize=p=>{
+    if(p.k==="sphere")return p.r;
+    if(p.k==="box")return Math.max(V.len(p.u),V.len(p.v),V.len(p.w));
+    if(p.k==="capsule"||p.k==="tube")return V.len(V.sub(p.b,p.a));
+    if(p.k==="panel")return (p.th||0)*8;
+    if(p.k==="lathe"&&p.prof)return Math.abs(p.prof[p.prof.length-1][0]-p.prof[0][0]);
+    if(p.k==="loft"&&p.sec&&p.sec.length>=2)
+      return V.len(V.sub(p.sec[p.sec.length-1].pts[0],p.sec[0].pts[0]));
+    return 0;
+  };
+  const hosts=parts.filter(p=>p.k!=="disc"&&hostSize(p)>L*0.035);
+  if(!hosts.length)return;
+  const skin=wantAft=>{
+    for(let t=0;t<28;t++){
+      const host=hosts[(R()*hosts.length)|0];
+      const S=surfaceOf(host,R);if(!S||!S.at)continue;
+      if(S.ok&&!S.ok(R(),rr(0.15,0.85)))continue;
+      const a=S.at(R(),rr(0.12,0.88));
+      if(!a||!a.n||V.len(a.n)<0.4)continue;
+      const n=V.norm(a.n);
+      if(V.dot(n,V.sub(a.q,mid))<0)continue;
+      if(a.q[0]>bb[0][0]+L*0.88)continue;
+      if(wantAft&&n[0]>-0.45)continue;
+      if(!wantAft&&n[0]<-0.72)continue;
+      return {q:a.q,n};
+    }
+    return null;
+  };
   const g0=Math.max(0.28,L*(fighter?0.011:0.018));
   const put=p=>parts.push(p);
-  const pair=p=>{put(p);if(R()<0.58)put(xMirZ(p));};
+  const frame=(sk,g)=>{
+    const n=sk.n,[u,w]=basis(n);
+    return {n,u,w,q:sk.q,c:off=>V.add(sk.q,V.mul(n,off))};
+  };
   for(let i=0;i<n;i++){
-    const g=g0*rr(0.75,1.25),x=xAt();
+    const sk=skin(false);if(!sk)continue;
+    const g=g0*rr(0.75,1.25),F=frame(sk,g);
     let kind=(R()*8)|0;
     if(smooth&&(kind===1||kind===7))kind=5;
     if(!scrap&&!smooth&&kind===1&&R()<0.6)kind=4;
     if(fighter&&kind===7)kind=2;
     if(kind===0){
-      const y=yD(),z=R()<0.42?0:zF()*(R()<0.5?1:-1);
-      put({k:"tube",a:[x,y,z],b:[x,y+g*2.2,z],r1:g*0.26,r2:g*0.16});
-      put({k:"box",c:[x,y+g*2.55,z],u:[g*0.10,0,0],v:[0,g*0.08,0],w:[0,0,g*1.05]});
+      put({k:"tube",a:F.c(g*0.05),b:F.c(g*2.2),r1:g*0.26,r2:g*0.16});
+      put({k:"box",c:F.c(g*2.55),u:V.mul(F.u,g*0.10),v:V.mul(F.n,g*0.08),w:V.mul(F.w,g*1.05)});
     }else if(kind===1){
-      const y=R()<0.6?yD():yV(),z=zF()*(R()<0.5?1:-1);
-      pair({k:"box",c:[x,y,z],u:[g*1.55,0,0],v:[0,g*0.65,0],w:[0,0,g*0.85]});
+      put({k:"box",c:F.c(g*0.62),u:V.mul(F.u,g*1.55),v:V.mul(F.n,g*0.62),w:V.mul(F.w,g*0.85)});
     }else if(kind===2){
-      const y=yD();
-      put({k:"tube",a:[x,y,0],b:[x+g*0.35,y+g*(fighter?2.4:4.0),0],r1:g*0.18,r2:g*0.08});
+      const h=g*(fighter?2.4:4.0);
+      put({k:"tube",a:F.c(g*0.04),b:F.c(h),r1:g*0.18,r2:g*0.08});
       if(!fighter&&R()<0.7)
-        put({k:"box",c:[x+g*0.35,y+g*4.15,0],u:[g*0.07,0,0],v:[0,g*0.07,0],w:[0,0,g*1.45]});
+        put({k:"box",c:F.c(h+g*0.12),u:V.mul(F.u,g*0.07),v:V.mul(F.n,g*0.07),w:V.mul(F.w,g*1.45)});
     }else if(kind===3){
-      const y=cy+H*rr(-0.10,0.16),z=zF();
-      pair({k:"capsule",a:[x-g*2.0,y,z],b:[x+g*2.0,y,z],r:g*0.62});
+      const r=g*0.62,along=V.mul(F.u,g*2.0);
+      const c=F.c(r);
+      put({k:"capsule",a:V.sub(c,along),b:V.add(c,along),r:r});
     }else if(kind===4){
-      const y=cy+H*rr(-0.18,0.22),z=zF()*0.90;
-      pair({k:"box",c:[x,y,z],u:[g*2.2,0,0],v:[0,g*0.95,0],w:[0,0,g*0.10]});
+      put({k:"box",c:F.c(g*0.08),u:V.mul(F.u,g*2.2),v:V.mul(F.n,g*0.08),w:V.mul(F.w,g*0.95)});
     }else if(kind===5){
-      const y=yD(),z=R()<0.45?0:zF()*0.45*(R()<0.5?1:-1);
-      put({k:"tube",a:[x,y,z],b:[x,y+g*1.15,z],r1:g*0.26,r2:g*0.18});
-      put({k:"sphere",c:[x,y+g*1.55,z],r:g*0.48});
+      put({k:"tube",a:F.c(g*0.04),b:F.c(g*1.15),r1:g*0.26,r2:g*0.18});
+      put({k:"sphere",c:F.c(g*1.55),r:g*0.48});
     }else if(kind===6){
-      const up=R()<0.55?1:-1,y=up>0?yD():yV(),z=zF()*(R()<0.5?1:-1);
-      put({k:"sphere",c:[x,y,z],r:g*0.62});
-      put({k:"tube",a:[x,y,z],b:[x+g*0.22,y+up*g*1.55,z],r1:g*0.18,r2:g*0.10});
+      put({k:"sphere",c:F.c(g*0.55),r:g*0.62});
+      put({k:"tube",a:F.c(g*0.4),b:F.c(g*1.7),r1:g*0.18,r2:g*0.10});
     }else{
-      const y=cy+H*rr(0.06,0.24),z=zF()*0.68;
-      pair({k:"box",c:[x,y,z],u:[g*2.8,0,0],v:[0,g*0.18,0],w:[0,0,g*0.30]});
+      put({k:"box",c:F.c(g*0.16),u:V.mul(F.u,g*2.8),v:V.mul(F.n,g*0.16),w:V.mul(F.w,g*0.30)});
     }
   }
   if(!fighter&&!smooth&&R()<0.38){
-    const g=L*0.011,z=B*rr(0.12,0.30)*(R()<0.5?1:-1),y=cy+H*rr(-0.06,0.10);
-    const x=bb[0][0]+L*0.05;
-    put({k:"tube",a:[x,y,z],b:[x-g*3.0,y,z],r1:g*0.85,r2:g*1.08});
-    put({k:"disc",c:[x-g*3.0,y,z],n:[-1,0,0],r:g*0.95,ri:g*0.32});
+    const sk=skin(true);
+    if(sk){
+      const g=L*0.011,F=frame(sk,g);
+      put({k:"tube",a:F.c(g*0.2),b:F.c(g*3.2),r1:g*0.85,r2:g*1.08});
+      put({k:"disc",c:F.c(g*3.2),n:F.n,r:g*0.95,ri:g*0.32});
+    }
   }
 };
 /* =====================================================================
