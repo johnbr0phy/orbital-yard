@@ -14532,7 +14532,7 @@ function fireIonFrom(g,side,now){
       beams.push({a:[best.x,best.y,best.z],b:[t.x,t.y,t.z],t0:now,side,race:g.race,arc:true});
   }
   kickCam(popped>3?28:16);
-  toast((RACE_DEFS[g.race]||{}).name.replace(/^THE /,"")+" · ION CANNON");
+  toast("ION CANNON");
 }
 function megaStep(s,now,dt){
   /* a crown fights at her own range. She advances to the reach of her
