@@ -12755,7 +12755,9 @@ function spreadMuster(){
 function scatterShadows(){
   /* they must not arrive as a grape of 1,500 m bodies on a TIE screen.
      A Shadow navy is a 3D scream: packs already pointing at the foe,
-     sea-room between the spines, no two crabs sharing a point of air. */
+     sea-room between the spines, no two crabs sharing a point of air.
+     The mother of the scream sits astern of the pack — she does not
+     lead the jump. */
   for(const side of [0,1]){
     const crabs=[];
     for(const s of ships){
@@ -12766,15 +12768,23 @@ function scatterShadows(){
     }
     if(crabs.length<2)continue;
     const sx=side?1:-1;
-    const n=crabs.length;
+    let titans=crabs.filter(s=>(s.hulls||0)>=50);
+    if(!titans.length){
+      let b=null;
+      for(const s of crabs)if(!b||(s.slen||0)>(b.slen||0))b=s;
+      if(b&&(b.slen||0)>400)titans=[b];
+    }
+    const pack=crabs.filter(s=>titans.indexOf(s)<0);
+    pack.sort((a,b)=>(a.slen||0)-(b.slen||0));
+    const n=pack.length;
     let berth=280;
-    for(const s of crabs)berth=Math.max(berth,Math.min(hullBerth(s),720));
+    for(const s of pack)berth=Math.max(berth,Math.min(hullBerth(s),720));
     const gap=berth*1.12+240;
-    const nx=Math.max(3,Math.round(Math.cbrt(n*0.55)));
-    const nz=Math.max(4,Math.round(Math.sqrt(n/nx*1.35)));
-    const ny=Math.max(3,Math.ceil(n/(nx*nz)));
+    const nx=Math.max(3,Math.round(Math.cbrt(Math.max(1,n)*0.55)));
+    const nz=Math.max(4,Math.round(Math.sqrt(Math.max(1,n)/nx*1.35)));
+    const ny=Math.max(3,Math.ceil(Math.max(1,n)/(nx*nz)));
     for(let i=0;i<n;i++){
-      const s=crabs[i];
+      const s=pack[i];
       const ix=i%nx;
       const iz=((i/nx)|0)%nz;
       const iy=(i/(nx*nz))|0;
@@ -12788,22 +12798,45 @@ function scatterShadows(){
       s.v=s.spdMax||s.spd||130;
       if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
     }
+    const rear=2600+Math.max(0,nx-1)*gap*0.78;
+    for(let t=0;t<titans.length;t++){
+      const s=titans[t];
+      const extra=Math.max(1100,(s.slen||2000)*0.58);
+      const jz=((s.seed>>>13)&31)/31-0.5;
+      s.x=sx*(rear+extra+t*(s.slen||2000)*0.35);
+      s.y=((s.seed>>>8)&31)/31*180-90;
+      s.z=jz*gap*0.22;
+      s.yaw=side?Math.PI:0;
+      s.v=s.spd||14;
+      if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
+    }
+    const all=pack.concat(titans);
+    const isT=s=>titans.indexOf(s)>=0;
     for(let t=0;t<10;t++){
-      for(let i=0;i<n;i++){
-        const a=crabs[i];
-        for(let j=i+1;j<n;j++){
-          const b=crabs[j];
+      for(let i=0;i<all.length;i++){
+        const a=all[i];
+        for(let j=i+1;j<all.length;j++){
+          const b=all[j];
           const dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z;
           const d=Math.hypot(dx,dy,dz)||0.001;
           const need=(hullBerth(a)+hullBerth(b))*0.70+90;
           if(d>=need)continue;
-          const k=(need-d)*0.5/d;
-          a.x+=dx*k;a.y+=dy*k;a.z+=dz*k;
-          b.x-=dx*k;b.y-=dy*k;b.z-=dz*k;
+          const aT=isT(a),bT=isT(b);
+          if(aT&&!bT){
+            const k=(need-d)/d;
+            b.x-=dx*k;b.y-=dy*k;b.z-=dz*k;
+          }else if(bT&&!aT){
+            const k=(need-d)/d;
+            a.x+=dx*k;a.y+=dy*k;a.z+=dz*k;
+          }else{
+            const k=(need-d)*0.5/d;
+            a.x+=dx*k;a.y+=dy*k;a.z+=dz*k;
+            b.x-=dx*k;b.y-=dy*k;b.z-=dz*k;
+          }
         }
       }
     }
-    for(const s of crabs)if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
+    for(const s of all)if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
   }
 }
 function spaceTheFleets(){
@@ -15053,6 +15086,7 @@ function maybeCallAlly(now){
     };
     const gH=gates.hammer;
     const cpos=slotAt(gH,0,1,0,0);
+    const sliceAlly=(RACE_DEFS[ally]||{}).fire==="slicer";
     if(RACE_DEFS[ally].unique){
       /* they do not dump into the merge. Each ancient her own jump,
          off the caller's far flank, spaced by her true keel — not a
@@ -15087,13 +15121,15 @@ function maybeCallAlly(now){
         }
       }
     }else{
-    mkA(10,cpos[0],cpos[1]+36,cpos[2],2.2+gH.dly,null,gH.yaw);
+    if(sliceAlly){
+      const cy=Math.cos(gH.yaw),sy=Math.sin(gH.yaw);
+      mkA(10,gH.p[0]-cy*2800,clampY(gH.p[1]+36),gH.p[2]-sy*2800,3.6+gH.dly,null,gH.yaw);
+    }else mkA(10,cpos[0],cpos[1]+36,cpos[2],2.2+gH.dly,null,gH.yaw);
 
     /* the relief column obeys the ally's own pyramid, then splits
        across the three doors — hammer, screen, cut — so nobody
        arrives as a single wad on the caller's head */
     const amix=RACE_DEFS[ally].mix||[0.72,0.18,0.10];
-    const sliceAlly=(RACE_DEFS[ally]||{}).fire==="slicer";
     let nSm=Math.max(3*SQN,Math.round(spawned[side]*0.28/SQN)*SQN);
     if(sliceAlly)nSm=Math.min(nSm,Math.max(2*SQN,Math.round(28/SQN)*SQN));
     const ftrByGate={hammer:[],relief:[],cut:[]};
