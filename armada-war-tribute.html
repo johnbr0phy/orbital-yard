@@ -34,6 +34,13 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 #brand a{color:inherit;text-decoration:none;border-bottom:1px solid;opacity:.62;pointer-events:auto}
 #stat{bottom:16px;left:20px;font-size:11px;letter-spacing:.06em;opacity:.75;line-height:1.7}
+/* the parked camera: five quiet seconds and the yard reminds you she flies */
+#wasd{bottom:44px;left:20px;font-size:11px;letter-spacing:.06em;opacity:0;
+  transition:opacity .7s}
+#wasd.on{opacity:.85;animation:wasdPulse 2.6s ease-in-out infinite}
+#wasd b{display:inline-block;border:1px solid var(--ink);border-radius:3px;
+  padding:1px 5px;margin:0 2px;font-weight:600;font-size:10px;line-height:1.5}
+@keyframes wasdPulse{0%,100%{opacity:.85}50%{opacity:.5}}
 #score{top:16px;right:16px;max-width:min(480px,52vw);display:flex;flex-wrap:nowrap;
   align-items:flex-start;justify-content:flex-end;gap:8px 14px;pointer-events:auto}
 #score .sc-col{min-width:0;flex:1 1 148px;max-width:220px;display:flex;flex-direction:column}
@@ -107,6 +114,7 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   #brand .s2 a{color:inherit;text-decoration:none;border-bottom:1px solid;
     opacity:.85;pointer-events:auto}
   #stat{display:none}
+  #wasd{display:none}
   #score{top:calc(46px + env(safe-area-inset-top,0px));left:8px;right:8px;
     max-width:none;justify-content:space-between;gap:6px 8px;flex-wrap:nowrap}
   #score .sc-col{min-width:0;flex:1 1 0;max-width:none}
@@ -207,6 +215,7 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   <div class="s2"><a href="index.html">&larr; the yard</a> · tap a ship · pinch zoom · ★ heroes</div>
 </div>
 <div class="hud" id="stat"></div>
+<div class="hud" id="wasd"><b>W</b><b>A</b><b>S</b><b>D</b> fly &nbsp;·&nbsp; <b>Q</b><b>E</b> climb &amp; dive</div>
 <div class="hud" id="score"></div>
 <div id="bar">
   <button data-n="150">150</button>
@@ -13218,6 +13227,7 @@ function startWar(fresh){
   forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
   const bH=document.getElementById("bHero");if(bH){bH.classList.remove("on");bH.textContent="HEROES";}
   document.getElementById("win").style.display="none";
+  if(typeof wasdHint!=="undefined")wasdHint.arm();
   const jobs=[];
   const mk=(side,hulls,pos,band,opt)=>{
     const id=ships.length;
@@ -15844,6 +15854,26 @@ addEventListener("keydown",e=>{
   }
 });
 addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
+/* five seconds parked after the sky is let slip; the first flight key ends it.
+   Tribute opens on the muster sheet, so the clock does not start on load. */
+const wasdHint=(()=>{
+  const coarse=typeof matchMedia==="function"&&matchMedia("(pointer:coarse)").matches;
+  const wEl=document.getElementById("wasd");
+  if(coarse||!wEl)return {arm(){}};
+  let flew=false,armed=false,wShow=0,wHide=0;
+  addEventListener("keydown",e=>{
+    if(!flew&&"wasdqe".includes(e.key.toLowerCase())){
+      flew=true;clearTimeout(wShow);clearTimeout(wHide);
+      wEl.classList.remove("on");
+    }
+  });
+  return {arm(){
+    if(flew||armed)return;
+    armed=true;
+    wShow=setTimeout(()=>{if(!flew)wEl.classList.add("on");},5000);
+    wHide=setTimeout(()=>wEl.classList.remove("on"),28000);
+  }};
+})();
 function setFleetSize(n,restart){
   perFleet=n;
   document.querySelectorAll("#bar [data-n], #pick .sizes [data-n]").forEach(b=>{
