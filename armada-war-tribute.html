@@ -4493,6 +4493,37 @@ var impDagger=function(parts,L,o){
   }
 };
 
+/* octuple barbette: a disk ON the terrace, not a 50 m plate hanging
+   in the air beside the city. Scale is metres and capped. */
+var impBarbette=function(parts,x,y,z,s){
+  parts.push({k:"disc",c:[x,y+s*0.10,z],n:[0,1,0],r:s,ri:s*0.24});
+  parts.push({k:"capsule",a:[x,y+s*0.06,z],b:[x,y+s*0.36,z],r:s*0.26});
+  for(const sz of [-0.26,0.26]){
+    parts.push({k:"tube",
+      a:[x+s*0.12,y+s*0.32,z+s*sz],
+      b:[x+s*1.40,y+s*0.38,z+s*sz],
+      r1:s*0.13,r2:s*0.08});
+  }
+};
+var impCityGuns=function(parts,L,o){
+  const xN=L*0.52,xS=-L*0.48,zb=L*o.hb,yr=L*o.ridge;
+  const ry=x=>yr*(xN-x)/(xN-xS);
+  const s=Math.min(10.5,Math.max(5.2,L*0.0068));
+  for(const t of (o.terr||[])){
+    const cx=L*t[0],hl=L*t[1],hw=zb*t[2],hh=L*t[3];
+    if(hw<s*2.6)continue;
+    const by=ry(cx)*0.5,top=by+hh*2;
+    const zOn=Math.min(hw-s*1.15,Math.max(s*1.4,hw*0.58));
+    const n=hl>L*0.11?2:1;
+    for(let i=0;i<n;i++){
+      const u=n===1?0.5:0.30+0.40*i;
+      const gx=cx-hl+u*2*hl;
+      impBarbette(parts,gx,top,zOn,s);
+      impBarbette(parts,gx,top,-zOn,s);
+    }
+  }
+};
+
 /* the fixed order of battle — the roster IS the navy. j() is the whole
    allowance the seed gets inside a class: a whisker, nothing more.
    Shares per the fleet bible, the small classes renormalised to one:
@@ -5006,10 +5037,11 @@ var buildImperial=function(seed){
   }else{
     /* Victory: the stubby elder dagger, skirt flanges flared at the stern */
     const L=900*j();   /* Victory-class: 900 m */
-    impDagger(parts,L,{hb:0.30,ridge:0.050,keel:0.045,bulge:true,
+    const oV={hb:0.30,ridge:0.050,keel:0.045,bulge:true,
       terr:[[-0.15,0.15,0.40,0.015],[-0.285,0.085,0.24,0.012]],
       tower:1,eng:[[0,0.021],[0.10,0.021],[-0.10,0.021]],
-      grb:[[-0.30,0.30],[-0.05,0.25]]});
+      grb:[[-0.30,0.30],[-0.05,0.25]]};
+    impDagger(parts,L,oV);impCityGuns(parts,L,oV);
     const fl={k:"box",c:[-L*0.43,0,L*0.30],
       u:[L*0.05,0,0],v:[0,L*0.005,0],w:[0,0,L*0.030]};
     parts.push(fl);parts.push(xMirZ(fl));
@@ -5032,7 +5064,7 @@ var buildImperialMega=function(seed,nH){
     /* dagger + nine spine terraces climbing aft; tower sits on the last
        pad (~0.85 from the bow) with the two globes. No mesa.
        hb 0.124 → 4500 m beam at j=1; ridge/keel/tower lifted so H hits 2200. */
-    impDagger(parts,L,{hb:0.124,ridge:0.032,keel:0.020,spine:18,tower:0.66,globeR:0.022,
+    const oX={hb:0.124,ridge:0.032,keel:0.020,spine:18,tower:0.66,globeR:0.022,
       terr:[[0.20,0.11,0.16,0.0030],[0.12,0.10,0.22,0.0036],
             [0.04,0.10,0.28,0.0042],[-0.04,0.09,0.30,0.0048],
             [-0.11,0.08,0.24,0.0055],[-0.17,0.065,0.18,0.0062],
@@ -5042,7 +5074,8 @@ var buildImperialMega=function(seed,nH){
            [0.048,0.007],[-0.048,0.007],[0.064,0.006],[-0.064,0.006],
            [0.080,0.005],[-0.080,0.005],[0.095,0.004],[-0.095,0.004]],
       grb:[[-0.40,0.38],[-0.32,0.34],[-0.24,0.30],[-0.16,0.30],[-0.08,0.28],
-           [0.00,0.26],[0.08,0.24],[0.16,0.22],[0.24,0.18]]});
+           [0.00,0.26],[0.08,0.24],[0.16,0.22],[0.24,0.18]]};
+    impDagger(parts,L,oX);impCityGuns(parts,L,oX);
     /* flank city modules — shorter boxes off the centreline so the dorsal
        reads as a terraced city, not three stacked slabs */
     const xN=L*0.52,xS=-L*0.48,zb=L*0.124,yr=L*0.032;
@@ -5083,22 +5116,24 @@ var buildImperialMega=function(seed,nH){
   }else if(nH>=25){
     /* Tector: the Imperator hull with a sealed flat belly — no bulge */
     L=1600*j();   /* Tector: same 1,600 m hull as the Imperator */
-    impDagger(parts,L,{hb:0.28,ridge:0.047,keel:0.038,bulge:false,
+    const oT={hb:0.28,ridge:0.047,keel:0.038,bulge:false,
       terr:[[-0.13,0.17,0.42,0.016],[-0.275,0.10,0.27,0.013],[-0.36,0.05,0.16,0.011]],
       tower:1,spine:3,
       eng:[[0,0.021],[0.10,0.021],[-0.10,0.021],[0.185,0.013],[-0.185,0.013]],
-      grb:[[-0.32,0.32],[-0.10,0.28],[0.08,0.22]]});
+      grb:[[-0.32,0.32],[-0.10,0.28],[0.08,0.22]]};
+    impDagger(parts,L,oT);impCityGuns(parts,L,oT);
     klass="TECTOR-CLASS DREADNOUGHT";pre="TEC";
   }else{
     /* Imperator: 1,600 × 585 m in the box. hb 0.183 is the 2.75:1 dagger;
        L is shy of 1,600 so the bells past the diamond still read 1,600 m. */
     L=1500*j();
-    impDagger(parts,L,{hb:0.183,ridge:0.036,keel:0.026,bulge:true,
+    const oI={hb:0.183,ridge:0.036,keel:0.026,bulge:true,
       terr:[[0.02,0.18,0.36,0.013],[-0.14,0.10,0.22,0.011],[-0.23,0.06,0.13,0.010]],
       tower:1,spine:3,globeR:0.016,
       eng:[[0,0.020],[0.058,0.018],[-0.058,0.018],[0.100,0.010],[-0.100,0.010],
            [0.138,0.010],[-0.138,0.010]],
-      grb:[[-0.30,0.32],[-0.08,0.28],[0.10,0.22]]});
+      grb:[[-0.30,0.32],[-0.08,0.28],[0.10,0.22]]};
+    impDagger(parts,L,oI);
     /* ventral hangar — rectangular bay mouth with armoured lips
        (ICS attack hangar / Onizaki f74ee8e), not a closed lump */
     const yk=L*0.026;
@@ -5111,22 +5146,9 @@ var buildImperialMega=function(seed,nH){
       u:[L*0.014,0,0],v:[0,yk*0.20,0],w:[0,0,L*0.050]});
     parts.push({k:"box",c:[-L*0.04,-yk*1.02,0],
       u:[L*0.014,0,0],v:[0,yk*0.20,0],w:[0,0,L*0.050]});
-    /* ICS: six 50 m turbolaser turrets + two ion along the city flanks */
-    const yrI=L*0.036,cityW=L*0.066;
-    for(const fx of [0.10,-0.02,-0.14,-0.24]){
-      const gx=L*fx;
-      const gy=yrI*(L*0.52-gx)/L*0.55+L*0.028;
-      const gz=cityW*0.95;
-      const td=DSC([gx,gy,gz],[0,1,0],L*0.0165,L*0.005);
-      parts.push(td);parts.push(xMirZ(td));
-      const br={k:"tube",a:[gx+L*0.008,gy+L*0.003,gz],
-        b:[gx+L*0.026,gy+L*0.009,gz],r1:L*0.0036,r2:L*0.0024};
-      parts.push(br);parts.push(xMirZ(br));
-      const br2={k:"tube",a:[gx+L*0.006,gy+L*0.003,gz+L*0.006],
-        b:[gx+L*0.022,gy+L*0.008,gz+L*0.006],r1:L*0.0030,r2:L*0.0020};
-      parts.push(br2);parts.push(xMirZ(br2));
-    }
+    impCityGuns(parts,L,oI);
     /* city greeble — Heataker/Digital Sock dorsal is a dense trench, not three slabs */
+    const yrI=L*0.036;
     const xN=L*0.52,zb=L*0.183;
     const ry=x=>yrI*(xN-x)/(L);
     for(const [fx,zw,hh,hl] of [[0.08,0.22,0.0040,0.022],[0.00,0.28,0.0045,0.018],
@@ -10461,6 +10483,28 @@ var buildHero=function(f,seed){
    three bands — small craft, escorts, capitals — and the fleet's mix
    table, not the class dice, decides how many of each band sail. ---- */
 var fleetBandOf=function(L){return L<=42?0:L<=95?1:2;};
+function hullDeckAt(parts,x,z,dorsal){
+  /* the skin at a station: highest (or lowest) part that actually
+     occupies this x,z — so a turret sits on the deck, not in the AABB */
+  let yHit=null,zMax=0;
+  for(const p of parts){
+    const es=partExtents(p);
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
+    for(const e of es){
+      const q=e[0],r=e[1]||0;
+      if(q[0]-r<x0)x0=q[0]-r;if(q[0]+r>x1)x1=q[0]+r;
+      if(q[1]-r<y0)y0=q[1]-r;if(q[1]+r>y1)y1=q[1]+r;
+      if(q[2]-r<z0)z0=q[2]-r;if(q[2]+r>z1)z1=q[2]+r;
+    }
+    if(x<x0||x>x1)continue;
+    const zm=Math.max(Math.abs(z0),Math.abs(z1));
+    if(zm>zMax)zMax=zm;
+    if(z<z0||z>z1)continue;
+    const y=dorsal?y1:y0;
+    if(yHit==null||(dorsal?y>yHit:y<yHit))yHit=y;
+  }
+  return {y:yHit,zMax:zMax};
+}
 function armShip(ship,race,hulls){
   /* a shot is a thing a mount throws. Harvest the barrels and tentacle
      mouths the yard already grew; if a hull was born without one, bolt
@@ -10516,31 +10560,35 @@ function armShip(ship,race,hulls){
   const hullR=Math.min(B,H,L*0.5)*0.5;
   if(found.length<Math.max(2,want?2:0)){
     const n=hulls?want:2;
+    /* a fitting, not a barn: cap in metres so a Star Destroyer does not
+       grow 70 m guns, and sit them on the deck the mesh already has */
+    const scale=Math.min(11,Math.max(2.4,Math.min(L*0.0075,14)));
+    const len=scale*1.5,r=scale*0.15;
     for(let i=0;i<n;i++){
       const u=n>1?i/(n-1):0.5;
       const side=i&1?1:-1;
-      let x,y,z,mz;
-      if(hulls){
-        x=bb[0][0]+L*(0.18+0.64*u);
-        y=cy+hullR*(i%4<2?0.42:-0.18);
-        z=cz+side*hullR*(0.45+0.35*u);
-      }else{
-        x=bb[1][0]-Math.min(L*0.14,hullR*0.9);
-        y=cy-hullR*0.22;
-        z=cz+side*hullR*0.52;
-      }
-      const len=hulls?L*0.045:L*0.13,r=hulls?L*0.007:L*0.012;
+      const dorsal=hulls?(i%3)!==2:true;
+      const x=hulls?bb[0][0]+L*(0.22+0.56*u):bb[1][0]-Math.min(L*0.16,hullR*0.9);
+      const skin0=hullDeckAt(parts,x,cz,dorsal);
+      const zMax=skin0.zMax||hullR;
+      const z=cz+side*Math.max(r*2.2,Math.min(Math.max(0,zMax-scale*1.25),zMax*(0.50+0.28*u)));
+      const skin=hullDeckAt(parts,x,z,dorsal);
+      let y=skin.y;
+      if(y==null)y=cy+(dorsal?1:-1)*hullR*0.28;
+      y+=(dorsal?1:-1)*scale*0.22;
+      let mz;
       if(organic&&!hulls){
-        const x0=cx+L*0.04,y0=cy,z0=cz+side*hullR*0.28;
-        const x1=bb[1][0]+L*0.05,y1=cy+hullR*0.18,z1=cz+side*hullR*0.72;
+        const x0=cx+L*0.04,y0=cy,z0=cz+side*Math.min(hullR*0.22,zMax*0.4);
+        const x1=bb[1][0]+L*0.04,y1=y,z1=z;
         parts.push({k:"capsule",a:[x0,y0,z0],b:[x1,y1,z1],r:r*1.1});
         parts.push({k:"sphere",c:[x1,y1,z1],r:r*1.2});
         mz=[x1,y1,z1];
       }else{
-        parts.push({k:"box",c:[x-len*0.28,y,z],
-          u:[len*0.22,0,0],v:[0,r*2.0,0],w:[0,0,r*2.0]});
-        parts.push({k:"tube",a:[x-len*0.06,y,z],b:[x+len,y,z],r1:r*1.15,r2:r*0.48});
-        mz=[x+len,y,z];
+        parts.push({k:"disc",c:[x,y,z],n:[0,dorsal?1:-1,0],r:scale,ri:scale*0.22});
+        parts.push({k:"capsule",a:[x,y,z],b:[x,y+(dorsal?1:-1)*scale*0.32,z],r:scale*0.28});
+        parts.push({k:"tube",a:[x+scale*0.12,y+(dorsal?1:-1)*scale*0.22,z],
+          b:[x+len,y+(dorsal?1:-1)*scale*0.28,z],r1:r*1.05,r2:r*0.55});
+        mz=[x+len,y+(dorsal?1:-1)*scale*0.28,z];
       }
       pushM(mz[0],mz[1],mz[2]);
     }
