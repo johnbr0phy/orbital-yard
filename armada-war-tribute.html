@@ -3879,6 +3879,81 @@ var buildBorgMega=function(seed,nH){
       :Math.round(LN*LN*1.4)}};
 };
 /*__RACE_BORG_END__*/
+/* seed-rolled fittings so tribute sisters are not clones. The class
+   still reads; a crate, a dish, a mast or a tank is the field-refit
+   the yard already gives every original. Never a forward gun — armShip
+   would harvest it. */
+var fleetKit=function(parts,seed,o){
+  o=o||{};
+  if(!parts||!parts.length)return;
+  const R=mulberry32((seed^0xA11E5)>>>0);
+  const rr=(a,b)=>a+(b-a)*R();
+  const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
+  for(const p of parts)for(const e of partExtents(p)){
+    const q=e[0],r=e[1];
+    for(let a=0;a<3;a++){
+      if(q[a]-r<bb[0][a])bb[0][a]=q[a]-r;
+      if(q[a]+r>bb[1][a])bb[1][a]=q[a]+r;}}
+  const L=bb[1][0]-bb[0][0],B=Math.max(4,bb[1][2]-bb[0][2]),H=Math.max(4,bb[1][1]-bb[0][1]);
+  if(!(L>8))return;
+  const fighter=o.fighter!=null?!!o.fighter:L<36;
+  const scrap=o.style==="scrap",smooth=o.style==="smooth";
+  let n=fighter?(R()<0.58?1:R()<0.86?2:0):2+((R()*4)|0);
+  if(!fighter&&L>90)n+=1+((R()*3)|0);
+  if(scrap&&L>70)n+=2;
+  if(smooth)n=Math.max(1,n-1);
+  const cy=(bb[0][1]+bb[1][1])/2;
+  const xAt=()=>bb[0][0]+L*rr(0.16,0.82);
+  const yD=()=>bb[1][1]-H*rr(0.01,0.08);
+  const yV=()=>bb[0][1]+H*rr(0.01,0.08);
+  const zF=()=>B*rr(0.26,0.44);
+  const g0=Math.max(0.28,L*(fighter?0.011:0.018));
+  const put=p=>parts.push(p);
+  const pair=p=>{put(p);if(R()<0.58)put(xMirZ(p));};
+  for(let i=0;i<n;i++){
+    const g=g0*rr(0.75,1.25),x=xAt();
+    let kind=(R()*8)|0;
+    if(smooth&&(kind===1||kind===7))kind=5;
+    if(!scrap&&!smooth&&kind===1&&R()<0.6)kind=4;
+    if(fighter&&kind===7)kind=2;
+    if(kind===0){
+      const y=yD(),z=R()<0.42?0:zF()*(R()<0.5?1:-1);
+      put({k:"tube",a:[x,y,z],b:[x,y+g*2.2,z],r1:g*0.26,r2:g*0.16});
+      put({k:"box",c:[x,y+g*2.55,z],u:[g*0.10,0,0],v:[0,g*0.08,0],w:[0,0,g*1.05]});
+    }else if(kind===1){
+      const y=R()<0.6?yD():yV(),z=zF()*(R()<0.5?1:-1);
+      pair({k:"box",c:[x,y,z],u:[g*1.55,0,0],v:[0,g*0.65,0],w:[0,0,g*0.85]});
+    }else if(kind===2){
+      const y=yD();
+      put({k:"tube",a:[x,y,0],b:[x+g*0.35,y+g*(fighter?2.4:4.0),0],r1:g*0.18,r2:g*0.08});
+      if(!fighter&&R()<0.7)
+        put({k:"box",c:[x+g*0.35,y+g*4.15,0],u:[g*0.07,0,0],v:[0,g*0.07,0],w:[0,0,g*1.45]});
+    }else if(kind===3){
+      const y=cy+H*rr(-0.10,0.16),z=zF();
+      pair({k:"capsule",a:[x-g*2.0,y,z],b:[x+g*2.0,y,z],r:g*0.62});
+    }else if(kind===4){
+      const y=cy+H*rr(-0.18,0.22),z=zF()*0.90;
+      pair({k:"box",c:[x,y,z],u:[g*2.2,0,0],v:[0,g*0.95,0],w:[0,0,g*0.10]});
+    }else if(kind===5){
+      const y=yD(),z=R()<0.45?0:zF()*0.45*(R()<0.5?1:-1);
+      put({k:"tube",a:[x,y,z],b:[x,y+g*1.15,z],r1:g*0.26,r2:g*0.18});
+      put({k:"sphere",c:[x,y+g*1.55,z],r:g*0.48});
+    }else if(kind===6){
+      const up=R()<0.55?1:-1,y=up>0?yD():yV(),z=zF()*(R()<0.5?1:-1);
+      put({k:"sphere",c:[x,y,z],r:g*0.62});
+      put({k:"tube",a:[x,y,z],b:[x+g*0.22,y+up*g*1.55,z],r1:g*0.18,r2:g*0.10});
+    }else{
+      const y=cy+H*rr(0.06,0.24),z=zF()*0.68;
+      pair({k:"box",c:[x,y,z],u:[g*2.8,0,0],v:[0,g*0.18,0],w:[0,0,g*0.30]});
+    }
+  }
+  if(!fighter&&!smooth&&R()<0.38){
+    const g=L*0.011,z=B*rr(0.12,0.30)*(R()<0.5?1:-1),y=cy+H*rr(-0.06,0.10);
+    const x=bb[0][0]+L*0.05;
+    put({k:"tube",a:[x,y,z],b:[x-g*3.0,y,z],r1:g*0.85,r2:g*1.08});
+    put({k:"disc",c:[x-g*3.0,y,z],n:[-1,0,0],r:g*0.95,ri:g*0.32});
+  }
+};
 /* =====================================================================
    THE FEDERATION — saucer, hull, two nacelles; hope with a deflector
    ==================================================================== */
@@ -3943,6 +4018,7 @@ var fedBB=function(parts){
    keels ever share a pennant. Overflow past five digits earns a suffix
    letter, the way a name that will not die earns one */
 var fedDone=function(parts,seed,klass,massK,crew,bank){
+  fleetKit(parts,seed,{style:"navy"});
   const bb=fedBB(parts);
   const BK=bank||FEDN;
   const NB=BK.length;let u=seed>>>0;
@@ -4476,6 +4552,7 @@ var impBB=function(parts){
 /* the registry reads the seed as a mixed-radix number, same law as the
    other yards: name digit, two block letters, pennant — every hull distinct */
 var impDone=function(parts,seed,pre,klass,bank,massK,crew){
+  fleetKit(parts,seed,{style:"navy"});
   const bb=impBB(parts);
   const NB=bank.length;let u=seed>>>0;
   const nm=bank[u%NB];u=(u-u%NB)/NB;
@@ -5293,6 +5370,7 @@ var kliBB=function(parts){
    Qo'noS carries its own pennant, and no two captains ever have to
    settle the matter with knives */
 var kliDone=function(parts,seed,klass,massK,crew,bank){
+  fleetKit(parts,seed,{style:"navy"});
   const bb=kliBB(parts);
   const NB=bank.length;let u=seed>>>0;
   const nm=bank[u%NB];u=(u-u%NB)/NB;
@@ -5932,6 +6010,7 @@ var minFit=function(parts,L){
 /* the registry reads the seed as a mixed-radix number, the same law the
    other yards obey — every hull distinct, every sister honestly named */
 var minDone=function(parts,seed,pre,klass,crew){
+  fleetKit(parts,seed,{style:"smooth"});
   const bb=minBB(parts);
   const NB=MINN.length;let u=seed>>>0;
   const nm=MINN[u%NB];u=(u-u%NB)/NB;
@@ -6326,6 +6405,7 @@ var rebBB=function(parts){
    a number, because a callsign is what you have when the ship came to
    you with someone else's name scratched off the hull */
 var rebDone=function(parts,seed,code,klass,massK,crew,fighter,bank){
+  fleetKit(parts,seed,{style:"scrap",fighter:!!fighter});
   const bb=rebBB(parts);
   let u=seed>>>0,desig;
   if(fighter){
@@ -7707,6 +7787,7 @@ var efFit=function(parts,L){
 /* the registry: hull number stenciled forward, name painted aft.
    ring, when present, is [RX,RW] — the war spins that band of hull */
 var efDone=function(parts,seed,klass,massK,crew,ring){
+  fleetKit(parts,seed,{style:"navy"});
   const bb=efBB(parts);
   const NB=EFN.length;let u=seed>>>0;
   const nm=EFN[u%NB];u=(u-u%NB)/NB;
@@ -8417,6 +8498,7 @@ var moName=function(seed,bank){return bank[(seed>>>0)%bank.length];};
 var moNum=function(seed,mod){return (Math.imul((seed>>>0)^0x9E37,0x85EBCA6B)>>>0)%mod;};
 
 var moDone=function(parts,seed,klass,desig,massK,crew){
+  fleetKit(parts,seed,{style:"smooth"});
   const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
   for(const p of parts)for(const e of partExtents(p)){
     const q=e[0],r=e[1];
@@ -8898,6 +8980,7 @@ var umBB=function(parts){
 
 /* the registry: a company serial first, the name the crew uses second */
 var umDone=function(parts,seed,prefix,code,bank,klass,massK,crew){
+  fleetKit(parts,seed,{style:"scrap"});
   const bb=umBB(parts);
   let u=seed>>>0;
   const nm=bank[u%bank.length];u=Math.floor(u/bank.length);
@@ -9466,6 +9549,7 @@ var enHub=function(parts,c,rd,hd){
 };
 
 var enDone=function(parts,seed,klass,bank,crew,cyc){
+  fleetKit(parts,seed,{style:"smooth"});
   const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
   for(const p of parts)for(const e of partExtents(p)){
     const q=e[0],r=e[1];
@@ -9680,6 +9764,7 @@ var yjBB=function(parts){
 /* the trophy roll: every kill-worthy hull is marked in the clan's
    ledger, seed unpacked so no two hunters ever contest a mark */
 var yjDone=function(parts,seed,klass,massK,crew,bank){
+  fleetKit(parts,seed,{style:"smooth"});
   const bb=yjBB(parts);
   const NB=bank.length;let u=seed>>>0;
   const nm=bank[u%NB];u=(u-u%NB)/NB;
