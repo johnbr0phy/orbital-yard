@@ -6197,26 +6197,30 @@ var shdDone=function(parts,seed,klass){
     mass:Math.max(1,L*B*H*0.018),crew:1}};
 };
 
-/* filmed order of battle: every regular hull is the battlecrab.
-   j() is a seed's whole allowance — a whisker, never a proportion. */
+/* three appetites of the same scream: a scout you could miss, a hunter
+   the size of a frigate, and the 1,500 m battlecrab the younger races
+   actually remember. The seed picks which; the band matching does the rest. */
 var buildShadow=function(seed){
   const R=mulberry32(seed|0);
   const j=()=>1+(R()*2-1)*0.03;
   const parts=[];
-  R();
-  shdCrab(parts,1500*j(),{veins:4,thorns:0});
-  return shdDone(parts,seed,"SHADOW VESSEL");
+  const u=R();
+  let L,klass,veins=3,thorns=0;
+  if(u<0.50){L=36*j();klass="SHADOW SCOUT";veins=3;}
+  else if(u<0.78){L=78*j();klass="SHADOW HUNTER";veins=4;}
+  else{L=(1100+R()*700)*j();klass="SHADOW VESSEL";veins=5;thorns=1;}
+  shdCrab(parts,L,{veins,thorns});
+  return shdDone(parts,seed,klass);
 };
 
-/* the same crab at every appetite: 1,500 m of night, nH only a
-   whisker of extra vein and crown-thorn. Class C and the Drakh
-   are not flown — they were never on the screen. */
+/* the crowns: a greater crab, and a mother that is a city of spines */
 var buildShadowMega=function(seed,nH){
   const R=mulberry32(seed|0);
   const j=()=>1+(R()*2-1)*0.03;
   const parts=[];
-  shdCrab(parts,1500*j(),{veins:nH>=25?8:5,thorns:nH>=50?6:2});
-  return shdDone(parts,seed,"SHADOW VESSEL");
+  const L=nH>=50?2900*j():nH>=25?2000*j():1550*j();
+  shdCrab(parts,L,{veins:nH>=25?8:5,thorns:nH>=50?6:2});
+  return shdDone(parts,seed,nH>=50?"GREATER BATTLECRAB":"SHADOW VESSEL");
 };
 /*__RACE_SHADOW_END__*/
 /* =====================================================================
@@ -12111,7 +12115,7 @@ const RACE_DEFS=[
    wpn:[[8,1],[14,2],[20,3],[40,4],[70,5]],
    fire:"neutron",boom:"crystal",msl:false,
    doct:{CHARGE:1,FLANK:5,ENVELOP:2,SWARM:1,HUNT:4,SCREEN:1,FEIGN:3,MINE:1}},
-  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.85,0.10,0.05],form:"swarm",fleetK:0.95,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:1,tone:0.55,dust:0.8,spdCap:170,
+  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.48,0.30,0.22],form:"swarm",fleetK:0.11,fleetMin:20,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:1,tone:0.55,dust:0.8,spdCap:170,
    hpdiv:15,spdK:1600,spdCap:80,turnK:41,
    wpn:[[6,1],[10,2],[14,3],[22,4],[80,5]],
    fire:"slicer",boom:"dissolve",msl:false,
@@ -12590,9 +12594,9 @@ function scatterShadows(){
     if(crabs.length<2)continue;
     const sx=side?1:-1;
     const n=crabs.length;
-    let berth=1600;
-    for(const s of crabs)berth=Math.max(berth,hullBerth(s));
-    const gap=berth*1.28+420;
+    let berth=280;
+    for(const s of crabs)berth=Math.max(berth,Math.min(hullBerth(s),720));
+    const gap=berth*1.12+240;
     const nx=Math.max(3,Math.round(Math.cbrt(n*0.55)));
     const nz=Math.max(4,Math.round(Math.sqrt(n/nx*1.35)));
     const ny=Math.max(3,Math.ceil(n/(nx*nz)));
@@ -12618,7 +12622,7 @@ function scatterShadows(){
           const b=crabs[j];
           const dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z;
           const d=Math.hypot(dx,dy,dz)||0.001;
-          const need=gap*0.92;
+          const need=(hullBerth(a)+hullBerth(b))*0.70+90;
           if(d>=need)continue;
           const k=(need-d)*0.5/d;
           a.x+=dx*k;a.y+=dy*k;a.z+=dz*k;
@@ -13093,7 +13097,7 @@ function startWar(fresh){
       built[side]=8;
       continue;
     }
-    const n=Math.max(48,Math.round(perFleet*(rd.fleetK||1)));
+    const n=Math.max(rd.fleetMin||48,Math.round(perFleet*(rd.fleetK||1)));
     const sm=n-3,mix=rd.mix||[0.72,0.18,0.10];
     let nFtr=Math.max(SQN,Math.floor(sm*mix[0]/SQN)*SQN);
     let nCap=Math.max(1,Math.round(sm*mix[2]));
@@ -14892,11 +14896,12 @@ function maybeCallAlly(now){
        across the three doors — hammer, screen, cut — so nobody
        arrives as a single wad on the caller's head */
     const amix=RACE_DEFS[ally].mix||[0.72,0.18,0.10];
-    const nSm=Math.max(3*SQN,Math.round(spawned[side]*0.28/SQN)*SQN);
+    const sliceAlly=(RACE_DEFS[ally]||{}).fire==="slicer";
+    let nSm=Math.max(3*SQN,Math.round(spawned[side]*0.28/SQN)*SQN);
+    if(sliceAlly)nSm=Math.min(nSm,Math.max(2*SQN,Math.round(28/SQN)*SQN));
     const ftrByGate={hammer:[],relief:[],cut:[]};
     const escByGate={hammer:[],relief:[],cut:[]};
     const slotN={hammer:0,relief:0,cut:0};
-    const sliceAlly=(RACE_DEFS[ally]||{}).fire==="slicer";
     const wideOf=b=>sliceAlly?2400:b===2?220:b===1?160:110;
     for(let i2=0;i2<nSm;i2++){
       const u=i2/Math.max(1,nSm);
