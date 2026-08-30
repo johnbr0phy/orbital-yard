@@ -6215,8 +6215,8 @@ var buildShadow=function(seed){
   const parts=[];
   const u=R();
   let L,klass,veins=3,thorns=0;
-  if(u<0.50){L=36*j();klass="SHADOW SCOUT";veins=3;}
-  else if(u<0.78){L=78*j();klass="SHADOW HUNTER";veins=4;}
+  if(u<0.64){L=36*j();klass="SHADOW SCOUT";veins=3;}
+  else if(u<0.88){L=78*j();klass="SHADOW HUNTER";veins=4;}
   else{L=(1100+R()*700)*j();klass="SHADOW VESSEL";veins=5;thorns=1;}
   shdCrab(parts,L,{veins,thorns});
   return shdDone(parts,seed,klass);
@@ -12191,7 +12191,7 @@ const RACE_DEFS=[
    wpn:[[8,1],[14,2],[20,3],[40,4],[70,5]],
    fire:"neutron",boom:"crystal",msl:false,
    doct:{CHARGE:1,FLANK:5,ENVELOP:2,SWARM:1,HUNT:4,SCREEN:1,FEIGN:3,MINE:1}},
-  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.48,0.30,0.22],form:"swarm",fleetK:0.11,fleetMin:20,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:1,tone:0.55,dust:0.8,spdCap:170,
+  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.70,0.22,0.08],form:"swarm",fleetK:0.16,fleetMin:32,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:1,tone:0.55,dust:0.8,spdCap:170,
    hpdiv:15,spdK:1600,spdCap:80,turnK:41,
    wpn:[[6,1],[10,2],[14,3],[22,4],[80,5]],
    fire:"slicer",boom:"dissolve",msl:false,
@@ -12446,12 +12446,22 @@ function setShipPace(s){
   const pace=s.pace||1,hot=s.hot||1;
   let cruise,dash;
   if(RD.fire==="slicer"){
-    /* Shadows are not a wall. They are a scream: a 1,500 m crab
-       still outruns a fighter, because the hull is a thought */
-    cruise=(118+48*(hot-0.8))*pace;
-    cruise=Math.max(102,Math.min(176,cruise));
-    dash=cruise*(1.58+0.38*hot);
-    s.turn=Math.max(s.turn||0,1.05);
+    /* scouts scream. Hunters run. The big crab is a thought that walks. */
+    if(L<=50){
+      cruise=(110+40*(hot-0.8))*pace;
+      cruise=Math.max(96,Math.min(155,cruise));
+      dash=cruise*(1.52+0.32*hot);
+      s.turn=Math.max(s.turn||0,1.25);
+    }else if(L<=140){
+      cruise=(68+24*(hot-0.8))*pace;
+      cruise=Math.max(52,Math.min(88,cruise));
+      dash=cruise*(1.36+0.24*hot);
+      s.turn=Math.max(s.turn||0,0.88);
+    }else{
+      cruise=Math.max(12,Math.min(28,48*(520/(L+220))))*pace;
+      dash=cruise*1.16;
+      s.turn=Math.max(0.14,Math.min(0.34,80/L));
+    }
   }else if(RD.fire==="cutter"&&!s.hulls){
     /* Borg spheres and probes: the cube's errands, not parked geometry */
     cruise=Math.max(52,Math.min(96,(88-L*0.04)*pace*(0.85+0.32*hot)));
@@ -14658,18 +14668,19 @@ function megaStep(s,now,dt){
          +((s.seed&15)/15-0.5)*0.16;
     let dyaw=want-s.yaw;
     dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
-    const mx=Math.max(1.05,s.turn||0.9);
-    let wantR=Math.max(-mx,Math.min(mx,dyaw*2.8));
-    s.yawV=(s.yawV||0)+(wantR-s.yawV)*Math.min(1,dt*3.8);
+    const bigSh=RD.fire==="slicer"&&(s.slen||0)>180;
+    const mx=bigSh?Math.max(0.16,s.turn||0.22):Math.max(1.05,s.turn||0.9);
+    let wantR=Math.max(-mx,Math.min(mx,dyaw*(bigSh?1.4:2.8)));
+    s.yawV=(s.yawV||0)+(wantR-s.yawV)*Math.min(1,dt*(bigSh?1.4:3.8));
     s.yaw+=s.yawV*dt;
-    const dash=s.spdMax||s.spd*1.55;
+    const dash=s.spdMax||s.spd*(bigSh?1.16:1.55);
     const gap=Math.max(0,Math.hypot(wx,wy,wz)-(s.slen||400)*0.35);
-    let sp=gap<280?s.spd*0.90:dash;
-    if(!(s.v>8))s.v=sp;
-    s.v+=(sp-s.v)*Math.min(1,dt*3.8);
+    let sp=gap<280?s.spd*0.90:(bigSh?s.spd*1.06:dash);
+    if(!(s.v>(bigSh?2:8)))s.v=sp;
+    s.v+=(sp-s.v)*Math.min(1,dt*(bigSh?1.15:3.8));
     s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
-    const climb=Math.max(-dash*0.55,Math.min(dash*0.55,wy*0.55));
-    s.vy+=(climb-s.vy)*Math.min(1,dt*2.2);
+    const climb=Math.max(-dash*0.55,Math.min(dash*0.55,wy*(bigSh?0.28:0.55)));
+    s.vy+=(climb-s.vy)*Math.min(1,dt*(bigSh?1.1:2.2));
     s.y+=s.vy*dt;
   }else if(isLeviathan(s)){
     /* overconfident: a 19 km blade does not spin out of the jump and
@@ -15091,7 +15102,9 @@ function simStep(now,dt){
         s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
         continue;
       }
-      s.v=Math.max(s.v||0,(s.spdMax||s.spd)*(sliceJump?1.05:1.2+0.55*(s.hot||1))*(s.goK||1));
+      const bigSlice=sliceJump&&(s.slen||0)>180;
+      s.v=Math.max(s.v||0,bigSlice?(s.spd||14):
+        (s.spdMax||s.spd)*(sliceJump?1.05:1.2+0.55*(s.hot||1))*(s.goK||1));
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
       continue;
     }
