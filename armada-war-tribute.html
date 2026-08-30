@@ -27,10 +27,11 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
 #gl.dragging{cursor:grabbing}
 .hud{position:fixed;z-index:5;pointer-events:none}
-#brand{top:18px;left:20px}
+#brand{top:18px;left:20px;right:min(500px,52vw)}
 #brand .t{font-family:"Saira Condensed",sans-serif;font-weight:700;font-size:22px;
   letter-spacing:.14em}
-#brand .s{font-size:11px;opacity:.62;margin-top:3px;letter-spacing:.08em}
+#brand .s{font-size:11px;opacity:.62;margin-top:3px;letter-spacing:.06em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 #brand a{color:inherit;text-decoration:none;border-bottom:1px solid;opacity:.62;pointer-events:auto}
 #stat{bottom:16px;left:20px;font-size:11px;letter-spacing:.06em;opacity:.75;line-height:1.7}
 #score{top:16px;right:16px;max-width:min(440px,48vw);display:flex;flex-wrap:wrap;
@@ -185,7 +186,7 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
 <canvas id="gl"></canvas>
 <div class="hud" id="brand">
   <div class="t">ORBITAL YARD — THE TRIBUTE WAR</div>
-  <div class="s"><a href="index.html">&larr; the yard</a> &nbsp;·&nbsp; every fleet we grew up with, one sky · pick two · a losing fleet may call an ally · click a ship to chase her · H cycles heroes · drag orbits, wheel closes in · N new war · P palette · <a href="https://github.com/johnbr0phy/orbital-yard" target="_blank" rel="noopener">GitHub</a> · <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">@JohnBr0</a></div>
+  <div class="s"><a href="index.html">&larr; the yard</a> · every fleet we grew up with · <a href="https://github.com/johnbr0phy/orbital-yard" target="_blank" rel="noopener">GitHub</a> · <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">@JohnBr0</a></div>
   <div class="s2"><a href="index.html">&larr; the yard</a> · tap a ship · pinch zoom · ★ heroes</div>
 </div>
 <div class="hud" id="stat"></div>
@@ -14532,7 +14533,7 @@ function fireIonFrom(g,side,now){
       beams.push({a:[best.x,best.y,best.z],b:[t.x,t.y,t.z],t0:now,side,race:g.race,arc:true});
   }
   kickCam(popped>3?28:16);
-  toast("ION CANNON");
+
 }
 function megaStep(s,now,dt){
   /* a crown fights at her own range. She advances to the reach of her
