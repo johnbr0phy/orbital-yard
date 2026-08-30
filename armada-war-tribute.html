@@ -13658,7 +13658,7 @@ function onWorkerMsg(e){
     const shipSp=Math.hypot(s.dvx||0,s.dvy||0,s.dvz||0);
     /* a frigate sheds bits, not just mist — and each race burns its own
        way: the shadows dissolve, the borg cleave off in solid blocks */
-    let dustFrac=s.slen>90?0.3:0.5;
+    let dustFrac=s.slen>90?0.16:0.28;
     if(RACE_DEFS[s.race]&&RACE_DEFS[s.race].dust!==undefined)dustFrac=RACE_DEFS[s.race].dust;
     for(const f2 of d.frags){
       const rl0=rod([f2.ox,f2.oy,f2.oz]);
@@ -16098,7 +16098,7 @@ function simStep(now,dt){
     }
   }
   tracers=tracers.filter(tr=>!tr.dead);
-  dusts=dusts.filter(du=>now-du.t0<9);
+  dusts=dusts.filter(du=>now-du.t0<22);
   for(const du of dusts){du.x+=du.vx*dt;du.y+=du.vy*dt;du.z+=du.vz*dt;}
   /* seekers: they lead their own lives — chase, retarget, or fizzle */
   for(const ms of missiles){
@@ -16598,11 +16598,20 @@ function frame(nowMs){
   for(const s of ships){
     if(!s.vao)continue;
     if(s.dead){
-      /* a corpse: whole, dark, drifting on her death momentum */
-      if(now-(s.deadT||0)>4){
-        dustBurst(s.x,s.y,s.z,s.dvx||0,s.dvy||0,s.dvz||0,16,now);
-        gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);s.vao=null;
-        continue;
+      /* a corpse drifts. She does not blink out — she speckles into dust. */
+      if(!s.dustT&&now-(s.deadT||0)>12){
+        s.dustT=now;s.dustDur=3.6+Math.random()*1.4;s.dustNext=now;
+      }
+      if(s.dustT){
+        const k=Math.min(1,(now-s.dustT)/s.dustDur);
+        if(now>=(s.dustNext||0)){
+          dustBurst(s.x,s.y,s.z,s.dvx||0,s.dvy||0,s.dvz||0,Math.max(2,Math.round(10*(1-k))),now);
+          s.dustNext=now+0.08+k*0.12;
+        }
+        if(k>=1){
+          gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);s.vao=null;
+          continue;
+        }
       }
       s.x+=(s.dvx||0)*dt;s.y+=(s.dvy||0)*dt;s.z+=(s.dvz||0)*dt;
       if(!sphereVis(FRP,s.x,s.y,s.z,s.slen*0.8))continue;
@@ -16610,7 +16619,7 @@ function frame(nowMs){
       gl.uniform3f(SU.pos,s.x,s.y,s.z);
       gl.uniform2f(SU.yaw,Math.cos(s.yaw),Math.sin(s.yaw));
       gl.uniform4f(SU.rot,dax[0],dax[1],dax[2],(s.dang||0)+(now-s.deadT)*(s.corpseSpin||0.4));
-      gl.uniform1f(SU.inz,1.0);
+      gl.uniform1f(SU.inz,s.dustT?Math.max(0.04,1-(now-s.dustT)/s.dustDur):1.0);
       gl.uniform1f(SU.hurt,Math.max(0,1.2-(now-s.deadT))*0.5);
       gl.uniform1f(SU.tone,0.6);
       gl.uniform4f(SU.anim,0,0,1,0);
@@ -16665,16 +16674,24 @@ function frame(nowMs){
   for(const w of wrecks){
     if(w.gone)continue;
     if(!w.pending){
-      /* a piece coasts until she has genuinely stopped — no drag out
-         here: she flies at the speed she was thrown at, forever, unless
-         she bangs into something that stops her */
-      if(w.shatter){
-        dustBurst(w.x,w.y,w.z,w.vx,w.vy,w.vz,14,now);
-        gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
-        w.gone=true;anyGone=true;continue;
+      /* a piece coasts. She does not expire on a clock. Only a last-resort
+         cull, or a knock that spends her integrity, turns her to dust —
+         and even then she speckles away, she does not blink out. */
+      if(w.shatter&&!w.dustT){
+        w.dustT=now;w.dustDur=3.0+Math.random()*1.8;w.dustNext=now;
+      }
+      if(w.dustT){
+        const k=Math.min(1,(now-w.dustT)/w.dustDur);
+        if(now>=(w.dustNext||0)){
+          dustBurst(w.x,w.y,w.z,w.vx,w.vy,w.vz,Math.max(2,Math.round(12*(1-k))),now);
+          w.dustNext=now+0.06+k*0.14;
+        }
+        if(k>=1){
+          gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
+          w.gone=true;anyGone=true;continue;
+        }
       }
       const wsp=Math.hypot(w.vx,w.vy,w.vz);
-      if(now-w.t0>(w.life||38))w.shatter=true;   /* old bones become mist */
       if(wsp<1.2){
         if(wsp>0.05){const f3=1.2/wsp;w.vx*=f3;w.vy*=f3;w.vz*=f3;}
         else{const a5=Math.random()*6.283;
@@ -16694,18 +16711,23 @@ function frame(nowMs){
       const wr=xQAA(w.bax||[0,1,0],w.bang||0,w.ax,w.ang!=null?w.ang:w.spin*(now-w.t0));
       gl.uniform4f(SU.rot,wr.ax[0],wr.ax[1],wr.ax[2],wr.ang);
     }
+    gl.uniform1f(SU.inz,w.dustT?Math.max(0.04,1-(now-w.dustT)/w.dustDur):1.0);
+    gl.uniform1f(SU.tone,w.dustT?0.28:0.42);
     gl.bindVertexArray(w.vao);
     gl.drawElements(gl.TRIANGLES,w.icount,gl.UNSIGNED_INT,0);
   }
+  gl.uniform1f(SU.inz,1.0);
+  gl.uniform1f(SU.tone,0.42);
   if(anyGone)wrecks=wrecks.filter(w=>!w.gone);
-  /* a massacre can flood the sky with tumbling pieces; past the budget,
-     the oldest flyers settle early rather than the frame rate */
+  /* last resort: a massacre can flood the GPU. Oldest pieces begin to
+     dust — they do not vanish — and only a couple per frame, so the
+     sky thins as grit, not as a cut. */
   let liveW=0;
-  for(const w of wrecks)if(!w.pending&&!w.gone)liveW++;
-  if(liveW>600){let marks=0;for(const w of wrecks){
-    if(w.pending||w.gone||w.shatter)continue;
+  for(const w of wrecks)if(!w.pending&&!w.gone&&!w.dustT)liveW++;
+  if(liveW>2200){let marks=0;for(const w of wrecks){
+    if(w.pending||w.gone||w.shatter||w.dustT)continue;
     w.shatter=true;
-    if(--liveW<=600||++marks>=3)break;
+    if(--liveW<=2200||++marks>=2)break;
   }}
   if(pendI.length&&(now-lastBake>1.6||pendI.length>500000)){lastBake=now;bakeBoneyard();}
   /* beams */
@@ -16932,7 +16954,7 @@ function frame(nowMs){
       for(let i=0;i<nd2;i++){
         const du=dusts[i];
         duPool[i*4]=du.x;duPool[i*4+1]=du.y;duPool[i*4+2]=du.z;
-        duPool[i*4+3]=Math.max(0.5,2.2*(1-(now-du.t0)/9));
+        duPool[i*4+3]=Math.max(0.4,2.4*(1-(now-du.t0)/22));
       }
       gl.bindVertexArray(mmVao);
       gl.bindBuffer(gl.ARRAY_BUFFER,mmVbo);
