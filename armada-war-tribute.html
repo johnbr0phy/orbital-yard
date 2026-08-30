@@ -12305,6 +12305,7 @@ function setShipPace(s){
     cruise=(7.2+2100/(L+90))*(cap/70)*pace;
     cruise=Math.max(6.2,Math.min(18,cruise));
     dash=cruise*(1.10+0.16*hot);
+    if(s.hulls>=50){cruise=Math.min(cruise,3.6);dash=cruise*1.05;}
   }else{
     cruise=cap*(0.12+0.78*40/(L+35))*pace;
     if(L<=42)dash=cruise*(1.40+0.30*hot);
@@ -12921,7 +12922,7 @@ function startWar(fresh){
     const hero=!!(opt&&opt.hero);
     ships.push({id,side,race:sideRace[side],seed,
       x:pos[0],y:pos[1],z:pos[2],
-      yaw:(side?Math.PI:0)+(R()-0.5)*(hulls?0.10:0.85),vy:0,v:0,yawV:0,roll:0,pitch:0,brUntil:0,
+      yaw:(side?Math.PI:0)+(R()-0.5)*(hulls>=50?0.006:hulls?0.03:0.85),vy:0,v:0,yawV:0,roll:0,pitch:0,brUntil:0,
       hp:1,hpMax:1,cool:R()*2,squad:-1,grace:true,band:hulls?null:band,kills:0,
       delay:pos[3]+R()*0.5,arr:false,hurtT:-9,dead:false,
       vao:null,vbo:null,ibo:null,icount:0,meta:null,hero,
@@ -12929,7 +12930,7 @@ function startWar(fresh){
       hulls:hulls||0,slen:20,nose:9,spd:25,turn:1,wf:R()*6.283});
     pilotSeed(ships[id],R);
     ships[id].delay+=ships[id].lag;
-    ships[id].yaw+=(ships[id].crab||0)*0.45;
+    if(!hulls)ships[id].yaw+=(ships[id].crab||0)*0.45;
     jobs.push({id,seed,f:sideRace[side],hulls:hulls||0,band:hulls?null:band,hero});
     total++;
     return id;
@@ -13125,7 +13126,7 @@ function onWorkerMsg(e){
          each cannon a turret at her own fixed station down the length,
          the same battery every war because it grows from her seed */
       s.hpMax=s.hp=s.hulls*6;
-      s.turn=0.12;
+      s.turn=s.hulls>=50?0.007:0.032;
     }
     if(fightsAsCrown(s)){
       if(!s.hulls){
@@ -13451,6 +13452,10 @@ function fightsAsCrown(s){
   const RD=RACE_DEFS[s.race]||{};
   return !!(s.hulls||(RD.fire==="slicer"&&(s.slen||0)>180&&!s.hero));
 }
+function isLeviathan(s){
+  /* the super-keel: an Executor, a 19 km blade. She does not spin. */
+  return (s.hulls||0)>=50;
+}
 function cutRange(s){
   /* the molecular slicer is a lance, not a knife: it speaks at a
      crab's own length, not 180 m in front of a 1,500 m hull */
@@ -13587,6 +13592,9 @@ function thoughtLine(s,now){
   }
   if(s.hulls||(fightsAsCrown(s)&&!s.hero)){
     const slice=(RACE_DEFS[s.race]||{}).fire==="slicer";
+    if((s.hulls||0)>=50&&hpR>0.55)
+      return glue(skyBit,mn?"they will break on us. "+mn+" is already in the battery."
+        :"they cannot hurt us. we do not need to hurry.");
     if(sky==="LAST")return "last of the line. battery still speaking"+(mn?" on "+mn:"")+".";
     if(hpR<0.4)return glue(skyBit,"the hull is opened. holding the range. battery still speaking.");
     if(age<4||!foeCache[1-s.side].length)
@@ -14201,6 +14209,7 @@ function megaStep(s,now,dt){
   const ec=fleetCentroid(1-s.side);
   const dx=ec[0]-s.x,dz=ec[2]-s.z;
   const dist=Math.hypot(dx,dz);
+  const bear=Math.atan2(dz,dx);
   const foes5=foeCache[1-s.side];
   const mopup=foes5.length<=6;
   const hurt=s.hp<s.hpMax*0.4;
@@ -14244,6 +14253,23 @@ function megaStep(s,now,dt){
     const climb=Math.max(-s.spd*0.55,Math.min(s.spd*0.55,wy*0.45));
     s.vy+=(climb-s.vy)*Math.min(1,dt*1.8);
     s.y+=s.vy*dt;
+  }else if(isLeviathan(s)){
+    /* overconfident: a 19 km blade does not spin out of the jump and
+       does not waltz to broadside. She faces them, crawls, and waits
+       for the rebels to break on her. */
+    s.mood=hurt?"DEFEND":"ATTACK";
+    s.roll=0;s.pitch=0;s.vy*=Math.max(0,1-dt*4);
+    let want=bear;
+    let dyaw=want-s.yaw;
+    dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+    const mx=s.turn||0.007;
+    const wantR=Math.abs(dyaw)<0.025?0:Math.max(-mx,Math.min(mx,dyaw*0.35));
+    s.yawV=(s.yawV||0)*Math.max(0,1-dt*8)+wantR*dt*1.4;
+    s.yaw+=s.yawV*dt;
+    const crawl=(s.spd||4)*0.22;
+    if(!(s.v>=0))s.v=crawl;
+    s.v+=(crawl-s.v)*Math.min(1,dt*0.35);
+    s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
   }else{
     let hold=RD.hold||560;
     if(s.hulls>=50)hold*=0.88;
@@ -14253,9 +14279,8 @@ function megaStep(s,now,dt){
     hold*=0.92+0.16*((s.seed>>>11)&7)/7;
     hold=Math.max(hold,(s.slen||40)*0.48+220);
     if(!s.brSgn)s.brSgn=((s.seed>>>3)&1)?1:-1;
-    const bear=Math.atan2(dz,dx);
     let want;
-    const inbound=(now-warT0-(s.delay||0))<4.0||!foes5.length;
+    const inbound=(now-warT0-(s.delay||0))<(s.hulls?14:4.0)||!foes5.length;
     s.mood=hurt?"DEFEND":mopup?"HUNT":"ATTACK";
     if((RACE_DEFS[s.race]||{}).unique)s.mood=hurt?"DEFEND":"HUNT";
     if(inbound)want=s.yaw;
@@ -14485,7 +14510,7 @@ function maybeCallAlly(now){
         hulls:hulls||0,slen:20,nose:9,spd:25,turn:1,wf:Math.random()*6.283});
       pilotSeed(ships[id],Math.random);
       ships[id].delay+=ships[id].lag;
-      ships[id].yaw+=(ships[id].crab||0)*0.45;
+      if(!hulls)ships[id].yaw+=(ships[id].crab||0)*0.45;
       jobs.push({id,seed,f:ally,hulls:hulls||0,band:hulls?null:band});
       total++;counts[side]++;spawned[side]++;
       return id;
@@ -14621,8 +14646,16 @@ function simStep(now,dt){
       if((RACE_DEFS[s.race]||{}).unique&&s.meta&&s.meta.desig)toast(s.meta.desig);
     }
     if(age<(s.shed||1.0)){
-      /* shedding the jump: each keel burns on her own heading and
-         clock — not a rank of torches lighting as one */
+      /* shedding the jump: a fighter burns onto her heading. A crown
+         is already on station — she does not lunge, and a leviathan
+         does not spin. */
+      if(s.hulls){
+        s.yawV=0;s.roll=0;s.pitch=0;s.vy=0;
+        if(isLeviathan(s)){s.v=0;continue;}
+        s.v=Math.min(s.v||0,(s.spd||8)*0.16);
+        s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
+        continue;
+      }
       s.v=s.spd*(1.2+0.55*(s.hot||1))*(s.goK||1);
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
       continue;
