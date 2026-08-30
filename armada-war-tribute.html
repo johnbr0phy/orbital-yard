@@ -10120,11 +10120,17 @@ var heroBB=function(parts){
       if(q[a]+r>bb[1][a])bb[1][a]=q[a]+r;}}
   return bb;
 };
-var heroShip=function(parts,desig,klass,crew){
+var heroShip=function(parts,desig,klass,crew,guns){
   const bb=heroBB(parts);
   const L=bb[1][0]-bb[0][0],B=bb[1][2]-bb[0][2],H=bb[1][1]-bb[0][1];
-  return {parts,bb,meta:{desig:desig,klass:klass,length:L,beam:B,height:H,
+  const ship={parts,bb,meta:{desig:desig,klass:klass,length:L,beam:B,height:H,
     mass:Math.max(2,L*B*H*0.06),crew:crew||1,hero:true}};
+  if(guns&&guns.length)ship.muzzles=guns;
+  return ship;
+};
+var heroBarrel=function(parts,mz,root,tip,r1,r2){
+  parts.push({k:"tube",a:root,b:tip,r1:r1,r2:r2});
+  mz.push([tip[0],tip[1],tip[2]]);
 };
 var heroMir=function(p){
   if(p.k==="loft"){
@@ -10165,7 +10171,10 @@ var buildYardHero=function(){
   const wing={k:"box",c:[0,-L*0.01,L*0.16],u:[L*0.16,0,0],v:[0,L*0.012,0],w:[0,0,L*0.14]};
   parts.push(wing);parts.push(heroMir(wing));
   parts.push({k:"disc",c:[-L*0.42,0,0],n:[-1,0,0],r:L*0.07,ri:L*0.02});
-  return heroShip(parts,"THE PROTOTYPE","YARD ACE",1);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.10,-L*0.01,L*0.26],[L*0.22,-L*0.01,L*0.30],L*0.012,L*0.006);
+  heroBarrel(parts,mz,[L*0.10,-L*0.01,-L*0.26],[L*0.22,-L*0.01,-L*0.30],L*0.012,L*0.006);
+  return heroShip(parts,"THE PROTOTYPE","YARD ACE",1,mz);
 };
 /* ---- 1 Shoal: THE APEX — a toothed hunter that out-swam the shoal ---- */
 var buildShoalHero=function(){
@@ -10177,7 +10186,10 @@ var buildShoalHero=function(){
     parts.push({k:"tube",a:[-L*0.15,0,s*L*0.03],b:[-L*0.28,-L*0.04,s*L*0.18],r1:L*0.016,r2:L*0.004});
   }
   parts.push({k:"sphere",c:[L*0.22,L*0.02,0],r:L*0.03});
-  return heroShip(parts,"THE APEX","SHOAL APEX",1);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.18,L*0.01,L*0.04],[L*0.32,L*0.00,L*0.05],L*0.010,L*0.004);
+  heroBarrel(parts,mz,[L*0.18,L*0.01,-L*0.04],[L*0.32,L*0.00,-L*0.05],L*0.010,L*0.004);
+  return heroShip(parts,"THE APEX","SHOAL APEX",1,mz);
 };
 /* ---- 2 Lattice: THE KEYSTONE ---- */
 var buildLatticeHero=function(){
@@ -10187,7 +10199,10 @@ var buildLatticeHero=function(){
   parts.push({k:"box",c:[-L*0.28,0,0],u:[L*0.12,0,0],v:[0,L*0.09,0],w:[0,0,L*0.09]});
   const pylon={k:"box",c:[0,L*0.08,L*0.10],u:[L*0.08,0,0],v:[0,L*0.09,0],w:[0,0,L*0.02]};
   parts.push(pylon);parts.push(heroMir(pylon));
-  return heroShip(parts,"THE KEYSTONE","LATTICE KEYSTONE",1);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.30,L*0.02,L*0.05],[L*0.42,L*0.02,L*0.06],L*0.010,L*0.005);
+  heroBarrel(parts,mz,[L*0.30,L*0.02,-L*0.05],[L*0.42,L*0.02,-L*0.06],L*0.010,L*0.005);
+  return heroShip(parts,"THE KEYSTONE","LATTICE KEYSTONE",1,mz);
 };
 /* ---- 3 Drift: THE WANDERER ---- */
 var buildDriftHero=function(){
@@ -10196,7 +10211,10 @@ var buildDriftHero=function(){
   parts.push({k:"sphere",c:[L*0.22,L*0.04,L*0.06],r:L*0.09});
   parts.push({k:"sphere",c:[-L*0.20,-L*0.03,-L*0.05],r:L*0.11});
   parts.push({k:"tube",a:[-L*0.28,0,0],b:[L*0.30,0.02,0],r1:L*0.04,r2:L*0.02});
-  return heroShip(parts,"THE WANDERER","DRIFT WANDERER",2);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.22,L*0.04,L*0.06],[L*0.34,L*0.04,L*0.08],L*0.012,L*0.005);
+  heroBarrel(parts,mz,[L*0.12,-L*0.02,-L*0.08],[L*0.24,-L*0.02,-L*0.10],L*0.012,L*0.005);
+  return heroShip(parts,"THE WANDERER","DRIFT WANDERER",2,mz);
 };
 /* ---- 4 Choir: THE SOLOIST ---- */
 var buildChoirHero=function(){
@@ -10206,7 +10224,10 @@ var buildChoirHero=function(){
     n:[0,0.6,-0.8],th:L*0.008};
   parts.push(sail);parts.push(heroMir(sail));
   parts.push({k:"disc",c:[L*0.12,0,0],n:[1,0,0],r:L*0.06,ri:L*0.02});
-  return heroShip(parts,"THE SOLOIST","CHOIR SOLOIST",1);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.12,0,L*0.04],[L*0.26,0,L*0.05],L*0.010,L*0.004);
+  heroBarrel(parts,mz,[L*0.12,0,-L*0.04],[L*0.26,0,-L*0.05],L*0.010,L*0.004);
+  return heroShip(parts,"THE SOLOIST","CHOIR SOLOIST",1,mz);
 };
 /* ---- 5 Imperial: Vader's TIE Advanced x1 ---- */
 var buildImperialHero=function(){
@@ -10224,7 +10245,10 @@ var buildImperialHero=function(){
   const up2=up.map(q=>[q[0],q[1],-q[2]]).reverse();
   parts.push({k:"panel",pts:up2,n:[0,-1,0],th:rb*0.07});
   parts.push({k:"panel",pts:up2.map(q=>[q[0],-q[1],q[2]]),n:[0,1,0],th:rb*0.07});
-  return heroShip(parts,"ST-321 VADER'S FIST","TIE ADVANCED X1",1);
+  const mz=[];
+  heroBarrel(parts,mz,[rb*0.85,-rb*0.42,rb*0.28],[rb*1.72,-rb*0.50,rb*0.34],rb*0.07,rb*0.038);
+  heroBarrel(parts,mz,[rb*0.85,-rb*0.42,-rb*0.28],[rb*1.72,-rb*0.50,-rb*0.34],rb*0.07,rb*0.038);
+  return heroShip(parts,"ST-321 VADER'S FIST","TIE ADVANCED X1",1,mz);
 };
 /* ---- 6 Rebel: Millennium Falcon ----
    Haynes YT-1300: 34.75 × 25.61 × 8.27. Two saucers, a rim of light,
@@ -10279,10 +10303,14 @@ var buildRebelHero=function(){
     parts.push({k:"tube",a:[1.70,2.85*ySgn,0],b:[1.70,3.42*ySgn,0],r1:0.58,r2:0.70});
     parts.push({k:"lathe",c:[1.70,y0,0],axis:ax,prof:[
       [0,0.55],[0.08,1.28],[0.22,1.42],[0.40,1.35],[0.555,0.40]]});
-    for(const d of [[0.46,0.46],[0.46,-0.46],[-0.46,0.46],[-0.46,-0.46]])
+    for(const d of [[0.46,0.46],[0.46,-0.46],[-0.46,0.46],[-0.46,-0.46]]){
+      const tip=[1.70+d[0]*1.18,y0+0.48*ySgn,d[1]*1.18];
       parts.push({k:"tube",a:[1.70+d[0],y0+0.06*ySgn,d[1]],
-        b:[1.70+d[0]*1.18,y0+0.48*ySgn,d[1]*1.18],r1:0.060,r2:0.038});
+        b:tip,r1:0.060,r2:0.038});
+      mz.push(tip);
+    }
   };
+  const mz=[];
   ag2g(1);ag2g(-1);
   /* OT rectenna: a rectangle on a stalk, port-dorsal, under the guns */
   parts.push({k:"tube",a:[0.65,2.70,-4.85],b:[0.95,3.38,-5.30],r1:0.12,r2:0.09});
@@ -10314,7 +10342,7 @@ var buildRebelHero=function(){
   };
   ring(2.52,8.35,1);ring(2.78,5.55,1);ring(2.98,3.35,1);
   ring(-2.52,8.35,-1);ring(-2.78,5.55,-1);
-  return heroShip(parts,"MILLENNIUM FALCON","YT-1300 LIGHT FREIGHTER",2);
+  return heroShip(parts,"MILLENNIUM FALCON","YT-1300 LIGHT FREIGHTER",2,mz);
 };
 /* ---- 7 Minbari: DUKHAT'S BLADE — a unique Nial that outflew fleets ---- */
 var buildMinbariHero=function(){
@@ -10323,7 +10351,11 @@ var buildMinbariHero=function(){
   const fin={k:"box",c:[0,L*0.02,L*0.12],u:[L*0.22,0,0],v:[0,L*0.01,0],w:[0,0,L*0.14]};
   parts.push(fin);parts.push(heroMir(fin));
   parts.push({k:"box",c:[-L*0.05,L*0.10,0],u:[L*0.16,0,0],v:[0,L*0.12,0],w:[0,0,L*0.01]});
-  return heroShip(parts,"DUKHAT'S BLADE","NIAL-CLASS FIGHTER",1);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.28,L*0.00,0],[L*0.48,L*0.00,0],L*0.010,L*0.004);
+  heroBarrel(parts,mz,[L*0.22,L*0.01,L*0.04],[L*0.40,L*0.00,L*0.05],L*0.008,L*0.003);
+  heroBarrel(parts,mz,[L*0.22,L*0.01,-L*0.04],[L*0.40,L*0.00,-L*0.05],L*0.008,L*0.003);
+  return heroShip(parts,"DUKHAT'S BLADE","NIAL-CLASS FIGHTER",1,mz);
 };
 /* ---- 8 Shadows: THE GHOST ---- */
 var buildShadowHero=function(){
@@ -10339,7 +10371,8 @@ var buildShadowHero=function(){
         r1:L*0.018,r2:L*0.004});
     }
   }
-  return heroShip(parts,"THE GHOST","SHADOW BATTLECRAB",1);
+  const mz=[[L*0.88,L*0.01,0]];
+  return heroShip(parts,"THE GHOST","SHADOW BATTLECRAB",1,mz);
 };
 /* ---- 9 EarthForce: Sheridan's White Star ---- */
 var buildEarthforceHero=function(){
@@ -10393,7 +10426,10 @@ var buildEarthforceHero=function(){
   parts.push({k:"tube",a:[-L*0.44,L*0.006,-L*0.015],b:[-L*0.535,L*0.006,-L*0.015],r1:L*0.013,r2:L*0.009});
   parts.push({k:"tube",a:[L*0.46,L*0.002,0],b:[L*0.545,-L*0.008,0],r1:L*0.007,r2:L*0.0026});
   heroFit(parts,258);
-  return heroShip(parts,"WHITE STAR ONE","WHITE STAR",48);
+  const G=258,mz=[];
+  heroBarrel(parts,mz,[G*0.44,-G*0.010,G*0.016],[G*0.51,-G*0.014,G*0.020],G*0.0055,G*0.0024);
+  heroBarrel(parts,mz,[G*0.44,-G*0.010,-G*0.016],[G*0.51,-G*0.014,-G*0.020],G*0.0055,G*0.0024);
+  return heroShip(parts,"WHITE STAR ONE","WHITE STAR",48,mz);
 };
 /* ---- 10 Federation: USS DEFIANT ---- */
 var buildFedHero=function(){
@@ -10404,7 +10440,12 @@ var buildFedHero=function(){
   const nac={k:"capsule",a:[-L*0.22,L*0.04,L*0.20],b:[L*0.18,L*0.04,L*0.20],r:L*0.035};
   parts.push(nac);parts.push(heroMir(nac));
   parts.push({k:"disc",c:[L*0.05,L*0.07,0],n:[0,1,0],r:L*0.09,ri:0});
-  return heroShip(parts,"USS DEFIANT NX-74205","DEFIANT-CLASS ESCORT",50);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.42,L*0.02,L*0.06],[L*0.52,L*0.01,L*0.07],L*0.012,L*0.006);
+  heroBarrel(parts,mz,[L*0.42,L*0.02,-L*0.06],[L*0.52,L*0.01,-L*0.07],L*0.012,L*0.006);
+  heroBarrel(parts,mz,[L*0.40,-L*0.02,L*0.04],[L*0.50,-L*0.03,L*0.05],L*0.010,L*0.005);
+  heroBarrel(parts,mz,[L*0.40,-L*0.02,-L*0.04],[L*0.50,-L*0.03,-L*0.05],L*0.010,L*0.005);
+  return heroShip(parts,"USS DEFIANT NX-74205","DEFIANT-CLASS ESCORT",50,mz);
 };
 /* ---- 11 Klingon: IKS ROTARRAN ---- */
 var buildKlingonHero=function(){
@@ -10415,7 +10456,11 @@ var buildKlingonHero=function(){
   parts.push(wing);parts.push(heroMir(wing));
   parts.push({k:"box",c:[-L*0.22,L*0.10,0],u:[L*0.06,0,0],v:[0,L*0.08,0],w:[0,0,L*0.04]});
   parts.push({k:"tube",a:[-L*0.32,0,0],b:[-L*0.42,0,0],r1:L*0.04,r2:L*0.02});
-  return heroShip(parts,"IKS ROTARRAN","B'REL-CLASS BIRD-OF-PREY",12);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.18,0,0],[L*0.34,0,0],L*0.014,L*0.007);
+  heroBarrel(parts,mz,[-L*0.02,-L*0.03,L*0.36],[-L*0.02,-L*0.03,L*0.48],L*0.010,L*0.005);
+  heroBarrel(parts,mz,[-L*0.02,-L*0.03,-L*0.36],[-L*0.02,-L*0.03,-L*0.48],L*0.010,L*0.005);
+  return heroShip(parts,"IKS ROTARRAN","B'REL-CLASS BIRD-OF-PREY",12,mz);
 };
 /* ---- 12 Borg: the Queen's diamond ---- */
 var buildBorgHero=function(){
@@ -10426,7 +10471,12 @@ var buildBorgHero=function(){
   parts.push({k:"sphere",c:[s*0.15,s*0.15,s*0.15],r:s*0.22});
   for(const a of [[1,1,0],[1,-1,0],[-1,1,0],[-1,-1,0]])
     parts.push({k:"box",c:[a[0]*s*0.7,a[1]*s*0.7,0],u:[s*0.12,0,0],v:[0,s*0.12,0],w:[0,0,s*0.4]});
-  return heroShip(parts,"QUEEN'S DIAMOND","BORG TACTICAL DIAMOND",1);
+  const mz=[];
+  heroBarrel(parts,mz,[s*0.55,s*0.35,s*0.20],[s*0.95,s*0.45,s*0.28],s*0.05,s*0.022);
+  heroBarrel(parts,mz,[s*0.55,s*0.35,-s*0.20],[s*0.95,s*0.45,-s*0.28],s*0.05,s*0.022);
+  heroBarrel(parts,mz,[s*0.55,-s*0.35,s*0.20],[s*0.95,-s*0.45,s*0.28],s*0.05,s*0.022);
+  heroBarrel(parts,mz,[s*0.55,-s*0.35,-s*0.20],[s*0.95,-s*0.45,-s*0.28],s*0.05,s*0.022);
+  return heroShip(parts,"QUEEN'S DIAMOND","BORG TACTICAL DIAMOND",1,mz);
 };
 /* ---- 13 Mondoshawan: the bronze ark ---- */
 var buildMondoHero=function(){
@@ -10435,7 +10485,10 @@ var buildMondoHero=function(){
   parts.push({k:"sphere",c:[L*0.18,0,0],r:L*0.16});
   parts.push({k:"sphere",c:[-L*0.18,0,0],r:L*0.16});
   parts.push({k:"lathe",c:[0,0,0],axis:[1,0,0],prof:[[-L*0.32,L*0.12],[0,L*0.22],[L*0.32,L*0.12]]});
-  return heroShip(parts,"THE MONDOSHAWAN VESSEL","MONDOSHAWAN ARK",12);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.28,L*0.04,L*0.06],[L*0.40,L*0.04,L*0.08],L*0.016,L*0.007);
+  heroBarrel(parts,mz,[L*0.28,L*0.04,-L*0.06],[L*0.40,L*0.04,-L*0.08],L*0.016,L*0.007);
+  return heroShip(parts,"THE MONDOSHAWAN VESSEL","MONDOSHAWAN ARK",12,mz);
 };
 /* ---- 14 USCM: BUG STOMPER dropship ---- */
 var buildUSCMHero=function(){
@@ -10447,7 +10500,9 @@ var buildUSCMHero=function(){
   const eng={k:"tube",a:[-L*0.22,L*0.04,L*0.08],b:[-L*0.40,L*0.04,L*0.08],r1:L*0.04,r2:L*0.025};
   parts.push(eng);parts.push(heroMir(eng));
   parts.push({k:"box",c:[L*0.08,-L*0.08,0],u:[L*0.10,0,0],v:[0,L*0.03,0],w:[0,0,L*0.08]});
-  return heroShip(parts,"BUG STOMPER","UD-4L CHEYENNE DROPSHIP",4);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.22,-L*0.08,0],[L*0.38,-L*0.10,0],L*0.016,L*0.008);
+  return heroShip(parts,"BUG STOMPER","UD-4L CHEYENNE DROPSHIP",4,mz);
 };
 /* ---- 15 Engineers: the Derelict ---- */
 var buildEngineerHero=function(){
@@ -10457,7 +10512,10 @@ var buildEngineerHero=function(){
   parts.push({k:"tube",a:[L*0.08,L*0.22,0],b:[L*0.08,-L*0.22,0],r1:L*0.05,r2:L*0.05});
   const arm={k:"tube",a:[L*0.08,0,L*0.05],b:[L*0.08,L*0.04,L*0.28],r1:L*0.04,r2:L*0.03};
   parts.push(arm);parts.push(heroMir(arm));
-  return heroShip(parts,"THE DERELICT","ENGINEER JUGGERNAUT",1);
+  const mz=[];
+  heroBarrel(parts,mz,[L*0.08,L*0.04,L*0.26],[L*0.08,L*0.05,L*0.38],L*0.018,L*0.008);
+  heroBarrel(parts,mz,[L*0.08,L*0.04,-L*0.26],[L*0.08,L*0.05,-L*0.38],L*0.018,L*0.008);
+  return heroShip(parts,"THE DERELICT","ENGINEER JUGGERNAUT",1,mz);
 };
 /* ---- 16 Yautja: the hunter's claw ---- */
 var buildYautjaHero=function(){
@@ -10470,7 +10528,12 @@ var buildYautjaHero=function(){
   }
   const fin={k:"box",c:[-L*0.12,L*0.08,L*0.06],u:[L*0.14,0,0],v:[0,L*0.07,0],w:[0,0,L*0.015]};
   parts.push(fin);parts.push(heroMir(fin));
-  return heroShip(parts,"THE HUNTER'S CLAW","YAUTJA SCOUT SHIP",2);
+  const mz=[];
+  for(let i=0;i<3;i++){
+    const z=(i-1)*L*0.08;
+    mz.push([L*0.42,L*0.02,z*1.6]);
+  }
+  return heroShip(parts,"THE HUNTER'S CLAW","YAUTJA SCOUT SHIP",2,mz);
 };
 
 /* ---- 17 First Ones: Lorien himself, if a hero is asked for ---- */
@@ -10483,7 +10546,8 @@ var buildFirstonesHero=function(){
     u:[L*0.16,0.04*L,0],v:[-0.02*L,L*0.12,0],w:[0,0,L*0.14]});
   parts.push({k:"sphere",c:[L*0.18,L*0.16,0],r:L*0.10});
   heroFit(parts,220);
-  return heroShip(parts,"LORIEN'S VESSEL","THE FIRST BORN",1);
+  const mz=[[220*0.42,220*0.16,0]];
+  return heroShip(parts,"LORIEN'S VESSEL","THE FIRST BORN",1,mz);
 };
 
 var buildHero=function(f,seed){
@@ -10637,8 +10701,11 @@ function seatTurrets(ship){
 function armShip(ship,race,hulls){
   /* a shot is a thing a mount throws. Harvest the barrels and tentacle
      mouths the yard already grew; if a hull was born without one, bolt
-     a turret or a tendril on — never a beam from an empty nose. */
+     a turret or a tendril on — never a beam from an empty nose.
+     Heroes bring their own guns: do not harvest engines as muzzles
+     and do not bolt a pair of side plates onto an ace. */
   const parts=ship.parts;if(!parts||!parts.length)return;
+  if(ship.meta&&ship.meta.hero&&ship.muzzles&&ship.muzzles.length)return;
   seatTurrets(ship);
   const bb=ship.bb||[[0,0,0],[1,1,1]];
   const L=Math.max(8,bb[1][0]-bb[0][0]);
