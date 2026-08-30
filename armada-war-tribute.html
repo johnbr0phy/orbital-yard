@@ -13229,7 +13229,50 @@ function disposeShips(){
   boneyard=[];pendV=[];pendI=[];pendBase=0;lastBake=0;boneGrid=new Map();pendVX=0;pendVY=0;pendVZ=0;pendN=0;
   mines=[];missiles=[];ionState=[null,null];ionNext=[Infinity,Infinity];tracers=[];dusts=[];plasmas=[];
 }
+/* how many people open the sky, and how many actually fight — not the
+   yard. GoatCounter unique visits, no cookies. Bookmark this page once
+   with ?yard=mine in each of your browsers and you vanish from the
+   count. Dashboard: https://orbitalyard.goatcounter.com */
+const YARD_GC="https://orbitalyard.goatcounter.com/count";
+function yardMine(){
+  try{
+    const q=new URLSearchParams(location.search);
+    if(q.get("yard")==="mine"||q.get("yard")==="me")localStorage.setItem("oyMine","1");
+    return localStorage.getItem("oyMine")==="1";
+  }catch(e){return false;}
+}
+function yardLocal(){
+  const h=location.hostname||"";
+  return location.protocol==="file:"||h==="localhost"||h==="127.0.0.1"||h==="[::1]";
+}
+function yardTrack(path,isEvent){
+  if(yardMine()||yardLocal())return;
+  const fire=()=>{
+    if(!(window.goatcounter&&goatcounter.count))return false;
+    goatcounter.count({path:path,title:document.title,event:!!isEvent});
+    return true;
+  };
+  if(fire())return;
+  let n=0,t=setInterval(()=>{if(fire()||++n>50)clearInterval(t);},120);
+}
+(function(){
+  if(yardMine()||yardLocal())return;
+  window.goatcounter={no_onload:true};
+  const s=document.createElement("script");
+  s.async=true;s.src="https://gc.zgo.at/count.js";
+  s.setAttribute("data-goatcounter",YARD_GC);
+  document.head.appendChild(s);
+  yardTrack(location.pathname||"/orbital-yard/armada-war-tribute.html");
+})();
 function startWar(fresh){
+  if(fresh){
+    try{
+      if(!sessionStorage.getItem("oyPlayPing")){
+        sessionStorage.setItem("oyPlayPing","1");
+        yardTrack("play",true);
+      }
+    }catch(e){yardTrack("play",true);}
+  }
   genId++;disposeShips();
   ships=[];beams=[];flashes=[];squads=[];
   if(fresh)warSeed=(Math.random()*4294967296)|0;
