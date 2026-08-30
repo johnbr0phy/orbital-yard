@@ -10570,18 +10570,20 @@ var buildEarthforceHero=function(){
   heroBarrel(parts,mz,[G*0.44,-G*0.010,-G*0.016],[G*0.51,-G*0.014,-G*0.020],G*0.0055,G*0.0024);
   return heroShip(parts,"WHITE STAR ONE","WHITE STAR",48,mz);
 };
-/* ---- 10 Federation: USS DEFIANT NX-74205, 49 m, four pulse cannons ---- */
+/* ---- 10 Federation: USS ENTERPRISE NCC-1701, Constitution 305 m ---- */
 var buildFedHero=function(seed){
-  const R=mulberry32((seed==null?0x74205:seed)|0);
-  const parts=[],L=49;
-  fedDefiant(parts,R,L);
-  parts.push({k:"box",c:[L*0.08,L*0.095,0],u:[L*0.22,0,0],v:[0,L*0.006,0],w:[0,0,L*0.018]});
+  const R=mulberry32((seed==null?0x1701:seed)|0);
+  const parts=[],L=305;
+  fedConstitution(parts,R,L);
+  const Rs=L*0.22,sx=L*0.28,cy=L*0.062,th=L*0.052;
   const mz=[];
-  heroBarrel(parts,mz,[L*0.46,L*0.018,L*0.055],[L*0.545,L*0.012,L*0.062],L*0.010,L*0.0045);
-  heroBarrel(parts,mz,[L*0.46,L*0.018,-L*0.055],[L*0.545,L*0.012,-L*0.062],L*0.010,L*0.0045);
-  heroBarrel(parts,mz,[L*0.44,-L*0.028,L*0.042],[L*0.525,-L*0.034,L*0.048],L*0.009,L*0.004);
-  heroBarrel(parts,mz,[L*0.44,-L*0.028,-L*0.042],[L*0.525,-L*0.034,-L*0.048],L*0.009,L*0.004);
-  return heroShip(parts,"USS DEFIANT NX-74205","DEFIANT-CLASS ESCORT",50,mz);
+  /* two saucer phaser banks, the ones the show always fires */
+  const ph=0.52,px=sx+Rs*Math.cos(ph),pz=Rs*Math.sin(ph),py=cy+th*0.50;
+  heroBarrel(parts,mz,[px,py,pz],[px+L*0.028,py-L*0.004,pz*0.92],L*0.007,L*0.0032);
+  heroBarrel(parts,mz,[px,py,-pz],[px+L*0.028,py-L*0.004,-pz*0.92],L*0.007,L*0.0032);
+  /* photon launcher on the neck, movie-refit */
+  heroBarrel(parts,mz,[L*0.12,L*0.010,0],[L*0.22,L*0.004,0],L*0.009,L*0.0045);
+  return heroShip(parts,"USS ENTERPRISE NCC-1701","CONSTITUTION-CLASS HEAVY CRUISER",430,mz);
 };
 /* ---- 11 Klingon: IKS ROTARRAN — B'rel, 109 m, attack stoop ---- */
 var buildKlingonHero=function(seed){
