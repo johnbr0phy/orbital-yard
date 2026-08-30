@@ -10418,6 +10418,19 @@ var buildYautjaHero=function(){
   return heroShip(parts,"THE HUNTER'S CLAW","YAUTJA SCOUT SHIP",2);
 };
 
+/* ---- 17 First Ones: Lorien himself, if a hero is asked for ---- */
+var buildFirstonesHero=function(){
+  const L=220,parts=[];
+  parts.push({k:"lathe",c:[0,0,0],axis:[1,0,0],prof:[
+    [L*0.42,L*0.04],[L*0.28,L*0.16],[L*0.08,L*0.20],[-L*0.12,L*0.16],
+    [-L*0.32,L*0.08],[-L*0.46,L*0.03]],ell:[0.92,1.08]});
+  parts.push({k:"box",c:[L*0.22,L*0.14,0],
+    u:[L*0.16,0.04*L,0],v:[-0.02*L,L*0.12,0],w:[0,0,L*0.14]});
+  parts.push({k:"sphere",c:[L*0.18,L*0.16,0],r:L*0.10});
+  heroFit(parts,220);
+  return heroShip(parts,"LORIEN'S VESSEL","THE FIRST BORN",1);
+};
+
 var buildHero=function(f,seed){
   switch(f){
     case 0:return buildYardHero(seed);
@@ -10437,6 +10450,7 @@ var buildHero=function(f,seed){
     case 14:return buildUSCMHero(seed);
     case 15:return buildEngineerHero(seed);
     case 16:return buildYautjaHero(seed);
+    case 17:return buildFirstonesHero(seed);
     default:return buildYardHero(seed);
   }
 };
@@ -10498,7 +10512,7 @@ function armShip(ship,race,hulls){
   found.sort((a,b)=>Math.hypot(b[1]-cy,b[2]-cz)-Math.hypot(a[1]-cy,a[2]-cz));
   if(!hulls&&found.length>6)found.length=6;
   const want=hulls?Math.min(14,Math.max(6,(hulls/4)|0)):found.length>=2?0:2;
-  const organic=race===1||race===8||race===15;
+  const organic=race===1||race===8||race===15||race===17;
   const hullR=Math.min(B,H,L*0.5)*0.5;
   if(found.length<Math.max(2,want?2:0)){
     const n=hulls?want:2;
@@ -10547,6 +10561,341 @@ function armShip(ship,race,hulls){
   }
   ship.muzzles=found;
 }
+/* =====================================================================
+   THE FIRST ONES — eight unique keels, older than the younger suns
+   ==================================================================== */
+/*__RACE_FIRSTONES_BEGIN__*/
+/* ===================== THE FIRST ONES =====================
+   Not a navy. Eight unique keels, each a race that was old when
+   the younger suns were gas. No sisters, no fighters, no pyramid:
+   one Traveller, one Lordship, one Thoughtforce, one Triumviron,
+   one Dark Knife, Lorien's own vessel, a Vorlon grown to war, and
+   a Hand servitor. They do not flock. They arrive. */
+
+var FO_KLASS=[
+  {desig:"THE TRAVELLER",      klass:"WALKERS OF SIGMA 957", L:2600, crew:0},
+  {desig:"THE LORDSHIP",       klass:"KIRISHIAC LORDSHIP",   L:2200, crew:12},
+  {desig:"THOUGHTFORCE",       klass:"MINDRIDER THOUGHTFORCE",L:2000, crew:0},
+  {desig:"THE TRIUMVIRON",     klass:"TRIAD TRIUMVIRON",     L:2100, crew:3},
+  {desig:"DARK KNIFE",         klass:"TORVALUS DARK KNIFE",  L:3400, crew:0},
+  {desig:"LORIEN'S VESSEL",    klass:"THE FIRST BORN",       L:1600, crew:1},
+  {desig:"KOSH'S SHIP",        klass:"VORLON TRANSPORT",     L:1800, crew:1},
+  {desig:"HAND SERVITOR",      klass:"HAND SERVITOR VESSEL", L:1900, crew:0}
+];
+var FO_HULLS=[10,15,20,25,30,35,40,50];
+
+var foBB=function(parts){
+  const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
+  for(const p of parts)for(const e of partExtents(p)){
+    const q=e[0],r=e[1];
+    for(let a=0;a<3;a++){
+      if(q[a]-r<bb[0][a])bb[0][a]=q[a]-r;
+      if(q[a]+r>bb[1][a])bb[1][a]=q[a]+r;}}
+  return bb;
+};
+var foScale=function(parts,s){
+  const sc=v=>[v[0]*s,v[1]*s,v[2]*s];
+  for(const p of parts){
+    for(const k of ["a","b","c","u","v","w","n"])if(p[k])p[k]=sc(p[k]);
+    for(const k of ["r","r1","r2","ri","th"])if(p[k]!=null)p[k]*=s;
+    if(p.prof)p.prof=p.prof.map(q=>[q[0]*s,q[1]*s]);
+    if(p.sec)for(const sct of p.sec)sct.pts=sct.pts.map(sc);
+    if(p.pts)p.pts=p.pts.map(sc);
+  }
+};
+var foFit=function(parts,L){
+  const bb=foBB(parts);
+  const cur=bb[1][0]-bb[0][0];
+  const s=cur>1e-6?L/cur:1;
+  if(Math.abs(s-1)>1e-9)foScale(parts,s);
+  return s;
+};
+var foDone=function(parts,which){
+  const K=FO_KLASS[which];
+  foFit(parts,K.L);
+  const bb=foBB(parts);
+  const L=bb[1][0]-bb[0][0],B=bb[1][2]-bb[0][2],H=bb[1][1]-bb[0][1];
+  return {parts,bb,meta:{
+    desig:K.desig,klass:K.klass,length:L,beam:B,height:H,
+    mass:Math.max(80,L*B*H*0.05),crew:K.crew,unique:true,fo:which}};
+};
+var foWhich=function(seed,nH){
+  if(nH!=null&&nH>0){
+    let b=0,bd=1e9;
+    for(let i=0;i<FO_HULLS.length;i++){
+      const d=Math.abs(nH-FO_HULLS[i]);
+      if(d<bd){bd=d;b=i;}}
+    return b;
+  }
+  return (seed>>>8)&7;
+};
+var foRing=function(n,c,ax,u,w,h){
+  const v=V.norm(V.cross(ax,u)),pts=[];
+  for(let i=0;i<n;i++){
+    const t=i/n*Math.PI*2;
+    pts.push(V.add(c,V.add(V.mul(u,Math.cos(t)*w),V.mul(v,Math.sin(t)*h))));
+  }
+  return {pts:pts};
+};
+
+/* ---- 0 THE TRAVELLER — Walkers: a barnacle of light, spines bursting ---- */
+var foTraveller=function(parts){
+  const L=100;
+  parts.push({k:"lathe",c:[0,0,0],axis:[1,0,0],prof:[
+    [-L*0.42,L*0.04],[-L*0.28,L*0.16],[-L*0.08,L*0.28],[L*0.10,L*0.30],
+    [L*0.28,L*0.22],[L*0.42,L*0.10]],ell:[1.05,0.92]});
+  parts.push({k:"sphere",c:[L*0.06,L*0.02,0],r:L*0.22});
+  parts.push({k:"sphere",c:[-L*0.12,-L*0.04,L*0.06],r:L*0.14});
+  parts.push({k:"sphere",c:[L*0.18,-L*0.08,-L*0.05],r:L*0.11});
+  /* the burst: one hemisphere throws spines the way a sea-urchin throws
+     needles — Walkers drink the energy that sits between the spines */
+  const N=18;
+  for(let i=0;i<N;i++){
+    const a=i/N*Math.PI*2,b=((i*3)%7-3)*0.22;
+    const ux=Math.cos(b),uy=Math.sin(b)*0.7,uz=Math.sin(a)*Math.cos(b);
+    const x0=L*0.16+ux*L*0.12,y0=uy*L*0.12,z0=uz*L*0.12;
+    const len=L*(0.22+((i*5)%4)*0.05);
+    parts.push({k:"tube",a:[x0,y0,z0],
+      b:[x0+ux*len,y0+uy*len,z0+uz*len],r1:L*0.018,r2:L*0.004});
+  }
+  for(let i=0;i<14;i++){
+    const a=i/14*Math.PI*2+0.4,b=-0.4-((i%5)*0.12);
+    const ux=Math.cos(b),uy=Math.sin(b),uz=Math.sin(a)*0.8;
+    parts.push({k:"capsule",
+      a:[L*0.02+ux*L*0.18,uy*L*0.16,uz*L*0.16],
+      b:[L*0.02+ux*L*0.34,uy*L*0.32,uz*L*0.32],r:L*0.012});
+  }
+  /* the coloured organs Sigma 957 remembers */
+  const lights=[[0.22,0.12,0.08],[0.08,0.18,-0.10],[-0.06,0.14,0.16],
+    [0.30,0.02,0.14],[-0.18,0.08,-0.12],[0.14,-0.16,0.10],
+    [0.00,0.22,0.00],[0.24,-0.10,-0.12],[-0.22,-0.06,0.08],[0.10,0.06,0.22]];
+  for(const q of lights)
+    parts.push({k:"sphere",c:[q[0]*L,q[1]*L,q[2]*L],r:L*0.022});
+};
+
+/* ---- 1 THE LORDSHIP — Kirishiac: an asteroid that learned to point ---- */
+var foLordship=function(parts){
+  const L=100;
+  parts.push({k:"sphere",c:[0,0,0],r:L*0.32});
+  parts.push({k:"sphere",c:[L*0.12,L*0.10,-L*0.08],r:L*0.18});
+  parts.push({k:"sphere",c:[-L*0.14,-L*0.08,L*0.10],r:L*0.16});
+  parts.push({k:"sphere",c:[L*0.04,-L*0.16,-L*0.12],r:L*0.14});
+  parts.push({k:"sphere",c:[-L*0.08,L*0.18,L*0.04],r:L*0.12});
+  /* the graviton barrel — a stone throat aimed at the younger races */
+  parts.push({k:"tube",a:[L*0.22,0.02*L,0],b:[L*0.58,0,0],r1:L*0.12,r2:L*0.09});
+  parts.push({k:"tube",a:[L*0.52,0,0],b:[L*0.70,0,0],r1:L*0.09,r2:L*0.06});
+  parts.push({k:"disc",c:[L*0.70,0,0],n:[1,0,0],r:L*0.08,ri:L*0.03});
+  parts.push({k:"sphere",c:[L*0.28,0.02*L,0],r:L*0.11});
+  /* revolving satellites on stalks — they keep the Lords' gravity */
+  const pods=[[0.05,0.42,0.08],[0.10,-0.38,0.22],[-0.16,0.12,0.40],
+    [0.08,0.22,-0.38],[-0.20,-0.28,-0.18],[0.18,-0.08,0.36]];
+  for(const q of pods){
+    const c=[q[0]*L,q[1]*L,q[2]*L];
+    parts.push({k:"tube",a:[c[0]*0.35,c[1]*0.35,c[2]*0.35],b:c,r1:L*0.018,r2:L*0.028});
+    parts.push({k:"sphere",c:c,r:L*0.07});
+    parts.push({k:"disc",c:c,n:V.norm(c),r:L*0.09,ri:L*0.03});
+  }
+  /* rock pox */
+  for(let i=0;i<10;i++){
+    const a=i*2.399;
+    parts.push({k:"sphere",c:[Math.cos(a)*L*0.28,Math.sin(a*1.3)*L*0.22,Math.sin(a)*L*0.26],r:L*0.04});
+  }
+};
+
+/* ---- 2 THOUGHTFORCE — Mindriders: a stone mushroom, a disk for a mind ---- */
+var foThoughtforce=function(parts){
+  const L=100;
+  /* cap: the acorn, flying cap-first */
+  parts.push({k:"lathe",c:[0,0,0],axis:[1,0,0],prof:[
+    [L*0.42,L*0.04],[L*0.34,L*0.16],[L*0.22,L*0.26],[L*0.08,L*0.28],
+    [-L*0.04,L*0.22],[-L*0.14,L*0.12]],ell:[1.0,0.96]});
+  /* equatorial thought-disk — thin, vast, the shield they think */
+  parts.push({k:"lathe",c:[L*0.10,0,0],axis:[1,0,0],prof:[
+    [-L*0.02,L*0.22],[0,L*0.52],[L*0.03,L*0.54],[L*0.06,L*0.22]],ell:[1.0,0.18]});
+  parts.push({k:"disc",c:[L*0.12,0,0],n:[1,0,0],r:L*0.54,ri:L*0.24});
+  /* stem trailing, the body the minds inhabit */
+  parts.push({k:"lathe",c:[-L*0.08,0,0],axis:[1,0,0],prof:[
+    [0,L*0.12],[-L*0.18,L*0.10],[-L*0.40,L*0.08],[-L*0.58,L*0.05],[-L*0.62,L*0.02]]});
+  parts.push({k:"sphere",c:[L*0.30,0,0],r:L*0.08});
+  /* cap texture: thought-ridges */
+  for(let i=0;i<8;i++){
+    const a=i/8*Math.PI*2;
+    parts.push({k:"tube",
+      a:[L*0.18,Math.cos(a)*L*0.20,Math.sin(a)*L*0.20],
+      b:[L*0.36,Math.cos(a)*L*0.08,Math.sin(a)*L*0.08],r1:L*0.016,r2:L*0.008});
+  }
+};
+
+/* ---- 3 THE TRIUMVIRON — Triad: three-pronged claw, a red heart ---- */
+var foTriumviron=function(parts){
+  const L=100;
+  parts.push({k:"sphere",c:[0,0,0],r:L*0.10});
+  parts.push({k:"sphere",c:[0,0,0],r:L*0.06});
+  /* three arms in the horizontal, one leading: a claw, not a propeller */
+  const arms=[[1,0,0],[-0.5,0,0.866],[-0.5,0,-0.866]];
+  for(const d of arms){
+    const ax=V.norm(d);
+    const u=V.norm(V.cross(Math.abs(ax[1])>0.8?[1,0,0]:[0,1,0],ax));
+    const sec=[];
+    for(let i=0;i<5;i++){
+      const t=i/4,len=L*0.48*t;
+      const w=L*(0.055+(t<0.55?t*0.04:0.04-(t-0.55)*0.06));
+      const h=w*0.62;
+      sec.push(foRing(8,V.mul(ax,len),ax,u,w,h));
+    }
+    parts.push({k:"loft",sec:sec});
+    /* inner gill — the white-star plasma they keep in the bone */
+    parts.push({k:"tube",a:V.mul(ax,L*0.08),b:V.mul(ax,L*0.42),r1:L*0.022,r2:L*0.016});
+    const tip=V.mul(ax,L*0.50);
+    parts.push({k:"box",c:tip,
+      u:V.mul(ax,L*0.06),v:V.mul(u,L*0.04),w:V.mul(V.cross(ax,u),L*0.03)});
+    parts.push({k:"tube",a:V.add(tip,V.mul(ax,-L*0.02)),
+      b:V.add(tip,V.mul(ax,L*0.08)),r1:L*0.02,r2:L*0.008});
+  }
+  /* the three struts that keep the claw from opening */
+  for(let i=0;i<3;i++){
+    const a=arms[i],b=arms[(i+1)%3];
+    parts.push({k:"capsule",a:V.mul(V.norm(a),L*0.28),b:V.mul(V.norm(b),L*0.28),r:L*0.012});
+  }
+};
+
+/* ---- 4 DARK KNIFE — Torvalus: a long slender wing, rings of shade ---- */
+var foDarkKnife=function(parts){
+  const L=100;
+  parts.push({k:"lathe",c:[0,0,0],axis:[1,0,0],prof:[
+    [-L*0.50,L*0.012],[-L*0.32,L*0.028],[-L*0.10,L*0.038],[L*0.10,L*0.040],
+    [L*0.32,L*0.030],[L*0.48,L*0.014]],ell:[1.0,0.38]});
+  /* the glowing collars they vanish between */
+  for(let i=0;i<9;i++){
+    const u=i/8,x=-L*0.42+u*L*0.84;
+    const r=L*(0.022+0.016*Math.sin(u*Math.PI));
+    parts.push({k:"disc",c:[x,0,0],n:[1,0,0],r:r*2.4,ri:r*0.4});
+    parts.push({k:"tube",a:[x-L*0.008,0,0],b:[x+L*0.008,0,0],r1:r*1.6,r2:r*1.6});
+  }
+  /* saw-teeth along the dorsal — a millipede's keel */
+  for(let i=0;i<11;i++){
+    const u=i/10,x=-L*0.40+u*L*0.80;
+    const h=L*(0.04+0.02*Math.sin(u*Math.PI));
+    parts.push({k:"box",c:[x,h*0.55,0],u:[L*0.028,0,0],v:[0,h,0],w:[0,0,L*0.008]});
+  }
+  /* a hint of wing: two thin vanes, the slender wing the wiki named */
+  const vane=(z)=>{
+    parts.push({k:"panel",n:[0,1,0],th:L*0.006,pts:[
+      [L*0.30,0,0],[-L*0.20,0,0],[-L*0.36,0,z],[-L*0.10,0,z*0.7],[L*0.18,0,z*0.35]
+    ]});
+  };
+  vane(L*0.16);vane(-L*0.16);
+  parts.push({k:"sphere",c:[L*0.46,0,0],r:L*0.018});
+  parts.push({k:"tube",a:[L*0.46,0,0],b:[L*0.52,0,0],r1:L*0.01,r2:L*0.003});
+};
+
+/* ---- 5 LORIEN'S VESSEL — a cowl over a teardrop, older than language ---- */
+var foLorien=function(parts){
+  const L=100;
+  parts.push({k:"lathe",c:[0,0,0],axis:[1,0,0],prof:[
+    [L*0.42,L*0.04],[L*0.28,L*0.16],[L*0.08,L*0.20],[-L*0.12,L*0.16],
+    [-L*0.32,L*0.08],[-L*0.46,L*0.03]],ell:[0.92,1.08]});
+  /* the hood: a monk's cowl, the First Born looking down */
+  parts.push({k:"box",c:[L*0.22,L*0.14,0],
+    u:[L*0.16,0.04*L,0],v:[-0.02*L,L*0.12,0],w:[0,0,L*0.14]});
+  parts.push({k:"box",c:[L*0.32,L*0.06,0],
+    u:[L*0.08,0,0],v:[0,L*0.10,0],w:[0,0,L*0.10]});
+  parts.push({k:"sphere",c:[L*0.18,L*0.16,0],r:L*0.10});
+  /* veins of whatever still lives in him */
+  for(const z of [-1,1]){
+    parts.push({k:"tube",a:[L*0.20,L*0.02,z*L*0.08],b:[-L*0.28,-L*0.04,z*L*0.04],r1:L*0.012,r2:L*0.006});
+    parts.push({k:"tube",a:[L*0.10,-L*0.10,z*L*0.06],b:[-L*0.22,-L*0.08,z*L*0.03],r1:L*0.008,r2:L*0.004});
+  }
+  parts.push({k:"panel",n:[0,0,1],th:L*0.01,pts:[
+    [-L*0.30,L*0.04,0],[-L*0.48,L*0.16,0],[-L*0.42,-L*0.02,0]
+  ]});
+  parts.push({k:"sphere",c:[L*0.36,0.02*L,0],r:L*0.05});
+};
+
+/* ---- 6 KOSH'S SHIP — Vorlon transport grown to a First One's size ---- */
+var foVorlon=function(parts){
+  const L=100;
+  /* garlic-beetle: fat head, two circular eyes, four petals trailing */
+  parts.push({k:"lathe",c:[0,0,0],axis:[1,0,0],prof:[
+    [L*0.40,L*0.03],[L*0.32,L*0.14],[L*0.18,L*0.22],[L*0.02,L*0.20],
+    [-L*0.14,L*0.14],[-L*0.26,L*0.07]],ell:[1.12,0.82]});
+  parts.push({k:"sphere",c:[L*0.20,0.01*L,0],r:L*0.15});
+  for(const z of [-1,1]){
+    parts.push({k:"disc",c:[L*0.34,L*0.03,z*L*0.09],n:[1,0,0],r:L*0.09,ri:L*0.032});
+    parts.push({k:"tube",a:[L*0.26,L*0.03,z*L*0.09],b:[L*0.36,L*0.03,z*L*0.09],r1:L*0.07,r2:L*0.062});
+    parts.push({k:"sphere",c:[L*0.30,L*0.03,z*L*0.09],r:L*0.05});
+  }
+  /* petals: flat flower-blades, not tubes — the Vorlon's trailing hand */
+  const petals=[[0.55,0.18],[-0.55,0.18],[0.18,0.55],[-0.18,-0.55]];
+  for(const pz of petals){
+    const sec=[];
+    for(let i=0;i<6;i++){
+      const t=i/5;
+      const x=L*0.04-t*L*0.52;
+      const y=pz[0]*L*(0.22+t*0.85);
+      const z=pz[1]*L*(0.22+t*0.85);
+      const w=L*(0.09*(1-t*0.72)),h=L*(0.016*(1-t*0.4));
+      const A=V.norm([-1,pz[0]*0.35,pz[1]*0.35]);
+      const u=V.norm(V.cross(Math.abs(A[2])>0.6?[0,1,0]:[0,0,1],A));
+      sec.push(foRing(8,[x,y,z],A,u,w,h));
+    }
+    parts.push({k:"loft",sec:sec});
+  }
+  for(let i=0;i<6;i++){
+    const a=i*1.1;
+    parts.push({k:"sphere",c:[Math.cos(a)*L*0.10,Math.sin(a)*L*0.08,Math.sin(a*1.3)*L*0.11],r:L*0.028});
+  }
+};
+
+/* ---- 7 HAND SERVITOR — ice-blue urchin, a core that burns ---- */
+var foHand=function(parts){
+  const L=100;
+  parts.push({k:"sphere",c:[0,0,0],r:L*0.14});
+  parts.push({k:"sphere",c:[0,0,0],r:L*0.08});
+  const N=22;
+  for(let i=0;i<N;i++){
+    /* fibonacci sphere so it is a star, not a crab */
+    const y=1-(i+0.5)/N*2;
+    const r=Math.sqrt(Math.max(0,1-y*y));
+    const th=Math.PI*(1+Math.sqrt(5))*i;
+    const ax=V.norm([Math.cos(th)*r,y,Math.sin(th)*r]);
+    const len=L*(0.32+((i*3)%5)*0.04);
+    const u=V.norm(V.cross(Math.abs(ax[1])>0.85?[1,0,0]:[0,1,0],ax));
+    const sec=[];
+    for(let k=0;k<4;k++){
+      const t=k/3;
+      const w=L*0.028*(1-t*0.85),h=w*0.55;
+      sec.push(foRing(6,V.mul(ax,L*0.10+len*t),ax,u,w,h));
+    }
+    parts.push({k:"loft",sec:sec});
+    if(i%4===0){
+      const side=V.norm(V.cross(ax,u));
+      parts.push({k:"tube",a:V.mul(ax,L*0.18),
+        b:V.add(V.mul(ax,L*0.34),V.mul(side,L*0.16)),r1:L*0.012,r2:L*0.004});
+    }
+  }
+};
+
+var foBuild=function(which){
+  const parts=[];
+  if(which===0)foTraveller(parts);
+  else if(which===1)foLordship(parts);
+  else if(which===2)foThoughtforce(parts);
+  else if(which===3)foTriumviron(parts);
+  else if(which===4)foDarkKnife(parts);
+  else if(which===5)foLorien(parts);
+  else if(which===6)foVorlon(parts);
+  else foHand(parts);
+  return foDone(parts,which);
+};
+
+var buildFirstones=function(seed){
+  return foBuild(foWhich(seed,0));
+};
+var buildFirstonesMega=function(seed,nH){
+  return foBuild(foWhich(seed,nH));
+};
+/*__RACE_FIRSTONES_END__*/
 //__ARMADA_WORKER_CUT__
 
 /* =====================================================================
@@ -10919,6 +11268,7 @@ const raceBuild=(f,seed,hulls,hero)=>{
     case 14:return hulls?buildUSCMMega(seed,hulls):buildUSCM(seed);
     case 15:return hulls?buildEngineerMega(seed,hulls):buildEngineer(seed);
     case 16:return hulls?buildYautjaMega(seed,hulls):buildYautja(seed);
+    case 17:return hulls?buildFirstonesMega(seed,hulls):buildFirstones(seed);
     default:return hulls?buildMegaShip(seed,hulls):buildShip(seed,P,NL);
   }
 };
@@ -11576,7 +11926,12 @@ const RACE_DEFS=[
    hpdiv:16,spdK:1650,spdCap:84,turnK:44,
    wpn:[[12,1],[20,2],[55,3],[62,4],[70,5]],
    fire:"caster",boom:"cloakpop",msl:false,
-   doct:{CHARGE:1,FLANK:4,ENVELOP:1,SWARM:1,HUNT:5,SCREEN:1,FEIGN:4,MINE:1}}];
+   doct:{CHARGE:1,FLANK:4,ENVELOP:1,SWARM:1,HUNT:5,SCREEN:1,FEIGN:4,MINE:1}},
+  {name:"THE FIRST ONES",fr:"babylon 5",mix:[0,0,1],form:"packs",fleetK:0.03,hold:720,beam:[1.00,0.88,0.42],ion:[0.82,0.48,1.00],anim:1,tone:0.62,dust:0.55,unique:true,
+   hpdiv:6,spdK:900,spdCap:32,turnK:16,
+   wpn:[[8,5],[20,4],[40,3]],
+   fire:"song",boom:"flash",msl:false,
+   doct:{CHARGE:1,FLANK:2,ENVELOP:4,SWARM:0,HUNT:5,SCREEN:1,FEIGN:2,MINE:0}}];
 let sideRace=[0,1];
 let SIDE_NAME=[RACE_DEFS[0].name,RACE_DEFS[1].name];
 let BEAMCOL=[RACE_DEFS[0].beam,RACE_DEFS[1].beam];  /* everyday fire, per the draw */
@@ -11669,7 +12024,7 @@ function craftMood(s,now){
   /* a keel thinks for herself first: nerve, then duty, then the plan.
      The squadron's stratagem is an order she may refuse if she is
      opened or if a crown is dying under her wing. Heroes never break. */
-  if(s.hero)return "HUNT";
+  if(s.hero||(RACE_DEFS[s.race]||{}).unique)return "HUNT";
   if(s.fearT&&now<s.fearT)return "FEAR";
   const hpR=s.hp/Math.max(1,s.hpMax);
   if(hpR<=0.28&&now-s.hurtT<2.4){
@@ -12190,6 +12545,21 @@ function startWar(fresh){
   const built=[0,0];
   for(const side of [0,1]){
     const rd=RACE_DEFS[sideRace[side]];
+    if(rd.unique){
+      /* eight unique giants, one of each First One — no screen, no
+         pyramid, a staggered wall of ancients with a league of sea-room */
+      const sx=side?1:-1,J=k=>(R()-0.5)*k;
+      const HULLS=[10,15,20,25,30,35,40,50];
+      for(let i=0;i<8;i++){
+        const col=i&1,row=i>>1;
+        mk(side,HULLS[i],[sx*(1100+row*220)+J(28),
+          (row-1.5)*820+J(28),
+          (col-0.5)*2600+J(28),
+          0.25+i*0.16]);
+      }
+      built[side]=8;
+      continue;
+    }
     const n=Math.max(48,Math.round(perFleet*(rd.fleetK||1)));
     const sm=n-3,mix=rd.mix||[0.72,0.18,0.10];
     let nFtr=Math.max(SQN,Math.floor(sm*mix[0]/SQN)*SQN);
@@ -12367,7 +12737,19 @@ function onWorkerMsg(e){
             cool:3+TR()*4});
         }
       }
-    }else{
+    }
+    if((RACE_DEFS[s.race]||{}).unique){
+      s.hpMax=s.hp=Math.max(s.hpMax||1,240+Math.round(s.slen*0.12));
+      s.spd=Math.min(26,Math.max(12,2200/Math.sqrt(Math.max(80,s.slen))));
+      s.turn=Math.min(0.32,Math.max(0.08,70/Math.max(80,s.slen)));
+      if(s.meta&&/DARK KNIFE/i.test((s.meta.klass||"")+" "+(s.meta.desig||"")))s.canCloak=true;
+      const TR2=mulberry32((s.seed^0xF1A7)>>>0);
+      s.lances=s.lances||[];
+      while(s.lances.length<8)
+        s.lances.push({lx:(TR2()-0.25)*s.slen*0.42,ly:(TR2()-0.4)*s.slen*0.14,
+          lz:(TR2()-0.5)*s.slen*0.22,cool:2+TR2()*3});
+    }
+    if(!s.hulls){
       /* each race burns differently: glass is brittle but hard, scrap is
          plated, gossamer barely holds — and the light-pushed are the
          fastest straight-line sailors with the worst helm */
@@ -12682,6 +13064,8 @@ function thoughtLine(s,now){
   if(s.grace||age<(s.shed||1))return "shedding the jump. burning onto her heading.";
   if(winner!=null){
     const k=s.kills||0;
+    if((RACE_DEFS[s.race]||{}).unique)
+      return winner===s.side?"the younger races have been taught. we go.":"this age ends. we withdraw beyond the rim.";
     if(winner===s.side){
       if(s.hulls)return "the sky is ours. battery silent. the line holds.";
       if(s.hero)return "the sky is ours."+(k?" "+k+" kill"+(k===1?"":"s")+".":"")+" guns cooling.";
@@ -12691,6 +13075,14 @@ function thoughtLine(s,now){
     return "the sky is lost. going down with the line.";
   }
   if(s.cloaked)return "silent. cloak holding. the first shot burns it away.";
+  if((RACE_DEFS[s.race]||{}).unique){
+    const kn=(s.meta&&s.meta.desig)||"an ancient";
+    const markU=(s.mark>=0&&ships[s.mark]&&!ships[s.mark].dead)?ships[s.mark]:null;
+    const mnU=nameOf(markU);
+    if(warSky(s)==="LAST")return kn+". the last of the first. still speaking.";
+    if(mnU)return kn+". older than their suns. "+mnU+" is already decided.";
+    return kn+". we have seen this war before.";
+  }
   const mark=(s.mark>=0&&ships[s.mark]&&!ships[s.mark].dead)?ships[s.mark]:null;
   const mn=nameOf(mark);
   const hpR=s.hp/Math.max(1,s.hpMax);
@@ -13220,6 +13612,7 @@ function megaStep(s,now,dt){
   let want;
   const inbound=(now-warT0-(s.delay||0))<4.0||!foes5.length;
   s.mood=hurt?"DEFEND":mopup?"HUNT":"ATTACK";
+  if((RACE_DEFS[s.race]||{}).unique)s.mood=hurt?"DEFEND":"HUNT";
   if(inbound)want=s.yaw;
   else if(dist>hold+90)want=bear;
   else if(dist<hold-90)want=bear+Math.PI;
@@ -13257,7 +13650,7 @@ function megaStep(s,now,dt){
   for(const la of s.lances){
     la.cool-=dt*0.7;
     if(la.cool>0)continue;
-    const rng=760;
+    const rng=(RACE_DEFS[s.race]||{}).unique?Math.max(2800,s.slen*1.15):760;
     let best=null,bs=-1;
     const foes7=foeCache[1-s.side];
     for(let k7=0;k7<foes7.length;k7++){
@@ -13438,6 +13831,15 @@ function maybeCallAlly(now){
     };
     const gH=gates.hammer;
     const cpos=slotAt(gH,0,1,0,0);
+    if(RACE_DEFS[ally].unique){
+      const HULLS=[10,15,20,25,30,35,40,50];
+      for(let i=0;i<8;i++){
+        const gn=i<3?"hammer":i<6?"relief":"cut";
+        const g=gates[gn];
+        const p=slotAt(g,i,4,980,560);
+        mkA(HULLS[i],p[0],p[1],p[2],2.2+g.dly+i*0.18,null,g.yaw);
+      }
+    }else{
     mkA(10,cpos[0],cpos[1]+36,cpos[2],2.2+gH.dly,null,gH.yaw);
 
     /* the relief column obeys the ally's own pyramid, then splits
@@ -13483,6 +13885,7 @@ function maybeCallAlly(now){
       dealGate(escByGate[gn],ESCN,
         gn==="cut"?"CHARGE":null,gn==="relief"?"CHARGE":null,"FLANK");
     }
+    }
     const nw=workers.length;
     for(let w=0;w<nw;w++)
       workers[w].postMessage({kind:"batch",genId,jobs:jobs.filter((_,i2)=>i2%nw===w)});
@@ -13498,7 +13901,7 @@ function simStep(now,dt){
     if(s.dead||!s.vao)continue;
     /* the cloak: a hunter who has held her fire for four seconds slips
        off every scope — the first shot burns it away */
-    s.cloaked=!!(RACE_DEFS[s.race].cloak&&!s.hulls&&
+    s.cloaked=!!((s.canCloak||(RACE_DEFS[s.race].cloak&&!s.hulls))&&
       now-(s.lastFire||-9)>4&&!(s.cutUntil&&now<s.cutUntil));
     if(s.cloaked)s.cloakAmt=Math.min(1,(s.cloakAmt||0)+dt*2.6);
     else s.cloakAmt=Math.max(0,(s.cloakAmt||0)-dt*5.0);

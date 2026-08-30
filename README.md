@@ -77,8 +77,13 @@ mines to hive queens trailing beards of hook tentacles.
 **[Fight it →](https://johnbr0phy.github.io/orbital-yard/armada-war-tribute.html)**
 
 `armada-war-tribute.html` is every fleet we grew up with in one sky: Imperial,
-Rebel, Minbari, Shadows, EarthForce, Starfleet, Klingon, Borg and more. Pick
-two, click a ship to chase her, and read what she is thinking as the war turns.
+Rebel, Minbari, Shadows, EarthForce, Starfleet, Klingon, Borg, the First Ones
+and more. Pick two, click a ship to chase her, and read what she is thinking
+as the war turns.
+
+The First Ones are not a navy. Eight unique giants — the Traveller, the
+Lordship, Thoughtforce, the Triumviron, Dark Knife, Lorien's vessel, Kosh's
+ship, a Hand servitor — each a different ancient, each kilometres long.
 
 ## The War
 
