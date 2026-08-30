@@ -11819,9 +11819,13 @@ function collide(now){
       const dx=s.x-c2.x,dy=s.y-c2.y,dz=s.z-c2.z;
       const d2=dx*dx+dy*dy+dz*dz,d=Math.sqrt(d2)||0.001;
       /* every pilot sees the wall — hunting is not a licence to fly
-         through the mark. Own-side is home, but still not a tunnel. */
-      if(!s.hulls&&d<(c2.exL||c2.rad)*4.2)
-        avSee(dx,dy,dz,d,(1-d/((c2.exL||80)*4.2))*(s.side===c2.side?28:55));
+         through the mark. Own-side is home, but still not a tunnel.
+         First Ones are a hull you gun, not a 5 km no-fly sphere. */
+      const uniqueC=!!(RACE_DEFS[c2.race]||{}).unique;
+      const wall=(c2.exL||c2.rad||80);
+      const seeR=uniqueC?wall+220:wall*4.2;
+      if(!s.hulls&&d<seeR)
+        avSee(dx,dy,dz,d,(1-d/seeR)*(s.side===c2.side?28:uniqueC?12:55));
       const reach=(c2.exL||c2.rad)+sr;
       if(d2>reach*reach)continue;
       const cy2=Math.cos(c2.yaw),sy2=Math.sin(c2.yaw);
@@ -12436,26 +12440,55 @@ function craftWant(s,now,sq,mood,dist,boost){
   if(s.hero)want=Math.max(want,cruise*1.12);
   return want;
 }
+function skinOf(t){
+  /* the hittable hull, not the origin buried in a 2 km body */
+  return Math.max(t.rad||8,t.exL||0,(t.slen||20)*0.32);
+}
+function gapTo(s,t){
+  /* metres of air between you and her skin */
+  const d=Math.hypot(s.x-t.x,s.y-t.y,s.z-t.z);
+  return Math.max(0,d-skinOf(t)*0.88);
+}
+function aimSkin(s,t){
+  const dx=t.x-s.x,dy=t.y-s.y,dz=t.z-s.z;
+  const d=Math.hypot(dx,dy,dz)||1;
+  const skin=skinOf(t)*0.82;
+  if(d<=skin+4)return [t.x,t.y,t.z];
+  const k=skin/d;
+  return [t.x-dx*k,t.y-dy*k,t.z-dz*k];
+}
 function goalAttackRun(s,t,now,br,o,tight){
   /* a fighting pass: line up, bore in with guns hot, break past her
      and extend to the flank, come about, and do it again — never a
-     hover at the mark, never a slow nod toward a point in the dark */
+     hover at the mark, never a slow nod toward a point in the dark.
+     Break off the SKIN, not the buried origin — a First One is not
+     a 2 km no-fire bubble. */
   const ddx=t.x-s.x,ddy=t.y-s.y,ddz=t.z-s.z;
   const dd=Math.hypot(ddx,ddy,ddz);
-  const brk=(55+t.slen*0.5)*(s.hot||1);
+  const gap=Math.max(0,dd-skinOf(t)*0.88);
+  const brk=(48+(s.hot||1)*22);
   if(s.runP===1&&(now>(s.runT||0)||!s.runW||
      Math.hypot(s.runW[0]-s.x,s.runW[1]-s.y,s.runW[2]-s.z)<70))s.runP=0;
   if(s.runP===1)return {goal:s.runW,boost:1.05+0.35*(s.hot||1)};
-  if(dd<brk){
+  if(gap<brk){
     s.runP=1;s.runT=now+1.7+(s.hot||1)*1.5+Math.random()*1.6;
     const il=1/Math.max(1,dd);
     const px=-ddz*il,pz=ddx*il;
     const sg=(s.brkS||1)*(Math.random()<0.18?-1:1);
     const ext=180+br*(s.hot||1)+(s.hand||1)*80;
     const wing=br*(1.0+(s.hand||1)*0.8)+Math.random()*br*0.7;
-    s.runW=[t.x+ddx*il*ext+px*sg*wing,
-            t.y+ddy*il*(80+(s.hand||1)*60)+(o?o[1]:0)+(s.err?s.err[1]:0),
-            t.z+ddz*il*ext+pz*sg*wing];
+    const skin=skinOf(t);
+    if(skin>120){
+      /* a First One is a wall. Break OFF the hull, do not fly through her. */
+      const slide=wing+Math.min(280,skin*0.28);
+      s.runW=[s.x-ddx*il*ext*0.5+px*sg*slide,
+              s.y+(o?o[1]:0)*0.5+(s.err?s.err[1]:0),
+              s.z-ddz*il*ext*0.5+pz*sg*slide];
+    }else{
+      s.runW=[t.x+ddx*il*ext+px*sg*wing,
+              t.y+ddy*il*(80+(s.hand||1)*60)+(o?o[1]:0)+(s.err?s.err[1]:0),
+              t.z+ddz*il*ext+pz*sg*wing];
+    }
     return {goal:s.runW,boost:1.05+0.35*(s.hot||1)};
   }
   const il=1/Math.max(1,dd);
@@ -12467,19 +12500,20 @@ function goalAttackRun(s,t,now,br,o,tight){
 }
 function pickFoe(s,rng,now){
   /* a hero hunts the wounded and the small; anyone else takes the nearest.
-     Until the truce lifts, the other ace is not a mark. */
+     Until the truce lifts, the other ace is not a mark. Range is to the
+     skin — sitting on a First One is not 'out of range of her centre'. */
   let b=null,bs=1e18;
   const arr=foeCache[1-s.side];
-  const r2=rng*rng;
   const duel=heroDuelOpen(now!=null?now:performance.now()/1000);
   for(let i=0;i<arr.length;i++){
     const t=arr[i];
     if(t.hero&&!duel)continue;
-    const d=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
-    if(d>r2)continue;
+    const d=gapTo(s,t);
+    if(d>rng)continue;
     let sc=d;
     if(s.hero){
-      sc=d*(0.25+0.75*(t.hp/Math.max(1,t.hpMax)))*(t.hulls?3.4:1)
+      if((RACE_DEFS[t.race]||{}).unique)sc=d*0.4;
+      else sc=d*(0.25+0.75*(t.hp/Math.max(1,t.hpMax)))*(t.hulls?3.4:1)
         *(t.slen>90?1.8:0.55);
     }
     if(sc<bs){bs=sc;b=t;}
@@ -13452,9 +13486,20 @@ function squadThink(now){
         const s=ships[id];if(s&&s.hero&&!s.dead){h=id;break;}
       }
       if(h>=0)sq.lead=h;
-      sq.tac="HUNT";sq.phase=1;sq.tgt=-1;sq.tgtSq=-1;sq.wp=null;
+      sq.tac="HUNT";sq.phase=1;sq.tgtSq=-1;sq.wp=null;
       const lead=sqLeader(sq);
-      if(lead)sq.hdg=lead.yaw;
+      if(lead){
+        sq.hdg=lead.yaw;
+        const fo=foeCache[1-sq.side];
+        let b=-1,bd=1e18;
+        for(let i=0;i<fo.length;i++){
+          const t=fo[i];
+          const d=gapTo(lead,t);
+          const sc=((RACE_DEFS[t.race]||{}).unique||t.hulls)?d:d+900;
+          if(sc<bd){bd=sc;b=t.id;}
+        }
+        sq.tgt=b;
+      }else sq.tgt=-1;
       continue;
     }
     const aimH=sqAim(sq),cH=centroidOf(sq.mem);
@@ -13534,10 +13579,10 @@ function cutHold(s,now,dt){
   const ct=ships[s.cutTgt];
   const cutR=cutRange(s);
   if(ct&&!ct.dead&&ct.vao&&!ct.grace){
-    const d2c=(ct.x-s.x)*(ct.x-s.x)+(ct.y-s.y)*(ct.y-s.y)+(ct.z-s.z)*(ct.z-s.z);
-    if(d2c<cutR*cutR){
+    if(gapTo(s,ct)<cutR){
       const cm=nextMuzzle(s,now);
-      beams.push({a:cm,b:[ct.x,ct.y,ct.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
+      const hit=aimSkin(s,ct);
+      beams.push({a:cm,b:hit,t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
       wound(ct,dt*2.6,s,now);
       if(ct.dead)s.cutUntil=0;
     }else s.cutUntil=0;
@@ -13923,19 +13968,22 @@ function nextMuzzle(s,now){
   return gunWorld(s,gs[s.gunI],now);
 }
 function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
-  const ddx=t.x-ox,ddy=t.y-oy,ddz=t.z-oz;
+  s.lastFire=now;
+  const hit=aimSkin(s,t);
+  const ddx=hit[0]-ox,ddy=hit[1]-oy,ddz=hit[2]-oz;
   const dist=Math.hypot(ddx,ddy,ddz);
   let p=0.95-(t.spd/70)*0.5-dist*0.0006;
   if(now-t.hurtT<1.6)p-=0.12;              /* she is jinking */
   if(t.hulls)p=0.97;                       /* you do not miss a crown */
   if(s.hero)p=Math.max(p,0.88);            /* an ace does not spray the dark */
+  const jit=Math.max(8,Math.min(42,t.slen*0.03));
   if(Math.random()>Math.max(0.25,p)){
     /* a clean miss: the bolt streaks past her and dies in the dark */
-    const mo=Math.max(10,t.slen*1.1);
+    const mo=Math.max(14,jit*2.2);
     beams.push({a:[ox,oy,oz],
-      b:[t.x+(Math.random()-0.5)*mo*2.4,
-         t.y+(Math.random()-0.5)*mo*1.2,
-         t.z+(Math.random()-0.5)*mo*2.4],t0:now,side:s.side,race:s.race,heavy:!!heavy,
+      b:[hit[0]+(Math.random()-0.5)*mo*2.4,
+         hit[1]+(Math.random()-0.5)*mo*1.2,
+         hit[2]+(Math.random()-0.5)*mo*2.4],t0:now,side:s.side,race:s.race,heavy:!!heavy,
       wid:beamWid(s,heavy)});
     return;
   }
@@ -13943,16 +13991,16 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
   if(fx==="turbo"&&s.slen<38)fx="laser";
   const wid=beamWid(s,heavy);
   beams.push({a:[ox,oy,oz],
-    b:[t.x+(Math.random()-0.5)*t.slen*0.3,
-       t.y+(Math.random()-0.5)*t.slen*0.15,
-       t.z+(Math.random()-0.5)*t.slen*0.3],t0:now,side:s.side,race:s.race,heavy:!!heavy,
+    b:[hit[0]+(Math.random()-0.5)*jit,
+       hit[1]+(Math.random()-0.5)*jit*0.5,
+       hit[2]+(Math.random()-0.5)*jit],t0:now,side:s.side,race:s.race,heavy:!!heavy,
     phaser:fx==="phaser"||fx==="song",
     turbo:fx==="turbo"||!!heavy,
     pulse:fx==="pulse",
     disruptor:fx==="disruptor",
     wid,
     col:fx==="laser"?[1.0,0.22,0.16]:null});
-  flash(t.x,t.y,t.z,now,Math.max(heavy?48:12,t.slen*(heavy?1.1:0.35)),heavy?3:s.side);
+  flash(hit[0],hit[1],hit[2],now,Math.max(heavy?48:12,Math.min(90,t.slen*(heavy?0.08:0.04))),heavy?3:s.side);
   wound(t,dmg||1,s,now);
   if(heavy){
     const splash=Math.max(70,Math.min(160,s.slen*0.045));
@@ -13960,7 +14008,7 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
     const foes=foeCache[1-s.side];
     for(let i=0;i<foes.length;i++){
       const o=foes[i];if(o===t||o.hulls||o.dead)continue;
-      const dx=o.x-t.x,dy=o.y-t.y,dz=o.z-t.z;
+      const dx=o.x-hit[0],dy=o.y-hit[1],dz=o.z-hit[2];
       if(dx*dx+dy*dy+dz*dz>s2)continue;
       wound(o,2.4,s,now);
       flash(o.x,o.y,o.z,now,Math.max(18,o.slen*0.7),2);
@@ -13992,19 +14040,18 @@ function raceFire(s,t,now,nx,ny,nz){
   }
   if(fx==="slicer"||fx==="cutter"){
     const cutR=cutRange(s);
-    const dd2=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
-    if(dd2<cutR*cutR){
+    if(gapTo(s,t)<cutR){
       s.cutUntil=now+(fx==="slicer"?2.4:1.4);
       s.cutTgt=t.id;
       s.cool=2.0+Math.random()*0.7;
-      beams.push({a:[nx,ny,nz],b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
+      const hit=aimSkin(s,t);
+      beams.push({a:[nx,ny,nz],b:hit,t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
       wound(t,fx==="slicer"?2.6:1.7,s,now);
     }else s.cool=0.28;
     return;
   }
   if(fx==="neutron"){
-    const dd2=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
-    if(dd2<40000){
+    if(gapTo(s,t)<280){
       s.cutUntil=now+0.85;s.cutTgt=t.id;
       fireBeam(s,t,now,nx,ny,nz,1.35,true);
       s.cool=2.2+Math.random()*0.5;
@@ -14363,6 +14410,7 @@ let ionNext=[Infinity,Infinity];
 function fireIonFrom(g,side,now){
   /* the axial gun: a hole torn in the line. Aimed at the thickest
      knot of the enemy — a whole squadron, not a lonely fighter. */
+  if((RACE_DEFS[g.race]||{}).unique)return;
   if(now-warT0-g.delay<1)return;
   const foes=livingFoes(side);
   if(!foes.length)return;
@@ -14558,9 +14606,9 @@ function megaStep(s,now,dt){
     const foes7=foeCache[1-s.side];
     for(let k7=0;k7<foes7.length;k7++){
       const t=foes7[k7];
-      const d2=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
-      if(d2>rng*rng)continue;
-      const sc=t.slen+(t.hulls?500:0)-Math.sqrt(d2)*0.05;
+      const d=gapTo(s,t);
+      if(d>rng)continue;
+      const sc=t.slen+(t.hulls?500:0)-d*0.05;
       if(sc>bs){bs=sc;best=t;}
     }
     if(best){
@@ -14568,7 +14616,7 @@ function megaStep(s,now,dt){
       const m=gunWorld(s,[la.lx,la.ly,la.lz],now);
       if(slicer){
         s.cutUntil=now+2.6;s.cutTgt=best.id;s.lastFire=now;
-        beams.push({a:m,b:[best.x,best.y,best.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
+        beams.push({a:m,b:aimSkin(s,best),t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
         wound(best,4.5,s,now);
         la.cool=3.2+Math.random()*1.8;
       }else{
@@ -14587,7 +14635,7 @@ function megaStep(s,now,dt){
     const foes6=foeCache[1-s.side];
     for(let k6=0;k6<foes6.length;k6++){
       const t=foes6[k6];
-      if((t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z)>rng*rng)continue;
+      if(gapTo(s,t)>rng)continue;
       tgts.push(t);
     }
     if(tgts.length){
@@ -14599,7 +14647,7 @@ function megaStep(s,now,dt){
         const m=gunWorld(s,[tu.lx,tu.ly,tu.lz],now);
         if(slicer){
           s.cutUntil=now+1.8;s.cutTgt=t.id;s.lastFire=now;
-          beams.push({a:m,b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
+          beams.push({a:m,b:aimSkin(s,t),t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
           wound(t,2.2,s,now);
         }else fireBeam(s,t,now,m[0],m[1],m[2]);
         tu.cool=2.8+Math.random()*1.8;   /* the battery rolls, it does not mow */
@@ -14938,17 +14986,19 @@ function simStep(now,dt){
     /* a named ace thinks for herself once the truce lifts: she hunts
        the screen, not the crown, and not the other ace until then. */
     if(!goal&&s.hero&&mood==="HUNT"){
-      let nf=(s.fbT&&!s.fbT.dead&&s.fbT.vao&&!s.fbT.hulls&&!(s.fbT.hero&&!heroDuelOpen(now)))?s.fbT:null;
+      const skipHull=t=>t.hulls&&!(RACE_DEFS[t.race]||{}).unique;
+      let nf=(s.fbT&&!s.fbT.dead&&s.fbT.vao&&!skipHull(s.fbT)&&!(s.fbT.hero&&!heroDuelOpen(now)))?s.fbT:null;
       if(!nf||now>(s.fbUntil||0)){
         nf=pickFoe(s,1400,now);
-        if(!nf||nf.hulls||(nf.hero&&!heroDuelOpen(now))){
+        if(!nf||skipHull(nf)||(nf.hero&&!heroDuelOpen(now))){
           let b=null,bs=1e18;
           const arr=foeCache[1-s.side];
           const duel=heroDuelOpen(now);
           for(let i=0;i<arr.length;i++){
-            const t=arr[i];if(t.hulls||(t.hero&&!duel))continue;
-            const d=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
-            const sc=d*(0.2+0.8*(t.hp/Math.max(1,t.hpMax)))*(t.slen>70?1.7:0.5);
+            const t=arr[i];if(skipHull(t)||(t.hero&&!duel))continue;
+            const d=gapTo(s,t);
+            const sc=(RACE_DEFS[t.race]||{}).unique?d*0.4
+              :d*(0.2+0.8*(t.hp/Math.max(1,t.hpMax)))*(t.slen>70?1.7:0.5);
             if(sc<bs){bs=sc;b=t;}
           }
           nf=b||nf;
@@ -15142,17 +15192,25 @@ function simStep(now,dt){
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
     }
     s.mark=prefer>=0?prefer:-1;
-    /* fire at the squadron's mark first, else whatever crosses the sights */
+    /* fire at the squadron's mark first, else whatever crosses the sights.
+       Range is to the skin, so a White Star on a First One can actually shoot. */
     if(s.cool<=0){
       let rng=s.hero?290:isGunboat(s)?340:s.slen>90?210:175;
       const fx0=(RACE_DEFS[s.race]||{}).fire;
       if(fx0==="slicer"||fx0==="cutter")rng=Math.max(rng,cutRange(s));
-      let t=null;
-      if(prefer>=0){
-        const c2=ships[prefer];
-        if(c2&&!c2.dead&&!c2.grace&&!(c2.hero&&!heroDuelOpen(now))&&
-           (c2.x-s.x)*(c2.x-s.x)+(c2.y-s.y)*(c2.y-s.y)+(c2.z-s.z)*(c2.z-s.z)<rng*rng)t=c2;
+      const markT=prefer>=0?ships[prefer]:null;
+      if(markT&&(markT.hulls||(RACE_DEFS[markT.race]||{}).unique))rng=Math.max(rng,420);
+      else{
+        const arrU=foeCache[1-s.side];
+        for(let iu=0;iu<arrU.length;iu++){
+          const u=arrU[iu];
+          if(!((RACE_DEFS[u.race]||{}).unique||u.hulls))continue;
+          if(gapTo(s,u)<500){rng=Math.max(rng,420);break;}
+        }
       }
+      let t=null;
+      if(markT&&!markT.dead&&!markT.grace&&!(markT.hero&&!heroDuelOpen(now))&&
+         gapTo(s,markT)<rng)t=markT;
       if(!t)t=nearestFoeInRange(s,rng);
       if(t&&t.hero&&!heroDuelOpen(now))t=pickFoe(s,rng,now);
       if(t){
@@ -15240,16 +15298,19 @@ function simStep(now,dt){
       else{ms.dead=true;flash(ms.x,ms.y,ms.z,now,16,2);continue;}
     }
     const dx=t.x-ms.x,dy=t.y-ms.y,dz=t.z-ms.z;
-    const d=Math.hypot(dx,dy,dz);
-    if(d<Math.max(12,t.rad*0.6)){
+    const d=Math.hypot(dx,dy,dz)||1;
+    const skin=skinOf(t)*0.82;
+    if(d<skin+Math.max(12,t.rad*0.12)){
       wound(t,2,ms.from,now);
-      flash(t.x,t.y,t.z,now,Math.max(26,t.slen*0.4),2);
+      const hit=aimSkin({x:ms.x,y:ms.y,z:ms.z},t);
+      flash(hit[0],hit[1],hit[2],now,Math.max(26,Math.min(80,t.slen*0.06)),2);
       ms.dead=true;continue;
     }
     const inv=1/d,k3=Math.min(1,dt*2.4);
-    ms.vx+=(dx*inv*ms.spd-ms.vx)*k3;
-    ms.vy+=(dy*inv*ms.spd-ms.vy)*k3;
-    ms.vz+=(dz*inv*ms.spd-ms.vz)*k3;
+    const seek=Math.max(0.15,(d-skin)/d);
+    ms.vx+=(dx*inv*ms.spd*seek-ms.vx)*k3;
+    ms.vy+=(dy*inv*ms.spd*seek-ms.vy)*k3;
+    ms.vz+=(dz*inv*ms.spd*seek-ms.vz)*k3;
     ms.x+=ms.vx*dt;ms.y+=ms.vy*dt;ms.z+=ms.vz*dt;
   }
   missiles=missiles.filter(ms=>!ms.dead);
