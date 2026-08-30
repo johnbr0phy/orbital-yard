@@ -14520,7 +14520,6 @@ function foSpeak(s,now,dt){
   if(s.foCool>0)return;
   const w=s.fo!=null?s.fo:(s.meta&&s.meta.fo);
   if(w==null||w<0)return;
-  const name=(s.meta&&s.meta.desig)||"AN ANCIENT";
   const t=foKnot(s)||foPick(s,4200);
   if(w!==2&&!t)return;
   s.lastFire=now;
@@ -14548,7 +14547,7 @@ function foSpeak(s,now,dt){
       }
       cur=nxt;
     }
-    kickCam(24);toast(name+" · THE LIGHTNING ARRAY");
+    kickCam(24);
     s.foCool=9.5+Math.random()*2.2;
   }else if(w===1){
     /* Lordship: graviton well — the pack is yanked in, then crushed */
@@ -14567,7 +14566,7 @@ function foSpeak(s,now,dt){
       o.x+=dx/d*k;o.y+=dy/d*k*0.45;o.z+=dz/d*k;
     }
     foEat(s,c,now,560,42,11);
-    kickCam(26);toast(name+" · GRAVITON WELL");
+    kickCam(26);
     s.foCool=11.0+Math.random()*2.4;
   }else if(w===2){
     /* Thoughtforce: no barrel. The sky itself flinches. */
@@ -14582,7 +14581,7 @@ function foSpeak(s,now,dt){
         ion:true,fo:true,col:[0.72,0.82,1.0],wid:18});
     }
     foEat(s,c,now,R2,38,9);
-    kickCam(30);toast(name+" · A THOUGHT-WAVE");
+    kickCam(30);
     s.foCool=12.5+Math.random()*2.0;
   }else if(w===3){
     /* Triumviron: three claws, three columns, one murder */
@@ -14598,7 +14597,7 @@ function foSpeak(s,now,dt){
     }
     foNova(c,now,480,8);
     foEat(s,c,now,500,40,10);
-    kickCam(24);toast(name+" · THE THREE CLAWS");
+    kickCam(24);
     s.foCool=10.2+Math.random()*2.0;
   }else if(w===4){
     /* Dark Knife: a corridor of death. One stroke through the fleet. */
@@ -14620,7 +14619,7 @@ function foSpeak(s,now,dt){
       wound(o,o.hulls?12:48,s,now);n++;
       flash(o.x,o.y,o.z,now,Math.max(28,o.slen*0.9),7);
     }
-    kickCam(n>4?26:14);toast(name+" · POWERLASER");
+    kickCam(n>4?26:14);
     s.foCool=8.4+Math.random()*1.8;
   }else if(w===5){
     /* Lorien: an ending. The thickest column. It does not miss. */
@@ -14628,7 +14627,7 @@ function foSpeak(s,now,dt){
     foCol(s,m,c,now,[0.62,1.0,0.48],110);
     foNova(c,now,720,7);
     foEat(s,c,now,740,52,16);
-    kickCam(32);toast(name+" · AN ENDING");
+    kickCam(32);
     s.foCool=14.0+Math.random()*2.5;
   }else if(w===6){
     /* Vorlon: two eye-lightnings braid into a teal flower */
@@ -14641,7 +14640,7 @@ function foSpeak(s,now,dt){
     }
     foNova(c,now,500,6);
     foEat(s,c,now,520,38,9);
-    kickCam(22);toast(name+" · THE DISCHARGE");
+    kickCam(22);
     s.foCool=9.8+Math.random()*2.0;
   }else{
     /* Hand: the victim becomes the bomb — spikes out of the mark */
@@ -14658,7 +14657,7 @@ function foSpeak(s,now,dt){
         fo:true,col:ice,heavy:true,wid:14});
     }
     foEat(s,c,now,480,40,8);
-    kickCam(24);toast(name+" · SPIKE BLOOM");
+    kickCam(24);
     s.foCool=10.5+Math.random()*2.2;
   }
 }
