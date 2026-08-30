@@ -11240,7 +11240,37 @@ void main(){
   float r=length(d)*2.0;
   vec3 col;
   float rw=0.9;
-  if(vC>3.5){
+  if(vC>8.5){
+    /* ice bloom — Thoughtforce, the Hand */
+    float spike=0.78+0.22*sin(a*2.0+vSeed*31.0);
+    r/=max(spike,0.25);
+    col=mix(vec3(1.0,1.0,1.0),vec3(0.55,0.82,1.0),clamp(vO*1.2,0.0,1.0));
+    rw=0.85;
+  }else if(vC>7.5){
+    /* red claw — Triumviron */
+    float spike=0.78+0.22*sin(a*2.0+vSeed*31.0);
+    r/=max(spike,0.25);
+    col=mix(vec3(1.0,0.95,0.88),vec3(1.0,0.22,0.08),clamp(vO*1.2,0.0,1.0));
+    rw=0.85;
+  }else if(vC>6.5){
+    /* gold-green ending — Lorien, Dark Knife */
+    float spike=0.78+0.22*sin(a*2.0+vSeed*31.0);
+    r/=max(spike,0.25);
+    col=mix(vec3(1.0,1.0,0.82),vec3(0.32,1.0,0.28),clamp(vO*1.2,0.0,1.0));
+    rw=0.85;
+  }else if(vC>5.5){
+    /* teal flower — Vorlon */
+    float spike=0.78+0.22*sin(a*2.0+vSeed*31.0);
+    r/=max(spike,0.25);
+    col=mix(vec3(0.88,1.0,0.98),vec3(0.12,0.92,0.72),clamp(vO*1.2,0.0,1.0));
+    rw=0.85;
+  }else if(vC>4.5){
+    /* gold lightning — Traveller, Lordship */
+    float spike=0.78+0.22*sin(a*2.0+vSeed*31.0);
+    r/=max(spike,0.25);
+    col=mix(vec3(1.0,1.0,0.82),vec3(1.0,0.68,0.12),clamp(vO*1.2,0.0,1.0));
+    rw=0.85;
+  }else if(vC>3.5){
     /* ion nova: white core, cyan bloom, a ring that eats the sky */
     float spike=0.78+0.22*sin(a*2.0+vSeed*31.0);
     r/=max(spike,0.25);
@@ -11665,7 +11695,8 @@ onmessage=e=>{
       ringX:ship.meta.ringX!==undefined?ship.meta.ringX-c[0]:0,
       ringW:ship.meta.ringW||0,hero:!!(j.hero||(ship.meta&&ship.meta.hero)),
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length,
-        beam:ship.meta.beam||0,height:ship.meta.height||0,hero:!!(ship.meta&&ship.meta.hero)}});
+        beam:ship.meta.beam||0,height:ship.meta.height||0,hero:!!(ship.meta&&ship.meta.hero),
+        fo:ship.meta.fo,unique:!!ship.meta.unique,crew:ship.meta.crew}});
     tr.push(m.v.buffer,m.i.buffer);
   }
   postMessage({kind:"batch",genId:d.genId,out},tr);
@@ -12983,12 +13014,13 @@ function startWar(fresh){
       const sx=side?1:-1,J=k=>(R()-0.5)*k;
       for(let i=0;i<8;i++){
         const L=(FO_KLASS[i]&&FO_KLASS[i].L)||2000;
-        mk(side,FO_HULLS[i],[
+        const id=mk(side,FO_HULLS[i],[
           sx*(3800+L*0.58+(i%4)*140)+J(40),
           ((i%4)-1.5)*820+J(40),
           ((i>>2)-0.5)*2600+J(40),
           4.2+i*9.0
         ]);
+        ships[id].fo=i;
       }
       built[side]=8;
       continue;
@@ -13595,7 +13627,7 @@ function thoughtLine(s,now){
     const markU=(s.mark>=0&&ships[s.mark]&&!ships[s.mark].dead)?ships[s.mark]:null;
     const mnU=nameOf(markU);
     if(warSky(s)==="LAST")return kn+". the last of the first. still speaking.";
-    const gun=["the lightning array","the graviton well","a thought-wave","white-star plasma",
+    const gun=["the lightning array","the graviton well","a thought-wave","the three claws",
       "the powerlaser","an ending","the discharge","a spike bloom"][s.fo!=null?s.fo:(s.meta&&s.meta.fo)||0];
     if(mnU)return kn+". "+gun+". "+mnU+" is already decided.";
     return kn+". "+gun+". we have seen this war before.";
@@ -14046,114 +14078,208 @@ function foPick(s,rng){
   }
   return best;
 }
-function foBolt(s,t,now,col,dmg,opt){
-  opt=opt||{};
-  const m=opt.m||nextMuzzle(s,now);
-  beams.push({a:m,b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,
-    fo:true,col:col,heavy:!!opt.heavy,ion:!!opt.ion,arc:!!opt.arc,rail:!!opt.rail});
-  wound(t,dmg,s,now);
-  flash(t.x,t.y,t.z,now,Math.max(18,t.slen*0.55),s.side);
-  s.lastFire=now;s.mark=t.id;
+function foKnot(s){
+  const arr=foeCache[1-s.side];
+  if(!arr.length)return null;
+  const packR2=400*400;
+  let best=null,bs=-1;
+  for(let i=0;i<arr.length;i++){
+    const t=arr[i];let n=0;
+    for(let j=0;j<arr.length;j++){
+      const o=arr[j],dx=o.x-t.x,dy=o.y-t.y,dz=o.z-t.z;
+      if(dx*dx+dy*dy+dz*dz<packR2)n+=(o.hulls?0.18:1);
+    }
+    if(n>bs){bs=n;best=t;}
+  }
+  return best;
+}
+function foMuz(s){
+  const cy=Math.cos(s.yaw||0),sy=Math.sin(s.yaw||0),L=s.slen||400;
+  return [s.x+cy*L*0.46,s.y,s.z+sy*L*0.46];
+}
+function foCol(s,a,b,now,col,wid){
+  beams.push({a:a,b:b,t0:now,side:s.side,race:s.race,ion:true,fo:true,col:col,wid:wid||48,heavy:true});
+}
+function foSparks(c,now,blast,n){
+  n=n||16;
+  const [u,v]=basis([0.15,1,0.08]);
+  for(let i=0;i<n;i++){
+    const an=i/n*6.283,L2=blast*(0.72+Math.random()*0.5);
+    const dx=u[0]*Math.cos(an)+v[0]*Math.sin(an);
+    const dy=u[1]*Math.cos(an)+v[1]*Math.sin(an);
+    const dz=u[2]*Math.cos(an)+v[2]*Math.sin(an);
+    beams.push({a:[c[0],c[1],c[2]],b:[c[0]+dx*L2,c[1]+dy*L2,c[2]+dz*L2],t0:now,spark:true});
+  }
+}
+function foNova(c,now,blast,kind){
+  const k=kind==null?4:kind;
+  flash(c[0],c[1],c[2],now,Math.max(420,blast*1.35),k);
+  flash(c[0],c[1],c[2],now+0.12,blast*0.9,k);
+  flash(c[0],c[1],c[2],now+0.28,blast*0.5,k);
+  foSparks(c,now,blast,18);
+}
+function foEat(s,c,now,blast,df,dc){
+  const arr=foeCache[1-s.side],b2=blast*blast;
+  let n=0;
+  for(let i=0;i<arr.length;i++){
+    const t=arr[i];if(t.dead)continue;
+    const dx=t.x-c[0],dy=t.y-c[1],dz=t.z-c[2],d2=dx*dx+dy*dy+dz*dz;
+    if(d2>b2)continue;
+    const fall=1-Math.sqrt(d2)/blast;
+    if(!t.hulls){wound(t,df*(0.4+0.6*fall),s,now);n++;}
+    else wound(t,dc*(0.45+0.55*fall),s,now);
+    flash(t.x,t.y,t.z,now,Math.max(22,t.slen*(t.hulls?0.35:1.05)),t.hulls?2:3);
+  }
+  return n;
 }
 function foSpeak(s,now,dt){
-  /* each First One is a different war. Not a reskin of the battery. */
-  s.foCool=(s.foCool||0)-dt;
+  /* each First One is a different war. A variation of the axial
+     discharge — not a reskin, a different way the sky goes wrong. */
+  if(s.foCool==null)s.foCool=1.35;
+  s.foCool-=dt;
   if(s.foCool>0)return;
   const w=s.fo!=null?s.fo:(s.meta&&s.meta.fo);
   if(w==null||w<0)return;
+  const name=(s.meta&&s.meta.desig)||"AN ANCIENT";
+  const t=foKnot(s)||foPick(s,4200);
+  if(w!==2&&!t)return;
+  s.lastFire=now;
+  if(t)s.mark=t.id;
   if(w===0){
-    /* Traveller: lightning array, chains, drinks their power */
-    const t=foPick(s,3400);if(!t)return;
+    /* Traveller: gold chain-lightning that drinks a pack dry */
+    if(!t)return;
+    const gold=[1.0,0.92,0.38];
     let cur=t;const hit=new Set();
-    for(let n=0;n<5&&cur&&!cur.dead;n++){
-      foBolt(s,cur,now,[1.0,0.94,0.42],4.2,{arc:true,heavy:true});
+    const muz=foMuz(s);
+    foCol(s,muz,[t.x,t.y,t.z],now,gold,52);
+    for(let n=0;n<8&&cur&&!cur.dead;n++){
+      const m=n? [cur.x,cur.y,cur.z]:muz;
+      beams.push({a:m,b:[cur.x,cur.y,cur.z],t0:now,side:s.side,race:s.race,arc:true,fo:true,col:gold,wid:22});
+      foNova([cur.x,cur.y,cur.z],now,n?220:380,5);
+      foEat(s,[cur.x,cur.y,cur.z],now,n?240:380,36,7);
       hit.add(cur.id);
+      if(cur.spd)cur.spd=Math.max((cur.spdMax||cur.spd)*0.28,cur.spd*0.55);
       let nxt=null,bd=1e9;
       const arr=foeCache[1-s.side];
       for(let i=0;i<arr.length;i++){
         const o=arr[i];if(o.dead||hit.has(o.id))continue;
         const d=(o.x-cur.x)*(o.x-cur.x)+(o.y-cur.y)*(o.y-cur.y)+(o.z-cur.z)*(o.z-cur.z);
-        if(d<220000&&d<bd){bd=d;nxt=o;}
+        if(d<360000&&d<bd){bd=d;nxt=o;}
       }
       cur=nxt;
     }
-    if(t.spd)t.spd=Math.max((t.spdMax||t.spd)*0.35,t.spd*0.78);
-    s.foCool=4.4+Math.random()*1.2;
+    kickCam(24);toast(name+" · THE LIGHTNING ARRAY");
+    s.foCool=9.5+Math.random()*2.2;
   }else if(w===1){
-    /* Lordship: graviton well. The barrel speaks, the pods yank. */
-    const t=foPick(s,2800);if(!t)return;
-    const muz=gunWorld(s,[s.slen*0.42,0,0],now);
-    foBolt(s,t,now,[1.0,0.82,0.28],6.5,{ion:true,heavy:true,m:muz});
+    /* Lordship: graviton well — the pack is yanked in, then crushed */
+    const muz=foMuz(s);
+    const c=[t.x,t.y,t.z];
+    foCol(s,muz,c,now,[1.0,0.72,0.22],70);
+    foNova(c,now,520,5);
     const arr=foeCache[1-s.side];
     for(let i=0;i<arr.length;i++){
       const o=arr[i];if(o.dead)continue;
-      const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
+      const dx=c[0]-o.x,dy=c[1]-o.y,dz=c[2]-o.z;
       const d=Math.hypot(dx,dy,dz)||1;
-      if(d>680)continue;
-      const k=Math.min(42,28/d*18);
-      o.x+=dx/d*k;o.y+=dy/d*k*0.4;o.z+=dz/d*k;
-      wound(o,1.3,s,now);
+      if(d>780)continue;
+      beams.push({a:[o.x,o.y,o.z],b:c,t0:now,side:s.side,race:s.race,fo:true,col:[1.0,0.72,0.22],wid:7});
+      const k=Math.min(95,42/d*55);
+      o.x+=dx/d*k;o.y+=dy/d*k*0.45;o.z+=dz/d*k;
     }
-    s.foCool=5.6+Math.random()*1.5;
+    foEat(s,c,now,560,42,11);
+    kickCam(26);toast(name+" · GRAVITON WELL");
+    s.foCool=11.0+Math.random()*2.4;
   }else if(w===2){
-    /* Thoughtforce: a thought-wave. No barrel. The sky flinches. */
-    flash(s.x,s.y,s.z,now,Math.max(220,s.slen*0.55),2);
-    const arr=foeCache[1-s.side];
-    for(let i=0;i<arr.length;i++){
-      const o=arr[i];if(o.dead)continue;
-      const d=Math.hypot(o.x-s.x,o.y-s.y,o.z-s.z);
-      if(d>1100)continue;
-      wound(o,3.8*(1-d/1100),s,now);
-      flash(o.x,o.y,o.z,now,Math.max(12,o.slen*0.4),s.side);
+    /* Thoughtforce: no barrel. The sky itself flinches. */
+    const c=[s.x,s.y,s.z];
+    flash(c[0],c[1],c[2],now,Math.max(520,s.slen*0.45),9);
+    flash(c[0],c[1],c[2],now+0.18,s.slen*0.28,9);
+    const R2=14000;
+    for(let i=0;i<28;i++){
+      const a=i/28*6.283,el=((i%7)-3)*0.22;
+      const dx=Math.cos(a)*Math.cos(el),dy=Math.sin(el),dz=Math.sin(a)*Math.cos(el);
+      beams.push({a:c,b:[c[0]+dx*R2,c[1]+dy*R2,c[2]+dz*R2],t0:now,side:s.side,race:s.race,
+        ion:true,fo:true,col:[0.72,0.82,1.0],wid:18});
     }
-    s.lastFire=now;s.foCool=7.8+Math.random()*1.6;
+    foEat(s,c,now,R2,38,9);
+    kickCam(30);toast(name+" · A THOUGHT-WAVE");
+    s.foCool=12.5+Math.random()*2.0;
   }else if(w===3){
-    /* Triumviron: three white-star plasmas from the claw */
-    const t=foPick(s,2600);if(!t)return;
+    /* Triumviron: three claws, three columns, one murder */
     const yaw=s.yaw||0,cy=Math.cos(yaw),sy=Math.sin(yaw);
+    const c=[t.x,t.y,t.z];
+    const col=[1.0,0.38,0.14];
     for(let k=0;k<3;k++){
       const a=k*2.094;
-      const mx=s.x+cy*(s.slen*0.28)+(-sy)*Math.cos(a)*s.slen*0.22;
-      const my=s.y+Math.sin(a)*s.slen*0.08;
-      const mz=s.z+sy*(s.slen*0.28)+cy*Math.cos(a)*s.slen*0.22;
-      foBolt(s,t,now,[1.0,0.42,0.18],3.1,{ion:true,heavy:true,m:[mx,my,mz]});
+      const mx=s.x+cy*(s.slen*0.30)+(-sy)*Math.cos(a)*s.slen*0.24;
+      const my=s.y+Math.sin(a)*s.slen*0.10;
+      const mz=s.z+sy*(s.slen*0.30)+cy*Math.cos(a)*s.slen*0.24;
+      foCol(s,[mx,my,mz],c,now,col,42);
     }
-    s.foCool=3.6+Math.random()*1.1;
+    foNova(c,now,480,8);
+    foEat(s,c,now,500,40,10);
+    kickCam(24);toast(name+" · THE THREE CLAWS");
+    s.foCool=10.2+Math.random()*2.0;
   }else if(w===4){
-    /* Dark Knife: a powerlaser, one stroke, then gone */
-    const t=foPick(s,4200);if(!t)return;
-    foBolt(s,t,now,[0.65,1.0,0.82],8.5,{rail:true,heavy:true});
-    s.foCool=2.1+Math.random()*0.8;
+    /* Dark Knife: a corridor of death. One stroke through the fleet. */
+    const m=foMuz(s);
+    const dir=V.norm([t.x-m[0],t.y-m[1],t.z-m[2]]);
+    const far=[m[0]+dir[0]*5800,m[1]+dir[1]*5800,m[2]+dir[2]*5800];
+    foCol(s,m,far,now,[0.45,1.0,0.72],48);
+    flash(m[0],m[1],m[2],now,180,7);
+    foNova([t.x,t.y,t.z],now,280,7);
+    const arr=foeCache[1-s.side];
+    let n=0;
+    for(let i=0;i<arr.length;i++){
+      const o=arr[i];if(o.dead)continue;
+      const px=o.x-m[0],py=o.y-m[1],pz=o.z-m[2];
+      const along=px*dir[0]+py*dir[1]+pz*dir[2];
+      if(along<0||along>5800)continue;
+      const rx=px-dir[0]*along,ry=py-dir[1]*along,rz=pz-dir[2]*along;
+      if(Math.hypot(rx,ry,rz)>88+o.slen*0.25)continue;
+      wound(o,o.hulls?12:48,s,now);n++;
+      flash(o.x,o.y,o.z,now,Math.max(28,o.slen*0.9),7);
+    }
+    kickCam(n>4?26:14);toast(name+" · POWERLASER");
+    s.foCool=8.4+Math.random()*1.8;
   }else if(w===5){
-    /* Lorien: an ending. One column. It does not miss. */
-    const t=foPick(s,3000);if(!t)return;
-    const m=nextMuzzle(s,now);
-    beams.push({a:m,b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,fo:true,heavy:true,col:[0.72,1.0,0.55]});
-    wound(t,14,s,now);
-    flash(t.x,t.y,t.z,now,Math.max(40,t.slen*0.9),2);
-    s.lastFire=now;s.mark=t.id;s.foCool=8.2+Math.random()*1.8;
+    /* Lorien: an ending. The thickest column. It does not miss. */
+    const m=foMuz(s),c=[t.x,t.y,t.z];
+    foCol(s,m,c,now,[0.62,1.0,0.48],110);
+    foNova(c,now,720,7);
+    foEat(s,c,now,740,52,16);
+    kickCam(32);toast(name+" · AN ENDING");
+    s.foCool=14.0+Math.random()*2.5;
   }else if(w===6){
-    /* Vorlon discharge: two organic lightnings off the eyes */
-    const t=foPick(s,2400);if(!t)return;
+    /* Vorlon: two eye-lightnings braid into a teal flower */
+    const c=[t.x,t.y,t.z];
+    const teal=[0.42,0.95,0.82];
     for(const z of [-1,1]){
-      const m=gunWorld(s,[s.slen*0.38,s.slen*0.04,z*s.slen*0.08],now);
-      foBolt(s,t,now,[0.55,0.95,0.82],3.4,{arc:true,heavy:true,m:m});
+      const m=gunWorld(s,[s.slen*0.38,s.slen*0.05,z*s.slen*0.09],now);
+      foCol(s,m,c,now,teal,38);
+      beams.push({a:m,b:c,t0:now,side:s.side,race:s.race,arc:true,fo:true,col:teal,wid:18});
     }
-    s.foCool=3.3+Math.random()*1.0;
+    foNova(c,now,500,6);
+    foEat(s,c,now,520,38,9);
+    kickCam(22);toast(name+" · THE DISCHARGE");
+    s.foCool=9.8+Math.random()*2.0;
   }else{
-    /* Hand servitor: a bloom of ice-spikes */
-    const t=foPick(s,2200);if(!t)return;
-    const m=nextMuzzle(s,now);
-    const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
-    for(let i=0;i<12;i++){
-      const ax=t.x+tvx*0.4-m[0]+(Math.random()-0.5)*t.slen*1.1;
-      const ay=t.y-m[1]+(Math.random()-0.5)*t.slen*0.6;
-      const az=t.z+tvz*0.4-m[2]+(Math.random()-0.5)*t.slen*1.1;
-      const il=1/Math.max(1,Math.hypot(ax,ay,az));
-      plasmas.push({x:m[0],y:m[1],z:m[2],vx:ax*il*160,vy:ay*il*160,vz:az*il*160,
-        t0:now,side:s.side,race:s.race,ph:Math.random()*6.28,dead:false,kind:"caster",from:s.id});
+    /* Hand: the victim becomes the bomb — spikes out of the mark */
+    const c=[t.x,t.y,t.z];
+    const ice=[0.78,0.92,1.0];
+    foCol(s,foMuz(s),c,now,ice,44);
+    wound(t,t.hulls?18:60,s,now);
+    foNova(c,now,460,9);
+    for(let i=0;i<22;i++){
+      const a=i/22*6.283,el=((i%5)-2)*0.35;
+      const dx=Math.cos(a)*Math.cos(el),dy=Math.sin(el),dz=Math.sin(a)*Math.cos(el);
+      const L2=520+Math.random()*180;
+      beams.push({a:c,b:[c[0]+dx*L2,c[1]+dy*L2,c[2]+dz*L2],t0:now,side:s.side,race:s.race,
+        fo:true,col:ice,heavy:true,wid:14});
     }
-    s.lastFire=now;s.mark=t.id;s.foCool=4.1+Math.random()*1.2;
+    foEat(s,c,now,480,40,8);
+    kickCam(24);toast(name+" · SPIKE BLOOM");
+    s.foCool=10.5+Math.random()*2.2;
   }
 }
 function spawnBreakup(s,now){
@@ -14624,11 +14750,12 @@ function maybeCallAlly(now){
       const sx=side?1:-1;
       for(let i=0;i<8;i++){
         const L=(FO_KLASS[i]&&FO_KLASS[i].L)||2000;
-        mkA(FO_HULLS[i],
+        const id=mkA(FO_HULLS[i],
           fc[0]+sx*(3600+L*0.5),
           clampY(fc[1]+((i%4)-1.5)*780),
           fc[2]+((i>>2)-0.5)*2400,
           5+i*9.0,null,side?Math.PI:0);
+        ships[id].fo=i;
       }
     }else{
     mkA(10,cpos[0],cpos[1]+36,cpos[2],2.2+gH.dly,null,gH.yaw);
@@ -14708,7 +14835,9 @@ function simStep(now,dt){
       if(now>=ionNext[side]-2.8){
         let g=null;
         for(const s2 of ships)
-          if(s2.side===side&&!s2.dead&&s2.vao&&(s2.hulls||0)>=10&&(!g||s2.slen>g.slen))g=s2;
+          if(s2.side===side&&!s2.dead&&s2.vao&&(s2.hulls||0)>=10
+            &&!(RACE_DEFS[s2.race]||{}).unique
+            &&(!g||s2.slen>g.slen))g=s2;
         if(g)ionState[side]={fire:ionNext[side],gun:g.id,last:0};
         else ionNext[side]=now+8;
       }
@@ -15154,7 +15283,7 @@ function simStep(now,dt){
   }
   mines=mines.filter(mi=>!mi.dead);
   collide(now);
-  beams=beams.filter(b2=>now-b2.t0<(b2.ion?1.55:b2.rail?0.38:b2.arc?0.22:b2.spark?0.42:b2.phaser?0.5:b2.cut?0.55:b2.turbo?0.38:b2.pulse?0.18:b2.heavy?0.62:0.16));
+  beams=beams.filter(b2=>now-b2.t0<(b2.ion?(b2.fo?2.15:1.55):b2.fo?(b2.arc?1.4:1.8):b2.rail?0.38:b2.arc?0.22:b2.spark?0.42:b2.phaser?0.5:b2.cut?0.55:b2.turbo?0.38:b2.pulse?0.18:b2.heavy?0.62:0.16));
   if(flashes.length>1400)flashes.splice(0,flashes.length-1400);
 }
 /* ===================== stars ===================== */
@@ -15713,15 +15842,16 @@ function frame(nowMs){
         gl.drawArrays(gl.LINES,0,arrR.length/3);
       }
       /* the ion lance: a collapsing column of light, white core,
-         faction bloom — a hole you can see from the other side of the sky */
+         faction bloom — a hole you can see from the other side of the sky.
+         First Ones bring their own ink so they do not all paint purple. */
       for(const b of beams){
         if(b.race!==rc||!b.ion)continue;
-        const life=1.55,k2=Math.max(0,1-(now-b.t0)/life);
+        const life=b.fo?2.15:1.55,k2=Math.max(0,1-(now-b.t0)/life);
         const wr=(b.wid||36)*k2;
         const outer=boltSkin(b.a,b.b,wr,14);
         const mid=boltSkin(b.a,b.b,wr*0.42,10);
         const core=boltSkin(b.a,b.b,Math.max(4,wr*0.14),8);
-        const ic=RACE_DEFS[rc].ion;
+        const ic=b.col||RACE_DEFS[rc].ion;
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
         gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(outer),gl.STREAM_DRAW);
         gl.uniform4f(BU.col,ic[0],ic[1],ic[2],0.55*k2+0.12);
@@ -15732,10 +15862,10 @@ function frame(nowMs){
         gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(core),gl.STREAM_DRAW);
         gl.uniform4f(BU.col,1.0,1.0,1.0,0.95*k2);
         gl.drawArrays(gl.LINES,0,core.length/3);
-        if(now-b.t0<0.22){
-          const bloom=boltSkin(b.a,b.b,wr*1.7,12);
+        if(now-b.t0<(b.fo?0.42:0.22)){
+          const bloom=boltSkin(b.a,b.b,wr*(b.fo?2.4:1.7),12);
           gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(bloom),gl.STREAM_DRAW);
-          gl.uniform4f(BU.col,1.0,1.0,1.0,0.45);
+          gl.uniform4f(BU.col,ic[0],ic[1],ic[2],b.fo?0.55:0.45);
           gl.drawArrays(gl.LINES,0,bloom.length/3);
         }
       }
@@ -15743,6 +15873,25 @@ function frame(nowMs){
       const aarr=[];
       for(const b of beams){
         if(b.race!==rc||!b.arc)continue;
+        if(b.fo){
+          const segs=8,jit=110,col=b.col||RACE_DEFS[rc].beam;
+          let px=b.a[0],py=b.a[1],pz=b.a[2];
+          const skinArr=[];
+          for(let j=1;j<=segs;j++){
+            const u2=j/segs;
+            const jx=b.a[0]+(b.b[0]-b.a[0])*u2+(j<segs?(Math.random()-0.5)*jit:0);
+            const jy=b.a[1]+(b.b[1]-b.a[1])*u2+(j<segs?(Math.random()-0.5)*jit:0);
+            const jz=b.a[2]+(b.b[2]-b.a[2])*u2+(j<segs?(Math.random()-0.5)*jit:0);
+            const sk=boltSkin([px,py,pz],[jx,jy,jz],Math.max(10,(b.wid||22)*0.5),6);
+            for(let i=0;i<sk.length;i++)skinArr.push(sk[i]);
+            px=jx;py=jy;pz=jz;
+          }
+          gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+          gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(skinArr),gl.STREAM_DRAW);
+          gl.uniform4f(BU.col,col[0],col[1],col[2],0.95);
+          gl.drawArrays(gl.LINES,0,skinArr.length/3);
+          continue;
+        }
         let px=b.a[0],py=b.a[1],pz=b.a[2];
         for(let j=1;j<=5;j++){
           const u2=j/5;
@@ -15788,21 +15937,21 @@ function frame(nowMs){
         gl.uniform4f(BU.col,Math.min(1,(c[0]+1)*0.55),Math.min(1,(c[1]+0.4)*0.7),Math.min(1,(c[2]+1)*0.55),0.95);
         gl.drawArrays(gl.LINES,0,carr.length/3);
       }
-      /* First One ink: each ancient her own colour, not a fleet dye */
+      /* First One ink: leftover spikes and lashes that are not ion columns */
       for(const b of beams){
         if(b.race!==rc||!b.fo||b.arc||b.ion||b.rail)continue;
         const col=b.col||[1,0.9,0.5];
-        const a2=[b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]];
-        if(b.heavy){
-          a2.push(b.a[0],b.a[1]+2.4,b.a[2],b.b[0],b.b[1]+2.4,b.b[2]);
-          a2.push(b.a[0],b.a[1]-2.4,b.a[2],b.b[0],b.b[1]-2.4,b.b[2]);
-          a2.push(b.a[0]+2.0,b.a[1],b.a[2],b.b[0]+2.0,b.b[1],b.b[2]);
-          a2.push(b.a[0]-2.0,b.a[1],b.a[2],b.b[0]-2.0,b.b[1],b.b[2]);
-        }
+        const life=1.8,k2=Math.max(0,1-(now-b.t0)/life);
+        const wr=Math.max(6,(b.wid||16)*k2);
+        const outer=boltSkin(b.a,b.b,wr,10);
+        const core=boltSkin(b.a,b.b,Math.max(3,wr*0.22),6);
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(a2),gl.STREAM_DRAW);
-        gl.uniform4f(BU.col,col[0],col[1],col[2],0.92);
-        gl.drawArrays(gl.LINES,0,a2.length/3);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(outer),gl.STREAM_DRAW);
+        gl.uniform4f(BU.col,col[0],col[1],col[2],0.7*k2+0.15);
+        gl.drawArrays(gl.LINES,0,outer.length/3);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(core),gl.STREAM_DRAW);
+        gl.uniform4f(BU.col,1.0,1.0,1.0,0.9*k2);
+        gl.drawArrays(gl.LINES,0,core.length/3);
       }
       /* tracer fire: short bright rounds you can watch fly */
       const trr=[];
