@@ -4493,27 +4493,27 @@ var impDagger=function(parts,L,o){
   }
 };
 
-/* octuple barbette: a disk ON the terrace, not a 50 m plate hanging
-   in the air beside the city. Scale is metres and capped. */
+/* octuple barbette: a disk ON the terrace, a fitting not a barn.
+   Scale is metres — an ISD city gun is ~10 m across, not 20. */
 var impBarbette=function(parts,x,y,z,s){
-  parts.push({k:"disc",c:[x,y+s*0.10,z],n:[0,1,0],r:s,ri:s*0.24});
-  parts.push({k:"capsule",a:[x,y+s*0.06,z],b:[x,y+s*0.36,z],r:s*0.26});
-  for(const sz of [-0.26,0.26]){
+  parts.push({k:"disc",c:[x,y+s*0.08,z],n:[0,1,0],r:s,ri:s*0.22});
+  parts.push({k:"capsule",a:[x,y+s*0.04,z],b:[x,y+s*0.26,z],r:s*0.22});
+  for(const sz of [-0.20,0.20]){
     parts.push({k:"tube",
-      a:[x+s*0.12,y+s*0.32,z+s*sz],
-      b:[x+s*1.40,y+s*0.38,z+s*sz],
-      r1:s*0.13,r2:s*0.08});
+      a:[x+s*0.08,y+s*0.22,z+s*sz],
+      b:[x+s*1.05,y+s*0.26,z+s*sz],
+      r1:s*0.10,r2:s*0.06});
   }
 };
 var impCityGuns=function(parts,L,o){
   const xN=L*0.52,xS=-L*0.48,zb=L*o.hb,yr=L*o.ridge;
   const ry=x=>yr*(xN-x)/(xN-xS);
-  const s=Math.min(10.5,Math.max(5.2,L*0.0068));
+  const s=Math.min(5.4,Math.max(2.8,L*0.0033));
   for(const t of (o.terr||[])){
     const cx=L*t[0],hl=L*t[1],hw=zb*t[2],hh=L*t[3];
-    if(hw<s*2.6)continue;
+    if(hw<s*2.8)continue;
     const by=ry(cx)*0.5,top=by+hh*2;
-    const zOn=Math.min(hw-s*1.15,Math.max(s*1.4,hw*0.58));
+    const zOn=Math.min(hw-s*1.25,Math.max(s*1.5,hw*0.55));
     const n=hl>L*0.11?2:1;
     for(let i=0;i<n;i++){
       const u=n===1?0.5:0.30+0.40*i;
@@ -10483,11 +10483,66 @@ var buildHero=function(f,seed){
    three bands — small craft, escorts, capitals — and the fleet's mix
    table, not the class dice, decides how many of each band sail. ---- */
 var fleetBandOf=function(L){return L<=42?0:L<=95?1:2;};
-function hullDeckAt(parts,x,z,dorsal){
-  /* the skin at a station: highest (or lowest) part that actually
-     occupies this x,z — so a turret sits on the deck, not in the AABB */
+function loftPolyAtX(p,x){
+  const secs=p.sec;if(!secs||secs.length<2)return null;
+  const xs=secs.map(sc=>{
+    let s=0;for(const q of sc.pts)s+=q[0];return s/sc.pts.length;
+  });
+  const dir=xs[xs.length-1]>=xs[0]?1:-1;
+  if(dir>0){if(x<xs[0]||x>xs[xs.length-1])return null;}
+  else{if(x>xs[0]||x<xs[xs.length-1])return null;}
+  let i=0;
+  while(i<xs.length-2&&(dir>0?xs[i+1]<x:xs[i+1]>x))i++;
+  const den=xs[i+1]-xs[i],t=Math.abs(den)<1e-9?0:(x-xs[i])/den;
+  const a=secs[i].pts,b=secs[i+1].pts,n=Math.min(a.length,b.length);
+  const pts=new Array(n);
+  for(let k=0;k<n;k++)
+    pts[k]=[a[k][0]+t*(b[k][0]-a[k][0]),
+            a[k][1]+t*(b[k][1]-a[k][1]),
+            a[k][2]+t*(b[k][2]-a[k][2])];
+  return pts;
+}
+function polyYAtZ(pts,z,dorsal){
+  let yHit=null,zMax=0;
+  const n=pts.length;
+  for(let i=0;i<n;i++){
+    const a=pts[i],b=pts[(i+1)%n];
+    if(Math.abs(a[2])>zMax)zMax=Math.abs(a[2]);
+    const z0=a[2],z1=b[2];
+    if((z0<z&&z1<z)||(z0>z&&z1>z))continue;
+    const dz=z1-z0;
+    const u=Math.abs(dz)<1e-9?0:(z-z0)/dz;
+    if(u<-1e-6||u>1+1e-6)continue;
+    const y=a[1]+u*(b[1]-a[1]);
+    if(yHit==null||(dorsal?y>yHit:y<yHit))yHit=y;
+  }
+  return {y:yHit,zMax:zMax};
+}
+function partNudge(p,dy,dz){
+  const add=q=>{if(!q)return;q[1]+=dy;if(dz)q[2]+=dz;};
+  if(p.c)add(p.c);
+  if(p.a)add(p.a);
+  if(p.b)add(p.b);
+  if(p.pts)for(const q of p.pts)add(q);
+  if(p.pts2)for(const q of p.pts2)add(q);
+  if(p.sec)for(const sc of p.sec)for(const q of sc.pts)add(q);
+}
+function hullDeckAt(parts,x,z,dorsal,skip){
+  /* the skin at a station: loft sampled at this x, boxes that actually
+     occupy this x,z — so a turret sits on the deck, not in the AABB */
   let yHit=null,zMax=0;
   for(const p of parts){
+    if(skip&&skip.has(p))continue;
+    if(p.k==="tube"||p.k==="capsule"||p.k==="disc")continue;
+    if(p.k==="loft"){
+      const poly=loftPolyAtX(p,x);
+      if(!poly)continue;
+      const hit=polyYAtZ(poly,z,dorsal);
+      if(hit.zMax>zMax)zMax=hit.zMax;
+      if(hit.y==null)continue;
+      if(yHit==null||(dorsal?hit.y>yHit:hit.y<yHit))yHit=hit.y;
+      continue;
+    }
     const es=partExtents(p);
     let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
     for(const e of es){
@@ -10505,11 +10560,53 @@ function hullDeckAt(parts,x,z,dorsal){
   }
   return {y:yHit,zMax:zMax};
 }
+function seatTurrets(ship){
+  /* native discs with a vertical face are gun houses: drop them onto
+     the skin at their station so nothing floats beside the hull */
+  const parts=ship.parts;if(!parts||!parts.length)return;
+  const bb=ship.bb||[[0,0,0],[1,1,1]];
+  const L=Math.max(8,bb[1][0]-bb[0][0]);
+  const discs=[];
+  for(const p of parts){
+    if(p.k!=="disc")continue;
+    const n=p.n||[0,1,0];
+    if(Math.abs(n[1])<0.78)continue;
+    if(p.r<L*0.0012||p.r>L*0.04)continue;
+    discs.push(p);
+  }
+  for(const d of discs){
+    const dorsal=d.n[1]>=0;
+    const group=[d],skip=new Set([d]);
+    for(const p of parts){
+      if(p===d)continue;
+      if(p.k!=="tube"&&p.k!=="capsule"&&p.k!=="sphere"&&p.k!=="disc")continue;
+      const c=partCentroid(p);
+      if(Math.hypot(c[0]-d.c[0],c[1]-d.c[1],c[2]-d.c[2])>d.r*3.6)continue;
+      if(p.k==="disc"&&Math.abs(p.c[2]-d.c[2])>d.r*1.25)continue;
+      group.push(p);skip.add(p);
+    }
+    let z=d.c[2],x=d.c[0];
+    let skin=hullDeckAt(parts,x,z,dorsal,skip);
+    if(skin.y==null){
+      const zAim=Math.sign(z||1)*Math.max(d.r*1.3,(skin.zMax||0)*0.62);
+      if(Math.abs(zAim-z)>0.2){
+        skin=hullDeckAt(parts,x,zAim,dorsal,skip);
+        if(skin.y!=null)z=zAim;
+      }
+    }
+    if(skin.y==null)continue;
+    const yWant=skin.y+(dorsal?1:-1)*Math.max(0.04,d.r*0.08);
+    const dy=yWant-d.c[1],dz=z-d.c[2];
+    if(Math.abs(dy)<0.04&&Math.abs(dz)<0.04)continue;
+    for(const p of group)partNudge(p,dy,dz);
+  }
+}
 function armShip(ship,race,hulls){
   /* a shot is a thing a mount throws. Harvest the barrels and tentacle
      mouths the yard already grew; if a hull was born without one, bolt
      a turret or a tendril on — never a beam from an empty nose. */
   const parts=ship.parts;if(!parts||!parts.length)return;
+  seatTurrets(ship);
   const bb=ship.bb||[[0,0,0],[1,1,1]];
   const L=Math.max(8,bb[1][0]-bb[0][0]);
   const B=Math.max(4,bb[1][2]-bb[0][2]);
@@ -10560,10 +10657,10 @@ function armShip(ship,race,hulls){
   const hullR=Math.min(B,H,L*0.5)*0.5;
   if(found.length<Math.max(2,want?2:0)){
     const n=hulls?want:2;
-    /* a fitting, not a barn: cap in metres so a Star Destroyer does not
-       grow 70 m guns, and sit them on the deck the mesh already has */
-    const scale=Math.min(11,Math.max(2.4,Math.min(L*0.0075,14)));
-    const len=scale*1.5,r=scale*0.15;
+    /* a fitting, not a barn: scale with the keel, cap in metres so a
+       Star Destroyer does not grow 20 m pancakes */
+    const scale=Math.min(5.6,Math.max(0.55,Math.min(L*0.012,6.5)));
+    const len=scale*1.35,r=scale*0.13;
     for(let i=0;i<n;i++){
       const u=n>1?i/(n-1):0.5;
       const side=i&1?1:-1;
@@ -10571,11 +10668,17 @@ function armShip(ship,race,hulls){
       const x=hulls?bb[0][0]+L*(0.22+0.56*u):bb[1][0]-Math.min(L*0.16,hullR*0.9);
       const skin0=hullDeckAt(parts,x,cz,dorsal);
       const zMax=skin0.zMax||hullR;
-      const z=cz+side*Math.max(r*2.2,Math.min(Math.max(0,zMax-scale*1.25),zMax*(0.50+0.28*u)));
-      const skin=hullDeckAt(parts,x,z,dorsal);
+      let z=cz+side*Math.max(r*2.2,Math.min(Math.max(0,zMax-scale*1.25),zMax*(0.42+0.20*u)));
+      let skin=hullDeckAt(parts,x,z,dorsal);
+      if(skin.y==null||(dorsal?skin.y<cy:skin.y>cy)){
+        z=cz+side*Math.max(r*1.6,zMax*0.34);
+        skin=hullDeckAt(parts,x,z,dorsal);
+      }
       let y=skin.y;
-      if(y==null)y=cy+(dorsal?1:-1)*hullR*0.28;
-      y+=(dorsal?1:-1)*scale*0.22;
+      if(y==null)y=cy+(dorsal?1:-1)*hullR*0.22;
+      if(dorsal&&y<cy)y=cy+scale*0.2;
+      if(!dorsal&&y>cy)y=cy-scale*0.2;
+      y+=(dorsal?1:-1)*scale*0.12;
       let mz;
       if(organic&&!hulls){
         const x0=cx+L*0.04,y0=cy,z0=cz+side*Math.min(hullR*0.22,zMax*0.4);
