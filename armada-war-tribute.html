@@ -12766,6 +12766,8 @@ function craftWant(s,now,sq,mood,dist,boost){
     else if(tac==="FEIGN")k=0.50+(hpR<0.55?0.12:0);
     else if(tac==="MINE")k=0.62;
   }
+  if(s.evadeT&&now<s.evadeT)k=Math.max(k,1.40);
+  else if(sideWake[s.side]&&now<sideWake[s.side]+12)k=Math.max(k,1.26);
   if(mood==="FEAR"||mood==="FLEE")k=1.32;
   else if(mood==="DEFEND")k=Math.min(k,0.80);
   else if(mood==="HUNT")k=Math.max(k,1.10);
@@ -12789,7 +12791,7 @@ function craftWant(s,now,sq,mood,dist,boost){
       if(along>30)catchK=1.10+Math.min(0.32,along*0.0035);
       else if(along<-30)catchK=0.74;
       want=lv*catchK;
-    }else want=cruise*Math.min(k,1.16);
+    }else want=cruise*Math.min(k,sideWake[s.side]&&now<sideWake[s.side]+12?1.32:1.16);
   }
   if(want>dash)want=dash;
   if(want<cruise*0.36)want=cruise*0.36;
@@ -13140,6 +13142,7 @@ const DOCTRINE=[
   {n:"FEIGN",  w:[2,1]},
   {n:"MINE",   w:[2,3]}
 ];
+const ION_DECK=DOCTRINE.filter(d=>d.n==="CHARGE"||d.n==="FLANK"||d.n==="ENVELOP"||d.n==="SWARM"||d.n==="HUNT");
 /* ===================== the muster =====================
    A fleet is not a die roll: it DEPLOYS. Every doctrine answers three
    questions — where the crowns stand, how the line forms, and where
@@ -13822,6 +13825,7 @@ function onWorkerMsg(e){
     frameTheWar();
     warT0=performance.now()/1000+0.4;
     ionNext=[warT0+10,warT0+15];
+    sideWake=[0,0];
     toast("CONTACT IMMINENT");
   }
   roster();
@@ -13841,7 +13845,7 @@ function fleetCentroid(side){
   for(const t of ships)if(t.side===side&&!t.dead&&t.vao){x+=t.x;y+=t.y;z+=t.z;n++;}
   return n?[x/n,y/n,z/n]:[0,0,0];
 }
-function assignTactic(sq,now){
+function assignTactic(sq,now,deck0){
   sq.mem=sq.mem.filter(id=>!ships[id].dead);
   if(!sq.mem.length)return;
   const foes=foeCache[1-sq.side].length?foeCache[1-sq.side]:livingFoes(sq.side);
@@ -13852,7 +13856,8 @@ function assignTactic(sq,now){
      the wounded before the fleets have even met — early hands are dealt
      from the advancing half of the deck only */
   const gap=Math.hypot(c[0]-ec[0],c[1]-ec[1],c[2]-ec[2]);
-  const deck=gap>640?DOCTRINE.filter(d2=>d2.n!=="FEIGN"&&d2.n!=="SWARM"):DOCTRINE;
+  const deck=deck0&&deck0.length?deck0
+    :(gap>640?DOCTRINE.filter(d2=>d2.n!=="FEIGN"&&d2.n!=="SWARM"):DOCTRINE);
   const doct=RACE_DEFS[sq.race!==undefined?sq.race:sideRace[sq.side]].doct;
   let tot=0;for(const d of deck)tot+=doct[d.n];
   let r=Math.random()*tot,pick=deck[0];
@@ -13973,6 +13978,11 @@ function squadThink(now){
        the lines actually meet. A 720 m hop then a private dogfight is
        not a squadron. */
     if(sq.adv){
+      if(sideWake[sq.side]&&now<sideWake[sq.side]+18){
+        sq.adv=false;
+        if(!sq.hero)assignTactic(sq,now,ION_DECK);
+        continue;
+      }
       const c=centroidOf(sq.mem);if(!c)continue;
       const ec=fleetCentroid(1-sq.side);
       const gap=Math.hypot(c[0]-ec[0],c[1]-ec[1],c[2]-ec[2]);
@@ -14159,6 +14169,20 @@ function pickPatrol(s,now){
   return s.patW;
 }
 function gunboatGoal(s,now){
+  if(s.evadeT&&now<s.evadeT&&s.evadeW)return s.evadeW;
+  if(sideWake[s.side]&&now<sideWake[s.side]+12){
+    const need=!s.atkW||now>(s.patUntil||0)||
+      Math.hypot((s.atkW[0]-s.x),(s.atkW[2]-s.z))<Math.max(140,s.slen*0.6);
+    if(need){
+      const ec=fleetCentroid(1-s.side);
+      const u=((s.seed>>>7)&31)/31-0.5;
+      const v=((s.seed>>>12)&31)/31-0.5;
+      const w=((s.seed>>>17)&31)/31-0.5;
+      s.atkW=[ec[0]+u*560,s.y+v*280,ec[2]+w*720];
+      s.patUntil=now+4.5+((s.seed>>>5)&7)*0.7;
+    }
+    return s.atkW;
+  }
   const need=!s.patW||now>(s.patUntil||0)||
     Math.hypot((s.patW[0]-s.x),(s.patW[2]-s.z))<Math.max(110,s.slen*0.55);
   if(need)pickPatrol(s,now);
@@ -15048,6 +15072,43 @@ function kill(t,now){
   roster();
 }
 let ionNext=[Infinity,Infinity];
+let sideWake=[0,0];
+function wakeTheLine(side,now,hit){
+  /* the axial gun is spooling, or it has already torn a hole. The
+     parade is over: break the wall, then form up and go in at attack
+     speed — do not sit in the next blast. */
+  sideWake[side]=now;
+  for(const sq of squads){
+    if(sq.side!==side||!sq.mem.length||sq.hero)continue;
+    if(sq.adv||(hit&&sq.phase===0)){
+      sq.adv=false;
+      assignTactic(sq,now,ION_DECK);
+    }
+  }
+  const ec=fleetCentroid(1-side);
+  const span=hit?300:170;
+  const climb=hit?240:120;
+  const dur=hit?3.8:2.3;
+  for(const s of ships){
+    if(s.dead||s.side!==side)continue;
+    if((s.hulls||0)>=50)continue;
+    if((RACE_DEFS[s.race]||{}).unique)continue;
+    const u=((s.seed>>>7)&31)/31-0.5;
+    const v=((s.seed>>>12)&31)/31-0.5;
+    const w=((s.seed>>>2)&31)/31-0.5;
+    const ax=ec[0]-s.x,az=ec[2]-s.z;
+    const al=Math.hypot(ax,az)||1;
+    const px=-az/al,pz=ax/al;
+    s.evadeT=Math.max(s.evadeT||0,now+dur+(s.lag||0)*0.5);
+    s.evadeW=[
+      s.x+px*u*span*2+(ax/al)*(hit?140:55)+w*90,
+      s.y+v*climb,
+      s.z+pz*u*span*2+(az/al)*(hit?140:55)
+    ];
+    const dash=s.spdMax||s.spd||20;
+    s.v=Math.max(s.v||0,dash*(hit?0.82:0.64));
+  }
+}
 function fireIonFrom(g,side,now){
   /* the axial gun: a hole torn in the line. Aimed at the thickest
      knot of the enemy — a whole squadron, not a lonely fighter. */
@@ -15108,7 +15169,8 @@ function fireIonFrom(g,side,now){
       beams.push({a:[best.x,best.y,best.z],b:[t.x,t.y,t.z],t0:now,side,race:g.race,arc:true});
   }
   kickCam(popped>3?28:16);
-
+  wakeTheLine(1-side,now,true);
+  wakeTheLine(side,now,false);
 }
 function megaStep(s,now,dt){
   /* a crown fights at her own range. She advances to the reach of her
@@ -15194,7 +15256,8 @@ function megaStep(s,now,dt){
     hold=Math.max(hold,(s.slen||40)*0.48+220);
     if(!s.brSgn)s.brSgn=((s.seed>>>3)&1)?1:-1;
     let want;
-    const inbound=(now-warT0-(s.delay||0))<(s.hulls?14:4.0)||!foes5.length;
+    const inbound=!(sideWake[s.side]&&now<sideWake[s.side]+14)
+      &&((now-warT0-(s.delay||0))<(s.hulls?14:4.0)||!foes5.length);
     s.mood=hurt?"DEFEND":mopup?"HUNT":"ATTACK";
     if((RACE_DEFS[s.race]||{}).unique)s.mood=hurt?"DEFEND":"HUNT";
     if(inbound)want=s.yaw;
@@ -15228,6 +15291,7 @@ function megaStep(s,now,dt){
     else if(dist>hold+90)k=1.08;
     else if(dist<hold-90)k=hurt?1.12:0.92;
     if(mopup)k=1.18;
+    if(sideWake[s.side]&&now<sideWake[s.side]+12)k=Math.max(k,1.12);
     if(hurt&&dist>hold)k*=0.82;
     k*=0.88+0.24*((s.seed>>>5)&7)/7;
     k*=0.92+0.14*(s.hot||1);
@@ -15588,7 +15652,11 @@ function simStep(now,dt){
           if(s2.side===side&&!s2.dead&&s2.vao&&(s2.hulls||0)>=10
             &&!(RACE_DEFS[s2.race]||{}).unique
             &&(!g||s2.slen>g.slen))g=s2;
-        if(g)ionState[side]={fire:ionNext[side],gun:g.id,last:0};
+        if(g){
+          ionState[side]={fire:ionNext[side],gun:g.id,last:0};
+          wakeTheLine(1-side,now,false);
+          wakeTheLine(side,now,false);
+        }
         else ionNext[side]=now+8;
       }
     }else{
@@ -15717,6 +15785,9 @@ function simStep(now,dt){
         goal=run.goal;boost=Math.max(run.boost,1.45);
       }
     }
+    if(!goal&&s.evadeT&&now<s.evadeT&&s.evadeW){
+      goal=s.evadeW;boost=1.42;s.form=false;
+    }
     if(!goal&&sq&&sq.mem.length){
       const mi=Math.max(0,sq.mem.indexOf(s.id));
       const br=sqBerth(sq),o=sqOffset(mi,br);
@@ -15727,7 +15798,8 @@ function simStep(now,dt){
       s.form=false;
       /* hold the chevron until the merge. CHARGE from a kilometre out
          as eight private dogfights is why nobody could see a squadron */
-      const inForm=mood!=="FEAR"&&mood!=="FLEE"&&(
+      const evading=s.evadeT&&now<s.evadeT;
+      const inForm=!evading&&mood!=="FEAR"&&mood!=="FLEE"&&(
         sq.adv||sq.phase===0||sq.phase===2||sq.phase===3||sq.phase===4
         ||(sq.phase===1&&merge>220)
         ||(sq.hero&&!s.hero));
@@ -15790,14 +15862,19 @@ function simStep(now,dt){
         }
       }
     }
+    if(!goal&&s.evadeT&&now<s.evadeT&&s.evadeW){
+      goal=s.evadeW;boost=1.42;s.form=false;
+    }
     /* frigates and the line: after the jump they patrol the lane and
        cover the screen. They do not chase a 28 m wobble, and they do
-       not dogfight like a TIE. */
+       not dogfight like a TIE. After the ion they close, they do not
+       sit in the kill-box. */
     if(!goal&&isGunboat(s)){
       const cover=nearestFoeInRange(s,480);
       if(cover)prefer=cover.id;
       goal=gunboatGoal(s,now);
       boost=cover?1.05+0.12*(s.goK||1):0.72+0.14*(s.goK||1);
+      if(sideWake[s.side]&&now<sideWake[s.side]+12)boost=Math.max(boost,1.34);
     }
     if(s.hero&&!heroDuelOpen(now)){
       const arrH=foeCache[1-s.side];
@@ -15841,7 +15918,7 @@ function simStep(now,dt){
       /* a private crab: she does not hold the same heading as her
          neighbour even when they share a waypoint. Gunboats keep a
          clean track — the weave is what made the frigates nod. */
-      const boat=isGunboat(s);
+      const boat=isGunboat(s)&&!(s.evadeT&&now<s.evadeT);
       const formed=!!s.form;
       /* a whisker of private heading — never a drunk crab that walks
          the whole chevron off the line */
