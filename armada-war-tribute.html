@@ -11222,12 +11222,14 @@ uniform mat4 uVP;uniform float uT,uPx;
 out float vA;out float vC;out float vO;out float vSeed;
 void main(){
   float age=uT-aF.w;
-  if(age<0.0||age>0.8){gl_Position=vec4(2.0,2.0,2.0,1.0);gl_PointSize=0.0;vA=0.0;vC=0.0;vO=0.0;vSeed=0.0;return;}
+  float kind=aS.y;
+  float life=kind>2.5?2.15:0.8;
+  if(age<0.0||age>life){gl_Position=vec4(2.0,2.0,2.0,1.0);gl_PointSize=0.0;vA=0.0;vC=0.0;vO=0.0;vSeed=0.0;return;}
   gl_Position=uVP*vec4(aF.xyz,1.0);
-  float o2=age/0.8;
-  vA=exp(-age*5.0)*(1.0-smoothstep(0.70,1.0,o2));
-  vC=aS.y;vO=o2;vSeed=aS.z;
-  gl_PointSize=clamp(aS.x*(0.25+2.6*o2)*uPx/max(gl_Position.w,1.0),1.0,420.0);
+  float o2=age/life;
+  vA=exp(-age*(kind>2.5?1.8:5.0))*(1.0-smoothstep(0.70,1.0,o2));
+  vC=kind;vO=o2;vSeed=aS.z;
+  gl_PointSize=clamp(aS.x*(0.25+2.6*o2)*uPx/max(gl_Position.w,1.0),1.0,kind>2.5?1800.0:560.0);
 }`,`#version 300 es
 precision highp float;
 in float vA;in float vC;in float vO;in float vSeed;
@@ -11238,7 +11240,13 @@ void main(){
   float r=length(d)*2.0;
   vec3 col;
   float rw=0.9;
-  if(vC>1.5){
+  if(vC>3.5){
+    /* ion nova: white core, cyan bloom, a ring that eats the sky */
+    float spike=0.78+0.22*sin(a*2.0+vSeed*31.0);
+    r/=max(spike,0.25);
+    col=mix(vec3(1.0,1.0,1.0),vec3(0.35,0.82,1.0),clamp(vO*1.2,0.0,1.0));
+    rw=0.85;
+  }else if(vC>1.5){
     /* an explosion is heat, not a team colour: white going to ember, and
        no two the same shape — the lobes come off the flash's own seed */
     float spike=0.72+0.28*sin(a*(3.0+floor(vSeed*4.0))+vSeed*43.0)
@@ -13497,7 +13505,7 @@ function cutHold(s,now,dt){
     const d2c=(ct.x-s.x)*(ct.x-s.x)+(ct.y-s.y)*(ct.y-s.y)+(ct.z-s.z)*(ct.z-s.z);
     if(d2c<cutR*cutR){
       const cm=nextMuzzle(s,now);
-      beams.push({a:cm,b:[ct.x,ct.y,ct.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true});
+      beams.push({a:cm,b:[ct.x,ct.y,ct.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
       wound(ct,dt*2.6,s,now);
       if(ct.dead)s.cutUntil=0;
     }else s.cutUntil=0;
@@ -13696,6 +13704,25 @@ function craftThought(s,now){
   return line;
 }
 function flash(x,y,z,t0,size,c){flashes.push({x,y,z,t0,size,c,seed:Math.random()});}
+function boltSkin(a,b,r,n){
+  /* a cylinder of lines: world-metre radius so a crown bolt reads at 40 km */
+  const dir=V.norm(V.sub(b,a));
+  const [u,v]=basis(dir);
+  const o=[];n=Math.max(4,n||6);
+  for(let j=0;j<n;j++){
+    const an=j/n*6.283,c=Math.cos(an)*r,s=Math.sin(an)*r;
+    const ox=u[0]*c+v[0]*s,oy=u[1]*c+v[1]*s,oz=u[2]*c+v[2]*s;
+    o.push(a[0]+ox,a[1]+oy,a[2]+oz,b[0]+ox,b[1]+oy,b[2]+oz);
+  }
+  return o;
+}
+function beamWid(s,heavy){
+  const L=s.slen||20;
+  if(heavy||s.hulls)return Math.max(12,Math.min(78,L*0.014));
+  return Math.max(2.4,Math.min(9,L*0.09));
+}
+let camKick=0;
+function kickCam(n){camKick=Math.max(camKick,n);}
 function dustBurst(x,y,z,vx,vy,vz,n,t0){
   for(let i=0;i<n;i++)
     dusts.push({x:x+(Math.random()-0.5)*10,y:y+(Math.random()-0.5)*10,z:z+(Math.random()-0.5)*10,
@@ -13876,11 +13903,13 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
     beams.push({a:[ox,oy,oz],
       b:[t.x+(Math.random()-0.5)*mo*2.4,
          t.y+(Math.random()-0.5)*mo*1.2,
-         t.z+(Math.random()-0.5)*mo*2.4],t0:now,side:s.side,race:s.race,heavy:!!heavy});
+         t.z+(Math.random()-0.5)*mo*2.4],t0:now,side:s.side,race:s.race,heavy:!!heavy,
+      wid:beamWid(s,heavy)});
     return;
   }
   let fx=(RACE_DEFS[s.race]||{}).fire;
   if(fx==="turbo"&&s.slen<38)fx="laser";
+  const wid=beamWid(s,heavy);
   beams.push({a:[ox,oy,oz],
     b:[t.x+(Math.random()-0.5)*t.slen*0.3,
        t.y+(Math.random()-0.5)*t.slen*0.15,
@@ -13889,9 +13918,22 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy){
     turbo:fx==="turbo"||!!heavy,
     pulse:fx==="pulse",
     disruptor:fx==="disruptor",
+    wid,
     col:fx==="laser"?[1.0,0.22,0.16]:null});
-  flash(t.x,t.y,t.z,now,Math.max(heavy?16:9,t.slen*(heavy?0.5:0.3)),s.side);
+  flash(t.x,t.y,t.z,now,Math.max(heavy?48:12,t.slen*(heavy?1.1:0.35)),heavy?3:s.side);
   wound(t,dmg||1,s,now);
+  if(heavy){
+    const splash=Math.max(70,Math.min(160,s.slen*0.045));
+    const s2=splash*splash;
+    const foes=foeCache[1-s.side];
+    for(let i=0;i<foes.length;i++){
+      const o=foes[i];if(o===t||o.hulls||o.dead)continue;
+      const dx=o.x-t.x,dy=o.y-t.y,dz=o.z-t.z;
+      if(dx*dx+dy*dy+dz*dz>s2)continue;
+      wound(o,2.4,s,now);
+      flash(o.x,o.y,o.z,now,Math.max(18,o.slen*0.7),2);
+    }
+  }
 }
 function raceFire(s,t,now,nx,ny,nz){
   /* each navy's own hand: not a random locker, the weapons she was
@@ -13923,7 +13965,7 @@ function raceFire(s,t,now,nx,ny,nz){
       s.cutUntil=now+(fx==="slicer"?2.4:1.4);
       s.cutTgt=t.id;
       s.cool=2.0+Math.random()*0.7;
-      beams.push({a:[nx,ny,nz],b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true});
+      beams.push({a:[nx,ny,nz],b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
       wound(t,fx==="slicer"?2.6:1.7,s,now);
     }else s.cool=0.28;
     return;
@@ -14193,18 +14235,19 @@ function kill(t,now){
 }
 let ionNext=[Infinity,Infinity];
 function fireIonFrom(g,side,now){
-  /* the discharge: an ion lance aimed at the thickest knot of the enemy,
-     with a blast radius — not a shot so much as a hole torn in the line */
+  /* the axial gun: a hole torn in the line. Aimed at the thickest
+     knot of the enemy — a whole squadron, not a lonely fighter. */
   if(now-warT0-g.delay<1)return;
   const foes=livingFoes(side);
   if(!foes.length)return;
+  const packR=420,packR2=packR*packR;
   let best=null,bs=-1;
   for(const t of foes){
     if(now-warT0-t.delay<1)continue;
     let n=0;
     for(const o of foes){
       const dx=o.x-t.x,dy=o.y-t.y,dz=o.z-t.z;
-      if(dx*dx+dy*dy+dz*dz<5625)n++;
+      if(dx*dx+dy*dy+dz*dz<packR2)n+=(o.hulls?0.2:1);
     }
     if(n>bs){bs=n;best=t;}
   }
@@ -14216,18 +14259,41 @@ function fireIonFrom(g,side,now){
     mz=gunWorld(g,bestG,now);
   }else{
     const cy=Math.cos(g.yaw),sy=Math.sin(g.yaw);
-    mz=[g.x+cy*g.slen*0.4,g.y+g.slen*0.05,g.z+sy*g.slen*0.4];
+    mz=[g.x+cy*g.slen*0.48,g.y+g.slen*0.02,g.z+sy*g.slen*0.48];
   }
-  beams.push({a:mz,b:[best.x,best.y,best.z],t0:now,side,race:g.race,ion:true});
-  flash(mz[0],mz[1],mz[2],now,g.slen*1.7,2);
-  flash(mz[0],mz[1],mz[2],now,g.slen*0.9,side);
-  flash(best.x,best.y,best.z,now,340,2);
+  const blast=Math.max(340,Math.min(820,g.slen*0.048));
+  const wid=Math.max(28,Math.min(110,g.slen*0.008));
+  beams.push({a:mz,b:[best.x,best.y,best.z],t0:now,side,race:g.race,ion:true,wid});
+  flash(mz[0],mz[1],mz[2],now,Math.max(220,g.slen*0.08),4);
+  flash(best.x,best.y,best.z,now,Math.max(420,blast*1.4),4);
+  flash(best.x,best.y,best.z,now+0.12,blast*0.9,4);
+  flash(best.x,best.y,best.z,now+0.28,blast*0.55,3);
+  const [u,v]=basis(V.norm(V.sub([best.x,best.y,best.z],mz)));
+  for(let i=0;i<18;i++){
+    const a=i/18*6.283,L2=blast*(0.85+Math.random()*0.4);
+    const dx=u[0]*Math.cos(a)+v[0]*Math.sin(a);
+    const dy=u[1]*Math.cos(a)+v[1]*Math.sin(a);
+    const dz=u[2]*Math.cos(a)+v[2]*Math.sin(a);
+    beams.push({a:[best.x,best.y,best.z],
+      b:[best.x+dx*L2,best.y+dy*L2,best.z+dz*L2],t0:now,spark:true});
+  }
+  const b2=blast*blast;
+  let popped=0;
   for(const t of foes){
     const dx=t.x-best.x,dy=t.y-best.y,dz=t.z-best.z;
-    if(dx*dx+dy*dy+dz*dz>5625)continue;
-    wound(t,4,g,now);
-    flash(t.x,t.y,t.z,now,Math.max(20,t.slen*0.6),2);
+    const d2=dx*dx+dy*dy+dz*dz;
+    if(d2>b2)continue;
+    const fall=1-Math.sqrt(d2)/blast;
+    if(!t.hulls){
+      wound(t,28+36*fall,g,now);
+      popped++;
+    }else wound(t,6+8*fall,g,now);
+    flash(t.x,t.y,t.z,now,Math.max(28,t.slen*(t.hulls?0.4:1.1)),t.hulls?2:3);
+    if(t!==best)
+      beams.push({a:[best.x,best.y,best.z],b:[t.x,t.y,t.z],t0:now,side,race:g.race,arc:true});
   }
+  kickCam(popped>3?28:16);
+  toast((RACE_DEFS[g.race]||{}).name.replace(/^THE /,"")+" · ION CANNON");
 }
 function megaStep(s,now,dt){
   /* a crown fights at her own range. She advances to the reach of her
@@ -14376,7 +14442,7 @@ function megaStep(s,now,dt){
       const m=gunWorld(s,[la.lx,la.ly,la.lz],now);
       if(slicer){
         s.cutUntil=now+2.6;s.cutTgt=best.id;s.lastFire=now;
-        beams.push({a:m,b:[best.x,best.y,best.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true});
+        beams.push({a:m,b:[best.x,best.y,best.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
         wound(best,4.5,s,now);
         la.cool=3.2+Math.random()*1.8;
       }else{
@@ -14407,7 +14473,7 @@ function megaStep(s,now,dt){
         const m=gunWorld(s,[tu.lx,tu.ly,tu.lz],now);
         if(slicer){
           s.cutUntil=now+1.8;s.cutTgt=t.id;s.lastFire=now;
-          beams.push({a:m,b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true});
+          beams.push({a:m,b:[t.x,t.y,t.z],t0:now,side:s.side,race:s.race,cut:true,heavy:true,wid:beamWid(s,true)});
           wound(t,2.2,s,now);
         }else fireBeam(s,t,now,m[0],m[1],m[2]);
         tu.cool=2.8+Math.random()*1.8;   /* the battery rolls, it does not mow */
@@ -14639,27 +14705,28 @@ function simStep(now,dt){
     if(winner!=null||counts[side]<=0){ionState[side]=null;continue;}
     const st=ionState[side];
     if(!st){
-      if(now>=ionNext[side]-2.4){
+      if(now>=ionNext[side]-2.8){
         let g=null;
-        for(const s2 of ships)if(s2.side===side&&!s2.dead&&s2.vao&&(!g||s2.slen>g.slen))g=s2;
+        for(const s2 of ships)
+          if(s2.side===side&&!s2.dead&&s2.vao&&(s2.hulls||0)>=10&&(!g||s2.slen>g.slen))g=s2;
         if(g)ionState[side]={fire:ionNext[side],gun:g.id,last:0};
-        else ionNext[side]=now+10;
+        else ionNext[side]=now+8;
       }
     }else{
       const g=ships[st.gun];
       if(!g||g.dead){ionState[side]=null;ionNext[side]=now+6;}
       else{
-        /* the charge: white light gathering at the muzzle for two and a
-           half seconds — you see the shot coming before it speaks */
-        if(now-st.last>0.09){
+        /* the charge: a star gathering in the bow — you see it coming */
+        if(now-st.last>0.07){
           st.last=now;
-          const prog=Math.min(1,1-(st.fire-now)/2.4);
+          const prog=Math.min(1,1-(st.fire-now)/2.8);
           const cy2=Math.cos(g.yaw),sy2=Math.sin(g.yaw);
-          flash(g.x+cy2*g.slen*0.4,g.y+g.slen*0.05,g.z+sy2*g.slen*0.4,now,
-                8+prog*prog*g.slen*0.9,2);
+          const mx=g.x+cy2*g.slen*0.48,my=g.y+g.slen*0.02,mz=g.z+sy2*g.slen*0.48;
+          flash(mx,my,mz,now,40+prog*prog*Math.min(520,g.slen*0.06),4);
+          if(prog>0.55)flash(mx,my,mz,now,18+prog*90,side);
         }
         if(now>=st.fire){
-          ionState[side]=null;ionNext[side]=now+13;
+          ionState[side]=null;ionNext[side]=now+16;
           fireIonFrom(g,side,now);
         }
       }
@@ -15087,7 +15154,7 @@ function simStep(now,dt){
   }
   mines=mines.filter(mi=>!mi.dead);
   collide(now);
-  beams=beams.filter(b2=>now-b2.t0<(b2.ion?0.9:b2.rail?0.3:b2.arc?0.16:b2.spark?0.32:b2.phaser?0.44:b2.cut?0.55:b2.turbo?0.24:b2.pulse?0.16:b2.heavy?0.42:0.13));
+  beams=beams.filter(b2=>now-b2.t0<(b2.ion?1.55:b2.rail?0.38:b2.arc?0.22:b2.spark?0.42:b2.phaser?0.5:b2.cut?0.55:b2.turbo?0.38:b2.pulse?0.18:b2.heavy?0.62:0.16));
   if(flashes.length>1400)flashes.splice(0,flashes.length-1400);
 }
 /* ===================== stars ===================== */
@@ -15437,6 +15504,11 @@ function frame(nowMs){
     if(keys.has("q"))cam.ey-=sp;
     if(keys.has("e"))cam.ey+=sp;
   }
+  if(camKick>0.4){
+    const k=camKick;
+    cam.ex+=(Math.random()-0.5)*k;cam.ey+=(Math.random()-0.5)*k*0.55;cam.ez+=(Math.random()-0.5)*k;
+    camKick*=Math.max(0,1-dt*4.2);
+  }else camKick=0;
   const m=mat(),eye=[cam.ex,cam.ey,cam.ez];
   const FRP=frustumPlanes(m);
   gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
@@ -15595,7 +15667,7 @@ function frame(nowMs){
   if(beams.length){
     gl.useProgram(beamProg);
     gl.uniformMatrix4fv(BU.vp,false,m);
-    gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+    gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
     gl.bindVertexArray(beamVao);
     /* explosion sparks: ember streaks, no faction colour */
     {
@@ -15615,14 +15687,12 @@ function frame(nowMs){
       const arr=[],arrR=[];
       for(const b of beams)if(b.race===rc&&!b.ion&&!b.arc&&!b.rail&&!b.cut&&!b.fo){
         const dst=b.col?arrR:arr;
-        dst.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
-        if(b.heavy||b.turbo||b.phaser){
-          dst.push(b.a[0],b.a[1]+1.2,b.a[2],b.b[0],b.b[1]+1.2,b.b[2]);
-          dst.push(b.a[0],b.a[1]-1.2,b.a[2],b.b[0],b.b[1]-1.2,b.b[2]);
-        }
-        if(b.turbo){
-          dst.push(b.a[0]+1.1,b.a[1],b.a[2],b.b[0]+1.1,b.b[1],b.b[2]);
-          dst.push(b.a[0]-1.1,b.a[1],b.a[2],b.b[0]-1.1,b.b[1],b.b[2]);
+        const w=b.wid||((b.heavy||b.turbo)?8:2.2);
+        const skin=boltSkin(b.a,b.b,w,b.heavy||b.turbo?10:6);
+        for(let i=0;i<skin.length;i++)dst.push(skin[i]);
+        if(b.heavy||b.turbo){
+          const core=boltSkin(b.a,b.b,w*0.28,6);
+          for(let i=0;i<core.length;i++)dst.push(core[i]);
         }
         if(b.pulse){
           const mx=(b.a[0]+b.b[0])*0.5,my=(b.a[1]+b.b[1])*0.5,mz=(b.a[2]+b.b[2])*0.5;
@@ -15633,7 +15703,7 @@ function frame(nowMs){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
         gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(arr),gl.STREAM_DRAW);
         const c0=RACE_DEFS[rc].beam;
-        gl.uniform4f(BU.col,c0[0],c0[1],c0[2],0.58);
+        gl.uniform4f(BU.col,c0[0],c0[1],c0[2],0.72);
         gl.drawArrays(gl.LINES,0,arr.length/3);
       }
       if(arrR.length){
@@ -15642,35 +15712,31 @@ function frame(nowMs){
         gl.uniform4f(BU.col,1.0,0.22,0.16,0.85);
         gl.drawArrays(gl.LINES,0,arrR.length/3);
       }
-      /* the ion lance: a fat bundle of lines that collapses as it dies,
-         faction-vivid around a white-hot core */
+      /* the ion lance: a collapsing column of light, white core,
+         faction bloom — a hole you can see from the other side of the sky */
       for(const b of beams){
         if(b.race!==rc||!b.ion)continue;
-        const k2=1-(now-b.t0)/0.9;
-        const dir=V.norm(V.sub(b.b,b.a));
-        const [bu,bv]=basis(dir);
-        const mk2=r2=>{
-          const a2=[];
-          for(let j=0;j<8;j++){
-            const an=j/8*6.283;
-            const off=V.add(V.mul(bu,Math.cos(an)*r2*k2),V.mul(bv,Math.sin(an)*r2*k2));
-            a2.push(b.a[0]+off[0],b.a[1]+off[1],b.a[2]+off[2],
-                    b.b[0]+off[0],b.b[1]+off[1],b.b[2]+off[2]);
-          }
-          return a2;
-        };
-        gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(mk2(4.2)),gl.STREAM_DRAW);
+        const life=1.55,k2=Math.max(0,1-(now-b.t0)/life);
+        const wr=(b.wid||36)*k2;
+        const outer=boltSkin(b.a,b.b,wr,14);
+        const mid=boltSkin(b.a,b.b,wr*0.42,10);
+        const core=boltSkin(b.a,b.b,Math.max(4,wr*0.14),8);
         const ic=RACE_DEFS[rc].ion;
-        gl.uniform4f(BU.col,ic[0],ic[1],ic[2],0.85*k2+0.1);
-        gl.drawArrays(gl.LINES,0,16);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(mk2(1.4)),gl.STREAM_DRAW);
-        gl.uniform4f(BU.col,1.0,1.0,1.0,0.9*k2+0.1);
-        gl.drawArrays(gl.LINES,0,16);
-        if(now-b.t0<0.18){
-          gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(mk2(9.0)),gl.STREAM_DRAW);
-          gl.uniform4f(BU.col,1.0,1.0,1.0,0.55);
-          gl.drawArrays(gl.LINES,0,16);
+        gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(outer),gl.STREAM_DRAW);
+        gl.uniform4f(BU.col,ic[0],ic[1],ic[2],0.55*k2+0.12);
+        gl.drawArrays(gl.LINES,0,outer.length/3);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(mid),gl.STREAM_DRAW);
+        gl.uniform4f(BU.col,(ic[0]+1)*0.5,(ic[1]+1)*0.5,(ic[2]+1)*0.5,0.8*k2);
+        gl.drawArrays(gl.LINES,0,mid.length/3);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(core),gl.STREAM_DRAW);
+        gl.uniform4f(BU.col,1.0,1.0,1.0,0.95*k2);
+        gl.drawArrays(gl.LINES,0,core.length/3);
+        if(now-b.t0<0.22){
+          const bloom=boltSkin(b.a,b.b,wr*1.7,12);
+          gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(bloom),gl.STREAM_DRAW);
+          gl.uniform4f(BU.col,1.0,1.0,1.0,0.45);
+          gl.drawArrays(gl.LINES,0,bloom.length/3);
         }
       }
       /* arc lightning: rebuilt jagged every frame, so it crackles */
@@ -15709,11 +15775,11 @@ function frame(nowMs){
       /* the cutter's held beam: a fat violet lance, not a hairline */
       const carr=[];
       for(const b of beams)if(b.race===rc&&b.cut){
-        carr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
-        carr.push(b.a[0],b.a[1]+2.4,b.a[2],b.b[0],b.b[1]+2.4,b.b[2]);
-        carr.push(b.a[0],b.a[1]-2.4,b.a[2],b.b[0],b.b[1]-2.4,b.b[2]);
-        carr.push(b.a[0]+2.0,b.a[1],b.a[2],b.b[0]+2.0,b.b[1],b.b[2]);
-        carr.push(b.a[0]-2.0,b.a[1],b.a[2],b.b[0]-2.0,b.b[1],b.b[2]);
+        const w=b.wid||8;
+        const skin=boltSkin(b.a,b.b,w,10);
+        for(let i=0;i<skin.length;i++)carr.push(skin[i]);
+        const core=boltSkin(b.a,b.b,w*0.28,6);
+        for(let i=0;i<core.length;i++)carr.push(core[i]);
       }
       if(carr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
@@ -15798,7 +15864,7 @@ function frame(nowMs){
   /* flashes: arrivals, impacts, deaths */
   if(flashes.length){
     const live=[];
-    for(const f2 of flashes)if(now-f2.t0<0.8)live.push(f2);
+    for(const f2 of flashes)if(now-f2.t0<(f2.c>2.5?2.15:0.8))live.push(f2);
     flashes=live;
     if(live.length){
       const nfl=Math.min(live.length,1600);
@@ -15814,7 +15880,7 @@ function frame(nowMs){
       gl.uniform1f(FU.px,cvs.height*0.9);
       gl.uniform3fv(FU.c0,BEAMCOL[0]);
       gl.uniform3fv(FU.c1,BEAMCOL[1]);
-      gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+      gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
       gl.bindVertexArray(flVao);
       gl.bindBuffer(gl.ARRAY_BUFFER,flVbo);
       gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STREAM_DRAW);
