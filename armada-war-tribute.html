@@ -12153,20 +12153,52 @@ function spaceTheFleets(){
   }
 }
 function frameTheWar(){
-  /* stand off the beam of the longest keel so 19 km reads as 19 km */
-  let flag=null;
-  for(const s of ships)if(!s.dead&&s.vao&&(!flag||s.slen>flag.slen))flag=s;
-  if(!flag){
+  /* the opening shot is the WHOLE war: both lines, every keel, in
+     one look. A portrait of the longest hull left the rest off-stage. */
+  let n=0;
+  const mn=[1e18,1e18,1e18],mx=[-1e18,-1e18,-1e18];
+  for(const s of ships){
+    if(s.dead)continue;
+    const hx=Math.max(s.exL||0,(s.slen||20)*0.5);
+    const hy=Math.max(s.exY||0,((s.meta&&s.meta.height)||s.slen*0.3)*0.5);
+    const hz=Math.max(s.exZ||0,((s.meta&&s.meta.beam)||s.slen*0.3)*0.5);
+    if(s.x-hx<mn[0])mn[0]=s.x-hx;if(s.x+hx>mx[0])mx[0]=s.x+hx;
+    if(s.y-hy<mn[1])mn[1]=s.y-hy;if(s.y+hy>mx[1])mx[1]=s.y+hy;
+    if(s.z-hz<mn[2])mn[2]=s.z-hz;if(s.z+hz>mx[2])mx[2]=s.z+hz;
+    n++;
+  }
+  if(!n){
     cam.ex=0;cam.ey=5200;cam.ez=18000;cam.yaw=-Math.PI/2;cam.pitch=-0.16;
     return;
   }
-  const L=flag.slen;
-  const dist=Math.max(2800,L*0.88);
-  const cy=Math.cos(flag.yaw||0),sy=Math.sin(flag.yaw||0);
-  cam.ex=flag.x-sy*dist;
-  cam.ey=flag.y+L*0.08;
-  cam.ez=flag.z+cy*dist;
-  cam.yaw=(flag.yaw||0)-Math.PI/2;cam.pitch=-0.10;
+  const c=[(mn[0]+mx[0])*0.5,(mn[1]+mx[1])*0.5,(mn[2]+mx[2])*0.5];
+  const rad=Math.hypot(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2])*0.5||800;
+  const ar=Math.max(0.55,(cvs.width||1280)/(cvs.height||800));
+  const halfY=0.44,halfX=Math.atan(Math.tan(halfY)*ar);
+  const half=Math.min(halfY,halfX);
+  let dist=Math.max(2800,rad/Math.sin(half)*1.18);
+  /* from the +Z quarter, a little above: the two lines sit left-right
+     with the decks readable, not a knife-edge on the horizon */
+  cam.yaw=-Math.PI/2;cam.pitch=-0.26;
+  const place=()=>{
+    const cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);
+    const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);
+    const f=[cy*cp,sp,sy*cp];
+    cam.ex=c[0]-f[0]*dist;cam.ey=c[1]-f[1]*dist;cam.ez=c[2]-f[2]*dist;
+  };
+  place();
+  for(let k=0;k<6;k++){
+    const P=frustumPlanes(mat());
+    let ok=true;
+    for(const s of ships){
+      if(s.dead)continue;
+      const r=Math.max(s.rad||0,(s.exL||0),(s.slen||20)*0.45);
+      if(!sphereVis(P,s.x,s.y,s.z,r)){ok=false;break;}
+    }
+    if(ok)break;
+    dist*=1.22;place();
+  }
+  if(dist>sceneR*0.55)sceneR=dist*1.85;
 }
 const DOCTRINE=[
   {n:"CHARGE", w:[3,2]},
