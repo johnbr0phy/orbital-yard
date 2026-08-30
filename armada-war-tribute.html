@@ -202,7 +202,7 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   <button data-n="300">300</button>
   <button data-n="600" class="on">600</button>
   <label id="camCtl" title="Wheel, pinch and fly speed — lower is more precise">ZOOM
-    <input id="camLook" type="range" min="1" max="7" value="3">
+    <input id="camLook" type="range" min="1" max="7" value="2">
   </label>
   <button id="bHero" title="Cycle heroes (H)">HEROES</button>
   <button id="bNew">NEW WAR</button>
@@ -15741,10 +15741,10 @@ function setFleetSize(n,restart){
 document.querySelectorAll("#bar [data-n], #pick .sizes [data-n]").forEach(b=>{
   b.addEventListener("click",()=>setFleetSize(+b.dataset.n,b.closest("#bar")!=null));
 });
-let camGear=3,camLook=0.54;
+let camGear=2,camLook=0.28;
 function setCamGear(n){
   camGear=Math.max(1,Math.min(7,n|0));
-  camLook=0.18+camGear*0.12;
+  camLook=0.10+camGear*0.09;
   const el=document.getElementById("camLook");
   if(el&&+el.value!==camGear)el.value=String(camGear);
   try{localStorage.setItem("oyCamLook",String(camGear));}catch(e){}
