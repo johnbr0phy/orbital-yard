@@ -15134,7 +15134,7 @@ function maybeCallAlly(now){
     };
     const slotAt=(g,i,n,wide,deep,yStep)=>{
       const c=Math.cos(g.yaw),s=Math.sin(g.yaw),px=-s,pz=c;
-      const cols=Math.max(1,Math.min(n,6));
+      const cols=Math.max(1,Math.min(n,8));
       const col=i%cols,row=(i/cols)|0;
       const lat=(col-(cols-1)/2)*wide;
       return [g.p[0]-c*row*deep+px*lat,
@@ -15142,7 +15142,6 @@ function maybeCallAlly(now){
               g.p[2]-s*row*deep+pz*lat];
     };
     const gH=gates.hammer;
-    const cpos=slotAt(gH,0,1,0,0);
     const sliceAlly=(RACE_DEFS[ally]||{}).fire==="slicer";
     if(RACE_DEFS[ally].unique){
       /* they do not dump into the merge. Each ancient her own jump,
@@ -15178,34 +15177,54 @@ function maybeCallAlly(now){
         }
       }
     }else{
-    if(sliceAlly){
-      const cy=Math.cos(gH.yaw),sy=Math.sin(gH.yaw);
-      mkA(10,gH.p[0]-cy*2800,clampY(gH.p[1]+36),gH.p[2]-sy*2800,3.6+gH.dly,null,gH.yaw);
-    }else mkA(10,cpos[0],cpos[1]+36,cpos[2],2.2+gH.dly,null,gH.yaw);
+    /* a full battalion at this war's size — the same muster she would
+       have brought had she started on the line. 600 on the bar is 600
+       in the jump, not a 28% relief column. */
+    const rdA=RACE_DEFS[ally];
+    const nBat=Math.max(rdA.fleetMin||48,Math.round(perFleet*(rdA.fleetK||1)));
+    const sm=Math.max(SQN,nBat-3);
+    const amix=rdA.mix||[0.72,0.18,0.10];
+    let nFtr=Math.max(SQN,Math.floor(sm*amix[0]/SQN)*SQN);
+    let nCap=Math.max(1,Math.round(sm*amix[2]));
+    let nEsc=sm-nFtr-nCap;
+    if(nEsc<0){nCap=Math.max(1,nCap+nEsc);nEsc=Math.max(0,sm-nFtr-nCap);}
+    const astern=(g,d,y)=>{
+      const c=Math.cos(g.yaw),s=Math.sin(g.yaw);
+      return [g.p[0]-c*d,clampY(g.p[1]+y),g.p[2]-s*d];
+    };
+    const back=sliceAlly?2800:980;
+    const p50=astern(gH,back+420,40);
+    mkA(50,p50[0],p50[1],p50[2],3.8+gH.dly,null,gH.yaw);
+    const p10a=astern(gates.relief,back,24);
+    mkA(10,p10a[0],p10a[1],p10a[2],3.2+gates.relief.dly,null,gates.relief.yaw);
+    const p10b=astern(gates.cut,back,24);
+    mkA(10,p10b[0],p10b[1],p10b[2],3.2+gates.cut.dly,null,gates.cut.yaw);
 
-    /* the relief column obeys the ally's own pyramid, then splits
-       across the three doors — hammer, screen, cut — so nobody
-       arrives as a single wad on the caller's head */
-    const amix=RACE_DEFS[ally].mix||[0.72,0.18,0.10];
-    let nSm=Math.max(3*SQN,Math.round(spawned[side]*0.28/SQN)*SQN);
-    if(sliceAlly)nSm=Math.min(nSm,Math.max(2*SQN,Math.round(28/SQN)*SQN));
     const ftrByGate={hammer:[],relief:[],cut:[]};
     const escByGate={hammer:[],relief:[],cut:[]};
-    const slotN={hammer:0,relief:0,cut:0};
-    const wideOf=b=>sliceAlly?2400:b===2?220:b===1?160:110;
-    for(let i2=0;i2<nSm;i2++){
-      const u=i2/Math.max(1,nSm);
-      const band=u<amix[0]?0:u<amix[0]+amix[1]?1:2;
-      const gn=broke.length>=3
-        ?(u<0.34?"cut":u<0.62?"relief":"hammer")
-        :(u<0.50?"hammer":u<0.78?"relief":"cut");
-      const g=gates[gn];
-      const k=slotN[gn]++;
-      const p=slotAt(g,k,8,wideOf(band),sliceAlly?1900:110,sliceAlly?820:170);
-      const id=mkA(0,p[0],p[1],p[2],2.4+g.dly+k*0.06,band,g.yaw);
-      if(band===0)ftrByGate[gn].push(id);
-      else if(band===1)escByGate[gn].push(id);
-    }
+    const slotN={hammer:[0,0,0],relief:[0,0,0],cut:[0,0,0]};
+    const wideOf=b=>sliceAlly?2400:b===2?280:b===1?180:120;
+    const deepOf=b=>sliceAlly?1900:b===2?240:b===1?160:120;
+    const yOf=b=>sliceAlly?820:b===2?220:170;
+    const placeBand=(count,band)=>{
+      for(let i2=0;i2<count;i2++){
+        const u=i2/Math.max(1,count);
+        const gn=broke.length>=3
+          ?(u<0.34?"cut":u<0.62?"relief":"hammer")
+          :(u<0.50?"hammer":u<0.78?"relief":"cut");
+        const g=gates[gn];
+        const k=slotN[gn][band]++;
+        const p=slotAt(g,k,8,wideOf(band),deepOf(band),yOf(band));
+        const extra=band===2?420:band===1?180:0;
+        const c=Math.cos(g.yaw),s=Math.sin(g.yaw);
+        const id=mkA(0,p[0]-c*extra,p[1],p[2]-s*extra,2.4+g.dly+k*0.04,band,g.yaw);
+        if(band===0)ftrByGate[gn].push(id);
+        else if(band===1)escByGate[gn].push(id);
+      }
+    };
+    placeBand(nFtr,0);
+    placeBand(nEsc,1);
+    placeBand(nCap,2);
     const dealGate=(ids,n,tacCut,tacRel,tacHam)=>{
       for(let i2=0;i2<ids.length;i2+=n){
         const mem=ids.slice(i2,i2+n);
