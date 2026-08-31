@@ -14215,10 +14215,8 @@ function cutHold(s,now,dt){
       const muz=fireLocal(s);
       const cm=gunWorld(s,muz,now);
       const hit=aimSkin(s,ct);
-      for(const e of fanHits(cm,hit,3,0.018)){
-        beams.push({a:[cm[0],cm[1],cm[2]],b:e,t0:now,side:s.side,race:s.race,
-          from:s.id,muz,cut:true,heavy:true,wid:beamWid(s,true)});
-      }
+      pushFork(s,muz,cm,hit,{t0:now,cut:true,heavy:true,wid:beamWid(s,true),
+        nFan:3,spread:0.042,splitU:0.34});
       wound(ct,dt*(s.wpn===5?1.9:2.6),s,now);
       if(ct.dead)s.cutUntil=0;
     }else s.cutUntil=0;
@@ -14611,24 +14609,40 @@ function fireLocal(s){
 function fireWorld(s,now){
   return gunWorld(s,fireLocal(s),now);
 }
-function fanHits(o,hit,n,spread){
-  const dx=hit[0]-o[0],dy=hit[1]-o[1],dz=hit[2]-o[2];
-  const dist=Math.max(12,Math.hypot(dx,dy,dz));
+function lerp3(a,b,u){
+  return [a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,a[2]+(b[2]-a[2])*u];
+}
+function forkEnd(split,aim,k,n,spread){
+  const dx=aim[0]-split[0],dy=aim[1]-split[1],dz=aim[2]-split[2];
+  const dist=Math.max(8,Math.hypot(dx,dy,dz));
   const dir=V.norm([dx,dy,dz]);
   const [u,v]=basis(dir);
-  const out=[];n=Math.max(1,n||3);
-  for(let i=0;i<n;i++){
-    const k=n<=1?0:i-(n-1)*0.5;
-    const ang=k*spread,wob=(Math.random()-0.5)*spread*0.28;
-    const d=V.norm([
-      dir[0]+u[0]*Math.sin(ang+wob)+v[0]*Math.sin(ang*0.42),
-      dir[1]+u[1]*Math.sin(ang+wob)+v[1]*Math.sin(ang*0.42),
-      dir[2]+u[2]*Math.sin(ang+wob)+v[2]*Math.sin(ang*0.42)
-    ]);
-    const L=dist*(0.97+Math.random()*0.06);
-    out.push([o[0]+d[0]*L,o[1]+d[1]*L,o[2]+d[2]*L]);
+  const kk=n<=1?0:k-(n-1)*0.5;
+  const ang=kk*spread;
+  const d=V.norm([
+    dir[0]+u[0]*Math.sin(ang)+v[0]*Math.sin(ang*0.32),
+    dir[1]+u[1]*Math.sin(ang)+v[1]*Math.sin(ang*0.32),
+    dir[2]+u[2]*Math.sin(ang)+v[2]*Math.sin(ang*0.32)
+  ]);
+  return [split[0]+d[0]*dist,split[1]+d[1]*dist,split[2]+d[2]*dist];
+}
+function pushFork(s,muz,o,aim,flags){
+  /* one stem from the turret, then it splits — not a shotgun from the hull */
+  const n=flags.nFan||3;
+  const spread=flags.spread||0.046;
+  const splitU=flags.splitU||0.38;
+  const stemW=(flags.wid||2.4)*1.2;
+  const tineW=(flags.wid||2.4)*0.58;
+  const meta={t0:flags.t0,side:s.side,race:s.race,from:s.id,muz,aim,
+    splitU,nFan:n,spread,cut:!!flags.cut,heavy:!!flags.heavy,
+    phaser:!!flags.phaser,turbo:!!flags.turbo,pulse:!!flags.pulse,
+    disruptor:!!flags.disruptor,col:flags.col||null};
+  beams.push(Object.assign({},meta,{a:[o[0],o[1],o[2]],b:lerp3(o,aim,splitU),fork:0,wid:stemW}));
+  for(let k=0;k<n;k++){
+    const split=lerp3(o,aim,splitU);
+    beams.push(Object.assign({},meta,{a:split,b:forkEnd(split,aim,k,n,spread),
+      fork:1,fanK:k,wid:tineW}));
   }
-  return out;
 }
 function pinBeams(now){
   /* the muzzle is a mount on the hull, not a point left in the dark */
@@ -14636,7 +14650,17 @@ function pinBeams(now){
     if(!b.muz||b.from==null||b.spark)continue;
     const s=ships[b.from];
     if(!s||s.dead||!s.vao)continue;
-    b.a=gunWorld(s,b.muz,now);
+    const o=gunWorld(s,b.muz,now);
+    if(b.aim){
+      const u=b.splitU||0.38;
+      if(b.fork===1){
+        const split=lerp3(o,b.aim,u);
+        b.a=split;
+        b.b=forkEnd(split,b.aim,b.fanK||0,b.nFan||3,b.spread||0.046);
+      }else{
+        b.a=o;b.b=lerp3(o,b.aim,u);
+      }
+    }else b.a=o;
   }
 }
 function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
@@ -14655,8 +14679,6 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
   let fx=(RACE_DEFS[s.race]||{}).fire;
   if(fx==="turbo"&&s.slen<38)fx="laser";
   const wid=beamWid(s,heavy);
-  const nFan=heavy||s.hulls?4:3;
-  const spread=heavy?0.020:0.032;
   let aim=hit;
   if(miss){
     const mo=Math.max(14,jit*2.2);
@@ -14664,16 +14686,13 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
          hit[1]+(Math.random()-0.5)*mo*1.2,
          hit[2]+(Math.random()-0.5)*mo*2.4];
   }
-  const ends=fanHits(o,aim,nFan,spread);
-  for(const e of ends){
-    beams.push({a:[o[0],o[1],o[2]],b:e,t0:now,side:s.side,race:s.race,
-      from:s.id,muz,heavy:!!heavy,wid,
-      phaser:fx==="phaser"||fx==="song",
-      turbo:fx==="turbo"||!!heavy,
-      pulse:fx==="pulse",
-      disruptor:fx==="disruptor",
-      col:fx==="laser"?[1.0,0.22,0.16]:null});
-  }
+  pushFork(s,muz,o,aim,{t0:now,wid,heavy:!!heavy,
+    nFan:3,spread:heavy?0.038:0.048,splitU:0.38,
+    phaser:fx==="phaser"||fx==="song",
+    turbo:fx==="turbo"||!!heavy,
+    pulse:fx==="pulse",
+    disruptor:fx==="disruptor",
+    col:fx==="laser"?[1.0,0.22,0.16]:null});
   if(miss)return;
   flash(hit[0],hit[1],hit[2],now,Math.max(heavy?48:12,Math.min(90,t.slen*(heavy?0.08:0.04))),heavy?3:s.side);
   wound(t,dmg||1,s,now);
@@ -14823,10 +14842,8 @@ function raceFire(s,t,now,nx,ny,nz){
       s.cutTgt=t.id;
       s.cool=2.0+Math.random()*0.7;
       const hit=aimSkin(s,t);
-      for(const e of fanHits([nx,ny,nz],hit,3,0.018)){
-        beams.push({a:[nx,ny,nz],b:e,t0:now,side:s.side,race:s.race,cut:true,heavy:true,
-          wid:beamWid(s,true),from:s.id,muz:muz0});
-      }
+      pushFork(s,muz0,[nx,ny,nz],hit,{t0:now,cut:true,heavy:true,wid:beamWid(s,true),
+        nFan:3,spread:0.042,splitU:0.34});
       wound(t,fx==="slicer"?2.6:1.7,s,now);
     }else s.cool=0.28;
     return;
@@ -15404,14 +15421,13 @@ function megaStep(s,now,dt){
       if(borgGun){
         fireBeam(s,best,now,m[0],m[1],m[2],2.4,true,[la.lx,la.ly,la.lz]);
         la.cool=0.45+Math.random()*0.35;
+        break;
       }else if(slicer){
         s.cutUntil=now+2.6;s.cutTgt=best.id;s.lastFire=now;
         const muzL=[la.lx,la.ly,la.lz];
         const hitL=aimSkin(s,best);
-        for(const e of fanHits(m,hitL,3,0.016)){
-          beams.push({a:[m[0],m[1],m[2]],b:e,t0:now,side:s.side,race:s.race,cut:true,heavy:true,
-            wid:beamWid(s,true),from:s.id,muz:muzL});
-        }
+        pushFork(s,muzL,m,hitL,{t0:now,cut:true,heavy:true,wid:beamWid(s,true),
+          nFan:3,spread:0.038,splitU:0.34});
         wound(best,4.5,s,now);
         la.cool=3.2+Math.random()*1.8;
       }else{
@@ -15443,14 +15459,13 @@ function megaStep(s,now,dt){
         if(borgGun){
           fireBeam(s,t,now,m[0],m[1],m[2],1.15,true,[tu.lx,tu.ly,tu.lz]);
           tu.cool=0.14+Math.random()*0.20;
+          break;
         }else if(slicer){
           s.cutUntil=now+1.8;s.cutTgt=t.id;s.lastFire=now;
           const muzT=[tu.lx,tu.ly,tu.lz];
           const hitT=aimSkin(s,t);
-          for(const e of fanHits(m,hitT,3,0.016)){
-            beams.push({a:[m[0],m[1],m[2]],b:e,t0:now,side:s.side,race:s.race,cut:true,heavy:true,
-              wid:beamWid(s,true),from:s.id,muz:muzT});
-          }
+          pushFork(s,muzT,m,hitT,{t0:now,cut:true,heavy:true,wid:beamWid(s,true),
+            nFan:3,spread:0.038,splitU:0.34});
           wound(t,2.2,s,now);
           tu.cool=2.8+Math.random()*1.8;
         }else{
