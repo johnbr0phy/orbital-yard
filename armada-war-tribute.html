@@ -13329,6 +13329,7 @@ function pickIntroHero(){
   });
   return cands[(Math.random()*Math.min(2,cands.length))|0];
 }
+const INTRO_FLY=6.4;          /* seconds of film, from her jump to the hand-over */
 function beginIntro(){
   /* empty sky. one named keel screams through. the camera takes the
      chase, then speeds up onto her tail. ahead, the other navy jumps. */
@@ -13343,39 +13344,84 @@ function beginIntro(){
   }
   if(!(n0>-1e17)||!(n1<1e17))return false;
   const L=h.slen||40;
-  const dash=Math.max(320,Math.min(780,L*4.0));
   const pass=Math.max(120,L*2.15);
   const ar=(typeof innerWidth==="number"?innerWidth/Math.max(1,innerHeight):1.7);
   const halfW=pass*Math.tan(0.44)*Math.max(1.15,ar);
   const runUp=halfW+L*0.55+260;
-  const midX=(n0+n1)*0.5;
   const run=h.side===0?1:-1;
   const foe=1-h.side;
-  cam.ex=midX;
+  /* SHE FLIES AT THE HEAD OF HER OWN NAVY. The opening used to set her
+     down alone in the middle of the neutral ground with everything she
+     cared about astern of her, so the instant the camera let go she put
+     the helm over and ran for home — which is a poor first impression of
+     a hero. Start her a length or two off her own front rank instead,
+     already pointed at the other fellow, and the first thing she does is
+     charge; the enemy then jumps in ahead of her, into her windscreen. */
+  const ownFront=h.side===0?n0:n1;
+  const foeFront=h.side===0?n1:n0;
+  const lead=L*2.2+180;
+  /* the run is a fixed length of film. Her speed is then whatever carries
+     her a little over half the crossing in that time — never a fixed
+     dash, which put a fast keel through the enemy line before the camera
+     had finished with her, and that is the OTHER way a hero ends up
+     pointing the wrong way. */
+  const gap0=Math.max(600,Math.abs(foeFront-(ownFront+run*lead)));
+  const dash=Math.max(150,Math.min(900,gap0*0.55/INTRO_FLY));
+  h.yaw=h.side?Math.PI:0;
+  h.yawV=0;h.pitch=0;h.roll=0;h.v=0;h.vy=0;
+  h.x=ownFront+run*lead;
+  h.delay=0.58;h.shed=0.05;h.lag=0;h.arr=false;
+  /* the camera waits down her line of flight; she screams past it */
+  cam.ex=h.x+run*runUp;
   cam.ey=Math.max(28,L*0.14);
   cam.ez=-Math.max(36,pass*0.06);
   cam.yaw=Math.PI/2;
   cam.pitch=-0.05;
-  h.yaw=h.side?Math.PI:0;
-  h.yawV=0;h.pitch=0;h.roll=0;h.v=0;h.vy=0;
-  h.x=cam.ex-run*runUp;
   h.y=cam.ey-Math.max(4,L*0.06);
   h.z=cam.ez+pass;
-  h.delay=0.58;h.shed=0.05;h.lag=0;h.arr=false;
+  /* HER FLIGHT COMES UP WITH HER. A squadron steers to a waypoint set
+     nine hundred metres ahead of its OWN centroid — so an ace dealt a
+     station at the head of the fleet, with her wing left back in the
+     ranks, is handed a waypoint that lies behind her, and the first
+     thing she does when the camera lets go is turn round and go and
+     find them. That is the flee. */
+  const wing=h.squad>=0?squads[h.squad]:null;
+  if(wing){
+    let k=0;
+    for(const id of wing.mem){
+      if(id===h.id)continue;
+      const m=ships[id];
+      if(!m||m.dead)continue;
+      k++;
+      const wide=(k%2)?1:-1,rank=Math.ceil(k/2);
+      m.x=h.x-run*(rank*L*2.6+140);
+      m.y=h.y+wide*rank*L*0.42;
+      m.z=h.z+wide*(rank*L*2.4+110);
+      m.yaw=h.yaw;m.yawV=0;m.pitch=0;m.roll=0;m.v=0;m.vy=0;
+      if(m.stn){m.stn[0]=m.x;m.stn[1]=m.y;m.stn[2]=m.z;}
+    }
+    wing.lead=h.id;
+    wing.adv=true;wing.tac="ADVANCE";wing.phase=0;
+  }
   for(const s of ships){
     if(s.id===h.id)continue;
     const unique=!!(RACE_DEFS[s.race]||{}).unique;
     const i=s.fo||0;
     if(s.side===foe){
-      s.delay=unique?5.15+i*3.1:5.12+(s.delay||0)*0.22+Math.random()*0.5;
+      /* the other navy arrives AHEAD of her, while she is already running */
+      s.delay=unique?5.7+i*3.0:5.35+(s.delay||0)*0.22+Math.random()*0.55;
     }else{
-      s.delay=unique?10.1+i*3.1:10.05+(s.delay||0)*0.16+Math.random()*0.65;
+      /* and her own forms up at her back, a breath after she passes */
+      const inWing=!!(wing&&wing.mem.indexOf(s.id)>=0);
+      s.delay=unique?3.3+i*2.2
+        :inWing?1.05+Math.random()*0.35
+        :1.75+(s.delay||0)*0.14+Math.random()*0.6;
     }
     s.arr=false;
   }
   intro={
     hero:h.id,foe,dash,catch:false,done:false,caughtT:0,
-    catchAt:h.delay+1.65,endAt:9.4,
+    catchAt:h.delay+1.65,endAt:h.delay+INTRO_FLY,
     dist0:pass,dist1:Math.max(42,L*3.8),h0:20,h1:Math.max(10,L*0.62)
   };
   sel=null;orb=null;card(null);
@@ -14289,7 +14335,20 @@ function squadThink(now){
       const ec=fleetCentroid(1-sq.side);
       const gap=Math.hypot(c[0]-ec[0],c[1]-ec[1],c[2]-ec[2]);
       const gx=ec[0]-c[0],gz=ec[2]-c[2],gl=Math.hypot(gx,gz)||1;
-      sq.wp=[c[0]+gx/gl*900,(c[1]+ec[1])*0.5,c[2]+gz/gl*900];
+      /* the mark must lie ahead of the WHOLE flight, not ahead of her
+         middle. Nine hundred metres off the centroid is fine for a tight
+         chevron and useless for a strung-out one: the keel out in front
+         is handed a waypoint behind her own nose, and she turns round to
+         go and reach it — which looks exactly like a hero fleeing. */
+      let van=0;
+      for(const id of sq.mem){
+        const m=ships[id];
+        if(!m||m.dead)continue;
+        const p=((m.x-c[0])*gx+(m.z-c[2])*gz)/gl;
+        if(p>van)van=p;
+      }
+      const reach=Math.max(900,van+560);
+      sq.wp=[c[0]+gx/gl*reach,(c[1]+ec[1])*0.5,c[2]+gz/gl*reach];
       sq.phase=0;sq.tac="ADVANCE";
       sq.hdg=Math.atan2(gz,gx);
       if(gap<640||now-warT0>48){
