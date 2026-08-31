@@ -97,6 +97,14 @@ body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
   transition:opacity .25s;pointer-events:none}
 #toast.on{opacity:.9}
 #brand .s2{display:none}
+/* the opening: chrome holds its breath so the sky can speak */
+body.intro #brand,
+body.intro #score,
+body.intro #stat,
+body.intro #bar,
+body.intro #card,
+body.intro #wasd{
+  opacity:0 !important;pointer-events:none !important;transition:opacity .5s}
 
 /* ---- compact chrome: any screen short of room on either axis -------------
    Width alone was the wrong test. A phone on its side is 874 across and 402
@@ -13204,6 +13212,123 @@ function frameTheWar(){
   cam.yaw=Math.atan2(lookZ-cam.ez,lookX-cam.ex);
   cam.pitch=Math.atan2(lookY-cam.ey,Math.hypot(lookX-cam.ex,lookZ-cam.ez));
 }
+let intro=null;
+function pickIntroHero(){
+  const cands=[];
+  for(const s of ships){
+    if(s.dead||!s.vao||!s.hero)continue;
+    if(s.hulls)continue;
+    if((RACE_DEFS[s.race]||{}).unique)continue;
+    if((s.slen||0)>900)continue;
+    cands.push(s);
+  }
+  if(!cands.length)return null;
+  cands.sort((a,b)=>{
+    const score=s=>{
+      const L=s.slen||80;
+      const sweet=L>=24&&L<=280?0:Math.abs(L-90)*0.015;
+      return sweet+(s.heroTag?0.5:0);
+    };
+    return score(a)-score(b);
+  });
+  return cands[(Math.random()*Math.min(2,cands.length))|0];
+}
+function beginIntro(){
+  /* empty sky. one named keel screams through. the camera takes the
+     chase, then speeds up onto her tail. ahead, the other navy jumps. */
+  const h=pickIntroHero();
+  if(!h)return false;
+  let n0=-1e18,n1=1e18;
+  for(const s of ships){
+    if(s.dead||!s.vao)continue;
+    const half=Math.max(s.exL||0,(s.slen||20)*0.5);
+    if(s.side===0){const n=s.x+half;if(n>n0)n0=n;}
+    else{const n=s.x-half;if(n<n1)n1=n;}
+  }
+  if(!(n0>-1e17)||!(n1<1e17))return false;
+  const L=h.slen||40;
+  const dash=Math.max(320,Math.min(780,L*4.0));
+  const pass=Math.max(120,L*2.15);
+  const ar=(typeof innerWidth==="number"?innerWidth/Math.max(1,innerHeight):1.7);
+  const halfW=pass*Math.tan(0.44)*Math.max(1.15,ar);
+  const runUp=halfW+L*0.55+260;
+  const midX=(n0+n1)*0.5;
+  const run=h.side===0?1:-1;
+  const foe=1-h.side;
+  cam.ex=midX;
+  cam.ey=Math.max(28,L*0.14);
+  cam.ez=-Math.max(36,pass*0.06);
+  cam.yaw=Math.PI/2;
+  cam.pitch=-0.05;
+  h.yaw=h.side?Math.PI:0;
+  h.yawV=0;h.pitch=0;h.roll=0;h.v=0;h.vy=0;
+  h.x=cam.ex-run*runUp;
+  h.y=cam.ey-Math.max(4,L*0.06);
+  h.z=cam.ez+pass;
+  h.delay=0.58;h.shed=0.05;h.lag=0;h.arr=false;
+  for(const s of ships){
+    if(s.id===h.id)continue;
+    const unique=!!(RACE_DEFS[s.race]||{}).unique;
+    const i=s.fo||0;
+    if(s.side===foe){
+      s.delay=unique?5.15+i*3.1:5.12+(s.delay||0)*0.22+Math.random()*0.5;
+    }else{
+      s.delay=unique?10.1+i*3.1:10.05+(s.delay||0)*0.16+Math.random()*0.65;
+    }
+    s.arr=false;
+  }
+  intro={
+    hero:h.id,foe,dash,catch:false,done:false,caughtT:0,
+    catchAt:h.delay+1.65,endAt:9.4,
+    dist0:pass,dist1:Math.max(42,L*3.8),h0:20,h1:Math.max(10,L*0.62)
+  };
+  sel=null;orb=null;card(null);
+  document.body.classList.add("intro");
+  return true;
+}
+function endIntro(){
+  if(!intro||intro.done)return;
+  const hid=intro.hero,caught=intro.catch;
+  intro.done=true;
+  document.body.classList.remove("intro");
+  intro=null;
+  const h=ships[hid];
+  if(h&&!h.dead&&caught){
+    sel=hid;orb=chaseCamInit(h);card(hid);updateHeroBtn();
+  }else if(!caught){
+    frameTheWar();
+    sel=null;orb=null;card(null);
+  }
+}
+function introStep(now,dt){
+  if(!intro||intro.done||warT0===Infinity)return;
+  const T=now-warT0;
+  const h=ships[intro.hero];
+  if(!h||h.dead){endIntro();return;}
+  if(!intro.catch){
+    cam.pitch=Math.max(-0.11,cam.pitch-dt*0.014);
+    const run=h.side===0?1:-1;
+    const abreast=(h.x-cam.ex)*run;
+    const visible=T>=(h.delay||0)&&abreast>-Math.max(40,h.slen*0.45);
+    if(visible||T>=intro.catchAt){
+      intro.catch=true;intro.caughtT=now;
+      sel=h.id;
+      const d=Math.hypot(h.x-cam.ex,h.y-cam.ey,h.z-cam.ez);
+      intro.dist0=Math.max(70,d);
+      intro.dist1=Math.max(42,h.slen*3.8);
+      intro.h0=Math.max(8,cam.ey-h.y);
+      intro.h1=Math.max(10,h.slen*0.62);
+      orb={chase:true,dist:intro.dist0,h:intro.h0,yaw:h.yaw+Math.PI,pitch:0.1};
+      card(null);
+    }
+  }else if(orb&&sel===intro.hero){
+    const u=Math.min(1,(now-intro.caughtT)/2.35);
+    const e=u*u*(3-2*u);
+    orb.dist=intro.dist0+(intro.dist1-intro.dist0)*e;
+    orb.h=intro.h0+(intro.h1-intro.h0)*e;
+  }
+  if(T>=intro.endAt)endIntro();
+}
 const DOCTRINE=[
   {n:"CHARGE", w:[3,2]},
   {n:"FLANK",  w:[3,2]},
@@ -13588,6 +13713,7 @@ function startWar(fresh){
   makeCelestial(mulberry32((warSeed^0xC0FFEE)>>>0));
   cam.ex=0;cam.ey=420;cam.ez=1100;cam.yaw=-Math.PI/2;cam.pitch=-0.22;
   forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
+  intro=null;document.body.classList.remove("intro");
   const bH=document.getElementById("bHero");if(bH){bH.classList.remove("on");bH.textContent="HEROES";}
   document.getElementById("win").style.display="none";
   if(typeof wasdHint!=="undefined")wasdHint.arm();
@@ -13898,10 +14024,12 @@ function onWorkerMsg(e){
     scatterShadows();
     scatterBorg();
     spaceTheFleets();
-    frameTheWar();
-    warT0=performance.now()/1000+0.4;
-    ionNext=[warT0+10,warT0+15];
-    toast("CONTACT IMMINENT");
+    if(!beginIntro()){
+      frameTheWar();
+      toast("CONTACT IMMINENT");
+    }
+    warT0=performance.now()/1000+0.25;
+    ionNext=[warT0+18,warT0+24];
   }
   roster();
 }
@@ -15771,7 +15899,7 @@ function simStep(now,dt){
     if(!s.grace&&T-s.delay>=0&&!s.cloaked)foeCache[s.side].push(s);
   }
   simFrame++;
-  if((simFrame&31)===0)maybeCallAlly(now);
+  if((simFrame&31)===0&&!(intro&&!intro.done))maybeCallAlly(now);
   squadThink(now);
   for(const side of [0,1]){
     if(winner!=null||counts[side]<=0){ionState[side]=null;continue;}
@@ -15810,9 +15938,23 @@ function simStep(now,dt){
     if(s.dead||!s.vao)continue;
     const age=T-s.delay;
     if(age<0)continue;
+    if(intro&&!intro.done&&s.id===intro.hero){
+      if(!s.arr){
+        s.arr=true;flash(s.x,s.y,s.z,now,Math.max(26,s.slen*1.3),s.side);
+      }
+      s.cloaked=false;s.cloakAmt=0;s.grace=true;s.cool=1;
+      const streak=!intro.catch||(now-(intro.caughtT||now))<1.05;
+      const dash=streak?intro.dash:Math.max(s.spdMax||s.spd,(s.spdMax||s.spd)*1.28);
+      s.v=dash;
+      s.yaw=s.side?Math.PI:0;s.yawV=0;s.pitch=0;
+      s.roll=Math.sin(Math.min(1.2,Math.max(0,age))*2.2)*0.32;
+      s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
+      continue;
+    }
     if(!s.arr){
       s.arr=true;flash(s.x,s.y,s.z,now,Math.max(26,s.slen*1.3),s.side);
-      if((RACE_DEFS[s.race]||{}).unique&&s.meta&&s.meta.desig)toast(s.meta.desig);
+      if((RACE_DEFS[s.race]||{}).unique&&s.meta&&s.meta.desig&&!(intro&&!intro.done))
+        toast(s.meta.desig);
     }
     if(age<(s.shed||1.0)){
       /* shedding the jump: a fighter burns onto her heading. A crown
@@ -16395,6 +16537,7 @@ function followHero(){
   toast("CHASE · "+heroShort(hs[i])+(hs.length>1?" · "+(i+1)+"/"+hs.length:""));
 }
 function select(id){
+  if(intro&&!intro.done)endIntro();
   sel=id;
   if(id==null||!ships[id]||ships[id].dead){
     orb=null;card(null);sel=null;
@@ -16437,6 +16580,7 @@ cvs.addEventListener("pointermove",e=>{
   const dx=e.clientX-pdown[0],dy=e.clientY-pdown[1];
   if(Math.abs(dx)+Math.abs(dy)>4)pmoved=true;
   if(!pmoved)return;
+  if(intro&&!intro.done)endIntro();
   if(sel!=null&&orb){
     if(orb.chase){orb.chase=false;orb.yaw=cam.yaw+Math.PI;orb.pitch=0.28;}
     orb.yaw+=dx*0.005;orb.pitch=Math.max(-1.3,Math.min(1.3,orb.pitch+dy*0.005));
@@ -16456,6 +16600,7 @@ cvs.addEventListener("pointercancel",e=>{
 });
 cvs.addEventListener("wheel",e=>{
   e.preventDefault();
+  if(intro&&!intro.done)endIntro();
   if(sel!=null&&orb)orb.dist=Math.max(12,Math.min(sceneR*2,orb.dist*Math.exp(e.deltaY*0.0012*camLook)));
   else{
     const [f]=camBasis(),k=-e.deltaY*0.6*camLook;
@@ -16469,6 +16614,7 @@ addEventListener("keydown",e=>{
   if(k==="r")randomWar();
   if(k==="p"){palI=(palI+1)%PAL.length;applyPal();}
   if(k==="h")followHero();
+  if(intro&&!intro.done&&"wasdqe".includes(k))endIntro();
   if(k==="[")setCamGear(camGear-1);
   if(k==="]")setCamGear(camGear+1);
   if(e.key==="Escape"){
@@ -16608,20 +16754,36 @@ function frame(nowMs){
   lastT=now;
   fpsA+=((dt>0?1/dt:60)-fpsA)*0.05;
   simStep(now,dt);
+  introStep(now,dt);
   /* camera: chase is the default hold — behind her, looking down her
      nose. Drag breaks into an orbit. Empty sky is free flight. */
   if(sel!=null&&ships[sel]&&!ships[sel].dead){
     const s=ships[sel];
     if(!orb)orb=chaseCamInit(s);
-    const k=1-Math.exp(-dt*6);
+    let chaseK=6;
+    if(intro&&!intro.done&&intro.catch){
+      const u=Math.min(1,(now-(intro.caughtT||now))/2.5);
+      chaseK=1.55+u*u*10;
+    }
+    const k=1-Math.exp(-dt*chaseK);
     if(orb.chase){
       const cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
       const dist=orb.dist,h=orb.h||Math.max(10,s.slen*0.55);
       const want=[s.x-cy*dist,s.y+h,s.z-sy*dist];
       cam.ex+=(want[0]-cam.ex)*k;cam.ey+=(want[1]-cam.ey)*k;cam.ez+=(want[2]-cam.ez)*k;
-      const lx=s.x+cy*s.slen*1.8,ly=s.y,lz=s.z+sy*s.slen*1.8;
-      cam.yaw=Math.atan2(lz-cam.ez,lx-cam.ex);
-      cam.pitch=Math.atan2(ly-cam.ey,Math.hypot(lx-cam.ex,lz-cam.ez));
+      const ahead=(intro&&!intro.done)?Math.max(420,s.slen*10):s.slen*1.8;
+      const lx=s.x+cy*ahead,ly=s.y,lz=s.z+sy*ahead;
+      const ty=Math.atan2(lz-cam.ez,lx-cam.ex);
+      const tp=Math.atan2(ly-cam.ey,Math.hypot(lx-cam.ex,lz-cam.ez));
+      if(intro&&!intro.done&&intro.catch){
+        let dy=ty-cam.yaw;
+        while(dy>Math.PI)dy-=Math.PI*2;
+        while(dy<-Math.PI)dy+=Math.PI*2;
+        cam.yaw+=dy*Math.min(1,k*1.8);
+        cam.pitch+=(tp-cam.pitch)*Math.min(1,k*1.8);
+      }else{
+        cam.yaw=ty;cam.pitch=tp;
+      }
     }else{
       const cp=Math.cos(orb.pitch),sp=Math.sin(orb.pitch);
       const want=[s.x+orb.dist*cp*Math.cos(orb.yaw),s.y+orb.dist*sp,s.z+orb.dist*cp*Math.sin(orb.yaw)];
@@ -16630,7 +16792,7 @@ function frame(nowMs){
       cam.yaw=Math.atan2(dz,dx);
       cam.pitch=Math.atan2(dy,Math.hypot(dx,dz));
     }
-  }else{
+  }else if(!(intro&&!intro.done)){
     const [f,r]=camBasis();
     const sp=(keys.has("shift")?sceneR*0.28:sceneR*0.09)*dt*camLook;
     if(keys.has("w")){cam.ex+=f[0]*sp;cam.ey+=f[1]*sp;cam.ez+=f[2]*sp;}
