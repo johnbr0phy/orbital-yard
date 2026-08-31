@@ -12146,7 +12146,8 @@ function collide(now){
   for(const w of wrecks)if(!w.pending&&!w.gone)put2(wgrid,w);
   for(const s of ships){
     if(s.dead||!s.vao||s.grace)continue;
-    const sr=Math.max(s.rad||8,hullBerth(s)*0.38);
+    const cutS=(RACE_DEFS[s.race]||{}).fire==="cutter";
+    const sr=Math.max(s.rad||8,hullBerth(s)*(cutS?0.50:0.38));
     /* the caution ledger: every near thing this pass writes an offset the
        pilot will steer around — fresh each pass, spent within a beat */
     const avSee=(dx,dy,dz,d,k)=>{
@@ -12165,17 +12166,20 @@ function collide(now){
          through the mark. Own-side is home, but still not a tunnel.
          First Ones are a hull you gun, not a 5 km no-fly sphere. */
       const uniqueC=!!(RACE_DEFS[c2.race]||{}).unique;
-      const wall=(c2.exL||c2.rad||80);
-      const seeR=uniqueC?wall+220:wall*4.2;
+      const cutC=(RACE_DEFS[c2.race]||{}).fire==="cutter";
+      const wall=Math.max(c2.exL||0,c2.exY||0,c2.exZ||0,c2.rad||80);
+      const seeR=uniqueC?wall+220:wall*(cutC?1.55:4.2);
       if(!s.hulls&&d<seeR)
         avSee(dx,dy,dz,d,(1-d/seeR)*(s.side===c2.side?28:uniqueC?12:55));
-      const reach=(c2.exL||c2.rad)+sr;
+      const reach=cutC?Math.hypot(c2.exL||0,c2.exY||0,c2.exZ||0)+sr:wall+sr;
       if(d2>reach*reach)continue;
       const cy2=Math.cos(c2.yaw),sy2=Math.sin(c2.yaw);
       const lx=cy2*dx+sy2*dz,lz=-sy2*dx+cy2*dz;
       const eL=(c2.exL||c2.rad)+sr,eY=(c2.exY||c2.rad)+sr,eZ=(c2.exZ||c2.rad)+sr;
       const nx2=lx/eL,ny2=dy/eY,nz2=lz/eZ;
-      const q2=nx2*nx2+ny2*ny2+nz2*nz2;
+      const q2=cutC
+        ?Math.pow(Math.max(Math.abs(nx2),Math.abs(ny2),Math.abs(nz2)),2)
+        :nx2*nx2+ny2*ny2+nz2*nz2;
       if(q2>=1||q2<1e-9)continue;
       const q=Math.sqrt(q2);
       if(!s.hulls&&!s.grace&&!s.hero&&q2<(s.side===c2.side?0.42:0.78)){
@@ -12528,7 +12532,8 @@ function sqBerth(sq){
   for(const id of sq.mem){
     const s=ships[id];
     if(!s||s.dead)continue;
-    const k=hullBerth(s)*1.2;
+    const cut=(RACE_DEFS[s.race]||{}).fire==="cutter";
+    const k=hullBerth(s)*(cut?1.7:1.2);
     if(k>b)b=k;
   }
   return b;
@@ -12892,7 +12897,7 @@ function spreadRad(s){
   if((RACE_DEFS[s.race]||{}).fire==="slicer")
     return Math.max(1100,hullBerth(s)*0.78);
   if((RACE_DEFS[s.race]||{}).fire==="cutter")
-    return Math.max(hullBerth(s)*0.78,(s.slen||20)*0.62);
+    return Math.max(hullBerth(s)*0.55,(s.slen||20)*0.55)+120;
   if((s.hulls||0)>=25){
     const B=(s.meta&&s.meta.beam)||(s.exZ?s.exZ*2:s.slen*0.32);
     const H=(s.meta&&s.meta.height)||(s.exY?s.exY*2:s.slen*0.12);
@@ -13023,69 +13028,99 @@ function scatterShadows(){
   }
 }
 function scatterBorg(){
-  /* a sphere is six hundred metres of iron. The lattice was a 220 m
-     cell — they arrived inside each other. Lay the errands in a cube
-     of real berths, then unstick anything still kissing. */
+  /* a sphere is six hundred metres of iron; the cube is three kilometres
+     on an edge. The errands stand AHEAD of the cube, in a lattice of
+     their own diameter — never astern of her, never inside her, never
+     on a 140 m escort cell. The cube sits behind the pack, the way the
+     Shadow mother does. */
+  const needOf=(a,b)=>(hullBerth(a)+hullBerth(b))*0.52+220;
   for(const side of [0,1]){
-    const pack=[];
-    let cube=null;
+    const pack=[],cubes=[];
     for(const s of ships){
       if(s.dead||!s.vao||s.side!==side)continue;
       if((RACE_DEFS[s.race]||{}).fire!=="cutter")continue;
-      if((s.hulls||0)>=50){cube=s;continue;}
+      if((s.hulls||0)>=50){cubes.push(s);continue;}
       if(s.hero)continue;
       if(s.arr)continue;
       pack.push(s);
     }
-    if(pack.length<2)continue;
+    if(pack.length<2&&cubes.length<1)continue;
     const sx=side?1:-1;
     pack.sort((a,b)=>(a.slen||0)-(b.slen||0));
-    const big=pack.filter(s=>(s.slen||0)>140);
+    const big=pack.filter(s=>(s.slen||0)>100||s.hulls);
+    let berth=420;
+    for(const s of big)berth=Math.max(berth,hullBerth(s));
+    const gap=berth+240;
     if(big.length){
-      let berth=400;
-      for(const s of big)berth=Math.max(berth,hullBerth(s)*0.92);
-      const gap=berth*1.18+140;
       const n=big.length;
       const nx=Math.max(2,Math.round(Math.cbrt(n*0.95)));
       const nz=Math.max(2,Math.round(Math.sqrt(n/nx*1.25)));
       const ny=Math.max(1,Math.ceil(n/(nx*nz)));
-      let originX=sx*2600;
-      if(cube)originX=cube.x+sx*((cube.slen||800)*0.48+gap*0.45);
+      let originX=sx*2200;
+      if(cubes.length){
+        let cx=0;
+        for(const c of cubes)cx+=c.x;
+        cx/=cubes.length;
+        const ch=hullBerth(cubes[0])*0.52;
+        originX=cx-sx*(ch+gap*0.72);
+      }
       for(let i=0;i<n;i++){
         const s=big[i];
         const ix=i%nx,iz=((i/nx)|0)%nz,iy=(i/(nx*nz))|0;
         const jx=((s.seed>>>3)&31)/31-0.5;
         const jy=((s.seed>>>8)&31)/31-0.5;
         const jz=((s.seed>>>13)&31)/31-0.5;
-        s.x=originX+sx*(ix*gap*0.92+jx*gap*0.12);
-        s.y=(iy-(ny-1)*0.5)*gap*0.88+jy*gap*0.16;
-        s.z=(iz-(nz-1)*0.5)*gap+jz*gap*0.16;
+        s.x=originX-sx*(ix*gap+jx*gap*0.10);
+        s.y=(iy-(ny-1)*0.5)*gap*0.92+jy*gap*0.12;
+        s.z=(iz-(nz-1)*0.5)*gap+jz*gap*0.12;
         if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
       }
     }
-    for(let t=0;t<18;t++){
-      for(let i=0;i<pack.length;i++){
-        const a=pack[i];
-        for(let j=i+1;j<pack.length;j++){
-          const b=pack[j];
+    if(pack.length){
+      let rear=side? -1e18:1e18;
+      for(const s of pack){
+        const h=hullBerth(s)*0.5;
+        if(side){if(s.x+h>rear)rear=s.x+h;}
+        else if(s.x-h<rear)rear=s.x-h;
+      }
+      for(let i=0;i<cubes.length;i++){
+        const c=cubes[i];
+        if(c.arr)continue;
+        const extra=hullBerth(c)*0.55+gap*0.45+i*(hullBerth(c)*0.72+280);
+        c.x=rear+sx*extra;
+        c.y=((c.seed>>>8)&31)/31*160-80;
+        c.z=(((c.seed>>>13)&31)/31-0.5)*gap*0.35+i*hullBerth(c)*0.8;
+        c.yaw=side?Math.PI:0;
+      }
+    }
+    const live=pack.concat(cubes);
+    for(let t=0;t<22;t++){
+      for(let i=0;i<live.length;i++){
+        const a=live[i];
+        for(let j=i+1;j<live.length;j++){
+          const b=live[j];
           const dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z;
           const d=Math.hypot(dx,dy,dz)||0.001;
-          const need=(hullBerth(a)+hullBerth(b))*0.78+80;
+          const need=needOf(a,b);
           if(d>=need)continue;
-          const k=(need-d)*0.5/d;
-          a.x+=dx*k;a.y+=dy*k;a.z+=dz*k;
-          b.x-=dx*k;b.y-=dy*k;b.z-=dz*k;
-        }
-      }
-      if(cube){
-        const cr=hullBerth(cube)*0.52;
-        for(const s of pack){
-          const dx=s.x-cube.x,dy=s.y-cube.y,dz=s.z-cube.z;
-          const d=Math.hypot(dx,dy,dz)||0.001;
-          const need=hullBerth(s)*0.78+cr+160;
-          if(d>=need)continue;
-          const k=(need-d)/d;
-          s.x+=dx*k;s.y+=dy*k;s.z+=dz*k;
+          const aC=cubes.indexOf(a)>=0,bC=cubes.indexOf(b)>=0;
+          if(aC&&!bC){
+            const k=(need-d)/d;
+            b.x-=dx*k;b.y-=dy*k;b.z-=dz*k;
+          }else if(bC&&!aC){
+            const k=(need-d)/d;
+            a.x+=dx*k;a.y+=dy*k;a.z+=dz*k;
+          }else if(a.arr||b.arr){
+            const movable=a.arr?b:a,anchor=a.arr?a:b;
+            const mx=movable.x-anchor.x,my=movable.y-anchor.y,mz=movable.z-anchor.z;
+            const md=Math.hypot(mx,my,mz)||0.001;
+            const k=(need-md)/md;
+            movable.x+=mx*k;movable.y+=my*k;movable.z+=mz*k;
+          }else{
+            const k=(need-d)*0.5/d;
+            a.x+=dx*k;a.y+=dy*k;a.z+=dz*k;
+            b.x-=dx*k;b.y-=dy*k;b.z-=dz*k;
+          }
         }
       }
     }
@@ -13573,7 +13608,7 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
     /* fill the front first, then add decks astern — a cube of berths,
        never a square packed until neighbours kiss. Borg spheres are
        600 m; a 220 m cell is how they spawn inside each other. */
-    const cell=rd.fire==="cutter"?820:220;
+    const cell=rd.fire==="cutter"?900:220;
     const cols=Math.max(1,Math.min(nCap,Math.floor(MAXW/cell)+1));
     let rear=140;
     for(let i=0;i<nCap;i++){
@@ -13583,11 +13618,12 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
       out.cap.push(st(d,((r%3)-1)*170+((c%2)?40:-32),rowZ(c,cols,cell),1.1+i*0.05));
     }
     capRear=rear;
-    const eCols=Math.max(1,Math.min(nEsc,Math.floor(MAXW/140)+1));
+    const eCell=rd.fire==="cutter"?900:140;
+    const eCols=Math.max(1,Math.min(nEsc,Math.floor(MAXW/eCell)+1));
     for(let i=0;i<nEsc;i++){
       const c=i%eCols,r=(i/eCols)|0;
-      out.esc.push(st(20+r*90,((c%3)-1)*160+((r%2)?36:-28),
-        rowZ(c,eCols,140),1.8+i*0.03));
+      out.esc.push(st(20+r*(rd.fire==="cutter"?eCell:90),((c%3)-1)*160+((r%2)?36:-28),
+        rowZ(c,eCols,eCell),1.8+i*0.03));
     }
     fleetFtrScreen(out,st,nFtr,Math.max(1200,cols*cell),2.6);
     frontSpan=Math.max(1400,(cols-1)*cell);
@@ -13634,8 +13670,8 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
 
   /* the crowns stand behind the last capital layer, consorts abeam —
      a clear berth, never mixed into the gun line */
-  const crownD=capRear+240;
-  const cw=Math.max(480,Math.min(wingZ,1100));
+  const crownD=capRear+(rd.fire==="cutter"?1800:240);
+  const cw=Math.max(480,Math.min(wingZ,1100))*(rd.fire==="cutter"?2.6:1);
   out.crown.push(st(crownD,40+R()*80,0,0.5));
   out.crown.push(st(crownD-28,-220-R()*180,-cw,0.8));
   out.crown.push(st(crownD-28,240+R()*200,cw,1.0));
@@ -15408,7 +15444,7 @@ function megaStep(s,now,dt){
   const mopup=foes5.length<=6;
   const hurt=s.hp<s.hpMax*0.4;
   const RD=RACE_DEFS[s.race]||RACE_DEFS[0];
-  const slicer=RD.fire==="slicer"||RD.fire==="cutter";
+  const slicer=RD.fire==="slicer";
   const borgGun=RD.fire==="cutter"&&!!s.hulls;
   if(slicer){
     /* they do not hold a gun line. Each crab picks a mark and RUNS —
@@ -15806,9 +15842,9 @@ function maybeCallAlly(now){
     const ftrByGate={hammer:[],relief:[],cut:[]};
     const escByGate={hammer:[],relief:[],cut:[]};
     const slotN={hammer:[0,0,0],relief:[0,0,0],cut:[0,0,0]};
-    const wideOf=b=>sliceAlly?2400:cutAlly&&b>=1?820:b===2?280:b===1?180:120;
-    const deepOf=b=>sliceAlly?1900:cutAlly&&b>=1?720:b===2?240:b===1?160:120;
-    const yOf=b=>sliceAlly?820:cutAlly&&b>=1?480:b===2?220:170;
+    const wideOf=b=>sliceAlly?2400:cutAlly&&b>=1?900:b===2?280:b===1?180:120;
+    const deepOf=b=>sliceAlly?1900:cutAlly&&b>=1?900:b===2?240:b===1?160:120;
+    const yOf=b=>sliceAlly?820:cutAlly&&b>=1?720:b===2?220:170;
     const placeBand=(count,band)=>{
       for(let i2=0;i2<count;i2++){
         const u=i2/Math.max(1,count);
