@@ -12883,6 +12883,8 @@ function spreadRad(s){
      length is parked astern, not shoved sideways through the screen */
   if((RACE_DEFS[s.race]||{}).fire==="slicer")
     return Math.max(1100,hullBerth(s)*0.78);
+  if((RACE_DEFS[s.race]||{}).fire==="cutter")
+    return Math.max(hullBerth(s)*0.78,(s.slen||20)*0.62);
   if((s.hulls||0)>=25){
     const B=(s.meta&&s.meta.beam)||(s.exZ?s.exZ*2:s.slen*0.32);
     const H=(s.meta&&s.meta.height)||(s.exY?s.exY*2:s.slen*0.12);
@@ -13010,6 +13012,76 @@ function scatterShadows(){
       }
     }
     for(const s of all)if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
+  }
+}
+function scatterBorg(){
+  /* a sphere is six hundred metres of iron. The lattice was a 220 m
+     cell — they arrived inside each other. Lay the errands in a cube
+     of real berths, then unstick anything still kissing. */
+  for(const side of [0,1]){
+    const pack=[];
+    let cube=null;
+    for(const s of ships){
+      if(s.dead||!s.vao||s.side!==side)continue;
+      if((RACE_DEFS[s.race]||{}).fire!=="cutter")continue;
+      if((s.hulls||0)>=50){cube=s;continue;}
+      if(s.hero)continue;
+      if(s.arr)continue;
+      pack.push(s);
+    }
+    if(pack.length<2)continue;
+    const sx=side?1:-1;
+    pack.sort((a,b)=>(a.slen||0)-(b.slen||0));
+    const big=pack.filter(s=>(s.slen||0)>140);
+    if(big.length){
+      let berth=400;
+      for(const s of big)berth=Math.max(berth,hullBerth(s)*0.92);
+      const gap=berth*1.18+140;
+      const n=big.length;
+      const nx=Math.max(2,Math.round(Math.cbrt(n*0.95)));
+      const nz=Math.max(2,Math.round(Math.sqrt(n/nx*1.25)));
+      const ny=Math.max(1,Math.ceil(n/(nx*nz)));
+      let originX=sx*2600;
+      if(cube)originX=cube.x+sx*((cube.slen||800)*0.48+gap*0.45);
+      for(let i=0;i<n;i++){
+        const s=big[i];
+        const ix=i%nx,iz=((i/nx)|0)%nz,iy=(i/(nx*nz))|0;
+        const jx=((s.seed>>>3)&31)/31-0.5;
+        const jy=((s.seed>>>8)&31)/31-0.5;
+        const jz=((s.seed>>>13)&31)/31-0.5;
+        s.x=originX+sx*(ix*gap*0.92+jx*gap*0.12);
+        s.y=(iy-(ny-1)*0.5)*gap*0.88+jy*gap*0.16;
+        s.z=(iz-(nz-1)*0.5)*gap+jz*gap*0.16;
+        if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
+      }
+    }
+    for(let t=0;t<18;t++){
+      for(let i=0;i<pack.length;i++){
+        const a=pack[i];
+        for(let j=i+1;j<pack.length;j++){
+          const b=pack[j];
+          const dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z;
+          const d=Math.hypot(dx,dy,dz)||0.001;
+          const need=(hullBerth(a)+hullBerth(b))*0.78+80;
+          if(d>=need)continue;
+          const k=(need-d)*0.5/d;
+          a.x+=dx*k;a.y+=dy*k;a.z+=dz*k;
+          b.x-=dx*k;b.y-=dy*k;b.z-=dz*k;
+        }
+      }
+      if(cube){
+        const cr=hullBerth(cube)*0.52;
+        for(const s of pack){
+          const dx=s.x-cube.x,dy=s.y-cube.y,dz=s.z-cube.z;
+          const d=Math.hypot(dx,dy,dz)||0.001;
+          const need=hullBerth(s)*0.78+cr+160;
+          if(d>=need)continue;
+          const k=(need-d)/d;
+          s.x+=dx*k;s.y+=dy*k;s.z+=dz*k;
+        }
+      }
+    }
+    for(const s of pack)if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
   }
 }
 function spaceTheFleets(){
@@ -13374,8 +13446,9 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
 
   }else if(form==="lattice"){
     /* fill the front first, then add decks astern — a cube of berths,
-       never a square packed until neighbours kiss */
-    const cell=220;
+       never a square packed until neighbours kiss. Borg spheres are
+       600 m; a 220 m cell is how they spawn inside each other. */
+    const cell=rd.fire==="cutter"?820:220;
     const cols=Math.max(1,Math.min(nCap,Math.floor(MAXW/cell)+1));
     let rear=140;
     for(let i=0;i<nCap;i++){
@@ -13817,11 +13890,13 @@ function onWorkerMsg(e){
     if((RACE_DEFS[s.race]||{}).fire==="cutter"&&s.hulls)borgArm(s);
     setShipPace(s);
     forged++;
+    if(warT0!==Infinity&&(RACE_DEFS[s.race]||{}).fire==="cutter")scatterBorg();
   }
   if(forged>=total&&warT0===Infinity){
     parkTheCrowns();
     spreadMuster();
     scatterShadows();
+    scatterBorg();
     spaceTheFleets();
     frameTheWar();
     warT0=performance.now()/1000+0.4;
@@ -15527,6 +15602,7 @@ function maybeCallAlly(now){
     };
     const gH=gates.hammer;
     const sliceAlly=(RACE_DEFS[ally]||{}).fire==="slicer";
+    const cutAlly=(RACE_DEFS[ally]||{}).fire==="cutter";
     if(RACE_DEFS[ally].unique){
       /* they do not dump into the merge. Each ancient her own jump,
          off the caller's far flank, spaced by her true keel — not a
@@ -15587,9 +15663,9 @@ function maybeCallAlly(now){
     const ftrByGate={hammer:[],relief:[],cut:[]};
     const escByGate={hammer:[],relief:[],cut:[]};
     const slotN={hammer:[0,0,0],relief:[0,0,0],cut:[0,0,0]};
-    const wideOf=b=>sliceAlly?2400:b===2?280:b===1?180:120;
-    const deepOf=b=>sliceAlly?1900:b===2?240:b===1?160:120;
-    const yOf=b=>sliceAlly?820:b===2?220:170;
+    const wideOf=b=>sliceAlly?2400:cutAlly&&b>=1?820:b===2?280:b===1?180:120;
+    const deepOf=b=>sliceAlly?1900:cutAlly&&b>=1?720:b===2?240:b===1?160:120;
+    const yOf=b=>sliceAlly?820:cutAlly&&b>=1?480:b===2?220:170;
     const placeBand=(count,band)=>{
       for(let i2=0;i2<count;i2++){
         const u=i2/Math.max(1,count);
