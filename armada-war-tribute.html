@@ -14439,6 +14439,22 @@ function seedMine(s,now){
   mines.push({x:s.x+(Math.random()-0.5)*20,y:s.y+(Math.random()-0.5)*14,
     z:s.z+(Math.random()-0.5)*20,side:s.side,race:s.race,ph:Math.random()*6.28,dead:false});
 }
+function forkN(s){
+  /* a fighter is one turret, one stem, then it may split. Three
+     lines is the ceiling — twenty is a shotgun. */
+  if(s.hulls||s.hero||(s.slen||0)>=90)return 3;
+  return 2;
+}
+function refreshCut(s,muz,o,aim,now){
+  let n=0;
+  for(const b of beams){
+    if(b.from!==s.id||!b.cut||!b.hold)continue;
+    b.t0=now;b.aim=aim;
+    n++;
+  }
+  if(!n)pushFork(s,muz,o,aim,{t0:now,cut:true,hold:true,heavy:true,
+    wid:beamWid(s,true),nFan:forkN(s),spread:0.042,splitU:0.34});
+}
 function cutHold(s,now,dt){
   if(!(s.cutUntil&&now<s.cutUntil))return;
   const ct=ships[s.cutTgt];
@@ -14448,8 +14464,7 @@ function cutHold(s,now,dt){
       const muz=fireLocal(s);
       const cm=gunWorld(s,muz,now);
       const hit=aimSkin(s,ct);
-      pushFork(s,muz,cm,hit,{t0:now,cut:true,heavy:true,wid:beamWid(s,true),
-        nFan:3,spread:0.042,splitU:0.34});
+      refreshCut(s,muz,cm,hit,now);
       wound(ct,dt*(s.wpn===5?1.9:2.6),s,now);
       if(ct.dead)s.cutUntil=0;
     }else s.cutUntil=0;
@@ -14861,13 +14876,24 @@ function forkEnd(split,aim,k,n,spread){
 }
 function pushFork(s,muz,o,aim,flags){
   /* one stem from the turret, then it splits — not a shotgun from the hull */
-  const n=flags.nFan||3;
+  const n=Math.min(flags.nFan||3,forkN(s));
+  if(flags.hold){
+    let held=0;
+    for(const b of beams)if(b.from===s.id&&b.cut&&b.hold)held++;
+    if(held){
+      for(const b of beams){
+        if(b.from!==s.id||!b.cut||!b.hold)continue;
+        b.t0=flags.t0;b.muz=muz;b.aim=aim;
+      }
+      return;
+    }
+  }
   const spread=flags.spread||0.046;
   const splitU=flags.splitU||0.38;
   const stemW=(flags.wid||2.4)*1.2;
   const tineW=(flags.wid||2.4)*0.58;
   const meta={t0:flags.t0,side:s.side,race:s.race,from:s.id,muz,aim,
-    splitU,nFan:n,spread,cut:!!flags.cut,heavy:!!flags.heavy,
+    splitU,nFan:n,spread,cut:!!flags.cut,hold:!!flags.hold,heavy:!!flags.heavy,
     phaser:!!flags.phaser,turbo:!!flags.turbo,pulse:!!flags.pulse,
     disruptor:!!flags.disruptor,col:flags.col||null};
   beams.push(Object.assign({},meta,{a:[o[0],o[1],o[2]],b:lerp3(o,aim,splitU),fork:0,wid:stemW}));
@@ -14920,7 +14946,7 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
          hit[2]+(Math.random()-0.5)*mo*2.4];
   }
   pushFork(s,muz,o,aim,{t0:now,wid,heavy:!!heavy,
-    nFan:3,spread:heavy?0.038:0.048,splitU:0.38,
+    nFan:forkN(s),spread:heavy?0.038:0.048,splitU:0.38,
     phaser:fx==="phaser"||fx==="song",
     turbo:fx==="turbo"||!!heavy,
     pulse:fx==="pulse",
@@ -14958,7 +14984,8 @@ function raceFire(s,t,now,nx,ny,nz){
     nx=o[0];ny=o[1];nz=o[2];
     const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
     const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/300;
-    for(let b3=0;b3<9;b3++){
+    const burst=(s.hulls||s.hero||(s.slen||0)>=90)?9:3;
+    for(let b3=0;b3<burst;b3++){
       const ax3=t.x+tvx*lead-nx+(Math.random()-0.5)*t.slen*0.6;
       const ay3=t.y-ny+(Math.random()-0.5)*t.slen*0.35;
       const az3=t.z+tvz*lead-nz+(Math.random()-0.5)*t.slen*0.6;
@@ -15055,7 +15082,7 @@ function raceFire(s,t,now,nx,ny,nz){
   if(fx==="smart"||fx==="junk"){
     const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
     const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/300;
-    const n=fx==="smart"?11:7;
+    const n=fx==="smart"?((s.slen||0)>=90||s.hero?11:3):((s.slen||0)>=90||s.hero?7:3);
     for(let b3=0;b3<n;b3++){
       const ax3=t.x+tvx*lead-nx+(Math.random()-0.5)*t.slen*0.6;
       const ay3=t.y-ny+(Math.random()-0.5)*t.slen*0.35;
@@ -15075,8 +15102,8 @@ function raceFire(s,t,now,nx,ny,nz){
       s.cutTgt=t.id;
       s.cool=2.0+Math.random()*0.7;
       const hit=aimSkin(s,t);
-      pushFork(s,muz0,[nx,ny,nz],hit,{t0:now,cut:true,heavy:true,wid:beamWid(s,true),
-        nFan:3,spread:0.042,splitU:0.34});
+      pushFork(s,muz0,[nx,ny,nz],hit,{t0:now,cut:true,hold:true,heavy:true,wid:beamWid(s,true),
+        nFan:forkN(s),spread:0.042,splitU:0.34});
       wound(t,fx==="slicer"?2.6:1.7,s,now);
     }else s.cool=0.28;
     return;
@@ -15659,8 +15686,8 @@ function megaStep(s,now,dt){
         s.cutUntil=now+2.6;s.cutTgt=best.id;s.lastFire=now;
         const muzL=[la.lx,la.ly,la.lz];
         const hitL=aimSkin(s,best);
-        pushFork(s,muzL,m,hitL,{t0:now,cut:true,heavy:true,wid:beamWid(s,true),
-          nFan:3,spread:0.038,splitU:0.34});
+        pushFork(s,muzL,m,hitL,{t0:now,cut:true,hold:true,heavy:true,wid:beamWid(s,true),
+          nFan:forkN(s),spread:0.038,splitU:0.34});
         wound(best,4.5,s,now);
         la.cool=3.2+Math.random()*1.8;
       }else{
@@ -15697,8 +15724,8 @@ function megaStep(s,now,dt){
           s.cutUntil=now+1.8;s.cutTgt=t.id;s.lastFire=now;
           const muzT=[tu.lx,tu.ly,tu.lz];
           const hitT=aimSkin(s,t);
-          pushFork(s,muzT,m,hitT,{t0:now,cut:true,heavy:true,wid:beamWid(s,true),
-            nFan:3,spread:0.038,splitU:0.34});
+          pushFork(s,muzT,m,hitT,{t0:now,cut:true,hold:true,heavy:true,wid:beamWid(s,true),
+            nFan:forkN(s),spread:0.038,splitU:0.34});
           wound(t,2.2,s,now);
           tu.cool=2.8+Math.random()*1.8;
         }else{
