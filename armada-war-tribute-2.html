@@ -12888,6 +12888,7 @@ function craftMood(s,now){
   }
   return "ATTACK";
 }
+const PACE=1.10;              /* every keel in the war, cruise and dash */
 function setShipPace(s){
   /* cruise is the class; dash is the same keel with the tap open.
      Length sets the band — a TIE and a frigate must never share a
@@ -12943,8 +12944,11 @@ function setShipPace(s){
     dash=Math.max(dash*1.22,cruise*1.52);
     s.turn=Math.max(s.turn||0,2.45);
   }
-  s.spd=cruise;
-  s.spdMax=Math.max(dash,cruise*1.06);
+  /* the whole sky flies a tenth faster. One dial, laid on cruise and dash
+     alike at the very end, so every band keeps its relation to every
+     other and nothing has to be re-balanced against anything else. */
+  s.spd=cruise*PACE;
+  s.spdMax=Math.max(dash,cruise*1.06)*PACE;
 }
 function craftWant(s,now,sq,mood,dist,boost){
   /* she decides the tap: the squadron's order, her nerve, the sky.
