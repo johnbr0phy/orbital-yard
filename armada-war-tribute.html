@@ -12982,6 +12982,80 @@ function parkTheCrowns(){
     if(s.stn){s.stn[0]=s.x;s.stn[2]=s.z;}
   }
 }
+/* ===================== OPEN THE MUSTER =====================
+   The forge does not cut a hull until after the stations are dealt, so a
+   muster is laid out by a berth that is a GUESS. When the guess is too
+   tight the relaxation pass cannot fix it: relaxation only ever pushes,
+   so a line of battle berthed at five hundred metres with sixteen-hundred
+   metre keels standing in it does not become a wider line — every keel
+   shoves every neighbour, the shoves compound, and an ordered block boils
+   out into a ball of gravel. Which is precisely what it did.
+
+   So the muster is OPENED first: measure how tight the worst of it
+   actually is, and scale the whole formation about its own centre until
+   there is sea-room. A fleet that needs more space gets a bigger parade
+   ground, not a stirred one, and every line, interval and rank survives
+   at the larger size. */
+function openTheMuster(){
+  /* and it is opened BAND BY BAND, each about its own centre. One factor
+     for the whole navy means the capitals' need — a Star Destroyer wants
+     two kilometres of sea-room — is paid for by every TIE as well, and a
+     fleet that needed eleven kilometres gets fifty-eight. The line of
+     battle opens; the screen, which was never tight, does not. */
+  const bandOf=s=>s.hulls?3:(s.band==null?2:s.band);
+  for(const side of [0,1])for(const band of [0,1,2,3]){
+    const a=[];
+    for(const s of ships)
+      if(!s.dead&&s.vao&&s.side===side&&bandOf(s)===band)a.push(s);
+    if(a.length<3)continue;
+    let cx=0,cy=0,cz=0,big=0;
+    for(const s of a){
+      cx+=s.x;cy+=s.y;cz+=s.z;
+      s.srad=spreadRad(s);
+      if(s.srad>big)big=s.srad;
+    }
+    cx/=a.length;cy/=a.length;cz/=a.length;
+    /* nearest same-side neighbour, on a hash sized to the widest berth */
+    const cell=Math.max(200,big*2);
+    const G=new Map();
+    for(const s of a){
+      const k=gkey(Math.floor(s.x/cell),Math.floor(s.y/cell),Math.floor(s.z/cell));
+      let q=G.get(k);if(!q){q=[];G.set(k,q);}
+      q.push(s);
+    }
+    const need=[];
+    for(const s of a){
+      const ix=Math.floor(s.x/cell),iy=Math.floor(s.y/cell),iz=Math.floor(s.z/cell);
+      let worst=0;
+      for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++)for(let oz=-1;oz<=1;oz++){
+        const q=G.get(gkey(ix+ox,iy+oy,iz+oz));
+        if(!q)continue;
+        for(let j=0;j<q.length;j++){
+          const o=q[j];
+          if(o===s)continue;
+          const d=Math.hypot(s.x-o.x,s.y-o.y,s.z-o.z);
+          if(d<1)continue;
+          const r=(s.srad+o.srad)/d;
+          if(r>worst)worst=r;
+        }
+      }
+      if(worst>0)need.push(worst);
+    }
+    if(!need.length)continue;
+    /* the ninetieth, not the worst: one pathological pair must not blow
+       the whole parade ground out to the horizon */
+    need.sort((p,q)=>p-q);
+    const k=Math.min(need.length-1,Math.floor(need.length*0.90));
+    const grow=Math.max(1,Math.min(5.5,need[k]*1.06));
+    if(grow<=1.02)continue;
+    for(const s of a){
+      s.x=cx+(s.x-cx)*grow;
+      s.y=cy+(s.y-cy)*grow;
+      s.z=cz+(s.z-cz)*grow;
+      if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
+    }
+  }
+}
 function spreadMuster(){
   const live=[];
   for(const s of ships)if(!s.dead&&s.vao)live.push(s);
@@ -13546,6 +13620,74 @@ function dressMuster(out,side,R){
     }
   }
 }
+/* ===================== THE ACIES =====================
+   A Roman army did not get DEEPER as it got bigger. It got wider. A
+   legion stood the same handful of ranks whether it was one legion or
+   eight; you added cohorts along the line, and you left a cohort's worth
+   of air between them so the second line could step through the gaps.
+   That interval is the whole reason a Roman line reads as blocks and a
+   mob reads as a mob — and it is exactly what this muster was not doing.
+   The screen was capped at a handful of columns and every extra squadron
+   went ASTERN, so twelve thousand keels arrived as a hundred-and-sixty
+   kilometre column which, seen nose-on down its own axis, is a ball of
+   gravel with a Star Destroyer in front of it.
+
+   So the muster is dealt the way an army is raised, in units of units:
+
+     flight    SQN keels — the chevron the war already flies
+     century   a block of flights, laid wide, one flight's air around it
+     cohort    centuries abreast along the front
+     acies     the cohorts in THREE lines — the legions stood 4/3/3 —
+               the second line covering the first line's intervals (the
+               quincunx), the third held back as the reserve
+
+   Frontage and height grow with the muster. Depth never does: three
+   lines is three lines whether you brought six hundred or sixty thousand.
+
+   `n` units at pitch `p`. Returns offsets [astern, up, along-the-front]. */
+function acies(n,p,o){
+  o=o||{};
+  const bw=o.bw||4,bh=o.bh||3;            /* flights in a century: wide x tall */
+  const per=bw*bh;
+  const nBlk=Math.max(1,Math.ceil(n/per));
+  const nLines=nBlk>=6?(o.lines||3):1;
+  const share=[0.40,0.33,0.27];
+  const lineN=[];
+  let left=nBlk;
+  for(let i=0;i<nLines;i++){
+    const k=(i===nLines-1)?left:Math.max(1,Math.round(nBlk*share[i]));
+    lineN.push(Math.max(0,Math.min(left,k)));left-=lineN[i];
+  }
+  /* the interval: a century leaves most of its own width beside it */
+  const gz=p*(o.gz==null?0.75:o.gz),gy=p*(o.gy==null?0.55:o.gy);
+  const pz=bw*p+gz,py=bh*p+gy;
+  const lineGap=o.lineGap||p*3.2;
+  const out=[];
+  let idx=0;
+  for(let L=0;L<nLines&&idx<n;L++){
+    const m=lineN[L];
+    if(m<=0)continue;
+    /* a line is WIDE: about two and a half times its own height */
+    const cz=Math.max(1,Math.ceil(Math.sqrt(m*(o.ratio||2.6))));
+    const cy=Math.max(1,Math.ceil(m/cz));
+    /* the quincunx: the second line stands behind the first line's gaps */
+    const stagger=(L%2)?pz*0.5:0;
+    for(let b=0;b<m&&idx<n;b++){
+      const bz=b%cz,by=(b/cz)|0;
+      const z0=(bz-(cz-1)/2)*pz+stagger;
+      const y0=(by-(cy-1)/2)*py;
+      for(let u=0;u<per&&idx<n;u++,idx++){
+        const uz=u%bw,uy=(u/bw)|0;
+        out.push([
+          L*lineGap+((u*7+b*3)%3)*p*0.10,
+          y0+(uy-(bh-1)/2)*p,
+          z0+(uz-(bw-1)/2)*p
+        ]);
+      }
+    }
+  }
+  return out;
+}
 function fleetFtrScreen(out,st,nFtr,spread,dl0){
   /* the fighter screen: squadrons abreast in shallow ranks ahead of the
      line, every squadron a doubled finger-four with the lead proud.
@@ -13553,19 +13695,22 @@ function fleetFtrScreen(out,st,nFtr,spread,dl0){
      forge knows a crab's true span. `spread` is a CEILING — extra
      squadrons become ranks astern, never a tighter gap. */
   const nsq=Math.ceil(nFtr/SQN);
-  const br=96,minGap=br*4.2;
-  let cols=Math.max(1,Math.ceil(nsq/2));
-  while(cols>1&&(cols-1)*minGap>spread)cols--;
-  const gap=cols<=1?Math.max(minGap,spread):Math.max(minGap,spread/Math.max(1,cols-1));
+  const br=96;
+  const p=Math.max(br*4.2,Math.min(620,spread/6));
+  const slot=acies(nsq,p,{bw:4,bh:3,lines:3,ratio:2.0});
+  let half=0,deep=0;
+  for(const a of slot){
+    if(Math.abs(a[2])>half)half=Math.abs(a[2]);
+    if(a[0]>deep)deep=a[0];
+  }
   for(let i=0;i<nFtr;i++){
     const q=(i/SQN)|0,m=i%SQN;
-    const col=q%cols,row=(q/cols)|0;
+    const a=slot[q]||slot[slot.length-1]||[0,0,0];
     const o=sqOffset(m,br);
-    const yAlt=((q%5)-2)*210+((q&1)?70:-55);
-    out.ftr.push(st(-220-row*br*2.4+o[0],o[1]+yAlt,
-      (col-(cols-1)/2)*gap+o[2],
-      dl0+row*0.5+col*0.09+m*0.06));
+    out.ftr.push(st(-220-a[0]+o[0],a[1]+o[1],a[2]+o[2],
+      dl0+a[0]*0.0009+q*0.0015+m*0.06));
   }
+  return {half,deep};
 }
 function musterFleet(rd,side,R,nCap,nEsc,nFtr){
   const sx=side?1:-1,J=k=>(R()-0.5)*k;
@@ -13574,26 +13719,44 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
   const st=(d,y,z,dl)=>[sx*(760+d)+J(12),y+J(12),z+J(12),dl];
   const out={crown:[],cap:[],esc:[],ftr:[]};
   const form=pickForm(rd,R);
-  const GAP=200,MAXW=1680+R()*860,DSTP=150+R()*70;
+  /* Berths are dealt by BAND, generously, because the forge has not cut
+     these hulls yet — at muster time every keel still claims to be 20 m.
+     spreadMuster only ever pushes, so a berth that is too tight is not
+     corrected, it is INFLATED: two hundred metres between Star Destroyers
+     is how a line of battle becomes a ball of gravel. */
+  const GAP=560,MAXW=1680+R()*860,DSTP=460+R()*160;
+
   const rowZ=(i,n,gap)=>n<=1?0:(i-(n-1)/2)*gap;
   const lin=(i,n,a,b)=>a+(n<=1?0.5:i/(n-1))*(b-a);
   /* n hulls, min gap, max rank width → how many layers, how many abreast */
+  /* A LINE WIDENS; IT DOES NOT DEEPEN. The old law took a maximum width
+     and sent everything over it astern, which turns a big muster into a
+     column. Ranks are capped now and the FRONT grows to hold the fleet,
+     which is how every army that ever had to stand twelve thousand of
+     anything in one place did it. */
   const rankOf=(n,gap,maxW)=>{
-    const per=Math.max(1,Math.floor(maxW/gap)+1);
-    const nR=Math.max(1,Math.ceil(n/per));
+    const nR=Math.max(1,Math.min(9,Math.ceil(Math.sqrt(n/2.6))));
     return {nR,perR:Math.ceil(n/nR)};
   };
+  /* THE LINE OF BATTLE, in three dimensions. The same cohort law as the
+     screen — blocks with real air between them, three lines deep, the
+     second covering the first's intervals — except that a fleet may also
+     stack in HEIGHT, which no legion ever could. That is what keeps a
+     line of five hundred capitals eleven kilometres wide instead of
+     sixty, and a block instead of a ball. */
   const placeRanked=(n,d0,dStep,z0,y0,gap,maxW,dl0,into)=>{
-    const {nR,perR}=rankOf(n,gap,maxW);
-    let i=0;
-    for(let r=0;r<nR&&i<n;r++){
-      const here=Math.min(perR,n-i);
-      for(let k=0;k<here;k++,i++)
-        into.push(st(d0+r*dStep,y0+((r%3)-1)*160+((r+k)&1?28:-22),
-          z0+rowZ(k,here,gap),dl0+r*0.12+k*0.03));
+    if(n<=0)return {nR:0,perR:0,front:d0,rear:d0,half:0};
+    const slot=acies(n,gap,{bw:3,bh:2,lines:3,ratio:3.0,gz:0.5,gy:0.45,
+      lineGap:Math.max(dStep,gap*1.5)});
+    let half=0,rear=d0;
+    for(let i=0;i<n;i++){
+      const a=slot[i]||[0,0,0];
+      if(Math.abs(a[2])>half)half=Math.abs(a[2]);
+      const d=d0+a[0];
+      if(d>rear)rear=d;
+      into.push(st(d,y0+a[1],z0+a[2],dl0+a[0]*0.0012+i*0.0015));
     }
-    return {nR,perR,front:d0,rear:d0+Math.max(0,nR-1)*dStep,
-      half:(Math.max(0,perR-1)*gap)/2};
+    return {nR:3,perR:Math.ceil(n/3),front:d0,rear,half};
   };
   let capRear=140,wingZ=480,frontSpan=1400;
 
@@ -13660,17 +13823,28 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
       const z0=rowZ(p,nP,pitch);
       placeRanked(here,30,70,z0+((p%2)?70:-70),((p%3)-1)*150,100,packW+80,1.7,out.esc);
     }
+    /* every pack keeps her own line — a small acies apiece, strung along
+       the front, rather than one column per pack running to the horizon */
     const nsq=Math.ceil(nFtr/SQN);
-    const br=96;
-    for(let i=0;i<nFtr;i++){
-      const q=(i/SQN)|0,m=i%SQN,p=q%nP;
-      const z0=rowZ(p,nP,pitch);
-      const k=(q/nP)|0;
-      const o=sqOffset(m,br);
-      out.ftr.push(st(-160-k*br*2.4+o[0],o[1]+((p%3)-1)*180+((q%5)-2)*90,
-        z0+o[2],2.4+k*0.35+m*0.05));
+    const br=96,pp=br*4.6;
+    const perPack=Math.ceil(nsq/nP);
+    for(let g=0;g<nP;g++){
+      const here=Math.min(perPack,Math.max(0,nsq-g*perPack));
+      if(here<=0)continue;
+      const z0=rowZ(g,nP,Math.max(pitch,pp*5.5));
+      const slot=acies(here,pp,{bw:3,bh:3,lines:2,ratio:2.2});
+      for(let j=0;j<here;j++){
+        const a=slot[j]||[0,0,0];
+        for(let m=0;m<SQN;m++){
+          const i=(g*perPack+j)*SQN+m;
+          if(i>=nFtr)break;
+          const o=sqOffset(m,br);
+          out.ftr.push(st(-160-a[0]+o[0],a[1]+o[1]+((g%3)-1)*180,
+            z0+a[2]+o[2],2.4+a[0]*0.0012+m*0.05));
+        }
+      }
     }
-    frontSpan=Math.max(1400,(nP-1)*pitch+packW);
+    frontSpan=Math.max(1400,(nP-1)*Math.max(pitch,pp*5.5)+pp*10);
 
   }else if(form==="crescent"){
     /* concentric arcs, not one overloaded bow: each rank is a full
@@ -13698,21 +13872,25 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
         out.esc.push(arc(u,30+r*70,((k%3)-1)*170+((k%2)?40:-28),1.7+r*0.08+k*0.03));
       }
     }
+    /* the same line, bowed. The acies is dealt flat and then bent along
+       the blade, so a crescent of sixty thousand is still three lines
+       deep and not a sixty-kilometre horn. */
     const nsq=Math.ceil(nFtr/SQN);
-    const br=96;
-    const perArc=Math.max(3,Math.floor((2*zSpan*0.8)/(br*4.6)));
-    const nArcs=Math.max(1,Math.ceil(nsq/perArc));
+    const br=96,cp=br*4.4;
+    const slot=acies(nsq,cp,{bw:4,bh:3,lines:3,ratio:3.4});
+    let zHalf=1;
+    for(const a of slot)if(Math.abs(a[2])>zHalf)zHalf=Math.abs(a[2]);
     for(let i=0;i<nFtr;i++){
       const q=(i/SQN)|0,m=i%SQN;
+      const a=slot[q]||[0,0,0];
       const o=sqOffset(m,br);
-      const arcI=q%nArcs,slot=(q/nArcs)|0;
-      const nOn=Math.ceil((nsq-arcI)/nArcs);
-      const u=lin(slot,nOn,0.06,0.94);
-      const b=arc(u,-200-arcI*br*2.4+o[0],o[1]+((q%5)-2)*190,2.4+arcI*0.2+m*0.05);
-      b[2]+=o[2];
-      out.ftr.push(b);
+      const u=0.5+0.5*(a[2]/zHalf);
+      const th=(u-0.5)*TH;
+      out.ftr.push(st(-200-a[0]+(1-Math.cos(th))*bow+o[0],
+        a[1]+o[1],Math.sin(th)*Math.max(zSpan,zHalf)+o[2],
+        2.4+a[0]*0.0012+m*0.05));
     }
-    frontSpan=zSpan*2;
+    frontSpan=Math.max(zSpan,zHalf)*2;
     wingZ=zSpan*0.55;
 
   }else if(form==="lattice"){
@@ -13746,37 +13924,49 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
     const L=placeRanked(nCap,200,DSTP,0,40,GAP,MAXW,1.1,out.cap);
     capRear=L.rear;
     placeRanked(nEsc,50,90,0,0,160,MAXW,1.6,out.esc);
+    /* a swarm is not a heap: the same line, dealt looser and let boil */
     const nsq=Math.ceil(nFtr/SQN);
-    const br=96;
-    const kCols=Math.max(1,Math.ceil(Math.sqrt(nsq)));
-    const kGap=Math.max(br*4.4,Math.min(560,MAXW/Math.max(1,kCols-1)));
+    const br=96,sp=br*4.0;
+    const slot=acies(nsq,sp,{bw:5,bh:4,lines:3,ratio:2.2,gz:1.1,gy:0.9});
+    let zH=1;
+    for(const a of slot)if(Math.abs(a[2])>zH)zH=Math.abs(a[2]);
     for(let i=0;i<nFtr;i++){
       const q=(i/SQN)|0,m=i%SQN;
-      const col=q%kCols,row=(q/kCols)|0;
+      const a=slot[q]||[0,0,0];
       const o=sqOffset(m,br);
-      out.ftr.push(st(-120-row*br*2.4+o[0],o[1]+((q%5)-2)*200,
-        rowZ(col,kCols,kGap)+o[2],
-        2.2+row*0.25+m*0.05));
+      out.ftr.push(st(-120-a[0]+o[0],a[1]+o[1]+((q%5)-2)*120,a[2]+o[2],
+        2.2+a[0]*0.0014+m*0.05));
     }
-    frontSpan=Math.max(1400,(kCols-1)*kGap);
-    wingZ=Math.max(480,L.half);
+    frontSpan=Math.max(1400,zH*2);
+    wingZ=Math.max(480,zH*0.5);
 
   }else{
     /* the wall — the line of battle: capitals ranked abreast, overflow
        in layers astern, escorts winging the flanks, the screen out front */
     const L=placeRanked(nCap,140,DSTP,0,0,GAP,MAXW,1.1,out.cap);
     capRear=L.rear;
-    const eHalf=L.half+160;
-    const ePer=Math.ceil(nEsc/2);
-    for(let i=0;i<nEsc;i++){
-      const sp=i%2?1:-1,k=(i/2)|0;
-      const r=(k/ePer)|0,slot=k%ePer;
-      out.esc.push(st(20+r*80,((k%3)-1)*170+((k%2)?36:-24),
-        sp*(eHalf+slot*100),1.7+i*0.04));
+    /* the screen goes out in front of the centre and sets the frontage */
+    const F=fleetFtrScreen(out,st,nFtr,Math.max(1400,L.half*2+400),2.4);
+    /* THE ALAE. Escorts are the wings, and a wing is a BLOCK on the flank
+       — outboard of the WHOLE line, screen included, not of the centre
+       alone. Twelve hundred of them laid one rank abreast was a hundred
+       and thirty kilometres of escort, which is not a flank, it is a
+       queue; anchored to the centre they stood inside their own screen. */
+    const eHalf=Math.max(L.half,F.half*0.86)+420;
+    const ep=190;
+    for(let sp=-1;sp<=1;sp+=2){
+      const halfN=Math.ceil(nEsc/2);
+      const slot=acies(halfN,ep,{bw:3,bh:3,lines:2,ratio:1.3,gz:0.6,gy:0.5});
+      let zw=0;
+      for(const a of slot)if(Math.abs(a[2])>zw)zw=Math.abs(a[2]);
+      for(let i=0;i<halfN;i++){
+        if((sp<0?i*2:i*2+1)>=nEsc)break;
+        const a=slot[i]||[0,0,0];
+        out.esc.push(st(20+a[0],a[1],sp*(eHalf+zw+a[2]),1.7+i*0.004));
+      }
+      wingZ=Math.max(wingZ,eHalf+zw*2);
     }
-    fleetFtrScreen(out,st,nFtr,Math.max(1400,L.half*2+400),2.4);
-    frontSpan=Math.max(1400,L.half*2+400);
-    wingZ=Math.max(480,L.half*0.55);
+    frontSpan=Math.max(1400,wingZ*2);
   }
 
   /* the crowns stand behind the last capital layer, consorts abeam —
@@ -14175,6 +14365,7 @@ function onWorkerMsg(e){
   }
   if(forged>=total&&warT0===Infinity){
     parkTheCrowns();
+    openTheMuster();
     spreadMuster();
     scatterShadows();
     scatterBorg();
