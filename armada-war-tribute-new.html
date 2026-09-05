@@ -12012,6 +12012,7 @@ function xQAA(ax1,a1,ax2,a2){
   return {ax:[x/l,y/l,z/l],ang:2*Math.atan2(l,w)};
 }
 function xPose(s,now){
+  if(s.debris){const w=s.debris;return xQAA(w.bax||[0,1,0],w.bang||0,w.ax||[0,1,0],w.ang||0);}
   /* the roll is not a rite that must complete: a flick swings out and
      recovers on a sine; a full turn eases through a smoothstep; only
      the shape she chose at the moment she chose it */
@@ -12026,16 +12027,182 @@ function xPose(s,now){
   if(Math.abs(roll)<0.02&&Math.abs(pitch)<0.02)return {ax:[0,1,0],ang:0};
   return xQAA([1,0,0],roll,[0,0,1],pitch);
 }
-function debrisStrike(s,bigBit,closing,now){
-  if(weaponProfile(s).fixed&&!s.hero){
-    // Damage follows inward impact speed: overlapping/separating fragments
-    // are not a lethal ram. A full-speed head-on strike remains dangerous.
-    if(closing<=0)return;
-    const fraction=Math.min(1,Math.pow(closing/120,2))*(bigBit?1:.18);
-    wound(s,s.hpMax*fraction,null,now);return;
+// Destruction budget includes queued meshes. Small fragments expire; hulks last longer.
+const DEBRIS_LIMIT=192,DEBRIS_UPLOADS=4,DEBRIS_BREAKUP=32;
+let debrisQueue=[];
+function debrisMass(o){const e=o.extents||[o.exL||o.rad||8,o.exY||o.rad||8,o.exZ||o.rad||8];return Math.max(8,e[0]*e[1]*e[2]);}
+function debrisSpinLimit(w){return Math.min(.65,10/Math.max(4,w.rad||4));}
+function integrateDebris(w,dt){
+  const rate=Math.max(-debrisSpinLimit(w),Math.min(debrisSpinLimit(w),w.spin||0));
+  const damping=w.disabled?.018:.045,decay=Math.exp(-damping*dt);
+  w.ang=(w.ang||0)+rate*(1-decay)/damping;w.spin=rate*decay;
+  w.x+=(w.vx||0)*dt;w.y+=(w.vy||0)*dt;w.z+=(w.vz||0)*dt;
+}
+function debrisProxy(w){
+  const e=w.extents||[w.rad,w.rad,w.rad];
+  return {...w,id:-1-w.uid,debris:w,dead:false,grace:false,slen:e[0]*2,
+    exL:e[0],exY:e[1],exZ:e[2],v:Math.hypot(w.vx||0,w.vz||0),vy:w.vy||0};
+}
+function debrisHit(a,b,w,now,pad=0){
+  if(w.gone||w.pending||w.dustT)return null;
+  // Conservative broad phase, followed by the rotating mesh's box envelope.
+  const r=(w.rad||8)+pad;
+  if([w.x,w.y,w.z].some((v,i)=>v<Math.min(a[i],b[i])-r||v>Math.max(a[i],b[i])+r))return null;
+  const p=weaponLocal(debrisProxy(w),a,now),q=weaponLocal(debrisProxy(w),b,now),e=w.extents||[r,r,r];
+  let lo=0,hi=1;
+  for(let i=0;i<3;i++){
+    const d=q[i]-p[i],h=e[i]+pad;
+    if(Math.abs(d)<1e-10){if(Math.abs(p[i])>h)return null;continue;}
+    const x=(-h-p[i])/d,y=(h-p[i])/d;lo=Math.max(lo,Math.min(x,y));hi=Math.min(hi,Math.max(x,y));if(lo>hi)return null;
   }
-  if(bigBit&&!s.hulls&&!s.hero){kill(s,now);return;}
-  wound(s,bigBit?1.2:.22,null,now);
+  return lo;
+}
+function firstDebrisHit(a,b,now,pad=0,source){
+  let w=null,u=Infinity;
+  for(const o of wrecks){if(o.src===source&&now-o.t0<1.8)continue;const h=debrisHit(a,b,o,now,pad);if(h!==null&&h<u){u=h;w=o;}}
+  return w?{w,u}:null;
+}
+function fractureMesh(fr,target=DEBRIS_BREAKUP){
+  // Split spatial triangle clusters, not procedural component boundaries.
+  // No re-tessellation of the ship, and the triangle budget never exceeds 8192.
+  let tris=[];
+  for(const f of fr||[])for(let j=0;j<f.i.length&&tris.length<8192;j+=3){
+    const t=[];for(let k=0;k<3;k++){const id=f.i[j+k]*3;t.push([f.v[id]+f.ox,f.v[id+1]+f.oy,f.v[id+2]+f.oz]);}tris.push(t);
+  }
+  if(!tris.length)return [];
+  const bounds=[[Infinity,Infinity,Infinity],[-Infinity,-Infinity,-Infinity]];
+  for(const t of tris)for(const p of t)for(let i=0;i<3;i++){bounds[0][i]=Math.min(bounds[0][i],p[i]);bounds[1][i]=Math.max(bounds[1][i],p[i]);}
+  const edgeLimit=Math.max(2,Math.max(...bounds[0].map((v,i)=>bounds[1][i]-v))/7),queue=tris;tris=[];
+  while(queue.length){
+    const t=queue.pop(),edges=[[0,1,2],[1,2,0],[2,0,1]],lengths=edges.map(([a,b])=>V.len(V.sub(t[a],t[b]))),j=lengths.indexOf(Math.max(...lengths));
+    if(lengths[j]>edgeLimit&&tris.length+queue.length<8191){const [a,b,c]=edges[j],m=V.mul(V.add(t[a],t[b]),.5);queue.push([t[a],m,t[c]],[m,t[b],t[c]]);}else tris.push(t);
+  }
+  while(tris.length<target*3){
+    const t=tris.shift(),a=t[0],b=t[1],c=t[2],m=a.map((v,i)=>(v+b[i])/2);tris.push([a,m,c],[m,b,c]);
+  }
+  const groups=[tris];
+  while(groups.length<target){
+    let index=-1,score=0;
+    for(let i=0;i<groups.length;i++)if(groups[i].length>score&&groups[i].length>=6){index=i;score=groups[i].length;}
+    if(index<0)break;
+    const g=groups.splice(index,1)[0],cent=g.map(t=>t[0].map((v,i)=>(v+t[1][i]+t[2][i])/3));
+    const range=[0,1,2].map(i=>Math.max(...cent.map(c=>c[i]))-Math.min(...cent.map(c=>c[i]))),axis=range.indexOf(Math.max(...range));
+    g.sort((a,b)=>a.reduce((v,p)=>v+p[axis],0)-b.reduce((v,p)=>v+p[axis],0));const mid=g.length>>1;groups.push(g.slice(0,mid),g.slice(mid));
+  }
+  return groups.map(g=>{
+    const pts=g.flat(),lo=[0,1,2].map(i=>Math.min(...pts.map(p=>p[i]))),hi=[0,1,2].map(i=>Math.max(...pts.map(p=>p[i]))),c=lo.map((v,i)=>(v+hi[i])/2),e=lo.map((v,i)=>Math.max(.5,(hi[i]-v)/2));
+    return {v:new Float32Array(pts.flatMap(p=>p.map((v,i)=>v-c[i]))),i:Uint32Array.from(pts.map((_,i)=>i)),ox:c[0],oy:c[1],oz:c[2],r:Math.hypot(...e),extents:e};
+  });
+}
+function wreckRecord(s,f,now,catastrophic){
+  const local=[f.ox,f.oy,f.oz],world=gunWorld({...s,roll:0,pitch:0,brUntil:0,debris:{bax:s.dax||[0,1,0],bang:s.dang||0,ax:[0,1,0],ang:0}},local,now);
+  const delta=V.sub(world,[s.x,s.y,s.z]),r=f.r||8,n=V.len(delta)>1?V.norm(delta):V.norm([debrisRandom()-.5,debrisRandom()-.5,debrisRandom()-.5]);
+  const outward=(catastrophic?22:8)*( .65+debrisRandom()*.7)/Math.max(1,Math.sqrt(r/90));
+  const e=f.extents||[r,r,r],limit=debrisSpinLimit({rad:r}),omega=Math.max(-limit,Math.min(limit,s.yawV||0));
+  return {v:f.v,i:f.i,icount:f.i.length,rad:r,extents:e,x:world[0],y:world[1],z:world[2],yaw:s.yaw,
+    bax:s.dax||[0,1,0],bang:s.dang||0,ax:V.norm([debrisRandom()-.5,debrisRandom()-.5,debrisRandom()-.5]),ang:0,
+    vx:(s.dvx||0)-omega*delta[2]+n[0]*outward,vy:(s.dvy||0)+n[1]*outward,vz:(s.dvz||0)+omega*delta[0]+n[2]*outward,
+    spin:limit*(debrisRandom()-.5),uid:wreckUid++,src:s.id,t0:now,integ:Math.min(28,1+Math.sqrt(r)*.3),life:45+debrisRandom()*35};
+}
+function uploadDebris(now){
+  for(let j=0;j<DEBRIS_UPLOADS&&debrisQueue.length;j++){
+    const w=debrisQueue.shift();integrateDebris(w,Math.max(0,now-w.t0));
+    w.integratedAt=now;w.vao=gl.createVertexArray();w.vbo=gl.createBuffer();w.ibo=gl.createBuffer();gl.bindVertexArray(w.vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER,w.vbo);gl.bufferData(gl.ARRAY_BUFFER,w.v,gl.STATIC_DRAW);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,w.ibo);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,w.i,gl.STATIC_DRAW);gl.bindVertexArray(null);wrecks.push(w);
+  }
+}
+function disableHull(s,now){
+  const mesh=s.hullMesh;if(!mesh||wrecks.filter(w=>w.disabled&&!w.gone).length>=24||wrecks.length+debrisQueue.length>=DEBRIS_LIMIT)return false;
+  const e=[s.exL,s.exY,s.exZ],w={vao:s.vao,vbo:s.vbo,ibo:s.ibo,icount:s.icount,v:mesh.v,i:mesh.i,
+    x:s.x,y:s.y,z:s.z,yaw:s.yaw,bax:s.dax,bang:s.dang,ax:[0,1,0],ang:0,rad:Math.hypot(...e),extents:e,
+    vx:s.dvx,vy:s.dvy,vz:s.dvz,spin:s.yawV||0,uid:wreckUid++,src:s.id,t0:now,life:180,disabled:true,
+    integ:Math.min(100,15+Math.sqrt(s.slen)),integratedAt:now,sourceFrags:s.fragData};
+  w.spin=Math.max(-debrisSpinLimit(w),Math.min(debrisSpinLimit(w),w.spin));wrecks.push(w);
+  s.vao=s.vbo=s.ibo=null;s.fragData=null;s.hullMesh=null;s.disabled=true;s.destruction='disabled';
+  flash(s.x,s.y,s.z,now,Math.min(120,s.slen*.15),2);return true;
+}
+function damageDebris(w,damage,now,point){
+  if(!w||w.gone||w.dustT||w.shatter)return;
+  w.integ=(w.integ??3)-damage;flash(...point,now,Math.min(45,Math.max(8,w.rad*.12)),2);
+  if(w.integ>0)return;
+  if(w.disabled&&w.sourceFrags){
+    const pose=xQAA(w.bax,w.bang,w.ax,w.ang||0);
+    const source={id:w.src,x:w.x,y:w.y,z:w.z,yaw:w.yaw,dax:pose.ax,dang:pose.ang,dvx:w.vx,dvy:w.vy,dvz:w.vz,slen:w.extents[0]*2,fragData:w.sourceFrags,destruction:'catastrophic'};
+    spawnBreakup(source,now);w.sourceFrags=null;
+  }
+  w.shatter=true;
+}
+function debrisPilot(s,now){
+  if(now<(s.debrisScan||0))return;s.debrisScan=now+.2;
+  const previous=s.debrisAvoid;
+  s.debrisGoal=null;s.debrisBrake=1;s.debrisTarget=null;s.debrisAction=null;
+  const forward=[Math.cos(s.yaw),0,Math.sin(s.yaw)],side=[-forward[2],0,forward[0]],width=Math.max(6,Math.min(s.exY||8,s.exZ||8)),lead=(s.exL||10)+Math.max(100,(s.v||s.spd||20)*(s.hulls?12:4));
+  const a=[s.x,s.y,s.z],b=V.add(a,V.mul(forward,lead));let threat=null,first=Infinity;
+  for(const w of wrecks){
+    if(w.gone||w.dustT||now-w.t0<.6)continue;
+    const future=V.sub(b,[(w.vx||0)*3,(w.vy||0)*3,(w.vz||0)*3]),h=debrisHit(a,future,w,now,width+18);
+    if(h!==null&&h<first){first=h;threat=w;}
+  }
+  if(!threat){
+    const old=previous&&wrecks.find(w=>w.uid===previous.uid&&!w.gone&&!w.dustT);
+    if(old&&now<previous.until&&V.dot(V.sub([old.x,old.y,old.z],a),previous.forward)>-(s.exL||10)&&V.len(V.sub(previous.goal,a))>45){
+      s.debrisGoal=previous.goal;s.debrisBrake=.65;s.debrisUntil=now+.35;s.debrisAction='Passing debris';
+    }else s.debrisAvoid=null;
+    return;
+  }
+  const offset=V.sub(a,[threat.x,threat.y,threat.z]),hand=V.dot(offset,side)||((s.id&1)?1:-1);
+  const lateral=(Math.sign(hand))*(Math.min(threat.rad,Math.max(...(threat.extents||[threat.rad])))+width+65);
+  s.debrisGoal=V.add([threat.x,threat.y,threat.z],V.add(V.mul(side,lateral),V.mul(forward,Math.max(80,width*2))));
+  s.debrisAvoid={uid:threat.uid,goal:s.debrisGoal,forward,until:now+6};
+  s.debrisUntil=now+.35;s.debrisBrake=first<.5?.25:.60;s.debrisTarget=threat.uid;s.debrisAction=threat.disabled?'Avoiding disabled hulk':'Avoiding debris';
+  if(s.ai)s.ai.reason=threat.disabled?'Avoiding disabled hulk':'Avoiding predicted debris crossing';
+}
+function fireAtDebris(s,now){
+  if(s.dead||!s.vao||now<(s.debrisFireAt||0)||s.debrisTarget==null)return false;
+  const w=wrecks.find(w=>w.uid===s.debrisTarget&&!w.gone&&!w.dustT);
+  if(!w||w.disabled||w.rad>Math.max(28,Math.min(160,s.slen*.4)))return false;
+  const t=debrisProxy(w),distance=Math.hypot(w.x-s.x,w.y-s.y,w.z-s.z);
+  if(distance>Math.max(420,Math.min(1500,s.slen)))return false;
+  s.clearingUntil=now+.25;
+  const shot=weaponSolution(s,t,now);if(!shot)return false;
+  const o=shot.o,end=shot.aim;
+  // Don't clear a lane through a living ship; a failed check preserves steering.
+  for(const other of ships)if(other!==s&&!other.dead&&other.vao&&weaponSegmentHit(o,end,other,now,2)!==null)return false;
+  const first=firstDebrisHit(o,end,now,shot.profile.width,s.id);if(!first||first.w!==w)return false;
+  const p=shot.profile,damage=s.hulls?3:.8;s.debrisFireAt=now+(p.mode==='beam'?.8:.38);s.lastFire=now;
+  s.debrisAction='Clearing debris';if(s.ai)s.ai.reason='Clearing obstructing debris';
+  if(p.mode==='beam'){
+    pushFork(s,shot.muz,o,lerp3(o,end,first.u),{t0:now,target:t.id,debrisUid:w.uid,life:Math.min(.4,p.duration),wid:p.width,col:p.color});
+    damageDebris(w,damage,now,lerp3(o,end,first.u));
+  }else{
+    tracers.push({x:o[0],y:o[1],z:o[2],vx:shot.direction[0]*p.speed,vy:shot.direction[1]*p.speed,vz:shot.direction[2]*p.speed,t0:now,life:Math.min(8,distance/p.speed+.6),side:s.side,race:s.race,from:s.id,energy:true,damage,width:p.width,col:p.color,clearing:true});
+  }
+  return true;
+}
+function shipWreckContact(s,w,now){
+  if(w.gone||w.dustT||now-w.t0<1.8)return;
+  const sr=Math.max(4,Math.min(s.exY||8,s.exZ||8)),t=debrisProxy(w),p=weaponLocal(t,[s.x,s.y,s.z],now),e=w.extents||[w.rad,w.rad,w.rad];
+  const nearest=p.map((v,i)=>Math.max(-e[i],Math.min(e[i],v))),delta=V.sub(p,nearest);let d=V.len(delta),n;
+  if(d>sr)return;
+  if(d<1e-6){const gaps=p.map((v,i)=>e[i]-Math.abs(v)),i=gaps.indexOf(Math.min(...gaps));n=[0,0,0];n[i]=p[i]>=0?1:-1;d=-gaps[i];}
+  else n=V.mul(delta,1/d);
+  const normal=V.norm(V.sub(gunWorld(t,n,now),[w.x,w.y,w.z])),sv=[Math.cos(s.yaw)*(s.v||0),s.vy||0,Math.sin(s.yaw)*(s.v||0)],wv=[w.vx,w.vy,w.vz],closing=-V.dot(V.sub(sv,wv),normal),ms=debrisMass(s),mw=debrisMass(w),inv=1/ms+1/mw;
+  const correction=Math.min(4,Math.max(0,sr-d)*.18);s.x+=normal[0]*correction*mw/(ms+mw);s.y+=normal[1]*correction*mw/(ms+mw);s.z+=normal[2]*correction*mw/(ms+mw);
+  w.x-=normal[0]*correction*ms/(ms+mw);w.y-=normal[1]*correction*ms/(ms+mw);w.z-=normal[2]*correction*ms/(ms+mw);
+  if(closing<=0)return;
+  const impulse=1.08*closing/inv;
+  w.vx-=normal[0]*impulse/mw;w.vy-=normal[1]*impulse/mw;w.vz-=normal[2]*impulse/mw;
+  s.v+=(normal[0]*Math.cos(s.yaw)+normal[2]*Math.sin(s.yaw))*impulse/ms;s.vy=(s.vy||0)+normal[1]*impulse/ms;
+  const lever=Math.min(w.rad*.12,V.len(nearest)),torque=impulse*lever/(.4*mw*Math.max(4,w.rad*w.rad));
+  w.spin=Math.max(-debrisSpinLimit(w),Math.min(debrisSpinLimit(w),(w.spin||0)+torque*Math.sign(V.dot(normal,[1,.3,-1])||1)));
+  if(now-(s.bumpT||-9)>.3){s.bumpT=now;debrisStrike(s,w.rad>sr,closing,now);if(closing>20)damageDebris(w,Math.min(3,closing/35),now,gunWorld(t,nearest,now));}
+}
+
+function debrisStrike(s,bigBit,closing,now){
+  if(closing<=0)return;
+  const fraction=Math.min(1,Math.pow(closing/120,2))*(bigBit?1:.18);
+  wound(s,s.hpMax*fraction,null,now);
 }
 function collide(now){
   /* two grids, not one: ships shove ships pair-by-pair (few per cell),
@@ -12052,6 +12219,8 @@ function collide(now){
   for(const w of wrecks)if(!w.pending&&!w.gone)put2(wgrid,w);
   for(const s of ships){
     if(s.dead||!s.vao||s.grace)continue;
+    for(const w of wrecks){if(Math.hypot(s.x-w.x,s.y-w.y,s.z-w.z)<(w.rad||8)+(s.rad||8))shipWreckContact(s,w,now);if(s.dead)break;}
+    if(s.dead)continue;
     const cutS=(RACE_DEFS[s.race]||{}).fire==="cutter";
     const sr=Math.max(s.rad||8,hullBerth(s)*(cutS?0.50:0.38));
     /* the caution ledger: every near thing this pass writes an offset the
@@ -12151,58 +12320,6 @@ function collide(now){
         o.x-=dx*inv*pen*0.55;o.y-=dy*inv*pen*0.55;o.z-=dz*inv*pen*0.55;
       }
       if(s.dead)continue;
-      const wcell=wgrid.get(kk);
-      if(wcell){
-        const wn=Math.min(wcell.length,10);
-        for(let k9=0;k9<wn;k9++){
-          const o=wcell[k9];
-          const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
-          const rb=sr+(o.rad||6),d2=dx*dx+dy*dy+dz*dz;
-          if(d2<rb*rb*3.24&&d2>1e-6&&now-o.t0>1.2){
-            const d=Math.sqrt(d2);
-            avSee(dx,dy,dz,d,(1-d/(rb*1.8))*10);
-          }
-          if(d2>rb*rb||d2<1e-6)continue;
-          const d=Math.sqrt(d2),inv=1/d;
-          /* a newborn piece rides inside her own fireball: traffic cannot
-             touch her until the cloud has opened — this was the mystery
-             half-second jerk, squadmates sweeping through fresh debris */
-          if(now-o.t0<1.8)continue;
-          /* the law arrives gently even for traffic: the ram eases in over
-             the second after the grace, so a squadmate overlapping a piece
-             at expiry shoves her aside — never detonates her */
-          const ramW=Math.min(1,(now-o.t0-1.8)/1.0);
-          /* physical ramming: an impulse along the closing velocity, ADDED
-             to what the piece already carries — a graze nudges, a head-on
-             ram sends it flying, and nothing ever snaps to a new vector */
-          const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
-          const appr=(svx-o.vx)*(-dx*inv)+((s.vy||0)-o.vy)*(-dy*inv)+(svz-o.vz)*(-dz*inv);
-          if(appr>4){
-            /* the shove is continuous: a small kick every contact tick
-               instead of one big one every 0.3 s — same momentum flow,
-               never a sampled jolt */
-            const imp=appr*0.12*ramW;
-            o.vx+=-dx*inv*imp+svx*0.02*ramW;
-            o.vy+=-dy*inv*imp*0.6;
-            o.vz+=-dz*inv*imp+svz*0.02*ramW;
-            o.spin*=1+0.06*ramW;
-            if(appr*ramW>18&&now-(o.kickT||0)>0.3){
-              o.kickT=now;
-              o.integ=(o.integ||2)-(appr*ramW>34?2:1);
-              dustBurst((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,
-                o.vx*0.5,o.vy*0.5,o.vz*0.5,3,now);
-              if(o.integ<=0)o.shatter=true;
-            }
-          }
-          if(ramW>0.3&&now-(s.bumpT||0)>0.28){
-            s.bumpT=now;s.hurtT=now;
-            const bigBit=(o.rad||6)>Math.max(10,sr*0.7);
-            flash((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,now,bigBit?16:7,2);
-            debrisStrike(s,bigBit,appr*ramW,now);
-            if(s.dead)break;
-          }
-        }
-      }
       const bcell=boneGrid.get(kk);
       if(bcell)for(const o of bcell){
         const dx=s.x-o.x,dy=s.y-o.y,dz=s.z-o.z;
@@ -12254,20 +12371,16 @@ function collide(now){
         o.x-=dx*pen;o.y-=dy*pen;o.z-=dz*pen;
         /* smooth and inelastic: the two share momentum and part gently —
            no piece ever slams from flight to a standstill */
-        const bl=0.16*ramp,sep=1.2*ramp;
-        const avx=(w.vx+o.vx)*0.5,avy=(w.vy+o.vy)*0.5,avz=(w.vz+o.vz)*0.5;
-        w.vx+=(avx-w.vx)*bl+dx*inv2*sep;
-        w.vy+=(avy-w.vy)*bl+dy*inv2*sep;
-        w.vz+=(avz-w.vz)*bl+dz*inv2*sep;
-        o.vx+=(avx-o.vx)*bl-dx*inv2*sep;
-        o.vy+=(avy-o.vy)*bl-dy*inv2*sep;
-        o.vz+=(avz-o.vz)*bl-dz*inv2*sep;
-        const sd=1-0.05*ramp;w.spin*=sd;o.spin*=sd;
+        const mw=debrisMass(w),mo=debrisMass(o),closing=-(rvx*dx+rvy*dy+rvz*dz)*inv2;
+        const avx=(w.vx*mw+o.vx*mo)/(mw+mo),avy=(w.vy*mw+o.vy*mo)/(mw+mo),avz=(w.vz*mw+o.vz*mo)/(mw+mo);
+        if(closing>0){const impulse=closing/(1/mw+1/mo)*ramp;
+          w.vx+=dx*inv2*impulse/mw;w.vy+=dy*inv2*impulse/mw;w.vz+=dz*inv2*impulse/mw;
+          o.vx-=dx*inv2*impulse/mo;o.vy-=dy*inv2*impulse/mo;o.vz-=dz*inv2*impulse/mo;}
         /* a hard knock chips the smaller piece; enough chips and she
            crumbles — downward, into dust, never into nothing. The chip
            obeys the same ramp: no piece crumbles the instant the law
            arrives */
-        if(rel*ramp>22){
+        if(closing*ramp>22){
           const sm=(w.rad<o.rad)?w:o;
           sm.integ=(sm.integ||2)-1;
           dustBurst((w.x+o.x)*0.5,(w.y+o.y)*0.5,(w.z+o.z)*0.5,avx,avy,avz,3,now);
@@ -13809,7 +13922,7 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
 function disposeShips(){
   for(const s of ships)if(s.vao){gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);}
   for(const w of wrecks){gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);}
-  wrecks=[];
+  wrecks=[];debrisQueue=[];
   for(const b of boneyard){gl.deleteVertexArray(b.vao);gl.deleteBuffer(b.vbo);gl.deleteBuffer(b.ibo);}
   boneyard=[];pendV=[];pendI=[];pendBase=0;lastBake=0;boneGrid=new Map();pendVX=0;pendVY=0;pendVZ=0;pendN=0;
   mines=[];missiles=[];ionState=[null,null];ionNext=[Infinity,Infinity];tracers=[];dusts=[];plasmas=[];
@@ -14000,72 +14113,8 @@ function onWorkerMsg(e){
   const d=e.data;
   if(d.genId!==genId)return;
   if(d.kind==="wreck"){
-    const s=ships[d.id];
-    if(!s)return;
-    const cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
-    /* the swap is rigid-body honest: the corpse has drifted AND turned
-       since she died, so every piece spawns exactly where the tumbling
-       hull put it, keeps the hull's orientation at the instant of the
-       split, and inherits its spin as tangential velocity. The cloud
-       then travels while it slowly opens — a breakup, not a detonation. */
-    const dtc=Math.max(0,battleTime-(s.deadT||0));
-    const dax=s.dax||[0,1,0];
-    const angT=(s.dang||0)+dtc*(s.corpseSpin||0);
-    const caT=Math.cos(angT),saT=Math.sin(angT);
-    const rod=v=>{
-      const dot2=dax[0]*v[0]+dax[1]*v[1]+dax[2]*v[2];
-      return [
-        v[0]*caT+(dax[1]*v[2]-dax[2]*v[1])*saT+dax[0]*dot2*(1-caT),
-        v[1]*caT+(dax[2]*v[0]-dax[0]*v[2])*saT+dax[1]*dot2*(1-caT),
-        v[2]*caT+(dax[0]*v[1]-dax[1]*v[0])*saT+dax[2]*dot2*(1-caT)];
-    };
-    const axW=[cy*dax[0]-sy*dax[2],dax[1],sy*dax[0]+cy*dax[2]];
-    const shipSp=Math.hypot(s.dvx||0,s.dvy||0,s.dvz||0);
-    /* a frigate sheds bits, not just mist — and each race burns its own
-       way: the shadows dissolve, the borg cleave off in solid blocks */
-    let dustFrac=s.slen>90?0.16:0.28;
-    if(RACE_DEFS[s.race]&&RACE_DEFS[s.race].dust!==undefined)dustFrac=RACE_DEFS[s.race].dust;
-    for(const f2 of d.frags){
-      const rl0=rod([f2.ox,f2.oy,f2.oz]);
-      const wox=cy*rl0[0]-sy*rl0[2],woy=rl0[1],woz=sy*rl0[0]+cy*rl0[2];
-      const rl=Math.hypot(wox,woy,woz)||1;
-      const sp3=s.corpseSpin||0;
-      const tvx=sp3*(axW[1]*woz-axW[2]*woy);
-      const tvy=sp3*(axW[2]*wox-axW[0]*woz);
-      const tvz=sp3*(axW[0]*woy-axW[1]*wox);
-      const outw=(6+Math.random()*10)+shipSp*0.15+Math.max(0,40-s.slen)*0.25;
-      const fvx=(s.dvx||0)+tvx+wox/rl*outw+(Math.random()-0.5)*5;
-      const fvy=(s.dvy||0)+tvy+woy/rl*outw*0.7+(Math.random()-0.5)*4;
-      const fvz=(s.dvz||0)+tvz+woz/rl*outw+(Math.random()-0.5)*5;
-      if(Math.random()<dustFrac){
-        dustBurst(s.x+wox,s.y+woy,s.z+woz,fvx,fvy,fvz,10,battleTime);
-        continue;
-      }
-      const vao=gl.createVertexArray(),vbo=gl.createBuffer(),ibo=gl.createBuffer();
-      gl.bindVertexArray(vao);
-      gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
-      gl.bufferData(gl.ARRAY_BUFFER,f2.v,gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(0);
-      gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,f2.i,gl.STATIC_DRAW);
-      gl.bindVertexArray(null);
-      wrecks.push({vao,vbo,ibo,icount:f2.i.length,v:f2.v,i:f2.i,rad:Math.max(3,f2.r||6),
-        x:s.x+wox,y:s.y+woy,z:s.z+woz,yaw:s.yaw,
-        bax:[dax[0],dax[1],dax[2]],bang:angT,uid:wreckUid++,
-        vx:fvx,vy:fvy,vz:fvz,
-        /* her tumble continues through the break: the piece's axis leans
-           toward the hull's, its rate near the hull's, sized to the mass */
-        ax:V.norm([dax[0]+(Math.random()-0.5)*0.7,
-                   dax[1]+(Math.random()-0.5)*0.7,
-                   dax[2]+(Math.random()-0.5)*0.7]),
-        spin:(s.corpseSpin||0)*0.8
-             +(0.15+Math.random()*0.5)*Math.min(1,14/Math.sqrt((f2.r||6)+4))
-              *(Math.random()<0.5?-1:1),
-        t0:battleTime,integ:2+((Math.random()*2)|0)+((f2.r||6)>10?1:0),life:32+Math.random()*16,baked:false});
-    }
-    if(s.vao){gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);s.vao=null;}
-    return;
+    const s=ships[d.id];if(!s||!s.dead||s.disabled)return;
+    s.fragData=d.frags;spawnBreakup(s,battleTime);return;
   }
   for(const rec of d.out){
     const s=ships[rec.id],m=rec.mesh;
@@ -14084,6 +14133,7 @@ function onWorkerMsg(e){
     s.ringX=rec.ringX||0;s.ringW=rec.ringW||0;   /* earthforce turns a ring here */
     s.guns=rec.guns||[];s.gunI=0;
     s.fragData=rec.frags||null;
+    s.hullMesh=s.slen>=180?{v:m.v,i:m.i}:null;
     s.rad=Math.max(s.slen*0.32,(rec.meta.beam||0)*0.38,(rec.meta.height||0)*0.38);
     /* her true half-extents, for the wall test: a cube is wall at the
        face and a blade is thin — one radius fits neither */
@@ -14491,7 +14541,7 @@ function thoughtLine(s,now){
     if(s.hulls)return "the sky is lost. the hull still speaks.";
     return "the sky is lost. going down with the line.";
   }
-  if(s.ai)return (s.cloaked?"Cloak holding. ":"")+s.ai.reason+". "+
+  if(s.ai)return (s.cloaked?"Cloak holding. ":"")+(s.debrisAction?s.debrisAction+". ":"")+s.ai.reason+". "+
     Array.from(s.ai.contacts.values()).filter(c=>c.direct).length+" contacts in view.";
   if(s.cloaked)return "silent. cloak holding. the first shot burns it away.";
   if((RACE_DEFS[s.race]||{}).unique){
@@ -14628,7 +14678,7 @@ function beamWid(s,heavy){
 let camKick=0;
 function kickCam(n){camKick=Math.max(camKick,n);}
 function dustBurst(x,y,z,vx,vy,vz,n,t0){
-  for(let i=0;i<n;i++)
+  for(let i=0;i<n&&dusts.length<1800;i++)
     dusts.push({x:x+(Math.random()-0.5)*10,y:y+(Math.random()-0.5)*10,z:z+(Math.random()-0.5)*10,
       vx:vx*0.5+(Math.random()-0.5)*8,vy:vy*0.5+(Math.random()-0.5)*8,
       vz:vz*0.5+(Math.random()-0.5)*8,t0});
@@ -14860,8 +14910,9 @@ function trackBarrels(now){
     if(s.dead||!s.vao||!s.weaponTracks)continue;
     for(const track of s.weaponTracks.values()){
       if(track.holdUntil>now){turretTrack(s,track.muz,track.holdPoint,now,-1);continue;}
-      const t=ships[track.target];
-      if(!t||t.dead||!battleAI.fireable(s,t,now)||!mountFaces(s,t,track.muz,now))continue;
+      const dw=track.target<0?wrecks.find(w=>-1-w.uid===track.target&&!w.gone&&!w.dustT):null;
+      const t=dw?debrisProxy(dw):ships[track.target];
+      if(!t||t.dead||(!dw&&!battleAI.fireable(s,t,now))||!mountFaces(s,t,track.muz,now))continue;
       const p=weaponProfile(s),origin=gunWorld(s,track.muz,now);
       const aim=p.mode==='bolt'?interceptPoint(s,t,p.speed,origin):aimSkin({x:origin[0],y:origin[1],z:origin[2]},t);
       turretTrack(s,track.muz,aim,now,t.id);
@@ -14973,7 +15024,7 @@ function turretTrack(s,muz,aim,now,target){
 }
 function interceptPoint(s,t,speed,origin){
   const o=origin||[s.x,s.y,s.z],r=V.sub([t.x,t.y,t.z],o);
-  const v=[Math.cos(t.yaw)*(t.v||0),t.vy||0,Math.sin(t.yaw)*(t.v||0)];
+  const v=t.debris?[t.vx||0,t.vy||0,t.vz||0]:[Math.cos(t.yaw)*(t.v||0),t.vy||0,Math.sin(t.yaw)*(t.v||0)];
   const a=V.dot(v,v)-speed*speed,b=2*V.dot(r,v),c=V.dot(r,r),disc=b*b-4*a*c;
   let time=0;
   if(Math.abs(a)<1e-6){if(b<0)time=-c/b;}
@@ -15045,7 +15096,8 @@ function pinBeams(now){
     const s=ships[b.from];
     if(!s||s.dead||!s.vao){if(b.coherent)b.t0=-Infinity;continue;}
     if(b.coherent){
-      const t=ships[b.target];
+      const dw=b.debrisUid==null?null:wrecks.find(w=>w.uid===b.debrisUid&&!w.gone&&!w.dustT);
+      const t=b.debrisUid==null?ships[b.target]:(dw?debrisProxy(dw):null);
       if(!t||t.dead||t.grace||!mountFaces(s,t,b.muz,now)){b.t0=-Infinity;continue;}
       b.a=weaponMuzzle(s,b.muz,now);
       if(weaponProfile(s).fixed){
@@ -15100,6 +15152,12 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
       t0:now,life:Math.min(10,Math.max(.6,dist/speed+.35)),side:s.side,race:s.race,from:s.id,
       dead:false,energy:true,damage:dmg||1,heavy:!!heavy,width:profile.width,col:profile.color});
     return true;
+  }
+  const obstacle=firstDebrisHit(o,shot.aim,now,profile.width,s.id),victim=weaponSegmentHit(o,shot.aim,t,now,profile.width);
+  if(obstacle&&(victim===null||obstacle.u<victim)){
+    const hit=lerp3(o,shot.aim,obstacle.u);
+    pushFork(s,shot.muz,o,hit,{t0:now,target:-1-obstacle.w.uid,debrisUid:obstacle.w.uid,life:profile.duration,wid:profile.width,col:profile.color});
+    damageDebris(obstacle.w,dmg||1,now,hit);return true;
   }
   const miss=combatRandom()>battleAI.hitChance(s,t,dist,now);
   let aim=shot.aim;
@@ -15540,66 +15598,27 @@ function foSpeak(s,now,dt){
   }
 }
 function spawnBreakup(s,now){
-  /* her pieces were carved at the forge: the instant she dies they exist,
-     in her exact pose, sharing her velocity and her turn — the hull
-     becomes its parts in a single frame, and none of it is mist */
-  const fr=s.fragData;
-  if(!fr||!fr.length)return;
+  const fr=s.fragData;if(!fr||!fr.length)return;
   s.fragData=null;
-  const cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
-  const dax=s.dax||[0,1,0];
-  const angT=s.dang||0;
-  const caT=Math.cos(angT),saT=Math.sin(angT);
-  const rod=v=>{
-    const dot2=dax[0]*v[0]+dax[1]*v[1]+dax[2]*v[2];
-    return [
-      v[0]*caT+(dax[1]*v[2]-dax[2]*v[1])*saT+dax[0]*dot2*(1-caT),
-      v[1]*caT+(dax[2]*v[0]-dax[0]*v[2])*saT+dax[1]*dot2*(1-caT),
-      v[2]*caT+(dax[0]*v[1]-dax[1]*v[0])*saT+dax[2]*dot2*(1-caT)];
-  };
-  const sp3=s.yawV||0;                     /* her turn carries into the throw */
-  const shipSp=Math.hypot(s.dvx||0,s.dvy||0,s.dvz||0);
-  for(const f2 of fr){
-    const rl0=rod([f2.ox,f2.oy,f2.oz]);
-    const wox=cy*rl0[0]-sy*rl0[2],woy=rl0[1],woz=sy*rl0[0]+cy*rl0[2];
-    const rl=Math.hypot(wox,woy,woz)||1;
-    const tvx=sp3*(-woz),tvz=sp3*(wox);
-    const outw=(6+debrisRandom()*10)+shipSp*0.15+Math.max(0,40-s.slen)*0.25;
-    const fvx=(s.dvx||0)+tvx+wox/rl*outw+(debrisRandom()-0.5)*5;
-    const fvy=(s.dvy||0)+woy/rl*outw*0.7+(debrisRandom()-0.5)*4;
-    const fvz=(s.dvz||0)+tvz+woz/rl*outw+(debrisRandom()-0.5)*5;
-    const vao=gl.createVertexArray(),vbo=gl.createBuffer(),ibo=gl.createBuffer();
-    gl.bindVertexArray(vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
-    gl.bufferData(gl.ARRAY_BUFFER,f2.v,gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,f2.i,gl.STATIC_DRAW);
-    gl.bindVertexArray(null);
-    wrecks.push({vao,vbo,ibo,icount:f2.i.length,v:f2.v,i:f2.i,rad:Math.max(3,f2.r||6),
-      x:s.x+wox,y:s.y+woy,z:s.z+woz,yaw:s.yaw,
-      bax:[dax[0],dax[1],dax[2]],bang:angT,uid:wreckUid++,src:s.id,ang:0,
-      vx:fvx,vy:fvy,vz:fvz,
-      ax:V.norm([dax[0]+(debrisRandom()-0.5)*0.7,
-                 dax[1]+(debrisRandom()-0.5)*0.7,
-                 dax[2]+(debrisRandom()-0.5)*0.7]),
-      spin:sp3*0.6+(0.15+debrisRandom()*0.5)
-            *Math.min(1,14/Math.sqrt((f2.r||6)+4))*(debrisRandom()<0.5?-1:1),
-      t0:battleTime,integ:2+((debrisRandom()*2)|0)+((f2.r||6)>10?1:0),
-      life:32+debrisRandom()*16,baked:false});
-  }
+  const room=Math.max(0,Math.min(64-debrisQueue.length,DEBRIS_LIMIT-wrecks.length-debrisQueue.length));
+  const cat=s.destruction==='catastrophic',target=Math.min(room,cat&&s.slen>=180?DEBRIS_BREAKUP:6);
+  if(target<1){dustBurst(s.x,s.y,s.z,s.dvx||0,s.dvy||0,s.dvz||0,12,now);return;}
+  for(const f of fractureMesh(fr,target))debrisQueue.push(wreckRecord(s,f,now,cat));
 }
 function kill(t,now){
   if(t.dead)return;      /* a tracer already in flight cannot kill her twice */
   t.dead=true;
   if(t.lastHit!=null&&ships[t.lastHit]&&!ships[t.lastHit].dead)
     ships[t.lastHit].kills=(ships[t.lastHit].kills||0)+1;
-  const dv=t.v||t.spd*0.5;
+  const dv=t.v??((t.spd||0)*.5);
   t.dvx=Math.cos(t.yaw)*dv;t.dvy=t.vy||0;t.dvz=Math.sin(t.yaw)*dv;
   const dp=xPose(t,now);t.dax=dp.ax;t.dang=dp.ang;
-  boom(t,now);
-  spawnBreakup(t,now);
+  t.deadT=now;
+  const catastrophic=t.destroyMode==='catastrophic'||(t.destroyMode!=='disabled'&&(t.slen<180||-t.hp/Math.max(1,t.hpMax)>.18||debrisRandom()<.6));
+  if(catastrophic||!disableHull(t,now)){
+    t.destruction='catastrophic';boom(t,now);spawnBreakup(t,now);
+  }
+  t.hullMesh=null;
   if(t.vao){gl.deleteVertexArray(t.vao);gl.deleteBuffer(t.vbo);gl.deleteBuffer(t.ibo);t.vao=null;}
   counts[t.side]--;
   if(sel===t.id)select(null);
@@ -15653,6 +15672,7 @@ function ionWarning(lock,g,now){
 }
 function megaStep(s,now,dt){
   battleAI.moveCapital(s,now,dt);
+  if(now<(s.clearingUntil||0))return;
   const RD=RACE_DEFS[s.race]||RACE_DEFS[0];
   const slicer=RD.fire==="slicer",borgGun=RD.fire==="cutter"&&!!s.hulls;
   if((RACE_DEFS[s.race]||{}).unique){foSpeak(s,now,dt);return;}
@@ -16107,6 +16127,7 @@ function simStep(now,dt){
       s.err[1]=Math.max(-7,Math.min(7,s.err[1]+Math.sin(now*0.08+(s.wf2||0))*dt*1.1));
       s.err[2]=Math.max(-10,Math.min(10,s.err[2]+Math.cos(now*0.10+(s.wf||1))*dt*1.6));
     }
+    debrisPilot(s,now);fireAtDebris(s,now);
     if(fightsAsCrown(s)){megaStep(s,now,dt);continue;}
     const sq=s.squad>=0?squads[s.squad]:null;
     const plan=battleAI.destination(s,now,false);
@@ -16118,6 +16139,7 @@ function simStep(now,dt){
         goal=fighterPassGoal(s,target,now);liningUp=now>=(s.passUntil||0);
       }
     }
+    if(s.debrisGoal&&now<s.debrisUntil){goal=s.debrisGoal;liningUp=false;}
     const mood=craftMood(s,now);s.mood=mood;
     let prefer=plan.target;
     s.form=plan.mode==="REGROUP"||plan.mode==="ESCORT";
@@ -16185,6 +16207,7 @@ function simStep(now,dt){
       if(now-s.hurtT<1.6)
         want=Math.min(s.spdMax||s.spd*1.3,want*1.22+5);
 
+      if(s.debrisGoal&&now<s.debrisUntil)want*=s.debrisBrake;
       if(s.stunT&&now<s.stunT){
         want*=0.36;
         s.yawV*=Math.max(0,1-dt*2.4);
@@ -16200,7 +16223,7 @@ function simStep(now,dt){
     }
     /* fire at the squadron's mark first, else whatever crosses the sights.
        Range is to the skin, so a White Star on a First One can actually shoot. */
-    if(s.cool<=0){
+    if(s.cool<=0&&now>=(s.clearingUntil||0)){
       let rng=s.hero?Math.max(250,Math.min(400,(s.slen||40)*.7+210)):isGunboat(s)?340:s.slen>90?280:210;
       if(weaponProfile(s).fixed)rng=Math.max(rng,420);
       const fx0=(RACE_DEFS[s.race]||{}).fire;
@@ -16252,6 +16275,8 @@ function simStep(now,dt){
     const a=[pl.x,pl.y,pl.z],b=[pl.x+pl.vx*dt,pl.y+pl.vy*dt,pl.z+pl.vz*dt];
     let hit=null,u=Infinity;
     for(const t of foeCache[1-pl.side]){if(t.dead||t.grace)continue;const h=weaponSegmentHit(a,b,t,now,3);if(h!==null&&h<u){hit=t;u=h;}}
+    const obstacle=firstDebrisHit(a,b,now,3,pl.from);
+    if(obstacle&&obstacle.u<u){const p=lerp3(a,b,obstacle.u);[pl.x,pl.y,pl.z]=p;damageDebris(obstacle.w,2,now,p);pl.dead=true;continue;}
     const point=hit?lerp3(a,b,u):b;[pl.x,pl.y,pl.z]=point;
     if(hit){
       pl.dead=true;flash(...point,now,70,2);wound(hit,2,pl.from,now);
@@ -16271,6 +16296,8 @@ function simStep(now,dt){
       const h=weaponSegmentHit(a,b,t,now,tr.energy?tr.width:1);
       if(h!==null&&h<u){u=h;hit=t;}
     }
+    const obstacle=firstDebrisHit(a,b,now,tr.energy?tr.width:1,tr.from);
+    if(obstacle&&obstacle.u<u){const p=lerp3(a,b,obstacle.u);[tr.x,tr.y,tr.z]=p;damageDebris(obstacle.w,tr.damage||.3,now,p);tr.dead=true;continue;}
     const point=hit?lerp3(a,b,u):b;[tr.x,tr.y,tr.z]=point;
     if(hit){
       const source=ships[tr.from];
@@ -16350,18 +16377,7 @@ function simStep(now,dt){
   if(flashes.length>1400)flashes.splice(0,flashes.length-1400);
 }
 function stepBattleWrecks(now,dt){
-  /* last resort: a massacre can flood the GPU. Oldest pieces begin to
-     dust — they do not vanish — and only a couple per simulation tick, so the
-     sky thins as grit, not as a cut. */
-  let liveW=0;
-  for(const w of wrecks)if(!w.pending&&!w.gone&&!w.dustT)liveW++;
-  if(liveW>2200){let marks=0;for(const w of wrecks){
-    if(w.pending||w.gone||w.shatter||w.dustT)continue;
-    w.shatter=true;
-    if(--liveW<=2200||++marks>=2)break;
-  }}
-  if(pendI.length&&(now-lastBake>1.6||pendI.length>500000)){lastBake=now;bakeBoneyard();}
-
+  uploadDebris(now);
   let anyGone=false;
   for(const w of wrecks){
     if(w.gone)continue;
@@ -16369,6 +16385,7 @@ function stepBattleWrecks(now,dt){
       /* a piece coasts. She does not expire on a clock. Only a last-resort
          cull, or a knock that spends her integrity, turns her to dust —
          and even then she speckles away, she does not blink out. */
+      if(now-w.t0>(w.life||70))w.shatter=true;
       if(w.shatter&&!w.dustT){
         w.dustT=now;w.dustDur=3.0+debrisRandom()*1.8;w.dustNext=now;
       }
@@ -16383,17 +16400,7 @@ function stepBattleWrecks(now,dt){
           w.gone=true;anyGone=true;continue;
         }
       }
-      const wsp=Math.hypot(w.vx,w.vy,w.vz);
-      if(wsp<1.2){
-        if(wsp>0.05){const f3=1.2/wsp;w.vx*=f3;w.vy*=f3;w.vz*=f3;}
-        else{const a5=debrisRandom()*6.283;
-          w.vx=Math.cos(a5)*1.2;w.vy=(debrisRandom()-0.5)*0.8;w.vz=Math.sin(a5)*1.2;}
-      }
-      w.x+=w.vx*dt;w.y+=w.vy*dt;w.z+=w.vz*dt;
-      /* tumble rides the same clamped clock as travel: a hitch (death
-         frames upload 2-6 fresh meshes) can no longer lurch the spin
-         ahead of the drift */
-      if(w.ang!=null)w.ang+=w.spin*dt;
+      integrateDebris(w,Math.max(0,now-(w.integratedAt??(now-dt))));w.integratedAt=now;
     }
   }
   if(anyGone)wrecks=wrecks.filter(w=>!w.gone);
