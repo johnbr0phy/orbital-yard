@@ -94,7 +94,7 @@
     senses(s) {
       const a=this.seedShip(s);
       if(a.sensor&&a.sensor.length===s.slen)return a.sensor;
-      return a.sensor={length:s.slen,range:a.profile.range+(capital(s)?radius(s)*.85:Math.min(600,(s.slen||30)*.30)),
+      return a.sensor={length:s.slen,range:a.profile.range+(capital(s)?radius(s):Math.min(600,(s.slen||30)*.30)),
         fov:Math.min(360,a.profile.fov+(capital(s)?35:0)),
         interval:(.44+(1-a.traits.skill)*.50)*(s.hulls?.9:1)};
     }

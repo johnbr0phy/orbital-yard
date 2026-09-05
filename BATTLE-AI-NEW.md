@@ -1,5 +1,8 @@
 # Fleet minds for the tribute simulation
 
+See [WEAPONS-NEW.md](WEAPONS-NEW.md) for the subsequent weapons overhaul,
+small-fleet controls and current bounded validation limits.
+
 `armada-war-tribute-new.html` loads `armada-battle-ai-new.js` beside it. Keep both files
 when copying or publishing this variant. There are no packages or build steps
 for the playable page. The other Armada variants keep their existing behaviour.

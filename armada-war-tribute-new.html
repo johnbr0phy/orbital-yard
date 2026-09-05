@@ -245,9 +245,10 @@ body.intro #wasd{
 <div class="hud" id="wasd"><b>W</b><b>A</b><b>S</b><b>D</b> fly &nbsp;·&nbsp; <b>Q</b><b>E</b> climb &amp; dive</div>
 <div class="hud" id="score"></div>
 <div id="bar">
-  <button data-n="150">150</button>
+  <button data-n="24">24</button>
+  <button data-n="150" class="on">150</button>
   <button data-n="300">300</button>
-  <button data-n="600" class="on">600</button>
+  <button data-n="600">600</button>
   <label id="camCtl" title="Wheel, pinch and fly speed — lower is more precise">ZOOM
     <input id="camLook" type="range" min="1" max="7" value="2">
   </label>
@@ -266,9 +267,10 @@ body.intro #wasd{
     <div class="col"><h2>SECOND ADMIRALTY</h2><div id="pickB"></div><div class="ally">ALLY<select id="allyB"></select></div></div>
   </div>
   <div class="sizes">FLEET SIZE
-    <button type="button" data-n="150">150</button>
+    <button type="button" data-n="24">24</button>
+    <button type="button" data-n="150" class="on">150</button>
     <button type="button" data-n="300">300</button>
-    <button type="button" data-n="600" class="on">600</button>
+    <button type="button" data-n="600">600</button>
   </div>
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
@@ -12064,7 +12066,7 @@ function ensureWorkers(){
   if(SRC==null)SRC=document.querySelector("script").textContent;
   const cut=SRC.indexOf(MARK);
   const url=URL.createObjectURL(new Blob([SRC.slice(0,cut)+WORKER_MAIN],{type:"text/javascript"}));
-  const n=Math.min(8,Math.max(2,(navigator.hardwareConcurrency||4)-1));
+  const n=1; // Forge serially: keep CPU and peak geometry memory bounded.
   for(let i=0;i<n;i++){
     const w=new Worker(url);
     w.onmessage=onWorkerMsg;
@@ -12430,7 +12432,7 @@ function bakeBoneyard(){
   }
   wrecks=wrecks.filter(w2=>!w2.gone);
 }
-let perFleet=600,warSeed=(Math.random()*4294967296)|0;
+let perFleet=150,warSeed=(Math.random()*4294967296)|0;
 let genId=0,forged=0,total=0,warT0=Infinity,winner=null;
 let counts=[0,0];
 /* five fleets share this sky; every war deals two of them. Each race is a
@@ -12826,12 +12828,11 @@ function gapTo(s,t){
   return Math.max(0,d-skinOf(t)*0.88-(fightsAsCrown(s)?skinOf(s)*.80:0));
 }
 function aimSkin(s,t){
-  const dx=t.x-s.x,dy=t.y-s.y,dz=t.z-s.z;
-  const d=Math.hypot(dx,dy,dz)||1;
-  const skin=skinOf(t)*0.82;
-  if(d<=skin+4)return [t.x,t.y,t.z];
-  const k=skin/d;
-  return [t.x-dx*k,t.y-dy*k,t.z-dz*k];
+  // Aim inside the oriented hull envelope, never at a length-sized sphere
+  // floating hundreds of metres above a narrow ship.
+  const local=weaponLocal(t,[s.x,s.y,s.z],battleTime);
+  const e=weaponExtents(t),q=Math.hypot(local[0]/e[0],local[1]/e[1],local[2]/e[2]);
+  return q>1?gunWorld(t,local.map(v=>v/q*.82),battleTime):[t.x,t.y,t.z];
 }
 function goalAttackRun(s,t,now,br,o,tight){
   /* a fighting pass: line up, bore in with guns hot, break past her
@@ -14028,7 +14029,7 @@ function startWar(fresh){
       built[side]=8;
       continue;
     }
-    const n=Math.max(rd.fleetMin||48,Math.round(perFleet*(rd.fleetK||1)));
+    const n=Math.max(Math.min(perFleet,rd.fleetMin||48),Math.round(perFleet*(rd.fleetK||1)));
     const sm=n-3,mix=rd.mix||[0.72,0.18,0.10];
     let nFtr=Math.max(SQN,Math.floor(sm*mix[0]/SQN)*SQN);
     let nCap=Math.max(1,Math.round(sm*mix[2]));
@@ -14280,7 +14281,7 @@ function onWorkerMsg(e){
     s.hero=s.hero||!!rec.hero||!!(rec.meta&&rec.meta.hero);
     if(s.heroTag&&s.meta&&s.meta.desig&&s.meta.desig.indexOf(s.heroTag)<0)
       s.meta.desig=s.meta.desig+s.heroTag;
-    if(s.hero||(RACE_DEFS[s.race]||{}).unique)s.wpn=0;
+    if(s.race>=5||s.hero||(RACE_DEFS[s.race]||{}).unique)s.wpn=0;
     if(s.meta&&s.meta.klass==="BABYLON 5")
       s.hpMax=s.hp=Math.round(s.hpMax*1.35);
     if(s.hero&&!s.hulls){
@@ -14500,21 +14501,9 @@ function seedMine(s,now){
   mines.push({x:s.x+(combatRandom()-0.5)*20,y:s.y+(combatRandom()-0.5)*14,
     z:s.z+(combatRandom()-0.5)*20,side:s.side,race:s.race,ph:combatRandom()*6.28,dead:false});
 }
-function forkN(s){
-  /* a fighter is one turret, one stem, then it may split. Three
-     lines is the ceiling — twenty is a shotgun. */
-  if(s.hulls||s.hero||(s.slen||0)>=90)return 3;
-  return 2;
-}
 function refreshCut(s,muz,o,aim,now){
-  let n=0;
-  for(const b of beams){
-    if(b.from!==s.id||!b.cut||!b.hold)continue;
-    b.t0=now;b.aim=aim;
-    n++;
-  }
-  if(!n)pushFork(s,muz,o,aim,{t0:now,cut:true,hold:true,heavy:true,
-    wid:beamWid(s,true),nFan:forkN(s),spread:0.042,splitU:0.34});
+  pushFork(s,muz,o,aim,{t0:now,cut:true,hold:true,heavy:true,
+    target:s.cutTgt,wid:weaponProfile(s).width});
 }
 function cutHold(s,now,dt){
   if(!(s.cutUntil&&now<s.cutUntil))return;
@@ -14522,11 +14511,11 @@ function cutHold(s,now,dt){
   const cutR=holdCutRange(s);
   if(ct&&!ct.dead&&ct.vao&&!ct.grace&&battleAI.fireable(s,ct,now)){
     if(gapTo(s,ct)<cutR){
-      const muz=fireLocal(s);
-      const cm=gunWorld(s,muz,now);
-      const hit=aimSkin(s,ct);
+      const solution=weaponSolution(s,ct,now,s.cutMuz);
+      if(!solution)return;
+      const muz=solution.muz,cm=solution.o,hit=solution.aim;
       refreshCut(s,muz,cm,hit,now);
-      wound(ct,dt*(s.wpn===5?1.9:2.6),s,now);
+      if(weaponSegmentHit(cm,hit,ct,now,solution.profile.width)!==null)wound(ct,dt*(s.wpn===5?1.9:2.6),s,now);
       if(ct.dead)s.cutUntil=0;
     }else s.cutUntil=0;
   }else s.cutUntil=0;
@@ -14919,97 +14908,163 @@ function fireWorld(s,now){
 function lerp3(a,b,u){
   return [a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,a[2]+(b[2]-a[2])*u];
 }
-function forkEnd(split,aim,k,n,spread){
-  const dx=aim[0]-split[0],dy=aim[1]-split[1],dz=aim[2]-split[2];
-  const dist=Math.max(8,Math.hypot(dx,dy,dz));
-  const dir=V.norm([dx,dy,dz]);
-  const [u,v]=basis(dir);
-  const kk=n<=1?0:k-(n-1)*0.5;
-  const ang=kk*spread;
-  const d=V.norm([
-    dir[0]+u[0]*Math.sin(ang)+v[0]*Math.sin(ang*0.32),
-    dir[1]+u[1]*Math.sin(ang)+v[1]*Math.sin(ang*0.32),
-    dir[2]+u[2]*Math.sin(ang)+v[2]*Math.sin(ang*0.32)
-  ]);
-  return [split[0]+d[0]*dist,split[1]+d[1]*dist,split[2]+d[2]*dist];
+// Weapons use hull/class hardware; pilot traits still govern the decision to fire.
+function weaponProfile(s){
+  const name=((s.meta&&s.meta.klass)||'')+' '+((s.meta&&s.meta.desig)||'');
+  const fx=(RACE_DEFS[s.race]||RACE_DEFS[0]).fire;
+  const fixed=!s.hulls&&s.slen<120&&!/FALCON|CORVETTE|TRANSPORT|SHUTTLE/i.test(name);
+  const beam=['phaser','song','neutron','slicer','cutter'].includes(fx)&&!(/DEFIANT/i.test(name));
+  return {fx,fixed,mode:beam?'beam':'bolt',
+    width:Math.max(.65,Math.min(12,(s.slen||20)*(beam?.004:.008))),
+    speed:fx==='pulse'?850:fx==='disruptor'?1000:fx==='smart'||fx==='junk'?650:1400,
+    duration:fx==='neutron'?.75:fx==='song'?.65:fx==='phaser'?.48:.32,
+    color:fx==='laser'?[1,.22,.16]:(RACE_DEFS[s.race]||RACE_DEFS[0]).beam};
+}
+function weaponExtents(s){return [Math.max(4,s.exL||s.slen*.5),Math.max(2,s.exY||s.slen*.14),Math.max(2,s.exZ||s.slen*.14)];}
+function weaponLocal(s,p,now){
+  const dx=p[0]-s.x,dy=p[1]-s.y,dz=p[2]-s.z,cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
+  const v=[cy*dx+sy*dz,dy,-sy*dx+cy*dz],pose=xPose(s,now);
+  if(!pose.ang)return v;
+  const c=Math.cos(pose.ang),si=-Math.sin(pose.ang),a=pose.ax,d=V.dot(a,v),cross=V.cross(a,v);
+  return v.map((x,i)=>x*c+cross[i]*si+a[i]*d*(1-c));
+}
+function turretTrack(s,muz,aim,now){
+  const key=muz.join(','),desired=V.norm(V.sub(weaponLocal(s,aim,now),muz));
+  const tracks=s.weaponTracks||(s.weaponTracks=new Map());
+  let track=tracks.get(key);
+  if(!track){const e=weaponExtents(s),n=muz.map((v,i)=>v/(e[i]*e[i]));track={dir:V.len(n)>1e-6?V.norm(n):[1,0,0],at:now-1/30};tracks.set(key,track);}
+  const angle=Math.acos(Math.max(-1,Math.min(1,V.dot(track.dir,desired))));
+  const step=Math.min(.1,Math.max(0,now-track.at))*(s.slen>300?.9:2.4);track.at=now;
+  if(angle<=step)track.dir=desired;
+  else if(step>0){
+    let axis=V.cross(track.dir,desired);if(V.len(axis)<1e-6)axis=basis(track.dir)[0];axis=V.norm(axis);
+    track.dir=V.norm(V.add(V.mul(track.dir,Math.cos(step)),V.mul(V.cross(axis,track.dir),Math.sin(step))));
+  }
+  return Math.acos(Math.max(-1,Math.min(1,V.dot(track.dir,desired))))<.025;
+}
+function interceptPoint(s,t,speed,origin){
+  const o=origin||[s.x,s.y,s.z],r=V.sub([t.x,t.y,t.z],o);
+  const v=[Math.cos(t.yaw)*(t.v||0),t.vy||0,Math.sin(t.yaw)*(t.v||0)];
+  const a=V.dot(v,v)-speed*speed,b=2*V.dot(r,v),c=V.dot(r,r),disc=b*b-4*a*c;
+  let time=0;
+  if(Math.abs(a)<1e-6){if(b<0)time=-c/b;}
+  else if(disc>=0){const roots=[(-b-Math.sqrt(disc))/(2*a),(-b+Math.sqrt(disc))/(2*a)].filter(x=>x>0);if(roots.length)time=Math.min(...roots);}
+  time=Math.min(8,time);
+  return [t.x+v[0]*time,t.y+v[1]*time,t.z+v[2]*time];
+}
+function mountFaces(s,t,muz,now){
+  if(weaponProfile(s).fixed)return true;
+  const e=weaponExtents(s),d=V.sub(weaponLocal(s,[t.x,t.y,t.z],now),muz);
+  const n=muz.map((v,i)=>v/(e[i]*e[i]));
+  if(V.len(n)<1e-6)return true;
+  // A turret can traverse its exposed hemisphere plus 10 degrees,
+  // but cannot shoot backwards through its own hull.
+  return V.dot(V.norm(n),V.norm(d))>=-.17;
+}
+function weaponMount(s,t,now){
+  const gs=s.guns&&s.guns.length?s.guns:[fireLocal(s)];
+  if(weaponProfile(s).fixed)return gs[(s.weaponShot||0)%gs.length];
+  let best=null,score=-Infinity;
+  for(const g of gs){if(!mountFaces(s,t,g,now))continue;const o=gunWorld(s,g,now),d=Math.hypot(o[0]-t.x,o[1]-t.y,o[2]-t.z);if(-d>score){score=-d;best=g;}}
+  return best;
+}
+function weaponSolution(s,t,now,muz){
+  const profile=weaponProfile(s);muz=muz||weaponMount(s,t,now);if(!muz)return null;
+  const o=gunWorld(s,muz,now),aim=profile.mode==='bolt'?interceptPoint(s,t,profile.speed,o):aimSkin({x:o[0],y:o[1],z:o[2]},t);
+  const desired=V.norm(V.sub(aim,o));
+  if(profile.fixed){
+    const forward=V.norm(V.sub(gunWorld(s,[1,0,0],now),[s.x,s.y,s.z]));
+    const d=Math.max(1,V.len(V.sub(aim,o))),e=weaponExtents(t);
+    const cone=Math.min(.30,.035+Math.min(...e)/d);
+    if(V.dot(forward,desired)<Math.cos(cone))return null;
+    // Fixed barrels shoot along the hull axis. They never swivel toward a target.
+    return {o,muz,aim:V.add(o,V.mul(forward,d)),direction:forward,profile};
+  }
+  if(!mountFaces(s,t,muz,now)||!turretTrack(s,muz,aim,now))return null;
+  return {o,muz,aim,direction:desired,profile};
 }
 function pushFork(s,muz,o,aim,flags){
-  /* one stem from the turret, then it splits — not a shotgun from the hull */
-  const n=Math.min(flags.nFan||3,forkN(s));
-  if(flags.hold){
-    let held=0;
-    for(const b of beams)if(b.from===s.id&&b.cut&&b.hold)held++;
-    if(held){
-      for(const b of beams){
-        if(b.from!==s.id||!b.cut||!b.hold)continue;
-        b.t0=flags.t0;b.muz=muz;b.aim=aim;
-      }
-      return;
-    }
-  }
-  const spread=flags.spread||0.046;
-  const splitU=flags.splitU||0.38;
-  const stemW=(flags.wid||2.4)*1.2;
-  const tineW=(flags.wid||2.4)*0.58;
-  const meta={t0:flags.t0,side:s.side,race:s.race,from:s.id,muz,aim,
-    splitU,nFan:n,spread,cut:!!flags.cut,hold:!!flags.hold,heavy:!!flags.heavy,
-    phaser:!!flags.phaser,turbo:!!flags.turbo,pulse:!!flags.pulse,
-    disruptor:!!flags.disruptor,col:flags.col||null};
-  beams.push(Object.assign({},meta,{a:[o[0],o[1],o[2]],b:lerp3(o,aim,splitU),fork:0,wid:stemW}));
-  for(let k=0;k<n;k++){
-    const split=lerp3(o,aim,splitU);
-    beams.push(Object.assign({},meta,{a:split,b:forkEnd(split,aim,k,n,spread),
-      fork:1,fanK:k,wid:tineW}));
-  }
+  // Legacy callers now emit one complete beam per physical mount. No fork,
+  // split stem, or duplicate refreshed segments.
+  if(flags.hold)s.cutMuz=muz.slice();
+  const key=muz.join(','),target=flags.target==null?s.cutTgt:flags.target;
+  let b=flags.hold&&beams.find(b=>b.coherent&&b.hold&&b.from===s.id&&b.mountKey===key);
+  const data={...flags,a:o.slice(),b:aim.slice(),aim:aim.slice(),from:s.id,muz:muz.slice(),
+    mountKey:key,target,side:s.side,race:s.race,coherent:true,life:flags.hold?.12:(flags.life||.5)};
+  if(b)Object.assign(b,data);else beams.push(data);
 }
 function pinBeams(now){
-  /* the muzzle is a mount on the hull, not a point left in the dark */
   for(const b of beams){
-    if(!b.muz||b.from==null||b.spark)continue;
+    if(!b.muz||b.from==null||b.spark||b.rail)continue;
     const s=ships[b.from];
-    if(!s||s.dead||!s.vao)continue;
-    const o=gunWorld(s,b.muz,now);
-    if(b.aim){
-      const u=b.splitU||0.38;
-      if(b.fork===1){
-        const split=lerp3(o,b.aim,u);
-        b.a=split;
-        b.b=forkEnd(split,b.aim,b.fanK||0,b.nFan||3,b.spread||0.046);
-      }else{
-        b.a=o;b.b=lerp3(o,b.aim,u);
-      }
-    }else b.a=o;
+    if(!s||s.dead||!s.vao){if(b.coherent)b.t0=-Infinity;continue;}
+    if(b.coherent){
+      const t=ships[b.target];
+      if(!t||t.dead||t.grace||!mountFaces(s,t,b.muz,now)){b.t0=-Infinity;continue;}
+      b.a=gunWorld(s,b.muz,now);
+      if(weaponProfile(s).fixed){
+        const solution=weaponSolution(s,t,now,b.muz);if(!solution){b.t0=-Infinity;continue;}b.b=solution.aim;
+      }else b.b=b.miss?b.aim:aimSkin({x:b.a[0],y:b.a[1],z:b.a[2]},t);
+    }else if(b.ion||b.arc||b.stun)b.a=gunWorld(s,b.muz,now);
   }
 }
-function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
-  if(!battleAI.fireable(s,t,now))return;
-  s.lastFire=now;
-  muz=muz||fireLocal(s);
-  const o=gunWorld(s,muz,now);
-  const hit=aimSkin(s,t);
-  const ddx=hit[0]-o[0],ddy=hit[1]-o[1],ddz=hit[2]-o[2];
-  const dist=Math.hypot(ddx,ddy,ddz);
-  const p=battleAI.hitChance(s,t,dist,now);
-  const jit=Math.max(8,Math.min(42,t.slen*0.03));
-  const miss=combatRandom()>p;
-  let fx=(RACE_DEFS[s.race]||{}).fire;
-  if(fx==="turbo"&&s.slen<38)fx="laser";
-  const wid=beamWid(s,heavy);
-  let aim=hit;
-  if(miss){
-    const mo=Math.max(14,jit*2.2);
-    aim=[hit[0]+(combatRandom()-0.5)*mo*2.4,
-         hit[1]+(combatRandom()-0.5)*mo*1.2,
-         hit[2]+(combatRandom()-0.5)*mo*2.4];
+function weaponSegmentHit(a,b,t,now,pad=0){
+  const reach=Math.max(...weaponExtents(t))+pad;
+  if(t.x<Math.min(a[0],b[0])-reach||t.x>Math.max(a[0],b[0])+reach||t.y<Math.min(a[1],b[1])-reach||t.y>Math.max(a[1],b[1])+reach||t.z<Math.min(a[2],b[2])-reach||t.z>Math.max(a[2],b[2])+reach)return null;
+  const e=weaponExtents(t).map(v=>v+pad),p=weaponLocal(t,a,now).map((v,i)=>v/e[i]),q=weaponLocal(t,b,now).map((v,i)=>v/e[i]);
+  const d=V.sub(q,p),A=V.dot(d,d),B=2*V.dot(p,d),C=V.dot(p,p)-1;
+  if(C<=0)return 0;if(A<1e-12)return null;
+  const D=B*B-4*A*C;if(D<0)return null;
+  const u=(-B-Math.sqrt(D))/(2*A);return u>=0&&u<=1?u:null;
+}
+function weaponRibbon(a,b,width){
+  const direction=V.sub(b,a),view=V.sub([cam.ex,cam.ey,cam.ez],V.mul(V.add(a,b),.5));
+  let side=V.cross(direction,view);if(V.len(side)<1e-6)side=basis(V.norm(direction))[0];
+  side=V.mul(V.norm(side),width);
+  const p=V.add(a,side),q=V.sub(a,side),r=V.add(b,side),t=V.sub(b,side);
+  return [...p,...q,...r,...r,...q,...t];
+}
+function drawCoherentWeapons(now){
+  const cull=gl.isEnabled(gl.CULL_FACE);gl.disable(gl.CULL_FACE);
+  const groups=new Map();
+  function add(a,b,width,col){
+    const key=col.join(','),g=groups.get(key)||{col,outer:[],core:[]};
+    g.outer.push(...weaponRibbon(a,b,width));g.core.push(...weaponRibbon(a,b,width*.28));groups.set(key,g);
   }
-  pushFork(s,muz,o,aim,{t0:now,wid,heavy:!!heavy,
-    nFan:forkN(s),spread:heavy?0.038:0.048,splitU:0.38,
-    phaser:fx==="phaser"||fx==="song",
-    turbo:fx==="turbo"||!!heavy,
-    pulse:fx==="pulse",
-    disruptor:fx==="disruptor",
-    col:fx==="laser"?[1.0,0.22,0.16]:null});
-  if(miss)return;
+  for(const b of beams)if(b.coherent&&now>=b.t0&&now-b.t0<(b.life||.5))add(b.a,b.b,b.wid||2,b.col||RACE_DEFS[b.race].beam);
+  for(const tr of tracers)if(tr.energy&&!tr.dead&&now>=tr.t0){
+    const age=Math.max(0,now-tr.t0),tail=Math.min(age,.025);
+    add([tr.x-tr.vx*tail,tr.y-tr.vy*tail,tr.z-tr.vz*tail],[tr.x,tr.y,tr.z],tr.width,tr.col);
+  }
+  for(const g of groups.values())for(const [vertices,core] of [[g.outer,false],[g.core,true]]){
+    gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.STREAM_DRAW);
+    const c=g.col;gl.uniform4f(BU.col,core?(c[0]+2)/3:c[0],core?(c[1]+2)/3:c[1],core?(c[2]+2)/3:c[2],core?.95:.35);
+    gl.drawArrays(gl.TRIANGLES,0,vertices.length/3);
+  }
+  if(cull)gl.enable(gl.CULL_FACE);
+}
+function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
+  if(!battleAI.fireable(s,t,now))return false;
+  const shot=weaponSolution(s,t,now,muz);if(!shot)return false;
+  const {o,profile}=shot;s.lastFire=now;s.weaponShot=(s.weaponShot||0)+1;
+  const dist=V.len(V.sub(shot.aim,o));
+  if(profile.mode==='bolt'){
+    const speed=profile.speed,dir=shot.direction;
+    tracers.push({x:o[0],y:o[1],z:o[2],vx:dir[0]*speed,vy:dir[1]*speed,vz:dir[2]*speed,
+      t0:now,life:Math.min(10,Math.max(.6,dist/speed+.35)),side:s.side,race:s.race,from:s.id,
+      dead:false,energy:true,damage:dmg||1,heavy:!!heavy,width:profile.width,col:profile.color});
+    return true;
+  }
+  const miss=combatRandom()>battleAI.hitChance(s,t,dist,now);
+  let aim=shot.aim;
+  if(miss){const side=basis(shot.direction)[0],offset=Math.max(12,Math.min(...weaponExtents(t))*1.3);aim=V.add(aim,V.mul(side,offset));}
+  pushFork(s,shot.muz,o,aim,{t0:now,target:t.id,life:profile.duration,wid:profile.width,
+    col:profile.color,miss,heavy:!!heavy});
+  const impact=weaponSegmentHit(o,aim,t,now,profile.width);
+  if(!miss&&impact!==null)weaponImpact(s,t,now,lerp3(o,aim,impact),dmg||1,heavy);
+  return true;
+}
+function weaponImpact(s,t,now,hit,dmg,heavy){
   flash(hit[0],hit[1],hit[2],now,Math.max(heavy?48:12,Math.min(90,t.slen*(heavy?0.08:0.04))),heavy?3:s.side);
   wound(t,dmg||1,s,now);
   if(heavy){
@@ -15025,42 +15080,54 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
     }
   }
 }
+function tracerBurst(s,t,now,solution,count,speed){
+  const skill=s.ai?s.ai.traits.skill:.5,spread=.004+(1-skill)*.012;
+  for(let i=0;i<count;i++){
+    tracers.push({x:solution.o[0],y:solution.o[1],z:solution.o[2],vx:0,vy:0,vz:0,
+      t0:now+i*.045,life:Math.min(8,Math.max(1.4,V.len(V.sub(solution.aim,solution.o))/speed+.4)),
+      side:s.side,race:s.race,from:s.id,dead:false,launch:true,speed,muz:solution.muz.slice(),target:t.id,
+      spread:[(combatRandom()-.5)*spread,(combatRandom()-.5)*spread]});
+  }
+}
+function launchRound(tr,now){
+  const s=ships[tr.from],t=ships[tr.target];if(!s||s.dead||!s.vao){tr.dead=true;return;}
+  const o=gunWorld(s,tr.muz,now),profile=weaponProfile(s);
+  const forward=V.norm(V.sub(gunWorld(s,[1,0,0],now),[s.x,s.y,s.z]));
+  let dir=profile.fixed?forward:t&&!t.dead&&mountFaces(s,t,tr.muz,now)?V.norm(V.sub(interceptPoint(s,t,tr.speed,o),o)):null;
+  if(!dir){tr.dead=true;return;}
+  // Dispersion is a small angular error around one barrel direction, not
+  // independent, target-sized scatter on all three world axes.
+  const [u,v]=basis(dir);dir=V.norm(V.add(dir,V.add(V.mul(u,tr.spread[0]),V.mul(v,tr.spread[1]))));
+  [tr.x,tr.y,tr.z]=o;[tr.vx,tr.vy,tr.vz]=V.mul(dir,tr.speed);tr.launch=false;
+}
+function plasmaShot(s,t,now,solution,speed,kind){
+  const o=solution.o,dir=solution.profile.fixed?solution.direction:V.norm(V.sub(interceptPoint(s,t,speed,o),o));
+  plasmas.push({x:o[0],y:o[1],z:o[2],vx:dir[0]*speed,vy:dir[1]*speed,vz:dir[2]*speed,
+    t0:now,life:Math.min(12,Math.max(6,V.len(V.sub(solution.aim,o))/speed+.5)),side:s.side,race:s.race,
+    ph:combatRandom()*6.283,dead:false,kind,hero:!!s.hero,from:s.id});
+}
 function raceFire(s,t,now,nx,ny,nz){
   if(!battleAI.fireable(s,t,now))return;
-  /* the seed's locker speaks first so two X-wings are not the same gun.
-     0 is the navy's signature. 1 gatling, 2 arc, 3 mortar, 4 rail,
-     5 cutter, 6 stun. Crowns and named keels keep the racial hand. */
+  /* Tribute ships retain fleet hardware. Procedural originals can carry
+     gatling, arc, mortar, rail, cutter or stun variants. */
   const RD=RACE_DEFS[s.race]||{};
   const w=s.wpn||0;
+  const solution=weaponSolution(s,t,now);
+  if(!solution){s.cool=.08;return;}
   s.lastFire=now;
-  const muz0=fireLocal(s);
+  const muz0=solution.muz;
   const o0=gunWorld(s,muz0,now);
   nx=o0[0];ny=o0[1];nz=o0[2];
   if(w===1){
-    const muz=fireLocal(s);
-    const o=gunWorld(s,muz,now);
-    nx=o[0];ny=o[1];nz=o[2];
-    const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
-    const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/300;
-    const burst=(s.hulls||(s.slen||0)>=90)?9:s.hero?4:3;
-    for(let b3=0;b3<burst;b3++){
-      const ax3=t.x+tvx*lead-nx+(combatRandom()-0.5)*t.slen*0.6;
-      const ay3=t.y-ny+(combatRandom()-0.5)*t.slen*0.35;
-      const az3=t.z+tvz*lead-nz+(combatRandom()-0.5)*t.slen*0.6;
-      const il=1/Math.max(1,Math.hypot(ax3,ay3,az3));
-      tracers.push({x:nx,y:ny,z:nz,
-        vx:ax3*il*300,vy:ay3*il*300,vz:az3*il*300,
-        t0:now,side:s.side,race:s.race,dead:false,from:s.id,hero:!!s.hero});
-    }
-    s.cool=1.3+combatRandom()*0.6;
-    return;
+    tracerBurst(s,t,now,solution,(s.hulls||s.slen>=90)?9:s.hero?4:3,650);
+    s.cool=1.3+combatRandom()*.6;return;
   }
   if(w===2){
     if(gapTo(s,t)<200){
-      const muz=fireLocal(s);
+      const muz=solution.muz;
       const o=gunWorld(s,muz,now);
       nx=o[0];ny=o[1];nz=o[2];
-      const hit=aimSkin(s,t);
+      const hit=solution.aim;
       beams.push({a:[nx,ny,nz],b:hit,t0:now,side:s.side,race:s.race,arc:true,from:s.id,muz});
       wound(t,1,s,now);
       let c3=null,cb=8100;
@@ -15080,21 +15147,13 @@ function raceFire(s,t,now,nx,ny,nz){
     return;
   }
   if(w===3){
-    const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
-    const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/80;
-    const ax3=t.x+tvx*lead-nx,ay3=t.y-ny,az3=t.z+tvz*lead-nz;
-    const il=1/Math.max(1,Math.hypot(ax3,ay3,az3));
-    plasmas.push({x:nx,y:ny,z:nz,vx:ax3*il*80,vy:ay3*il*80,vz:az3*il*80,
-      t0:now,side:s.side,race:s.race,ph:combatRandom()*6.283,dead:false,
-      kind:"mortar",hero:!!s.hero,from:s.id});
-    s.cool=2.6+combatRandom()*0.8;
-    return;
+    plasmaShot(s,t,now,solution,180,'mortar');s.cool=2.6+combatRandom()*.8;return;
   }
   if(w===4){
-    const muz=fireLocal(s);
+    const muz=solution.muz;
     const o=gunWorld(s,muz,now);
     nx=o[0];ny=o[1];nz=o[2];
-    const ax3=t.x-nx,ay3=t.y-ny,az3=t.z-nz;
+    const ax3=solution.direction[0],ay3=solution.direction[1],az3=solution.direction[2];
     const rl2=Math.max(1,Math.hypot(ax3,ay3,az3));
     const dx3=ax3/rl2,dy3=ay3/rl2,dz3=az3/rl2;
     beams.push({a:[nx,ny,nz],b:[nx+dx3*420,ny+dy3*420,nz+dz3*420],
@@ -15123,10 +15182,10 @@ function raceFire(s,t,now,nx,ny,nz){
   }
   if(w===6){
     if(gapTo(s,t)<280){
-      const muz=fireLocal(s);
+      const muz=solution.muz;
       const o=gunWorld(s,muz,now);
       nx=o[0];ny=o[1];nz=o[2];
-      const hit=aimSkin(s,t);
+      const hit=solution.aim;
       beams.push({a:[nx,ny,nz],b:hit,t0:now,side:s.side,race:s.race,stun:true,wid:6,from:s.id,muz});
       t.stunT=Math.max(t.stunT||0,now+2.6);
       wound(t,0.35,s,now);
@@ -15138,20 +15197,9 @@ function raceFire(s,t,now,nx,ny,nz){
   let fx=RD.fire||"bolt";
   if(fx==="turbo"&&s.slen<38)fx="laser";   /* TIEs spit red, the wall spits green */
   if(fx==="smart"||fx==="junk"){
-    const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
-    const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/300;
-    const n=fx==="smart"?((s.slen||0)>=90?11:s.hero?4:3):((s.slen||0)>=90?7:s.hero?4:3);
-    for(let b3=0;b3<n;b3++){
-      const ax3=t.x+tvx*lead-nx+(combatRandom()-0.5)*t.slen*0.6;
-      const ay3=t.y-ny+(combatRandom()-0.5)*t.slen*0.35;
-      const az3=t.z+tvz*lead-nz+(combatRandom()-0.5)*t.slen*0.6;
-      const il=1/Math.max(1,Math.hypot(ax3,ay3,az3));
-      tracers.push({x:nx,y:ny,z:nz,
-        vx:ax3*il*(fx==="smart"?340:280),vy:ay3*il*(fx==="smart"?340:280),vz:az3*il*(fx==="smart"?340:280),
-        t0:now,side:s.side,race:s.race,dead:false,from:s.id,hero:!!s.hero});
-    }
-    s.cool=1.05+combatRandom()*0.5;
-    return;
+    const count=s.slen>=90?(fx==='smart'?11:7):s.hero?4:3;
+    tracerBurst(s,t,now,solution,count,fx==='smart'?750:600);
+    s.cool=1.05+combatRandom()*.5;return;
   }
   if(fx==="slicer"||fx==="cutter"){
     const cutR=cutRange(s);
@@ -15161,7 +15209,7 @@ function raceFire(s,t,now,nx,ny,nz){
       s.cool=2.0+combatRandom()*0.7;
       const hit=aimSkin(s,t);
       pushFork(s,muz0,[nx,ny,nz],hit,{t0:now,cut:true,hold:true,heavy:true,wid:beamWid(s,true),
-        nFan:forkN(s),spread:0.042,splitU:0.34});
+        nFan:1,spread:0.042,splitU:0.34});
       wound(t,fx==="slicer"?2.6:1.7,s,now);
     }else s.cool=0.28;
     return;
@@ -15175,18 +15223,11 @@ function raceFire(s,t,now,nx,ny,nz){
     return;
   }
   if(fx==="caster"||fx==="bio"){
-    const tvx=Math.cos(t.yaw)*(t.v||0),tvz=Math.sin(t.yaw)*(t.v||0);
-    const spd=fx==="caster"?110:70;
-    const lead=Math.hypot(t.x-nx,t.y-ny,t.z-nz)/spd;
-    const ax3=t.x+tvx*lead-nx,ay3=t.y-ny,az3=t.z+tvz*lead-nz;
-    const il=1/Math.max(1,Math.hypot(ax3,ay3,az3));
-    plasmas.push({x:nx,y:ny,z:nz,vx:ax3*il*spd,vy:ay3*il*spd,vz:az3*il*spd,
-      t0:now,side:s.side,race:s.race,ph:combatRandom()*6.283,dead:false,kind:fx,hero:!!s.hero,from:s.id});
-    s.cool=(fx==="caster"?1.8:2.4)+combatRandom()*0.6;
-    return;
+    plasmaShot(s,t,now,solution,fx==='caster'?380:240,fx);
+    s.cool=(fx==='caster'?1.8:2.4)+combatRandom()*.6;return;
   }
   if(fx==="shard"){
-    const ax3=t.x-nx,ay3=t.y-ny,az3=t.z-nz;
+    const ax3=solution.direction[0],ay3=solution.direction[1],az3=solution.direction[2];
     const rl2=Math.max(1,Math.hypot(ax3,ay3,az3));
     const dx3=ax3/rl2,dy3=ay3/rl2,dz3=az3/rl2;
     beams.push({a:[nx,ny,nz],b:[nx+dx3*380,ny+dy3*380,nz+dz3*380],
@@ -15571,7 +15612,7 @@ function megaStep(s,now,dt){
     for(let k7=0;k7<foes7.length;k7++){
       const t=foes7[k7];
       const d=gapTo(s,t);
-      if(d>rng)continue;
+      if(d>rng||!mountFaces(s,t,[la.lx,la.ly,la.lz],now))continue;
       const sc=t.slen+(t.hulls?500:0)-d*0.05;
       if(sc>bs){bs=sc;best=t;}
     }
@@ -15579,7 +15620,7 @@ function megaStep(s,now,dt){
       s.mark=best.id;
       const m=gunWorld(s,[la.lx,la.ly,la.lz],now);
       if(borgGun){
-        fireBeam(s,best,now,m[0],m[1],m[2],2.4,true,[la.lx,la.ly,la.lz]);
+        if(!fireBeam(s,best,now,m[0],m[1],m[2],2.4,true,[la.lx,la.ly,la.lz])){la.cool=.08;continue;}
         la.cool=0.45+combatRandom()*0.35;
         break;
       }else if(slicer){
@@ -15587,11 +15628,11 @@ function megaStep(s,now,dt){
         const muzL=[la.lx,la.ly,la.lz];
         const hitL=aimSkin(s,best);
         pushFork(s,muzL,m,hitL,{t0:now,cut:true,hold:true,heavy:true,wid:beamWid(s,true),
-          nFan:forkN(s),spread:0.038,splitU:0.34});
+          nFan:1,spread:0.038,splitU:0.34});
         wound(best,4.5,s,now);
         la.cool=3.2+combatRandom()*1.8;
       }else{
-        fireBeam(s,best,now,m[0],m[1],m[2],3,true,[la.lx,la.ly,la.lz]);
+        if(!fireBeam(s,best,now,m[0],m[1],m[2],3,true,[la.lx,la.ly,la.lz])){la.cool=.08;continue;}
         la.cool=5.5+combatRandom()*3;
       }
     }
@@ -15613,11 +15654,11 @@ function megaStep(s,now,dt){
       for(let ti=0;ti<(s.turrets||[]).length;ti++){
         const tu=s.turrets[ti];
         if(tu.cool>0)continue;
-        const t=tgts[ti%tgts.length];
-        if(t.dead)continue;
+        const t=tgts.slice(ti%tgts.length).concat(tgts.slice(0,ti%tgts.length)).find(t=>!t.dead&&mountFaces(s,t,[tu.lx,tu.ly,tu.lz],now));
+        if(!t)continue;
         const m=gunWorld(s,[tu.lx,tu.ly,tu.lz],now);
         if(borgGun){
-          fireBeam(s,t,now,m[0],m[1],m[2],1.15,true,[tu.lx,tu.ly,tu.lz]);
+          if(!fireBeam(s,t,now,m[0],m[1],m[2],1.15,true,[tu.lx,tu.ly,tu.lz])){tu.cool=.08;continue;}
           tu.cool=0.14+combatRandom()*0.20;
           break;
         }else if(slicer){
@@ -15625,11 +15666,11 @@ function megaStep(s,now,dt){
           const muzT=[tu.lx,tu.ly,tu.lz];
           const hitT=aimSkin(s,t);
           pushFork(s,muzT,m,hitT,{t0:now,cut:true,hold:true,heavy:true,wid:beamWid(s,true),
-            nFan:forkN(s),spread:0.038,splitU:0.34});
+            nFan:1,spread:0.038,splitU:0.34});
           wound(t,2.2,s,now);
           tu.cool=2.8+combatRandom()*1.8;
         }else{
-          fireBeam(s,t,now,m[0],m[1],m[2],1,false,[tu.lx,tu.ly,tu.lz]);
+          if(!fireBeam(s,t,now,m[0],m[1],m[2],1,false,[tu.lx,tu.ly,tu.lz])){tu.cool=.08;continue;}
           tu.cool=2.8+combatRandom()*1.8;
         }
       }
@@ -15824,7 +15865,7 @@ function maybeCallAlly(now){
        have brought had she started on the line. 600 on the bar is 600
        in the jump, not a 28% relief column. */
     const rdA=RACE_DEFS[ally];
-    const nBat=Math.max(rdA.fleetMin||48,Math.round(perFleet*(rdA.fleetK||1)));
+    const nBat=Math.max(Math.min(perFleet,rdA.fleetMin||48),Math.round(perFleet*(rdA.fleetK||1)));
     const sm=Math.max(SQN,nBat-3);
     const amix=rdA.mix||[0.72,0.18,0.10];
     let nFtr=Math.max(SQN,Math.floor(sm*amix[0]/SQN)*SQN);
@@ -16006,7 +16047,13 @@ function simStep(now,dt){
     if(fightsAsCrown(s)){megaStep(s,now,dt);continue;}
     const sq=s.squad>=0?squads[s.squad]:null;
     const plan=battleAI.destination(s,now,false);
-    const goal=plan.goal,boost=plan.boost;
+    let goal=plan.goal;const boost=plan.boost;
+    if(weaponProfile(s).fixed&&['ATTACK','FLANK'].includes(plan.mode)){
+      const target=ships[plan.target];
+      if(target&&!target.dead&&battleAI.fireable(s,target,now)&&gapTo(s,target)<520&&gapTo(s,target)>65){
+        goal=interceptPoint(s,target,weaponProfile(s).speed);
+      }
+    }
     const mood=craftMood(s,now);s.mood=mood;
     let prefer=plan.target;
     s.form=plan.mode==="REGROUP"||plan.mode==="ESCORT";
@@ -16132,49 +16179,38 @@ function simStep(now,dt){
       }
     }
   }
-  /* plasma bolts: slow, fat, and rude — they burst where they land */
+  // Plasma retains splash damage, with a swept direct hit on the actual
+  // hull envelope rather than a sphere as wide as a capital is long.
   for(const pl of plasmas){
-    if(pl.dead)continue;
-    if(now-pl.t0>6){pl.dead=true;continue;}
-    pl.x+=pl.vx*dt;pl.y+=pl.vy*dt;pl.z+=pl.vz*dt;
-    const foesA=foeCache[1-pl.side];
-    for(let kA=0;kA<foesA.length;kA++){
-      const o=foesA[kA];
-      const hrp=Math.max(12,o.rad*0.7);
-      const adx=o.x-pl.x;
-      if(adx>hrp||adx<-hrp)continue;
-      const d2=adx*adx+(o.y-pl.y)*(o.y-pl.y)+(o.z-pl.z)*(o.z-pl.z);
-      if(d2<hrp*hrp){
-        pl.dead=true;
-        flash(pl.x,pl.y,pl.z,now,70,2);
-        for(let kB=0;kB<foesA.length;kB++){
-          const v=foesA[kB];
-          const e2=(v.x-pl.x)*(v.x-pl.x)+(v.y-pl.y)*(v.y-pl.y)+(v.z-pl.z)*(v.z-pl.z);
-          if(e2>1600)continue;
-          wound(v,2,pl.from,now);
-        }
-        break;
-      }
+    if(pl.dead)continue;if(now-pl.t0>(pl.life||6)){pl.dead=true;continue;}
+    const a=[pl.x,pl.y,pl.z],b=[pl.x+pl.vx*dt,pl.y+pl.vy*dt,pl.z+pl.vz*dt];
+    let hit=null,u=Infinity;
+    for(const t of foeCache[1-pl.side]){if(t.dead||t.grace)continue;const h=weaponSegmentHit(a,b,t,now,3);if(h!==null&&h<u){hit=t;u=h;}}
+    const point=hit?lerp3(a,b,u):b;[pl.x,pl.y,pl.z]=point;
+    if(hit){
+      pl.dead=true;flash(...point,now,70,2);wound(hit,2,pl.from,now);
+      for(const t of foeCache[1-pl.side])if(t!==hit&&!t.dead&&Math.hypot(t.x-pl.x,t.y-pl.y,t.z-pl.z)<40)wound(t,2,pl.from,now);
     }
   }
   plasmas=plasmas.filter(pl=>!pl.dead);
-  /* tracer rounds: dumb, fast, and honest — they hit whatever crosses */
+  // Sweep each step through oriented hull volumes; fast rounds cannot tunnel.
   for(const tr of tracers){
-    if(tr.dead)continue;
-    if(now-tr.t0>1.4){tr.dead=true;continue;}
-    tr.x+=tr.vx*dt;tr.y+=tr.vy*dt;tr.z+=tr.vz*dt;
-    const foes3=foeCache[1-tr.side];
-    for(let k3=0;k3<foes3.length;k3++){
-      const o=foes3[k3];
-      const hr2=Math.max(9,o.rad*0.7);
-      const adx=o.x-tr.x;
-      if(adx>hr2||adx<-hr2)continue;
-      const d2=adx*adx+(o.y-tr.y)*(o.y-tr.y)+(o.z-tr.z)*(o.z-tr.z);
-      if(d2<hr2*hr2){
-        wound(o,0.3,tr.from,now);
-        flash(tr.x,tr.y,tr.z,now,8,tr.side);
-        tr.dead=true;break;
-      }
+    if(tr.dead||now<tr.t0)continue;
+    if(tr.launch){launchRound(tr,now);if(tr.dead)continue;}
+    if(now-tr.t0>(tr.life||1.4)){tr.dead=true;continue;}
+    const a=[tr.x,tr.y,tr.z],step=Math.min(dt,now-tr.t0),b=[tr.x+tr.vx*step,tr.y+tr.vy*step,tr.z+tr.vz*step];
+    let hit=null,u=Infinity;
+    for(const t of foeCache[1-tr.side]){
+      if(t.dead||t.grace)continue;
+      const h=weaponSegmentHit(a,b,t,now,tr.energy?tr.width:1);
+      if(h!==null&&h<u){u=h;hit=t;}
+    }
+    const point=hit?lerp3(a,b,u):b;[tr.x,tr.y,tr.z]=point;
+    if(hit){
+      const source=ships[tr.from];
+      if(tr.energy&&source)weaponImpact(source,hit,now,point,tr.damage,tr.heavy);
+      else{wound(hit,.3,tr.from,now);flash(...point,now,8,tr.side);}
+      tr.dead=true;
     }
   }
   tracers=tracers.filter(tr=>!tr.dead);
@@ -16244,7 +16280,7 @@ function simStep(now,dt){
   stepBattleWrecks(now,dt);
   collide(now);
   if(showSensors&&sel!=null&&ships[sel]&&!ships[sel].dead)drawBattleSensors(ships[sel],now);
-  beams=beams.filter(b2=>now-b2.t0<(b2.ion?(b2.fo?2.15:1.55):b2.fo?(b2.arc?1.4:1.8):b2.rail?0.38:b2.arc?0.22:b2.stun?0.45:b2.spark?0.42:b2.phaser?0.5:b2.cut?0.55:b2.turbo?0.38:b2.pulse?0.18:b2.heavy?0.62:0.16));
+  beams=beams.filter(b2=>now-b2.t0<(b2.coherent?b2.life:b2.ion?(b2.fo?2.15:1.55):b2.fo?(b2.arc?1.4:1.8):b2.rail?0.38:b2.arc?0.22:b2.stun?0.45:b2.spark?0.42:b2.phaser?0.5:b2.cut?0.55:b2.turbo?0.38:b2.pulse?0.18:b2.heavy?0.62:0.16));
   if(flashes.length>1400)flashes.splice(0,flashes.length-1400);
 }
 function stepBattleWrecks(now,dt){
@@ -16866,12 +16902,13 @@ function frame(nowMs){
   gl.uniform1f(SU.tone,0.42);
 
   /* beams */
-  if(beams.length){
+  if(beams.length||tracers.length||missiles.length){
     gl.useProgram(beamProg);
     gl.uniformMatrix4fv(BU.vp,false,m);
     gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
     gl.bindVertexArray(beamVao);
     pinBeams(now);
+    drawCoherentWeapons(now);
     /* explosion sparks: ember streaks, no faction colour */
     {
       const sarr=[];
@@ -16888,7 +16925,7 @@ function frame(nowMs){
        keeps her colours even while she bleeds for somebody else's war */
     for(const rc of warRaces){
       const arr=[],arrR=[];
-      for(const b of beams)if(b.race===rc&&!b.ion&&!b.arc&&!b.rail&&!b.cut&&!b.fo&&!b.stun){
+      for(const b of beams)if(b.race===rc&&!b.coherent&&!b.ion&&!b.arc&&!b.rail&&!b.cut&&!b.fo&&!b.stun){
         const dst=b.col?arrR:arr;
         const w=b.wid||((b.heavy||b.turbo)?8:2.2);
         const skin=boltSkin(b.a,b.b,w,b.heavy||b.turbo?10:6);
@@ -17012,7 +17049,7 @@ function frame(nowMs){
       }
       /* the cutter's held beam: a fat violet lance, not a hairline */
       const carr=[];
-      for(const b of beams)if(b.race===rc&&b.cut){
+      for(const b of beams)if(b.race===rc&&b.cut&&!b.coherent){
         const w=b.wid||8;
         const skin=boltSkin(b.a,b.b,w,10);
         for(let i=0;i<skin.length;i++)carr.push(skin[i]);
@@ -17044,7 +17081,7 @@ function frame(nowMs){
       }
       /* tracer fire: short bright rounds you can watch fly */
       const trr=[];
-      for(const tr of tracers)if(tr.race===rc)
+      for(const tr of tracers)if(tr.race===rc&&!tr.energy&&now>=tr.t0)
         trr.push(tr.x,tr.y,tr.z,tr.x-tr.vx*0.035,tr.y-tr.vy*0.035,tr.z-tr.vz*0.035);
       if(trr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
