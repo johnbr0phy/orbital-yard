@@ -45,3 +45,9 @@ A deterministic **normal 26-ship Imperial/Rebel muster**, seed 915, was run for 
 | Ships surviving at 40 seconds | 23 | 22 |
 
 18 weapon tests, 11 debris tests, 3 paint tests and the 57-model geometry check pass. The close fighter duel emits 34 shots in 18 seconds. The debris-avoidance smoke check remains finite, survives and clears the obstacle by 82.8 m. Actual WebGL screenshots cover all 18 featured ships without shader warnings/errors. These are small, serial checks; no full-fleet stress or long performance soak was run.
+
+## Rendering follow-up
+
+The drawing surface now starts within a 2.4-million-pixel budget and at most 1.5 device-pixel ratio. Slow frames can lower resolution at four-second intervals; it no longer repeatedly raises/lowers resolution every quarter-second. Window resizes avoid resetting unchanged canvas dimensions. This trades some high-DPI sharpness for lower fragment-shader cost and steadier frame delivery.
+
+Laser ribbons reuse growing typed buffers instead of allocating vertex arrays for every shot each frame. The broad-phase projectile rejection also avoids temporary extent arrays. Cadence, paint and hit behavior are unchanged: the seeded small muster still produces 393 emissions and 22 survivors. Three rendering regression tests and all 18 weapon tests pass. One brief 24-setting preview (50 ships including heroes) showed 60 FPS without logged warnings/errors; large-fleet performance is not established by this small check.

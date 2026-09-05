@@ -15140,7 +15140,7 @@ function pinBeams(now){
   }
 }
 function weaponSegmentHit(a,b,t,now,pad=0){
-  const reach=Math.max(...weaponExtents(t))+pad;
+  const reach=Math.max(4,t.exL||t.slen*.5,2,t.exY||t.slen*.14,t.exZ||t.slen*.14)+pad;
   if(t.x<Math.min(a[0],b[0])-reach||t.x>Math.max(a[0],b[0])+reach||t.y<Math.min(a[1],b[1])-reach||t.y>Math.max(a[1],b[1])+reach||t.z<Math.min(a[2],b[2])-reach||t.z>Math.max(a[2],b[2])+reach)return null;
   const e=weaponExtents(t).map(v=>v+pad),p=weaponLocal(t,a,now).map((v,i)=>v/e[i]),q=weaponLocal(t,b,now).map((v,i)=>v/e[i]);
   const d=V.sub(q,p),A=V.dot(d,d),B=2*V.dot(p,d),C=V.dot(p,p)-1;
@@ -15155,29 +15155,47 @@ function weaponRibbon(a,b,width){
   const p=V.add(a,side),q=V.sub(a,side),r=V.add(b,side),t=V.sub(b,side);
   return [...p,...q,...r,...r,...q,...t];
 }
+// Reusable packed ribbons avoid per-shot/per-frame temporary vertex arrays.
+const coherentGroups=new Map();
+function writeWeaponRibbon(out,at,a,b,width){
+  const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2];
+  const vx=cam.ex-(a[0]+b[0])*.5,vy=cam.ey-(a[1]+b[1])*.5,vz=cam.ez-(a[2]+b[2])*.5;
+  let x=dy*vz-dz*vy,y=dz*vx-dx*vz,z=dx*vy-dy*vx,n=Math.hypot(x,y,z);
+  if(n<1e-6){const fallback=basis(V.norm([dx,dy,dz]))[0];x=fallback[0];y=fallback[1];z=fallback[2];n=Math.hypot(x,y,z)||1;}
+  const k=width/n;x*=k;y*=k;z*=k;
+  out[at++]=a[0]+x;out[at++]=a[1]+y;out[at++]=a[2]+z;
+  out[at++]=a[0]-x;out[at++]=a[1]-y;out[at++]=a[2]-z;
+  out[at++]=b[0]+x;out[at++]=b[1]+y;out[at++]=b[2]+z;
+  out[at++]=b[0]+x;out[at++]=b[1]+y;out[at++]=b[2]+z;
+  out[at++]=a[0]-x;out[at++]=a[1]-y;out[at++]=a[2]-z;
+  out[at++]=b[0]-x;out[at++]=b[1]-y;out[at++]=b[2]-z;
+}
 function drawCoherentWeapons(now){
   const cull=gl.isEnabled(gl.CULL_FACE);gl.disable(gl.CULL_FACE);
-  const groups=new Map();
+  for(const g of coherentGroups.values())g.count=0;
+  const pixelScale=2*Math.tan(.44)/Math.max(1,cvs.height);
   function add(a,b,width,col){
-    // Optical halo has a pixel floor; the collision bore stays unchanged.
-    const distance=V.len(V.sub([cam.ex,cam.ey,cam.ez],V.mul(V.add(a,b),.5)));
-    const worldPerPixel=distance*(2*Math.tan(.44))/Math.max(1,cvs.height);
-    width=Math.max(width,Math.min(24,worldPerPixel*.85));
-    const key=col.join(','),g=groups.get(key)||{col,outer:[],core:[]};
-    g.outer.push(...weaponRibbon(a,b,width));g.core.push(...weaponRibbon(a,b,width*.28));groups.set(key,g);
+    const distance=Math.hypot(cam.ex-(a[0]+b[0])*.5,cam.ey-(a[1]+b[1])*.5,cam.ez-(a[2]+b[2])*.5);
+    width=Math.max(width,Math.min(24,distance*pixelScale*.85));
+    const key=col.join(',');let g=coherentGroups.get(key);
+    if(!g){g={col,count:0,outer:new Float32Array(1152),core:new Float32Array(1152)};coherentGroups.set(key,g);}
+    if(g.count+18>g.outer.length){const size=g.outer.length*2,outer=new Float32Array(size),core=new Float32Array(size);outer.set(g.outer);core.set(g.core);g.outer=outer;g.core=core;}
+    writeWeaponRibbon(g.outer,g.count,a,b,width);writeWeaponRibbon(g.core,g.count,a,b,width*.28);g.count+=18;
   }
   for(const b of beams)if(b.coherent&&now>=b.t0&&now-b.t0<(b.life||.5))add(b.a,b.b,b.wid||2,b.col||RACE_DEFS[b.race].beam);
   for(const tr of tracers)if(tr.energy&&!tr.dead&&now>=tr.t0){
-    const age=Math.max(0,now-tr.t0),tail=Math.min(age,.075);
+    const tail=Math.min(Math.max(0,now-tr.t0),.075);
     add([tr.x-tr.vx*tail,tr.y-tr.vy*tail,tr.z-tr.vz*tail],[tr.x,tr.y,tr.z],tr.width,tr.col);
   }
-  for(const g of groups.values())for(const [vertices,core] of [[g.outer,false],[g.core,true]]){
-    gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.STREAM_DRAW);
+  for(const g of coherentGroups.values())if(g.count)for(let core=0;core<2;core++){
+    const vertices=core?g.core:g.outer;
+    gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);gl.bufferData(gl.ARRAY_BUFFER,vertices.subarray(0,g.count),gl.STREAM_DRAW);
     const c=g.col;gl.uniform4f(BU.col,core?(c[0]+2)/3:c[0],core?(c[1]+2)/3:c[1],core?(c[2]+2)/3:c[2],core?.95:.35);
-    gl.drawArrays(gl.TRIANGLES,0,vertices.length/3);
+    gl.drawArrays(gl.TRIANGLES,0,g.count/3);
   }
   if(cull)gl.enable(gl.CULL_FACE);
 }
+
 function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
   if(!battleAI.fireable(s,t,now))return false;
   const shot=weaponSolution(s,t,now,muz);if(!shot)return false;
@@ -16465,11 +16483,14 @@ function makeStars(){
 }
 /* ===================== camera ===================== */
 const cam={yaw:-Math.PI/2,pitch:-0.22,ex:0,ey:420,ez:1100};
-let dpr=Math.min(devicePixelRatio||1,2);
+function renderPixelRatio(width,height,ratio){return Math.min(ratio||1,1.5,Math.sqrt(2400000/Math.max(1,width*height)));}
+let dpr=renderPixelRatio(innerWidth,innerHeight,devicePixelRatio),resolutionCheck=0;
 let sel=null,orb=null;
 const keys=new Set();
 function resize(){
-  cvs.width=Math.round(innerWidth*dpr);cvs.height=Math.round(innerHeight*dpr);
+  dpr=Math.min(dpr,renderPixelRatio(innerWidth,innerHeight,devicePixelRatio));
+  const width=Math.round(innerWidth*dpr),height=Math.round(innerHeight*dpr);
+  if(cvs.width!==width)cvs.width=width;if(cvs.height!==height)cvs.height=height;
   cvs.style.width=innerWidth+"px";cvs.style.height=innerHeight+"px";
   gl.viewport(0,0,cvs.width,cvs.height);
 }
@@ -17345,8 +17366,8 @@ function frame(nowMs){
   if(now-statT>0.25){
     statT=now;
     if(rosterDirty)rosterDraw();
-    if(fpsA<45&&dpr>1.01){dpr=Math.max(1,dpr*0.85);resize();}
-    else if(fpsA>57&&dpr<Math.min(devicePixelRatio||1,2)){dpr=Math.min(devicePixelRatio||1,2,dpr*1.08);resize();}
+    // Reduce only after a sustained interval; no up/down framebuffer oscillation.
+    if(wall-resolutionCheck>4){resolutionCheck=wall;if(fpsA<48&&dpr>.65){dpr=Math.max(.65,dpr*.85);resize();}}
     const st=document.getElementById("stat");
     if(forged<total&&warT0===Infinity)st.textContent="FORGING THE FLEETS · "+forged+" / "+total;
     else if(winner!=null)st.textContent=SIDE_NAME[winner]+" HOLDS THE SKY · N FOR THE NEXT WAR · "+Math.round(fpsA)+" FPS";
