@@ -14928,11 +14928,143 @@ function weaponLocal(s,p,now){
   const c=Math.cos(pose.ang),si=-Math.sin(pose.ang),a=pose.ax,d=V.dot(a,v),cross=V.cross(a,v);
   return v.map((x,i)=>x*c+cross[i]*si+a[i]*d*(1-c));
 }
-function turretTrack(s,muz,aim,now){
+// Shared mount geometry. Only instance transforms change while a barrel turns.
+function barrelStyle(s){
+  const fx=weaponProfile(s).fx;
+  return ['bio','caster','slicer'].includes(fx)?'organic':weaponProfile(s).mode==='beam'?'emitter':'naval';
+}
+function barrelShape(s){
+  const style=barrelStyle(s),length=Math.max(1.2,Math.min(48,(s.slen||20)*.018));
+  return {style,length:style==='emitter'?length*.62:length,radius:length*(style==='naval'?.14:.23)};
+}
+function barrelFrame(s,muz,now){
+  const pivot=gunWorld(s,muz,now),fixed=weaponProfile(s).fixed||RACE_DEFS[s.race].unique;
+  const track=s.weaponTracks&&s.weaponTracks.get(muz.join(','));
+  const e=weaponExtents(s),normal=V.norm(muz.map((v,i)=>v/(e[i]*e[i])));
+  const local=fixed?[1,0,0]:track?track.dir:V.len(normal)>0?normal:[1,0,0];
+  const dir=V.norm(V.sub(gunWorld(s,local,now),[s.x,s.y,s.z]));
+  const up=V.norm(V.sub(gunWorld(s,[0,1,0],now),[s.x,s.y,s.z]));
+  const shape=barrelShape(s),length=fixed?0:shape.length;
+  return {pivot,dir,up,tip:V.add(pivot,V.mul(dir,length)),length,radius:shape.radius,style:shape.style};
+}
+function weaponMuzzle(s,muz,now){return barrelFrame(s,muz,now).tip;}
+function shipBarrels(s){
+  if(weaponProfile(s).fixed||RACE_DEFS[s.race].unique)return [];
+  if(s.barrelMounts)return s.barrelMounts;
+  const map=new Map();
+  const add=g=>map.set(g.join(','),g.slice());
+  for(const g of s.guns||[])add(g);
+  for(const g of [...(s.turrets||[]),...(s.lances||[])])add([g.lx,g.ly,g.lz]);
+  if(!map.size)add(fireLocal(s));
+  return s.barrelMounts=[...map.values()];
+}
+function trackBarrels(now){
+  for(const s of ships){
+    if(s.dead||!s.vao||!s.weaponTracks)continue;
+    for(const track of s.weaponTracks.values()){
+      if(track.holdUntil>now){turretTrack(s,track.muz,track.holdPoint,now,-1);continue;}
+      const t=ships[track.target];
+      if(!t||t.dead||!battleAI.fireable(s,t,now)||!mountFaces(s,t,track.muz,now))continue;
+      const p=weaponProfile(s),origin=gunWorld(s,track.muz,now);
+      const aim=p.mode==='bolt'?interceptPoint(s,t,p.speed,origin):aimSkin({x:origin[0],y:origin[1],z:origin[2]},t);
+      turretTrack(s,track.muz,aim,now,t.id);
+    }
+  }
+}
+function barrelGeometry(style){
+  // A rotating breech/collar and one axial bore. Its cap centre is x=1:
+  // exactly the same point used by barrelFrame().tip.
+  const rings=style==='naval'?[[0,1.15],[.14,1.15],[.24,.65],[.32,.44],[.86,.44],[.9,.60],[1,.60]]:
+    style==='emitter'?[[0,1.3],[.22,1.3],[.55,.88],[.84,.66],[1,.90]]:
+    [[0,1.1],[.20,1.3],[.45,.95],[.72,.60],[1,.32]];
+  const sides=style==='naval'?6:8,vertices=[];
+  const point=(ring,i,glow=0)=>[ring[0],Math.cos(i/sides*Math.PI*2)*ring[1],Math.sin(i/sides*Math.PI*2)*ring[1],glow];
+  for(let r=0;r<rings.length-1;r++)for(let i=0;i<sides;i++){
+    const a=point(rings[r],i),b=point(rings[r],i+1),c=point(rings[r+1],i),d=point(rings[r+1],i+1);
+    vertices.push(...a,...b,...c,...c,...b,...d);
+  }
+  for(let i=0;i<sides;i++)vertices.push(1,0,0,1,...point(rings[rings.length-1],i,1),...point(rings[rings.length-1],i+1,1));
+  return new Float32Array(vertices);
+}
+let barrelRenderer=null;
+function initBarrelRenderer(){
+  const program=compile(`#version 300 es
+layout(location=0) in vec4 aP;
+layout(location=1) in vec3 iOrigin;
+layout(location=2) in vec3 iDir;
+layout(location=3) in vec3 iUp;
+layout(location=4) in vec3 iSize;
+layout(location=5) in vec3 iColor;
+uniform mat4 uVP;
+out vec3 vW;out vec3 vColor;out float vGlow;out float vAlpha;
+void main(){
+ vec3 f=normalize(iDir),up=iUp;
+ if(abs(dot(f,up))>.98)up=abs(f.z)<.9?vec3(0,0,1):vec3(1,0,0);
+ vec3 z=normalize(cross(f,up)),y=cross(z,f);
+ vW=iOrigin+f*aP.x*iSize.x+(y*aP.y+z*aP.z)*iSize.y;
+ vGlow=aP.w;vAlpha=iSize.z;vColor=iColor;
+ gl_Position=uVP*vec4(vW,1);
+}`,`#version 300 es
+precision highp float;
+in vec3 vW;in vec3 vColor;in float vGlow;in float vAlpha;
+uniform vec3 uEye,uInk,uBg;uniform float uFog;
+out vec4 o;
+void main(){
+ if(fract(sin(dot(vW,vec3(12.98,78.23,37.71)))*43758.54)>vAlpha)discard;
+ vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));
+ if(dot(n,uEye-vW)<0.)n=-n;
+ float light=.25+.65*max(0.,dot(n,normalize(vec3(.45,.8,.35))));
+ vec3 col=mix(uBg,uInk,light);
+ col=mix(col,mix(uInk,vColor,.6),vGlow*.72);
+ float fog=1.-exp(-length(uEye-vW)*uFog);
+ o=vec4(mix(col,uBg,fog*.85),1.);
+}`);
+  const uniforms={};for(const key of ['VP','Eye','Ink','Bg','Fog'])uniforms[key]=gl.getUniformLocation(program,'u'+key);
+  const groups={};
+  for(const style of ['naval','emitter','organic']){
+    const mesh=barrelGeometry(style),vao=gl.createVertexArray(),vbo=gl.createBuffer(),instances=gl.createBuffer();
+    gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,vbo);gl.bufferData(gl.ARRAY_BUFFER,mesh,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,4,gl.FLOAT,false,16,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,instances);
+    for(let k=1;k<=5;k++){gl.enableVertexAttribArray(k);gl.vertexAttribPointer(k,3,gl.FLOAT,false,60,(k-1)*12);gl.vertexAttribDivisor(k,1);}
+    groups[style]={vao,vbo,instances,vertices:mesh.length/4,data:new Float32Array(256*15),count:0};
+  }
+  gl.bindVertexArray(null);return {program,uniforms,groups};
+}
+function drawBarrels(now,m,planes){
+  if(!barrelRenderer)barrelRenderer=initBarrelRenderer();
+  const r=barrelRenderer;for(const g of Object.values(r.groups))g.count=0;
+  for(const s of ships){
+    if(s.dead||!s.vao||!s.arr||s.grace||s.cloakAmt>.98)continue;
+    if(!sphereVis(planes,s.x,s.y,s.z,hullBerth(s)))continue;
+    const distance=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez);
+    if(distance>barrelShape(s).length*450)continue; // Subpixel mounts need no draw.
+    for(const muz of shipBarrels(s)){
+      const f=barrelFrame(s,muz,now),g=r.groups[f.style];
+      if(g.count>=8192)continue;
+      if((g.count+1)*15>g.data.length){const next=new Float32Array(g.data.length*2);next.set(g.data);g.data=next;}
+      const offset=g.count++*15;
+      g.data.set(f.pivot,offset);g.data.set(f.dir,offset+3);g.data.set(f.up,offset+6);
+      g.data.set([f.length,f.radius,1-(s.cloakAmt||0)],offset+9);g.data.set(RACE_DEFS[s.race].beam,offset+12);
+    }
+  }
+  gl.useProgram(r.program);gl.uniformMatrix4fv(r.uniforms.VP,false,m);
+  gl.uniform3f(r.uniforms.Eye,cam.ex,cam.ey,cam.ez);gl.uniform3fv(r.uniforms.Ink,inkc);gl.uniform3fv(r.uniforms.Bg,bgc);
+  gl.uniform1f(r.uniforms.Fog,.14/sceneR);
+  const cull=gl.isEnabled(gl.CULL_FACE);gl.disable(gl.CULL_FACE);
+  for(const g of Object.values(r.groups))if(g.count){
+    gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,g.instances);
+    gl.bufferData(gl.ARRAY_BUFFER,g.data.subarray(0,g.count*15),gl.STREAM_DRAW);
+    gl.drawArraysInstanced(gl.TRIANGLES,0,g.vertices,g.count);
+  }
+  if(cull)gl.enable(gl.CULL_FACE);gl.bindVertexArray(null);gl.useProgram(shipProg);
+}
+function turretTrack(s,muz,aim,now,target){
   const key=muz.join(','),desired=V.norm(V.sub(weaponLocal(s,aim,now),muz));
   const tracks=s.weaponTracks||(s.weaponTracks=new Map());
   let track=tracks.get(key);
   if(!track){const e=weaponExtents(s),n=muz.map((v,i)=>v/(e[i]*e[i]));track={dir:V.len(n)>1e-6?V.norm(n):[1,0,0],at:now-1/30};tracks.set(key,track);}
+  track.muz=muz; if(target!=null)track.target=target;
   const angle=Math.acos(Math.max(-1,Math.min(1,V.dot(track.dir,desired))));
   const step=Math.min(.1,Math.max(0,now-track.at))*(s.slen>300?.9:2.4);track.at=now;
   if(angle<=step)track.dir=desired;
@@ -14970,6 +15102,8 @@ function weaponMount(s,t,now){
 }
 function weaponSolution(s,t,now,muz){
   const profile=weaponProfile(s);muz=muz||weaponMount(s,t,now);if(!muz)return null;
+  if(ionState.some(lock=>lock&&lock.gun===s.id&&lock.muz&&lock.muz.join(',')===muz.join(',')))return null;
+  const held=s.weaponTracks&&s.weaponTracks.get(muz.join(','));if(held&&held.holdUntil>now)return null;
   const o=gunWorld(s,muz,now),aim=profile.mode==='bolt'?interceptPoint(s,t,profile.speed,o):aimSkin({x:o[0],y:o[1],z:o[2]},t);
   const desired=V.norm(V.sub(aim,o));
   if(profile.fixed){
@@ -14980,8 +15114,9 @@ function weaponSolution(s,t,now,muz){
     // Fixed barrels shoot along the hull axis. They never swivel toward a target.
     return {o,muz,aim:V.add(o,V.mul(forward,d)),direction:forward,profile};
   }
-  if(!mountFaces(s,t,muz,now)||!turretTrack(s,muz,aim,now))return null;
-  return {o,muz,aim,direction:desired,profile};
+  if(!mountFaces(s,t,muz,now)||!turretTrack(s,muz,aim,now,t.id))return null;
+  const frame=barrelFrame(s,muz,now),distance=V.len(V.sub(aim,frame.tip));
+  return {o:frame.tip,muz,aim:V.add(frame.tip,V.mul(frame.dir,distance)),direction:frame.dir,profile};
 }
 function pushFork(s,muz,o,aim,flags){
   // Legacy callers now emit one complete beam per physical mount. No fork,
@@ -14989,7 +15124,7 @@ function pushFork(s,muz,o,aim,flags){
   if(flags.hold)s.cutMuz=muz.slice();
   const key=muz.join(','),target=flags.target==null?s.cutTgt:flags.target;
   let b=flags.hold&&beams.find(b=>b.coherent&&b.hold&&b.from===s.id&&b.mountKey===key);
-  const data={...flags,a:o.slice(),b:aim.slice(),aim:aim.slice(),from:s.id,muz:muz.slice(),
+  const data={...flags,a:weaponMuzzle(s,muz,flags.t0),b:aim.slice(),aim:aim.slice(),from:s.id,muz:muz.slice(),
     mountKey:key,target,side:s.side,race:s.race,coherent:true,life:flags.hold?.12:(flags.life||.5)};
   if(b)Object.assign(b,data);else beams.push(data);
 }
@@ -15001,11 +15136,11 @@ function pinBeams(now){
     if(b.coherent){
       const t=ships[b.target];
       if(!t||t.dead||t.grace||!mountFaces(s,t,b.muz,now)){b.t0=-Infinity;continue;}
-      b.a=gunWorld(s,b.muz,now);
+      b.a=weaponMuzzle(s,b.muz,now);
       if(weaponProfile(s).fixed){
         const solution=weaponSolution(s,t,now,b.muz);if(!solution){b.t0=-Infinity;continue;}b.b=solution.aim;
-      }else b.b=b.miss?b.aim:aimSkin({x:b.a[0],y:b.a[1],z:b.a[2]},t);
-    }else if(b.ion||b.arc||b.stun)b.a=gunWorld(s,b.muz,now);
+      }else{const frame=barrelFrame(s,b.muz,now);b.b=V.add(frame.tip,V.mul(frame.dir,V.len(V.sub([t.x,t.y,t.z],frame.tip))));}
+    }else if(b.ion||b.arc||b.stun)b.a=weaponMuzzle(s,b.muz,now);
   }
 }
 function weaponSegmentHit(a,b,t,now,pad=0){
@@ -15091,9 +15226,9 @@ function tracerBurst(s,t,now,solution,count,speed){
 }
 function launchRound(tr,now){
   const s=ships[tr.from],t=ships[tr.target];if(!s||s.dead||!s.vao){tr.dead=true;return;}
-  const o=gunWorld(s,tr.muz,now),profile=weaponProfile(s);
+  const o=weaponMuzzle(s,tr.muz,now),profile=weaponProfile(s);
   const forward=V.norm(V.sub(gunWorld(s,[1,0,0],now),[s.x,s.y,s.z]));
-  let dir=profile.fixed?forward:t&&!t.dead&&mountFaces(s,t,tr.muz,now)?V.norm(V.sub(interceptPoint(s,t,tr.speed,o),o)):null;
+  let dir=profile.fixed?forward:t&&!t.dead&&mountFaces(s,t,tr.muz,now)?barrelFrame(s,tr.muz,now).dir:null;
   if(!dir){tr.dead=true;return;}
   // Dispersion is a small angular error around one barrel direction, not
   // independent, target-sized scatter on all three world axes.
@@ -15101,7 +15236,7 @@ function launchRound(tr,now){
   [tr.x,tr.y,tr.z]=o;[tr.vx,tr.vy,tr.vz]=V.mul(dir,tr.speed);tr.launch=false;
 }
 function plasmaShot(s,t,now,solution,speed,kind){
-  const o=solution.o,dir=solution.profile.fixed?solution.direction:V.norm(V.sub(interceptPoint(s,t,speed,o),o));
+  const o=solution.o,dir=solution.direction;
   plasmas.push({x:o[0],y:o[1],z:o[2],vx:dir[0]*speed,vy:dir[1]*speed,vz:dir[2]*speed,
     t0:now,life:Math.min(12,Math.max(6,V.len(V.sub(solution.aim,o))/speed+.5)),side:s.side,race:s.race,
     ph:combatRandom()*6.283,dead:false,kind,hero:!!s.hero,from:s.id});
@@ -15116,7 +15251,7 @@ function raceFire(s,t,now,nx,ny,nz){
   if(!solution){s.cool=.08;return;}
   s.lastFire=now;
   const muz0=solution.muz;
-  const o0=gunWorld(s,muz0,now);
+  const o0=weaponMuzzle(s,muz0,now);
   nx=o0[0];ny=o0[1];nz=o0[2];
   if(w===1){
     tracerBurst(s,t,now,solution,(s.hulls||s.slen>=90)?9:s.hero?4:3,650);
@@ -15125,7 +15260,7 @@ function raceFire(s,t,now,nx,ny,nz){
   if(w===2){
     if(gapTo(s,t)<200){
       const muz=solution.muz;
-      const o=gunWorld(s,muz,now);
+      const o=weaponMuzzle(s,muz,now);
       nx=o[0];ny=o[1];nz=o[2];
       const hit=solution.aim;
       beams.push({a:[nx,ny,nz],b:hit,t0:now,side:s.side,race:s.race,arc:true,from:s.id,muz});
@@ -15151,7 +15286,7 @@ function raceFire(s,t,now,nx,ny,nz){
   }
   if(w===4){
     const muz=solution.muz;
-    const o=gunWorld(s,muz,now);
+    const o=weaponMuzzle(s,muz,now);
     nx=o[0];ny=o[1];nz=o[2];
     const ax3=solution.direction[0],ay3=solution.direction[1],az3=solution.direction[2];
     const rl2=Math.max(1,Math.hypot(ax3,ay3,az3));
@@ -15183,7 +15318,7 @@ function raceFire(s,t,now,nx,ny,nz){
   if(w===6){
     if(gapTo(s,t)<280){
       const muz=solution.muz;
-      const o=gunWorld(s,muz,now);
+      const o=weaponMuzzle(s,muz,now);
       nx=o[0];ny=o[1];nz=o[2];
       const hit=solution.aim;
       beams.push({a:[nx,ny,nz],b:hit,t0:now,side:s.side,race:s.race,stun:true,wid:6,from:s.id,muz});
@@ -15566,10 +15701,17 @@ function kill(t,now){
   roster();
 }
 let ionNext=[Infinity,Infinity];
+function ionBarrel(lock,g,now){
+  const target={x:lock.point[0],y:lock.point[1],z:lock.point[2]};
+  const muz=lock.muz||(lock.muz=weaponMount(g,target,now)||fireLocal(g));
+  return mountFaces(g,target,muz,now)&&turretTrack(g,muz,lock.point,now,-1);
+}
 function fireIonFrom(g,side,now,lock){
   if(!g||g.dead||!lock||!lock.point)return;
-  const p=lock.point,muz=fireLocal(g),m=gunWorld(g,muz,now),blast=lock.radius;
+  const p=lock.point,muz=lock.muz||fireLocal(g),m=weaponMuzzle(g,muz,now),blast=lock.radius;
   g.lastFire=now;
+  const track=g.weaponTracks&&g.weaponTracks.get(muz.join(','));
+  if(track){track.holdPoint=p.slice();track.holdUntil=now+1.55;track.target=-1;}
   beams.push({a:m,b:p.slice(),t0:now,side,race:g.race,ion:true,wid:Math.max(18,Math.min(64,g.slen*.009)),from:g.id,muz});
   flash(m[0],m[1],m[2],now,150,4);flash(p[0],p[1],p[2],now,blast*1.5,4);
   for(const t of ships){
@@ -15585,7 +15727,7 @@ function fireIonFrom(g,side,now,lock){
 }
 function ionWarning(lock,g,now){
   if(now-lock.last<.15)return;lock.last=now;
-  const m=gunWorld(g,fireLocal(g),now),p=lock.point;
+  const m=weaponMuzzle(g,lock.muz||fireLocal(g),now),p=lock.point;
   flash(m[0],m[1],m[2],now,60+140*(now-lock.started)/(lock.fire-lock.started),4);
   for(let i=0;i<20;i++){
     const a=i/20*Math.PI*2,b=(i+.7)/20*Math.PI*2;
@@ -15626,6 +15768,7 @@ function megaStep(s,now,dt){
       }else if(slicer){
         s.cutUntil=now+2.6;s.cutTgt=best.id;s.lastFire=now;
         const muzL=[la.lx,la.ly,la.lz];
+        if(!weaponSolution(s,best,now,muzL)){la.cool=.08;continue;}
         const hitL=aimSkin(s,best);
         pushFork(s,muzL,m,hitL,{t0:now,cut:true,hold:true,heavy:true,wid:beamWid(s,true),
           nFan:1,spread:0.038,splitU:0.34});
@@ -15664,6 +15807,7 @@ function megaStep(s,now,dt){
         }else if(slicer){
           s.cutUntil=now+1.8;s.cutTgt=t.id;s.lastFire=now;
           const muzT=[tu.lx,tu.ly,tu.lz];
+          if(!weaponSolution(s,t,now,muzT)){tu.cool=.08;continue;}
           const hitT=aimSkin(s,t);
           pushFork(s,muzT,m,hitT,{t0:now,cut:true,hold:true,heavy:true,wid:beamWid(s,true),
             nFan:1,spread:0.038,splitU:0.34});
@@ -15983,6 +16127,7 @@ function simStep(now,dt){
   if((simFrame&31)===0&&!(intro&&!intro.done))maybeCallAlly(now);
   battleAI.index(ships,now,squads,ionState);
   squadThink(now);
+  trackBarrels(now);
   for(const side of [0,1]){
     if(winner!=null||counts[side]<=0){ionState[side]=null;continue;}
     const lock=ionState[side];
@@ -15994,8 +16139,10 @@ function simStep(now,dt){
     }else if(lock){
       const g=ships[lock.gun];
       if(!g||g.dead){ionState[side]=null;ionNext[side]=now+12;continue;}
+      if(now>lock.fire+1){ionState[side]=null;ionNext[side]=now+3;continue;}
+      const aligned=ionBarrel(lock,g,now);
       ionWarning(lock,g,now);
-      if(now>=lock.fire){fireIonFrom(g,side,now,lock);ionState[side]=null;ionNext[side]=now+38+combatRandom()*16;}
+      if(now>=lock.fire&&aligned){fireIonFrom(g,side,now,lock);ionState[side]=null;ionNext[side]=now+38+combatRandom()*16;}
     }
   }
   for(const s of ships){
@@ -16868,6 +17015,7 @@ function frame(nowMs){
     gl.drawElements(gl.TRIANGLES,s.icount,gl.UNSIGNED_INT,0);
     if(ck>0.04){gl.depthMask(true);gl.disable(gl.BLEND);}
   }
+  drawBarrels(now,m,FRP);
   /* the litter of the war: charred pieces adrift, tumbling where they
      died — and beneath them the boneyard, every earlier piece kept */
   gl.uniform1f(SU.inz,1.0);

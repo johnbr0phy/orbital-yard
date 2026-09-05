@@ -12,7 +12,12 @@ retain their previous controller.
   A side/rear target does not permit a shot. Bolts leave along the hull axis.
 - Larger ships and transport/Falcon classes use exposed mount hemispheres.
   Turrets acquire a direction at a finite traverse rate before firing. The
-  procedural barrel meshes themselves are not separately animated turret rigs.
+  visible barrels rotate with this same aim state. Naval cannons, energy
+  emitters and organic nozzles use three shared meshes drawn with instancing.
+  Their transformed tips are the shot origins; fixed fighters keep their
+  original hull-mounted guns. Unique First One effects keep their bespoke
+  emitters. Existing hull gun detail remains as the mounting structure.
+  Subpixel barrels are omitted at distance; meshes are built once, not per frame.
 - Empire/Rebel lasers, EarthForce pulses and Klingon disruptors are short
   travelling bolts. Federation phasers, Choir emission, Minbari neutron beams,
   Shadow slicers and Borg cutters use coherent beams. Defiant-class weapons
@@ -39,7 +44,10 @@ this is a review build, not a claim of equal fleet win rates.
 ## Bounded validation
 
 `node --test tests/tribute-new/weapons.test.cjs` exercises geometry, fixed axes,
-mount arcs, turret traversal, emission lifetime, detached bolts and sensor reach.
+mount arcs, turret traversal, emission lifetime, detached bolts, sensor reach,
+barrel geometry, fixed-gun preservation and agreement between barrel tips and
+shot axes. Charged ion fire uses the barrel tip and waits for alignment; an
+unreachable firing direction cancels the charge after a bounded grace period.
 `node tests/tribute-new/weapons-smoke.cjs` uses one small forge and six simulated
 seconds to check Executor firing, then six seconds at two rendering rates.
 Run these serially with external wall timeouts. Do not run a WebGL preview at

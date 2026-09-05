@@ -43,7 +43,7 @@ test('one sustained emitter stays coherent and follows both hulls without multip
  for(let i=0;i<30;i++)pushFork(fighter,[10,0,0],[10,0,0],[140,0,0],{t0:2,target:1,hold:true,cut:true});`);
  assert.equal(b.run('beams.length'),1);
  b.run('fighter.x=5;enemy.x=180;pinBeams(2)');
- assert.equal(b.run('beams[0].a[0]'),15);assert.ok(b.run('beams[0].b[0]>165'));
+ assert.equal(b.run('beams[0].a[0]'),b.run('barrelFrame(fighter,[10,0,0],2).tip[0]'));assert.ok(b.run('beams[0].b[0]>165'));
  b.run('fighter.dead=true;pinBeams(2)');assert.equal(b.run('beams[0].t0'),-Infinity);
 });
 test('laser bolts detach and deal no instantaneous hitscan damage',()=>{
@@ -82,4 +82,36 @@ test('capital sensors reach beyond the bow of an Executor-sized hull',()=>{
  const b=scene();
  b.run('fighter.slen=19600;fighter.exL=9800;fighter.hulls=50;enemy.x=10600;battleAI.index(ships,3);battleAI.scan(fighter,3)');
  assert.ok(b.run('battleAI.fireable(fighter,enemy,3)'));
+});
+test('all shared barrel styles end at the common bore axis and have bounded geometry',()=>{
+ const b=scene();
+ for(const style of ['naval','emitter','organic']){
+  b.run(`var geometry=barrelGeometry('${style}')`);
+  assert.ok(b.run('geometry.length<2000&&geometry.every(Number.isFinite)'));
+  assert.ok(b.run('Array.from(geometry).some((v,i)=>i%4===0&&v===1&&geometry[i+1]===0&&geometry[i+2]===0)'));
+ }
+});
+test('visible barrel tips and emitted turret bolts share an origin and axis',()=>{
+ const b=scene();
+ b.run(`fighter.slen=250;fighter.exL=125;fighter.guns=[[10,0,0]];
+ for(let i=0;i<90;i++)turretTrack(fighter,[10,0,0],[150,0,0],2+i/30,1);
+ var solution=weaponSolution(fighter,enemy,5,[10,0,0]);var frame=barrelFrame(fighter,[10,0,0],5);`);
+ assert.ok(b.run('!!solution&&solution.o.every((v,i)=>Math.abs(v-frame.tip[i])<1e-9)'));
+ assert.ok(b.run('solution.direction.every((v,i)=>Math.abs(v-frame.dir[i])<1e-9)'));
+ assert.ok(b.run('frame.tip[0]>frame.pivot[0]'));
+});
+test('fixed fighter mounts get no rotating extension and turret instances deduplicate mounts',()=>{
+ const b=scene();assert.equal(b.run('shipBarrels(fighter).length'),0);
+ assert.ok(b.run('weaponMuzzle(fighter,[10,0,0],2).every((v,i)=>v===gunWorld(fighter,[10,0,0],2)[i])'));
+ b.run('fighter.slen=250;fighter.guns=[[10,0,0]];fighter.lances=[{lx:10,ly:0,lz:0}];fighter.turrets=[{lx:10,ly:0,lz:0}]');
+ assert.equal(b.run('shipBarrels(fighter).length'),1);
+});
+test('ion barrel retains its discharge direction until the visible shot ends',()=>{
+ const b=scene();
+ b.run(`fighter.slen=250;fighter.guns=[[10,0,0]];
+ turretTrack(fighter,[10,0,0],[150,0,0],2,1);
+ fireIonFrom(fighter,0,2,{point:[150,0,0],radius:100,muz:[10,0,0]});`);
+ assert.equal(b.run('weaponSolution(fighter,enemy,2.2,[10,0,0])'),null);
+ assert.equal(b.run("fighter.weaponTracks.get('10,0,0').holdUntil"),3.55);
+ assert.ok(b.run('beams[0].a.every((v,i)=>v===barrelFrame(fighter,[10,0,0],2).tip[i])'));
 });
