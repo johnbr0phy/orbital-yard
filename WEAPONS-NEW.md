@@ -57,3 +57,30 @@ The preview now offers a 24-ship size setting, starts at 150 instead of 600,
 and uses one forge worker. Actual fleet counts vary by fleet. These reduce
 load; they do not guarantee system stability. After a reported machine crash,
 validation deliberately excluded broad fleet stress/soak runs.
+
+## Fighter attack passes (September 5 follow-up)
+
+Fixed-gun fighters now keep an intercept line through an attack, extend for
+2.2 seconds after a close pass, and then reacquire. During alignment they lose
+the arbitrary private yaw offset and can climb toward the actual intercept
+rather than being restricted to the old shallow vertical drift. Their forward
+firing cone, finite turn rate, hull/muzzle transforms and swept impacts remain.
+Fixed-gun engagement reach is 420 units.
+
+Imperial fighters fire green and Rebels red, at 800 units/second. Their individual
+shots cycle faster at 0.28 damage each; no hull-health increase was added. Every
+shot still requires a sensor contact and forward alignment. Debris damage for
+nonhero fixed fighters now scales with inward collision speed; mere overlap or
+separation cannot trigger the old unconditional instant kill. Other ship types
+retain their previous collision behavior.
+
+Validation was deliberately serial and small: 18 focused weapons tests, bounded
+Executor/fire-rate independence checks, an 18-second controlled pair and a
+20-second eight-fighter normal-AI encounter. The controlled pair launched 13
+bolts versus 1 with the prior controller (arrival delays disabled in both, health
+raised only in this test to measure firing opportunities). The normal-AI fixture
+used normal health, disabled missiles/mines to isolate guns, launched 31 bolts,
+and retained seven of eight fighters. These are narrow regression fixtures,
+not fleet-balance or long-run performance results. A single 24-per-fleet browser
+preview rendered at about 60 FPS with no captured warnings/errors, then closed;
+this brief preview does not establish long-run stability or cinematic quality.

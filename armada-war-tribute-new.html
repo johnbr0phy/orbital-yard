@@ -12141,6 +12141,17 @@ function xPose(s,now){
   if(Math.abs(roll)<0.02&&Math.abs(pitch)<0.02)return {ax:[0,1,0],ang:0};
   return xQAA([1,0,0],roll,[0,0,1],pitch);
 }
+function debrisStrike(s,bigBit,closing,now){
+  if(weaponProfile(s).fixed&&!s.hero){
+    // Damage follows inward impact speed: overlapping/separating fragments
+    // are not a lethal ram. A full-speed head-on strike remains dangerous.
+    if(closing<=0)return;
+    const fraction=Math.min(1,Math.pow(closing/120,2))*(bigBit?1:.18);
+    wound(s,s.hpMax*fraction,null,now);return;
+  }
+  if(bigBit&&!s.hulls&&!s.hero){kill(s,now);return;}
+  wound(s,bigBit?1.2:.22,null,now);
+}
 function collide(now){
   /* two grids, not one: ships shove ships pair-by-pair (few per cell),
      while debris is scanned with a per-cell cap — a pile of pieces
@@ -12280,7 +12291,7 @@ function collide(now){
              to what the piece already carries — a graze nudges, a head-on
              ram sends it flying, and nothing ever snaps to a new vector */
           const svx=Math.cos(s.yaw)*(s.v||0),svz=Math.sin(s.yaw)*(s.v||0);
-          const appr=(svx-o.vx)*(-dx*inv)+(0-o.vy)*(-dy*inv)+(svz-o.vz)*(-dz*inv);
+          const appr=(svx-o.vx)*(-dx*inv)+((s.vy||0)-o.vy)*(-dy*inv)+(svz-o.vz)*(-dz*inv);
           if(appr>4){
             /* the shove is continuous: a small kick every contact tick
                instead of one big one every 0.3 s — same momentum flow,
@@ -12302,8 +12313,8 @@ function collide(now){
             s.bumpT=now;s.hurtT=now;
             const bigBit=(o.rad||6)>Math.max(10,sr*0.7);
             flash((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,now,bigBit?16:7,2);
-            if(bigBit&&!s.hulls&&!s.hero){kill(s,now);break;}
-            wound(s,bigBit?1.2:0.22,null,now);
+            debrisStrike(s,bigBit,appr*ramW,now);
+            if(s.dead)break;
           }
         }
       }
@@ -12319,8 +12330,9 @@ function collide(now){
           s.bumpT=now;s.hurtT=now;
           const bigBit=o.rad>Math.max(10,sr*0.7);
           flash((s.x+o.x)*0.5,(s.y+o.y)*0.5,(s.z+o.z)*0.5,now,bigBit?16:7,2);
-          if(bigBit&&!s.hulls&&!s.hero){kill(s,now);break;}
-          wound(s,bigBit?1.2:0.22,null,now);
+          const closing=-(Math.cos(s.yaw)*(s.v||0)*dx+(s.vy||0)*dy+Math.sin(s.yaw)*(s.v||0)*dz)/d;
+          debrisStrike(s,bigBit,closing,now);
+          if(s.dead)break;
         }
       }
     }
@@ -14916,9 +14928,9 @@ function weaponProfile(s){
   const beam=['phaser','song','neutron','slicer','cutter'].includes(fx)&&!(/DEFIANT/i.test(name));
   return {fx,fixed,mode:beam?'beam':'bolt',
     width:Math.max(.65,Math.min(12,(s.slen||20)*(beam?.004:.008))),
-    speed:fx==='pulse'?850:fx==='disruptor'?1000:fx==='smart'||fx==='junk'?650:1400,
+    speed:fixed&&(s.race===5||s.race===6)?800:fx==='pulse'?850:fx==='disruptor'?1000:fx==='smart'||fx==='junk'?650:1400,
     duration:fx==='neutron'?.75:fx==='song'?.65:fx==='phaser'?.48:.32,
-    color:fx==='laser'?[1,.22,.16]:(RACE_DEFS[s.race]||RACE_DEFS[0]).beam};
+    color:s.race===5?[.40,1,.45]:s.race===6?[1,.22,.16]:fx==='laser'?[1,.22,.16]:(RACE_DEFS[s.race]||RACE_DEFS[0]).beam};
 }
 function weaponExtents(s){return [Math.max(4,s.exL||s.slen*.5),Math.max(2,s.exY||s.slen*.14),Math.max(2,s.exZ||s.slen*.14)];}
 function weaponLocal(s,p,now){
@@ -15083,6 +15095,20 @@ function interceptPoint(s,t,speed,origin){
   else if(disc>=0){const roots=[(-b-Math.sqrt(disc))/(2*a),(-b+Math.sqrt(disc))/(2*a)].filter(x=>x>0);if(roots.length)time=Math.min(...roots);}
   time=Math.min(8,time);
   return [t.x+v[0]*time,t.y+v[1]*time,t.z+v[2]*time];
+}
+// A close pass needs room to turn; repeatedly aiming at a point inside the
+// opponent's hull creates a tight orbit with almost no forward firing window.
+function fighterPassGoal(s,t,now){
+  const gap=gapTo(s,t),key=t.id;
+  if(s.passTarget!==key){s.passTarget=key;s.passUntil=0;}
+  if(now<(s.passUntil||0))return s.passGoal;
+  if(gap<55){
+    const distance=Math.max(200,(s.v||s.spd)*2.2);
+    s.passGoal=[s.x+Math.cos(s.yaw)*distance,s.y+(s.vy||0)*2.2,s.z+Math.sin(s.yaw)*distance];
+    s.passUntil=now+2.2;
+    return s.passGoal;
+  }
+  return interceptPoint(s,t,weaponProfile(s).speed);
 }
 function mountFaces(s,t,muz,now){
   if(weaponProfile(s).fixed)return true;
@@ -15253,6 +15279,11 @@ function raceFire(s,t,now,nx,ny,nz){
   const muz0=solution.muz;
   const o0=weaponMuzzle(s,muz0,now);
   nx=o0[0];ny=o0[1];nz=o0[2];
+  if(w===0&&solution.profile.fixed&&(s.race===5||s.race===6)){
+    // More individual bolts, comparable sustained damage, every shot aligned.
+    fireBeam(s,t,now,nx,ny,nz,.28,false);
+    s.cool=.23+combatRandom()*.06;return;
+  }
   if(w===1){
     tracerBurst(s,t,now,solution,(s.hulls||s.slen>=90)?9:s.hero?4:3,650);
     s.cool=1.3+combatRandom()*.6;return;
@@ -16195,10 +16226,11 @@ function simStep(now,dt){
     const sq=s.squad>=0?squads[s.squad]:null;
     const plan=battleAI.destination(s,now,false);
     let goal=plan.goal;const boost=plan.boost;
+    let liningUp=false;
     if(weaponProfile(s).fixed&&['ATTACK','FLANK'].includes(plan.mode)){
       const target=ships[plan.target];
-      if(target&&!target.dead&&battleAI.fireable(s,target,now)&&gapTo(s,target)<520&&gapTo(s,target)>65){
-        goal=interceptPoint(s,target,weaponProfile(s).speed);
+      if(target&&!target.dead&&battleAI.fireable(s,target,now)&&gapTo(s,target)<700){
+        goal=fighterPassGoal(s,target,now);liningUp=now>=(s.passUntil||0);
       }
     }
     const mood=craftMood(s,now);s.mood=mood;
@@ -16223,7 +16255,7 @@ function simStep(now,dt){
       const formed=!!s.form;
       /* a whisker of private heading — never a drunk crab that walks
          the whole chevron off the line */
-      if(!boat&&!formed)dyaw+=(s.crab||0)*Math.min(1,rail/420)*0.35;
+      if(!boat&&!formed&&!liningUp)dyaw+=(s.crab||0)*Math.min(1,rail/420)*0.35;
       dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
       /* angular inertia: she rolls INTO the turn, peaks, and eases out —
          the difference between a servo and a pilot. The jink and the
@@ -16255,8 +16287,9 @@ function simStep(now,dt){
         else{s.brFlick=false;s.brAmp=sg9*12.566;s.brT=1.3+combatRandom()*0.5;}
         s.brUntil=now+s.brT;
       }
-      const wv=Math.max(-s.spd*(boat||formed?0.10:0.22),Math.min(s.spd*(boat||formed?0.10:0.22),
-        dy*(boat?0.08:formed?0.10:0.18)+h3*s.spd*(0.018+0.012*hand)*weaveK));
+      const climb=liningUp?.75:boat||formed?.10:.22;
+      const wv=Math.max(-s.spd*climb,Math.min(s.spd*climb,
+        liningUp?dy/rail*Math.max(18,Math.abs(s.v)):dy*(boat?.08:formed?.10:.18)+h3*s.spd*(.018+.012*hand)*weaveK));
       s.vy+=(wv-s.vy)*Math.min(1,dt*(1.2+0.8*hand));
       s.pitch+=(Math.atan2(s.vy,Math.max(18,Math.abs(s.v)))-s.pitch)*Math.min(1,dt*(1.6+1.0*(s.hot||1)));
       const dist=Math.hypot(dx,dy,dz);
@@ -16284,6 +16317,7 @@ function simStep(now,dt){
        Range is to the skin, so a White Star on a First One can actually shoot. */
     if(s.cool<=0){
       let rng=s.hero?Math.max(250,Math.min(400,(s.slen||40)*.7+210)):isGunboat(s)?340:s.slen>90?280:210;
+      if(weaponProfile(s).fixed)rng=Math.max(rng,420);
       const fx0=(RACE_DEFS[s.race]||{}).fire;
       if(fx0==="slicer"||fx0==="cutter")rng=Math.max(rng,cutRange(s));
       if(s.wpn===2)rng=Math.max(rng,210);

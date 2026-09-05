@@ -115,3 +115,22 @@ test('ion barrel retains its discharge direction until the visible shot ends',()
  assert.equal(b.run("fighter.weaponTracks.get('10,0,0').holdUntil"),3.55);
  assert.ok(b.run('beams[0].a.every((v,i)=>v===barrelFrame(fighter,[10,0,0],2).tip[i])'));
 });
+test('Imperial and Rebel fighters launch their green and red physical bolts',()=>{
+ const b=scene();
+ b.run('raceFire(fighter,enemy,2,0,0,0)');
+ assert.ok(b.run('tracers[0].col[1]>tracers[0].col[0]&&tracers[0].damage===.28'));
+ b.run('fighter.race=6;raceFire(fighter,enemy,2.5,0,0,0)');
+ assert.ok(b.run('tracers[1].col[0]>tracers[1].col[1]&&tracers[1].vx===800'));
+});
+test('a close fighter pass extends then reacquires without an instantaneous turn',()=>{
+ const b=scene();b.run('enemy.x=40;var yawBefore=fighter.yaw;var exitGoal=fighterPassGoal(fighter,enemy,2);enemy.x=200;enemy.z=100;');
+ assert.equal(b.run('fighter.yaw'),b.run('yawBefore'));
+ assert.ok(b.run('fighterPassGoal(fighter,enemy,3)===exitGoal'));
+ assert.ok(b.run('fighterPassGoal(fighter,enemy,5)!==exitGoal'));
+});
+test('debris separation is harmless and grazing damage is below a hard ram',()=>{
+ const b=scene(),hp=b.run('fighter.hp');b.run('debrisStrike(fighter,true,-20,2)');
+ assert.equal(b.run('fighter.hp'),hp);
+ b.run('debrisStrike(fighter,true,10,3);var afterGraze=fighter.hp;debrisStrike(fighter,true,60,4)');
+ assert.ok(b.run('afterGraze>98&&fighter.hp<afterGraze-10&&!fighter.dead'));
+});
