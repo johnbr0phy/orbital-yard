@@ -11379,8 +11379,8 @@ void main(){
 }`,`#version 300 es
 precision highp float;
 in vec3 vW;in vec3 vLocal;in float vGrain;
-uniform vec3 uEye,uInk,uBg;
-uniform vec4 uMaterial;
+uniform vec3 uEye,uInk,uBg,uTrim,uAccent,uPaintOffset;
+uniform vec4 uMaterial,uPaint;
 uniform float uFog,uIn,uHurt,uTone,uCloak,uT;
 out vec4 o;
 void main(){
@@ -11396,7 +11396,35 @@ void main(){
   vec3 col=mix(uBg,uInk,clamp(shade,0.0,1.0));
   // Object-space, derivative-filtered surface detail: no texture fetches,
   // extra meshes or animated deformation. Distinct from battle FX emission.
-  vec3 p=vLocal/max(1.0,uMaterial.y);
+  vec3 p=(vLocal+uPaintOffset)/max(1.0,uMaterial.y);
+  if(uMaterial.z>=0.0&&uPaint.x>0.0){
+    vec3 q=p*vec3(19.0,29.0,23.0),cell=floor(q);
+    float hash=fract(sin(dot(cell,vec3(17.13,31.7,73.9))+uPaint.y*19.0)*43758.5);
+    float panel=smoothstep(.70,.76,hash),mask=panel*.22;
+    float stripe=1.0-smoothstep(.009,.018,abs(abs(p.z)-max(.035,uPaint.z*.22)));
+    float style=uMaterial.z;
+    if(style>0.5&&style<1.5)mask=max(mask,stripe*.85);
+    else if(style<2.5&&style>1.5){float wave=sin(p.x*29.0+sin(p.z*21.0)*2.2+p.y*17.0);mask=smoothstep(-.1,.7,wave)*.60;}
+    else if(style<3.5&&style>2.5)mask=smoothstep(.45,.55,hash)*.60;
+    else if(style<4.5&&style>3.5)mask=smoothstep(.58,.70,fract(length(p.yz)*43.0+p.x*9.0))*.65;
+    else if(style<5.5&&style>4.5)mask=smoothstep(uPaint.z*.20,uPaint.z*.26,abs(p.z))*.98;
+    else if(style<6.5&&style>5.5)mask=max(stripe*.90,smoothstep(.30,.32,p.x)*(1.0-smoothstep(.06,.11,abs(p.z)))*.50);
+    else if(style<7.5&&style>6.5)mask=max(panel*.3,smoothstep(.08,.15,abs(p.z))*(1.0-smoothstep(-.08,.04,p.x))*.65);
+    else if(style<8.5&&style>7.5)mask=max(panel*.4,stripe*.8);
+    else if(style<9.5&&style>8.5)mask=step(.5,fract(p.x*22.0)+fract(p.z*22.0))*stripe;
+    vec3 pigment=mix(uInk,uTrim,clamp(mask,0.0,.98));
+    col=mix(uBg,pigment,clamp(shade,0.0,1.0));
+    float wear=step(.86,hash)*.10;col*=1.0-wear;
+    float spec=pow(max(dot(reflect(-normalize(vec3(.45,.8,.35)),N),Vd),0.0),mix(12.0,52.0,uPaint.x));
+    col+=mix(vec3(.10),uInk*.32,.4)*spec*uPaint.x;
+    // Small illuminated seams/windows; no full-hull neon or extra lights.
+    float lights=step(.966,hash)*(1.0-smoothstep(.025,.075,abs(fract(q.x)-.5)));
+    if(uMaterial.x==1.0||uMaterial.x==2.0)lights*=.08;
+    col+=uAccent*lights*.22*(1.0-uMaterial.w);
+    if(style>7.5&&style<8.5){float hazard=step(.5,fract((p.x+p.z)*42.0))*stripe*step(.15,p.x);col=mix(col,vec3(.67,.48,.12)*shade,hazard*.7);}
+    // Keep faction pigment on wrecks, with desaturation and scorch instead of a reset to gray.
+    float gray=dot(col,vec3(.21,.72,.07));col=mix(col,mix(col,vec3(gray),.48)*(.65+.18*hash),uMaterial.w);
+  }
   if(uMaterial.x>0.5){
     float spec=pow(max(dot(reflect(-normalize(vec3(.45,.8,.35)),N),Vd),0.0),18.0);
     if(uMaterial.x<1.5){ // Shadow chitin: irregular dark cells with a subtle wet rim.
@@ -11421,6 +11449,11 @@ void main(){
       col+=vec3(.015,.18,.035)*step(.985,cell)*seam;
     }
   }
+  // Restrained grazing-angle lift keeps dark Shadow/Borg silhouettes legible.
+  if((uMaterial.x>0.5&&uMaterial.x<1.5)||(uMaterial.x>4.5&&uMaterial.x<5.5)){
+    float rim=pow(1.0-max(dot(N,Vd),0.0),2.2);
+    col+=mix(uInk,vec3(.34,.38,.44),.45)*(.12+rim*.65)*(1.0-uMaterial.w*.7);
+  }
   float fog=1.0-exp(-length(uEye-vW)*uFog);
   float a=1.0;
   if(uCloak>0.001){
@@ -11438,9 +11471,9 @@ void main(){
   }
   o=vec4(mix(col,uBg,fog*0.85),a);
 }`);
-const SU={material:0,vp:0,pos:0,yaw:0,rot:0,anim:0,t:0,eye:0,ink:0,bg:0,fog:0,inz:0,hurt:0,tone:0,cloak:0};
+const SU={trim:0,accent:0,paint:0,paintOffset:0,material:0,vp:0,pos:0,yaw:0,rot:0,anim:0,t:0,eye:0,ink:0,bg:0,fog:0,inz:0,hurt:0,tone:0,cloak:0};
 for(const k of Object.keys(SU))SU[k]=gl.getUniformLocation(shipProg,
-  {material:"uMaterial",vp:"uVP",pos:"uPos",yaw:"uYaw",rot:"uRot",anim:"uAnim",t:"uT",eye:"uEye",ink:"uInk",
+  {trim:"uTrim",accent:"uAccent",paint:"uPaint",paintOffset:"uPaintOffset",material:"uMaterial",vp:"uVP",pos:"uPos",yaw:"uYaw",rot:"uRot",anim:"uAnim",t:"uT",eye:"uEye",ink:"uInk",
    bg:"uBg",fog:"uFog",inz:"uIn",hurt:"uHurt",tone:"uTone",cloak:"uCloak"}[k]);
 const beamProg=compile(`#version 300 es
 layout(location=0) in vec3 aP;
@@ -12099,7 +12132,7 @@ function wreckRecord(s,f,now,catastrophic){
   const delta=V.sub(world,[s.x,s.y,s.z]),r=f.r||8,n=V.len(delta)>1?V.norm(delta):V.norm([debrisRandom()-.5,debrisRandom()-.5,debrisRandom()-.5]);
   const outward=(catastrophic?22:8)*( .65+debrisRandom()*.7)/Math.max(1,Math.sqrt(r/90));
   const e=f.extents||[r,r,r],limit=debrisSpinLimit({rad:r}),omega=Math.max(-limit,Math.min(limit,s.yawV||0));
-  return {v:f.v,i:f.i,icount:f.i.length,rad:r,extents:e,x:world[0],y:world[1],z:world[2],yaw:s.yaw,
+  return {paint:s.paint||hullFinish(s),paintLength:s.paintLength||s.slen,paintAspect:s.paintAspect||[(s.meta?.beam||s.exZ*2||s.slen*.35)/s.slen,(s.meta?.height||s.exY*2||s.slen*.2)/s.slen],paintOffset:[f.ox,f.oy,f.oz],v:f.v,i:f.i,icount:f.i.length,rad:r,extents:e,x:world[0],y:world[1],z:world[2],yaw:s.yaw,
     bax:s.dax||[0,1,0],bang:s.dang||0,ax:V.norm([debrisRandom()-.5,debrisRandom()-.5,debrisRandom()-.5]),ang:0,
     vx:(s.dvx||0)-omega*delta[2]+n[0]*outward,vy:(s.dvy||0)+n[1]*outward,vz:(s.dvz||0)+omega*delta[0]+n[2]*outward,
     spin:limit*(debrisRandom()-.5),uid:wreckUid++,src:s.id,t0:now,integ:Math.min(28,1+Math.sqrt(r)*.3),life:45+debrisRandom()*35};
@@ -12114,7 +12147,7 @@ function uploadDebris(now){
 }
 function disableHull(s,now){
   const mesh=s.hullMesh;if(!mesh||wrecks.filter(w=>w.disabled&&!w.gone).length>=24||wrecks.length+debrisQueue.length>=DEBRIS_LIMIT)return false;
-  const e=[s.exL,s.exY,s.exZ],w={vao:s.vao,vbo:s.vbo,ibo:s.ibo,icount:s.icount,v:mesh.v,i:mesh.i,
+  const e=[s.exL,s.exY,s.exZ],w={paint:hullFinish(s),paintLength:s.slen,paintAspect:[(s.meta?.beam||s.exZ*2||s.slen*.35)/s.slen,(s.meta?.height||s.exY*2||s.slen*.2)/s.slen],paintOffset:[0,0,0],vao:s.vao,vbo:s.vbo,ibo:s.ibo,icount:s.icount,v:mesh.v,i:mesh.i,
     x:s.x,y:s.y,z:s.z,yaw:s.yaw,bax:s.dax,bang:s.dang,ax:[0,1,0],ang:0,rad:Math.hypot(...e),extents:e,
     vx:s.dvx,vy:s.dvy,vz:s.dvz,spin:s.yawV||0,uid:wreckUid++,src:s.id,t0:now,life:180,disabled:true,
     integ:Math.min(100,15+Math.sqrt(s.slen)),integratedAt:now,sourceFrags:s.fragData};
@@ -12128,7 +12161,7 @@ function damageDebris(w,damage,now,point){
   if(w.integ>0)return;
   if(w.disabled&&w.sourceFrags){
     const pose=xQAA(w.bax,w.bang,w.ax,w.ang||0);
-    const source={id:w.src,x:w.x,y:w.y,z:w.z,yaw:w.yaw,dax:pose.ax,dang:pose.ang,dvx:w.vx,dvy:w.vy,dvz:w.vz,slen:w.extents[0]*2,fragData:w.sourceFrags,destruction:'catastrophic'};
+    const source={paint:w.paint,paintLength:w.paintLength,paintAspect:w.paintAspect,id:w.src,x:w.x,y:w.y,z:w.z,yaw:w.yaw,dax:pose.ax,dang:pose.ang,dvx:w.vx,dvy:w.vy,dvz:w.vz,slen:w.extents[0]*2,fragData:w.sourceFrags,destruction:'catastrophic'};
     spawnBreakup(source,now);w.sourceFrags=null;
   }
   w.shatter=true;
@@ -15126,12 +15159,16 @@ function drawCoherentWeapons(now){
   const cull=gl.isEnabled(gl.CULL_FACE);gl.disable(gl.CULL_FACE);
   const groups=new Map();
   function add(a,b,width,col){
+    // Optical halo has a pixel floor; the collision bore stays unchanged.
+    const distance=V.len(V.sub([cam.ex,cam.ey,cam.ez],V.mul(V.add(a,b),.5)));
+    const worldPerPixel=distance*(2*Math.tan(.44))/Math.max(1,cvs.height);
+    width=Math.max(width,Math.min(24,worldPerPixel*.85));
     const key=col.join(','),g=groups.get(key)||{col,outer:[],core:[]};
     g.outer.push(...weaponRibbon(a,b,width));g.core.push(...weaponRibbon(a,b,width*.28));groups.set(key,g);
   }
   for(const b of beams)if(b.coherent&&now>=b.t0&&now-b.t0<(b.life||.5))add(b.a,b.b,b.wid||2,b.col||RACE_DEFS[b.race].beam);
   for(const tr of tracers)if(tr.energy&&!tr.dead&&now>=tr.t0){
-    const age=Math.max(0,now-tr.t0),tail=Math.min(age,.025);
+    const age=Math.max(0,now-tr.t0),tail=Math.min(age,.075);
     add([tr.x-tr.vx*tail,tr.y-tr.vy*tail,tr.z-tr.vz*tail],[tr.x,tr.y,tr.z],tr.width,tr.col);
   }
   for(const g of groups.values())for(const [vertices,core] of [[g.outer,false],[g.core,true]]){
@@ -15144,6 +15181,7 @@ function drawCoherentWeapons(now){
 function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
   if(!battleAI.fireable(s,t,now))return false;
   const shot=weaponSolution(s,t,now,muz);if(!shot)return false;
+  dmg=(dmg||1)*.60; // More discharges without multiplying sustained lethality.
   const {o,profile}=shot;s.lastFire=now;s.weaponShot=(s.weaponShot||0)+1;
   const dist=V.len(V.sub(shot.aim,o));
   if(profile.mode==='bolt'){
@@ -15224,8 +15262,8 @@ function raceFire(s,t,now,nx,ny,nz){
   nx=o0[0];ny=o0[1];nz=o0[2];
   if(w===0&&solution.profile.fixed&&(s.race===5||s.race===6)){
     // More individual bolts, comparable sustained damage, every shot aligned.
-    fireBeam(s,t,now,nx,ny,nz,.28,false);
-    s.cool=.23+combatRandom()*.06;return;
+    fireBeam(s,t,now,nx,ny,nz,.14,false);
+    s.cool=.10+combatRandom()*.04;return;
   }
   if(w===1){
     tracerBurst(s,t,now,solution,(s.hulls||s.slen>=90)?9:s.hero?4:3,650);
@@ -15680,7 +15718,7 @@ function megaStep(s,now,dt){
      bombardment while the fleets are still closing, and each one hunts
      the biggest thing she can see */
   for(const la of (s.lances||[])){
-    la.cool-=dt*0.7/(s.cycleK||1);
+    la.cool-=dt/(s.cycleK||1);
     if(la.cool>0)continue;
     const rng=borgGun?Math.max(1800,s.slen*0.85)
       :slicer?Math.max(1600,s.slen*1.05)
@@ -15711,17 +15749,17 @@ function megaStep(s,now,dt){
         wound(best,4.5,s,now);
         la.cool=3.2+combatRandom()*1.8;
       }else{
-        if(!fireBeam(s,best,now,m[0],m[1],m[2],3,true,[la.lx,la.ly,la.lz])){la.cool=.08;continue;}
-        la.cool=5.5+combatRandom()*3;
+        if(!fireBeam(s,best,now,m[0],m[1],m[2],1.7,true,[la.lx,la.ly,la.lz])){la.cool=.08;continue;}
+        la.cool=2.2+combatRandom()*1.4;
       }
     }
   }
   /* the battery never speaks as one thunderclap: every turret keeps her
      own clock, so fire rolls up and down the ship as stations come ready */
   let ready=false;
-  for(const tu of (s.turrets||[])){tu.cool-=dt*0.7/(s.cycleK||1);if(tu.cool<=0)ready=true;}
+  for(const tu of (s.turrets||[])){tu.cool-=dt/(s.cycleK||1);if(tu.cool<=0)ready=true;}
   if(ready){
-    const rng=borgGun?Math.max(1400,s.slen*0.72):slicer?Math.max(900,s.slen*0.55):Math.max(360,Math.min(650,s.slen*.20));
+    const rng=borgGun?Math.max(1400,s.slen*0.72):slicer?Math.max(900,s.slen*0.55):Math.max(650,Math.min(1400,s.slen*.50));
     const tgts=[];
     const foes6=battleAI.targets(s,now);
     for(let k6=0;k6<foes6.length;k6++){
@@ -15750,8 +15788,8 @@ function megaStep(s,now,dt){
           wound(t,2.2,s,now);
           tu.cool=2.8+combatRandom()*1.8;
         }else{
-          if(!fireBeam(s,t,now,m[0],m[1],m[2],1,false,[tu.lx,tu.ly,tu.lz])){tu.cool=.08;continue;}
-          tu.cool=2.8+combatRandom()*1.8;
+          if(!fireBeam(s,t,now,m[0],m[1],m[2],.35,false,[tu.lx,tu.ly,tu.lz])){tu.cool=.08;continue;}
+          tu.cool=.7+combatRandom()*.5;
         }
       }
     }
@@ -16121,7 +16159,7 @@ function simStep(now,dt){
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
       continue;
     }
-    s.cool-=dt*0.55;   /* the guns breathe: a longer war is a slower trigger */
+    s.cool-=dt;   /* cooldowns use simulation seconds; damage balances the denser cadence */
     if(s.err){
       s.err[0]=Math.max(-10,Math.min(10,s.err[0]+Math.sin(now*0.11+(s.wf||0))*dt*1.6));
       s.err[1]=Math.max(-7,Math.min(7,s.err[1]+Math.sin(now*0.08+(s.wf2||0))*dt*1.1));
@@ -16135,7 +16173,7 @@ function simStep(now,dt){
     let liningUp=false;
     if(weaponProfile(s).fixed&&['ATTACK','FLANK'].includes(plan.mode)){
       const target=ships[plan.target];
-      if(target&&!target.dead&&battleAI.fireable(s,target,now)&&gapTo(s,target)<700){
+      if(target&&!target.dead&&battleAI.fireable(s,target,now)&&gapTo(s,target)<1250){
         goal=fighterPassGoal(s,target,now);liningUp=now>=(s.passUntil||0);
       }
     }
@@ -16225,7 +16263,7 @@ function simStep(now,dt){
        Range is to the skin, so a White Star on a First One can actually shoot. */
     if(s.cool<=0&&now>=(s.clearingUntil||0)){
       let rng=s.hero?Math.max(250,Math.min(400,(s.slen||40)*.7+210)):isGunboat(s)?340:s.slen>90?280:210;
-      if(weaponProfile(s).fixed)rng=Math.max(rng,420);
+      if(weaponProfile(s).fixed)rng=Math.max(rng,850);
       const fx0=(RACE_DEFS[s.race]||{}).fire;
       if(fx0==="slicer"||fx0==="cutter")rng=Math.max(rng,cutRange(s));
       if(s.wpn===2)rng=Math.max(rng,210);
@@ -16778,25 +16816,57 @@ let lastT=0,fpsA=60,statT=0;
 // Natural hull finishes in the default slate view. Other palettes remain
 // deliberate ink studies. Mixed fleets choose by class, not just allegiance.
 function hullFinish(s){
-  const klass=(s.meta&&s.meta.klass)||"";
-  let color=[.69,.72,.75],surface=0;
-  switch(s.race){
-    case 5:color=[.69,.72,.76];break;
-    case 6:color=[.76,.73,.67];break;
-    case 7:color=[.38,.62,.83];surface=4;break;
-    case 8:color=[.21,.22,.28];surface=1;break;
-    case 9:color=/WHITE STAR/.test(klass)?[.67,.54,.78]:[.54,.60,.68];surface=/WHITE STAR/.test(klass)?4:0;break;
-    case 10:color=[.77,.80,.81];break;
-    case 11:color=[.40,.51,.29];break;
-    case 12:color=[.32,.37,.34];surface=5;break;
-    case 13:color=/MONDOSHAWAN/.test(klass)?[.79,.61,.34]:/CAB|TAXI/.test(klass)?[.84,.62,.13]:[.72,.74,.72];surface=/MONDOSHAWAN/.test(klass)?3:0;break;
-    case 14:color=/CHEYENNE|DROPSHIP/.test(klass)?[.40,.45,.31]:[.52,.58,.63];break;
-    case 15:color=[.47,.48,.41];surface=2;break;
-    case 16:color=[.40,.43,.38];break;
-    case 17:color=/VORLON/.test(klass)?[.73,.58,.27]:[.57,.51,.62];break;
+  const klass=((s.meta&&s.meta.klass)||'').toUpperCase();
+  // Hull / trim / emission. Every generated class inherits a deliberate family.
+  const families=[
+    [[.69,.77,.79],[.10,.24,.31],[.26,.85,.94],1,0,.45], // Yard: ceramic/navy
+    [[.24,.49,.43],[.50,.27,.39],[.25,.86,.69],2,1,.70], // Shoal: jade/rose chitin
+    [[.59,.58,.77],[.24,.15,.39],[.72,.48,.98],4,0,.65], // Lattice: amethyst ceramic
+    [[.59,.43,.30],[.17,.29,.32],[.90,.58,.23],3,0,.25], // Drift: rust/salvaged petrol
+    [[.83,.78,.64],[.23,.35,.46],[.86,.70,.34],4,3,.70], // Choir: pearl/gold
+    [[.72,.77,.82],[.24,.30,.38],[.31,.65,.90],0,0,.65],
+    [[.81,.77,.65],[.57,.16,.13],[.52,.77,.97],6,0,.40],
+    [[.40,.60,.82],[.15,.25,.47],[.37,.75,.85],2,4,.70],
+    [[.17,.19,.25],[.075,.055,.13],[.36,.16,.53],2,1,.85],
+    [[.60,.65,.70],[.19,.28,.38],[.48,.67,.97],1,0,.55],
+    [[.84,.86,.83],[.29,.39,.48],[.22,.63,.99],7,0,.65],
+    [[.43,.52,.26],[.30,.20,.12],[.68,.87,.25],1,0,.55],
+    [[.29,.34,.31],[.075,.12,.10],[.12,.92,.28],0,5,.50],
+    [[.83,.65,.32],[.42,.29,.10],[.68,.46,.19],4,3,.75],
+    [[.53,.58,.59],[.21,.28,.28],[.76,.60,.24],8,0,.30],
+    [[.53,.54,.43],[.24,.27,.21],[.45,.50,.28],2,2,.55],
+    [[.41,.49,.45],[.28,.24,.19],[.28,.77,.62],3,0,.80],
+    [[.60,.43,.57],[.30,.19,.35],[.83,.57,.32],2,4,.80]
+  ];
+  const r=Math.max(0,Math.min(17,s.race||0)),row=families[r];
+  let [color,trim,accent,pattern,surface,gloss]=row;
+  if(r===5&&/TIE/.test(klass)){color=[.61,.69,.77];trim=[.045,.07,.095];pattern=5;accent=[.85,.17,.13];}
+  if(r===6&&/X-WING|T-65|YT-1300/.test(klass)){pattern=6;trim=[.60,.17,.13];}
+  if(r===6&&/Y-WING/.test(klass)){trim=[.82,.59,.16];pattern=1;}
+  if(r===6&&/A-WING/.test(klass)){color=[.73,.24,.18];trim=[.85,.82,.69];pattern=6;}
+  if(r===6&&/MON CAL|MC[0-9]/.test(klass)){color=[.67,.66,.58];trim=[.45,.39,.28];pattern=3;}
+  if(r===9&&/WHITE STAR/.test(klass)){color=[.68,.62,.82];trim=[.26,.40,.52];accent=[.42,.80,.77];surface=4;pattern=2;gloss=.8;}
+  if(r===9&&/STARFURY|THUNDERBOLT/.test(klass)){color=[.69,.72,.72];trim=[.71,.38,.12];pattern=1;}
+  if(r===10&&/DEFIANT/.test(klass)){trim=[.39,.43,.48];pattern=1;}
+  if(r===13&&!/MONDOSHAWAN/.test(klass)){
+    surface=0;gloss=.55;
+    if(/CAB|TAXI/.test(klass)){color=[.97,.68,.10];trim=[.10,.11,.12];accent=[.90,.82,.53];pattern=9;}
+    else if(/POLICE/.test(klass)){color=[.78,.83,.87];trim=[.10,.19,.35];accent=[.20,.44,1];pattern=1;}
+    else if(/FHLOSTON/.test(klass)){color=[.74,.83,.84];trim=[.28,.54,.64];accent=[.95,.75,.36];pattern=7;}
+    else{color=[.54,.56,.48];trim=[.39,.19,.12];accent=[.78,.37,.15];pattern=3;}
   }
-  return {color,surface};
+  if(r===14&&/CHEYENNE|DROPSHIP/.test(klass)){color=[.39,.46,.29];trim=[.18,.23,.14];pattern=8;}
+  if(r===14&&/NARCISSUS|NOSTROMO/.test(klass)){color=[.76,.73,.62];trim=[.36,.36,.30];}
+  if(r===17){
+    if(/VORLON/.test(klass)){color=[.78,.63,.29];trim=[.33,.43,.23];accent=[.36,.82,.64];surface=3;}
+    else if(/THOUGHT/.test(klass)){color=[.40,.58,.69];trim=[.18,.31,.47];accent=[.53,.90,.98];}
+    else if(/TRIUMVIRON/.test(klass)){color=[.67,.30,.22];trim=[.29,.11,.13];accent=[.98,.53,.26];}
+    else if(/FIRST BORN|LORIEN/.test(klass)){color=[.59,.46,.29];trim=[.30,.38,.22];accent=[.74,.88,.39];}
+  }
+  let hash=0;for(let i=0;i<klass.length;i++)hash=(Math.imul(hash,31)+klass.charCodeAt(i))>>>0;
+  return {color,trim,accent,pattern,surface,gloss,seed:(hash%997)/997};
 }
+
 function frame(nowMs){
   requestAnimationFrame(frame);
   const wall=nowMs/1000;
@@ -16905,9 +16975,13 @@ function frame(nowMs){
   let alive=0;
   for(const s of ships){
     if(!s.vao)continue;
-    const finish=hullFinish(s),natural=palI===2&&s.race>=5;
-    gl.uniform3fv(SU.ink,natural?finish.color:inkc);
-    gl.uniform4f(SU.material,natural&&!s.dead?finish.surface:0,Math.max(1,s.slen),0,0);
+    const finish=s.finish||(s.finish=hullFinish(s));
+    const paintGain=[1,.72,1,.72,.68][palI];
+    gl.uniform3fv(SU.ink,finish.color.map(c=>c*paintGain));
+    gl.uniform3fv(SU.trim,finish.trim.map(c=>c*paintGain));gl.uniform3fv(SU.accent,finish.accent);
+    gl.uniform4f(SU.paint,finish.gloss,finish.seed,(s.meta.beam||s.exZ*2||s.slen*.3)/s.slen,(s.meta.height||s.exY*2||s.slen*.2)/s.slen);
+    gl.uniform3f(SU.paintOffset,0,0,0);
+    gl.uniform4f(SU.material,finish.surface,Math.max(1,s.slen),finish.pattern,s.dead?1:0);
     if(s.dead){
       /* a corpse drifts. She does not blink out — she speckles into dust. */
       if(!s.dustT&&now-(s.deadT||0)>12){
@@ -16966,7 +17040,7 @@ function frame(nowMs){
     gl.drawElements(gl.TRIANGLES,s.icount,gl.UNSIGNED_INT,0);
     if(ck>0.04){gl.depthMask(true);gl.disable(gl.BLEND);}
   }
-  gl.uniform3fv(SU.ink,inkc);gl.uniform4f(SU.material,0,1,0,0);
+  gl.uniform3fv(SU.ink,inkc);gl.uniform4f(SU.material,0,1,-1,0);gl.uniform4f(SU.paint,0,0,0,0);
   drawBarrels(now,m,FRP);
   /* the litter of the war: charred pieces adrift, tumbling where they
      died — and beneath them the boneyard, every earlier piece kept */
@@ -16986,6 +17060,10 @@ function frame(nowMs){
   for(const w of wrecks){
     if(w.gone)continue;
     if(!sphereVis(FRP,w.x,w.y,w.z,(w.rad||6)*1.6))continue;
+    const finish=w.paint||hullFinish({race:0}),gain=[1,.72,1,.72,.68][palI];
+    gl.uniform3fv(SU.ink,finish.color.map(c=>c*gain));gl.uniform3fv(SU.trim,finish.trim);gl.uniform3fv(SU.accent,finish.accent);
+    gl.uniform4f(SU.paint,finish.gloss,finish.seed,...(w.paintAspect||[.35,.2]));gl.uniform3fv(SU.paintOffset,w.paintOffset||[0,0,0]);
+    gl.uniform4f(SU.material,finish.surface,w.paintLength||w.rad*2,finish.pattern,1);
     gl.uniform3f(SU.pos,w.x,w.y,w.z);
     gl.uniform2f(SU.yaw,Math.cos(w.yaw),Math.sin(w.yaw));
     if(w.pending)gl.uniform4f(SU.rot,w.fAx[0],w.fAx[1],w.fAx[2],w.fAng);
@@ -16994,7 +17072,7 @@ function frame(nowMs){
       gl.uniform4f(SU.rot,wr.ax[0],wr.ax[1],wr.ax[2],wr.ang);
     }
     gl.uniform1f(SU.inz,w.dustT?Math.max(0.04,1-(now-w.dustT)/w.dustDur):1.0);
-    gl.uniform1f(SU.tone,w.dustT?0.28:0.42);
+    gl.uniform1f(SU.tone,w.dustT?0.28:0.70);
     gl.bindVertexArray(w.vao);
     gl.drawElements(gl.TRIANGLES,w.icount,gl.UNSIGNED_INT,0);
   }

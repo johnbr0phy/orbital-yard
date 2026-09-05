@@ -19,7 +19,7 @@
  const hullFinish=Function(finishSource+';return hullFinish;')();
  function compile(type,text){const s=gl.createShader(type);gl.shaderSource(s,text);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
  const prog=gl.createProgram();gl.attachShader(prog,compile(gl.VERTEX_SHADER,shader[1]));gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,shader[2]));gl.linkProgram(prog);if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(prog));gl.useProgram(prog);
- const u={};for(const name of ['VP','Pos','Yaw','Rot','Anim','T','Cloak','Eye','Ink','Bg','Fog','In','Hurt','Tone','Material'])u[name]=gl.getUniformLocation(prog,'u'+name);
+ const u={};for(const name of ['VP','Pos','Yaw','Rot','Anim','T','Cloak','Eye','Ink','Bg','Fog','In','Hurt','Tone','Material','Trim','Accent','Paint','PaintOffset'])u[name]=gl.getUniformLocation(prog,'u'+name);
  const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
  const names=['Yard','Shoal','Lattice','Drift','Choir','Imperial','Rebel','Minbari','Shadows','EarthForce','Federation','Klingon','Borg','Mondoshawan','USCM','Engineers','Yautja','First Ones'];
  const entries=names.map((name,race)=>({label:name+' · featured ship',race,build:()=>forge.buildHero(race,42)}));
@@ -32,7 +32,7 @@
   const eye=norm([Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch)]),right=norm(cross([0,1,0],eye)),up=cross(eye,right),aspect=canvas.width/canvas.height,zoom=1.65/extent;
   const mat=new Float32Array([right[0]*zoom/aspect,up[0]*zoom,-eye[0]/(extent*3),0,right[1]*zoom/aspect,up[1]*zoom,-eye[1]/(extent*3),0,right[2]*zoom/aspect,up[2]*zoom,-eye[2]/(extent*3),0,0,0,0,1]);
   const info=hullFinish({race:model.race,meta:model.meta}),clay=$('finish').value==='clay';
-  gl.uniformMatrix4fv(u.VP,false,mat);gl.uniform3f(u.Pos,0,0,0);gl.uniform2f(u.Yaw,1,0);gl.uniform4f(u.Rot,0,1,0,0);gl.uniform4f(u.Anim,0,0,1,0);gl.uniform1f(u.T,0);gl.uniform1f(u.Cloak,0);gl.uniform3fv(u.Eye,eye.map(x=>x*extent*5));gl.uniform3fv(u.Ink,clay?[.76,.79,.82]:info.color);gl.uniform3f(u.Bg,.078,.102,.133);gl.uniform1f(u.Fog,0);gl.uniform1f(u.In,1);gl.uniform1f(u.Hurt,0);gl.uniform1f(u.Tone,1);gl.uniform4f(u.Material,clay?0:info.surface,model.meta.length,0,0);gl.drawArrays(gl.TRIANGLES,0,count);
+  gl.uniformMatrix4fv(u.VP,false,mat);gl.uniform3f(u.Pos,0,0,0);gl.uniform2f(u.Yaw,1,0);gl.uniform4f(u.Rot,0,1,0,0);gl.uniform4f(u.Anim,0,0,1,0);gl.uniform1f(u.T,0);gl.uniform1f(u.Cloak,0);gl.uniform3fv(u.Eye,eye.map(x=>x*extent*5));gl.uniform3fv(u.Ink,clay?[.76,.79,.82]:info.color);gl.uniform3f(u.Bg,.078,.102,.133);gl.uniform1f(u.Fog,0);gl.uniform1f(u.In,1);gl.uniform1f(u.Hurt,0);gl.uniform1f(u.Tone,1);gl.uniform3fv(u.Trim,info.trim);gl.uniform3fv(u.Accent,info.accent);gl.uniform3f(u.PaintOffset,0,0,0);gl.uniform4f(u.Paint,clay?0:info.gloss,info.seed,model.meta.beam/model.meta.length,model.meta.height/model.meta.length);gl.uniform4f(u.Material,clay?0:info.surface,model.meta.length,clay?-1:info.pattern,0);gl.drawArrays(gl.TRIANGLES,0,count);
  }
  function select(){
   const e=entries[+$('model').value];model=e.build();model.race=e.race;const mesh=forge.shipMeshQ(model,.65),center=model.bb[0].map((v,i)=>(v+model.bb[1][i])/2);const vertices=mesh.t;

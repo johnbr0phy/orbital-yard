@@ -94,7 +94,7 @@
     senses(s) {
       const a=this.seedShip(s);
       if(a.sensor&&a.sensor.length===s.slen)return a.sensor;
-      return a.sensor={length:s.slen,range:a.profile.range+(capital(s)?radius(s):Math.min(600,(s.slen||30)*.30)),
+      return a.sensor={length:s.slen,range:a.profile.range*(capital(s)?1:1.5)+(capital(s)?radius(s):Math.min(600,(s.slen||30)*.30)),
         fov:Math.min(360,a.profile.fov+(capital(s)?35:0)),
         interval:(.44+(1-a.traits.skill)*.50)*(s.hulls?.9:1)};
     }
@@ -224,6 +224,7 @@
       for(const c of known){
         let score=2.2/(1+surface(s,c)/650)+(1-c.hp/Math.max(1,c.hpMax))*.48+c.confidence*.35;
         if(c.hulls)score+=s.hulls?.52:-.25;
+        if(!capital(s)&&(s.slen||0)<120&&!c.hulls&&c.slen<120)score+=.65;
         const sq=this.squads[s.squad];if(sq&&sq.tgt===c.id)score+=a.traits.cooperation*.28;
         score+=((Math.imul(s.seed^c.id,2654435761)>>>0)%100)/500;
         if(c.id===a.target)score+=.18;
