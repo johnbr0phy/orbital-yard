@@ -1,0 +1,46 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tribute New · Ship study</title>
+<style>body{margin:0;background:#141a22;color:#e8e9ed;font:15px system-ui}main{max-width:1150px;margin:auto;padding:25px}h1{font-size:25px;margin:4px 0 8px}p{color:#aab8c9;line-height:1.5}nav,section{display:flex;flex-wrap:wrap;align-items:center;gap:14px}a{color:#bdd4f4}select,button{font:inherit;color:#e8e9ed;background:#242e3c;border:1px solid #59667a;border-radius:5px;padding:9px}label{display:flex;gap:8px;align-items:center}canvas{display:block;width:100%;height:570px;background:#141a22;margin:18px 0;border:1px solid #344051;border-radius:8px}#status{font-variant-numeric:tabular-nums}small{color:#aab8c9}@media(max-width:600px){canvas{height:420px}main{padding:15px}}</style>
+<main><nav><a href="armada-war-tribute-new.html">← Tribute New battle</a><a href="https://github.com/johnbr0phy/orbital-yard/blob/main/MODELS-NEW.md">Fleet review & references</a></nav><h1>Ship study</h1><p>Inspect one ship at a time. Choose a view or drag to rotate. These are procedural interpretations; the review identifies canonical designs and invented variants.</p>
+<section><label>Ship <select id="model" aria-label="Ship"></select></label><label>View <select id="view"><option value="oblique">Three-quarter</option><option value="top">Top</option><option value="side">Side</option><option value="front">Front</option></select></label><label>Finish <select id="finish"><option value="material">Fleet material</option><option value="clay">Neutral clay</option></select></label></section>
+<canvas id="canvas" aria-label="Static three-dimensional ship model"></canvas><div id="status" role="status">Loading forge…</div><p id="identity"></p><small>One ship, one draw per change. No battle simulation, animation loop, reinforcements or background forge workers.</small></main>
+<script>
+(async()=>{
+ const $=id=>document.getElementById(id),canvas=$('canvas'),gl=canvas.getContext('webgl2',{antialias:true,preserveDrawingBuffer:true});
+ if(!gl)throw Error('WebGL 2 is unavailable.');
+ const response=await fetch('armada-war-tribute-new.html');if(!response.ok)throw Error('Cannot load Tribute New forge.');
+ const html=await response.text(),source=html.slice(html.indexOf('\n<script>\n')+10,html.lastIndexOf('<'+ '/script>'));
+ const prefix=source.slice(0,source.indexOf('//__ARMADA_WORKER_CUT__'));
+ const builders=['buildHero','buildImperialMega','buildRebelMega','buildMinbariMega','buildShadowMega','buildEarthforceMega','buildFedMega','buildKlingonMega','buildBorgMega','buildMondoMega','buildUSCMMega','buildEngineerMega','buildYautjaMega','buildFirstonesMega','shipMeshQ'];
+ // Only the fixed, same-origin forge code; no query-supplied scripts or eval input.
+ const forge=Function(prefix+';return {'+builders.join(',')+'};')();
+ const shader=source.match(/const shipProg=compile\(`([\s\S]*?)`,`([\s\S]*?)`\);/);
+ if(!shader)throw Error('Ship shader unavailable.');
+ const finishSource=source.slice(source.indexOf('function hullFinish('),source.indexOf('\nfunction frame('));
+ const hullFinish=Function(finishSource+';return hullFinish;')();
+ function compile(type,text){const s=gl.createShader(type);gl.shaderSource(s,text);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
+ const prog=gl.createProgram();gl.attachShader(prog,compile(gl.VERTEX_SHADER,shader[1]));gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,shader[2]));gl.linkProgram(prog);if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(prog));gl.useProgram(prog);
+ const u={};for(const name of ['VP','Pos','Yaw','Rot','Anim','T','Cloak','Eye','Ink','Bg','Fog','In','Hurt','Tone','Material'])u[name]=gl.getUniformLocation(prog,'u'+name);
+ const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+ const names=['Yard','Shoal','Lattice','Drift','Choir','Imperial','Rebel','Minbari','Shadows','EarthForce','Federation','Klingon','Borg','Mondoshawan','USCM','Engineers','Yautja','First Ones'];
+ const entries=names.map((name,race)=>({label:name+' · featured ship',race,build:()=>forge.buildHero(race,42)}));
+ for(const [race,name] of [[5,'Imperial'],[6,'Rebel'],[7,'Minbari'],[8,'Shadow'],[9,'Earthforce'],[10,'Fed'],[11,'Klingon'],[12,'Borg'],[13,'Mondo'],[14,'USCM'],[15,'Engineer'],[16,'Yautja'],[17,'Firstones']])for(const size of [10,25,50])entries.push({label:names[race]+' · capital '+size,race,build:()=>forge['build'+name+'Mega'](42,size)});
+ entries.forEach((entry,i)=>{const o=document.createElement('option');o.value=i;o.textContent=entry.label;$('model').append(o)});$('model').value=8;
+ let model,count=0,extent=1,yaw=.65,pitch=.48;
+ const norm=v=>{const d=Math.hypot(...v)||1;return v.map(x=>x/d)},cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+ function draw(){
+  if(!model)return;canvas.width=Math.min(1500,canvas.clientWidth);canvas.height=Math.min(750,canvas.clientHeight);gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(.078,.102,.133,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.disable(gl.CULL_FACE);
+  const eye=norm([Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch)]),right=norm(cross([0,1,0],eye)),up=cross(eye,right),aspect=canvas.width/canvas.height,zoom=1.65/extent;
+  const mat=new Float32Array([right[0]*zoom/aspect,up[0]*zoom,-eye[0]/(extent*3),0,right[1]*zoom/aspect,up[1]*zoom,-eye[1]/(extent*3),0,right[2]*zoom/aspect,up[2]*zoom,-eye[2]/(extent*3),0,0,0,0,1]);
+  const info=hullFinish({race:model.race,meta:model.meta}),clay=$('finish').value==='clay';
+  gl.uniformMatrix4fv(u.VP,false,mat);gl.uniform3f(u.Pos,0,0,0);gl.uniform2f(u.Yaw,1,0);gl.uniform4f(u.Rot,0,1,0,0);gl.uniform4f(u.Anim,0,0,1,0);gl.uniform1f(u.T,0);gl.uniform1f(u.Cloak,0);gl.uniform3fv(u.Eye,eye.map(x=>x*extent*5));gl.uniform3fv(u.Ink,clay?[.76,.79,.82]:info.color);gl.uniform3f(u.Bg,.078,.102,.133);gl.uniform1f(u.Fog,0);gl.uniform1f(u.In,1);gl.uniform1f(u.Hurt,0);gl.uniform1f(u.Tone,1);gl.uniform4f(u.Material,clay?0:info.surface,model.meta.length,0,0);gl.drawArrays(gl.TRIANGLES,0,count);
+ }
+ function select(){
+  const e=entries[+$('model').value];model=e.build();model.race=e.race;const mesh=forge.shipMeshQ(model,.65),center=model.bb[0].map((v,i)=>(v+model.bb[1][i])/2);const vertices=mesh.t;
+  for(let i=0;i<vertices.length;i++)vertices[i]-=center[i%3];extent=Math.max(...model.bb[0].map((v,i)=>model.bb[1][i]-v));count=vertices.length/3;gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);
+  $('status').textContent=model.meta.klass+' · '+Math.round(model.meta.length)+' m model length · '+Math.round(count/3).toLocaleString()+' triangles';
+  $('identity').textContent=e.race<5?'Original Orbital Yard design.':e.race===15?'Juggernaut/Derelict anatomy is film-derived; patrol, seeder and ark variants are speculative.':e.race===13?'Mixed Fifth Element convoy. The Mondoshawan shell is based on a production maquette; armed use is a battle adaptation.':'See the fleet review for reference provenance and remaining simplifications.';draw();
+ }
+ $('model').onchange=select;$('finish').onchange=draw;$('view').onchange=()=>{[yaw,pitch]=({oblique:[.65,.48],top:[0,1.56],side:[0,0],front:[Math.PI/2,0]})[$('view').value];draw()};
+ let drag=null;canvas.onpointerdown=e=>{drag=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)};canvas.onpointerup=()=>drag=null;canvas.onpointermove=e=>{if(!drag)return;yaw+=(e.clientX-drag[0])*.008;pitch=Math.max(-1.5,Math.min(1.5,pitch+(e.clientY-drag[1])*.008));drag=[e.clientX,e.clientY];draw()};addEventListener('resize',draw);select();
+})().catch(e=>{document.getElementById('status').textContent=e.message;console.error(e)});
+</script></html>

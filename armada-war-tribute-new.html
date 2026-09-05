@@ -238,8 +238,8 @@ body.intro #wasd{
 <canvas id="gl"></canvas>
 <div class="hud" id="brand">
   <div class="t">ORBITAL YARD — THE TRIBUTE WAR</div>
-  <div class="s"><a href="index.html">&larr; the yard</a> · every fleet we grew up with · <a href="https://github.com/johnbr0phy/orbital-yard" target="_blank" rel="noopener">GitHub</a> · <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">@JohnBr0</a></div>
-  <div class="s2"><a href="index.html">&larr; the yard</a> · tap a ship · pinch zoom · ★ heroes</div>
+  <div class="s"><a href="index.html">&larr; the yard</a> · every fleet we grew up with · <a href="tribute-new-models.html">ship study</a> · <a href="https://github.com/johnbr0phy/orbital-yard" target="_blank" rel="noopener">GitHub</a> · <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">@JohnBr0</a></div>
+  <div class="s2"><a href="index.html">&larr; the yard</a> · <a href="tribute-new-models.html">ship study</a> · ★ heroes</div>
 </div>
 <div class="hud" id="stat"></div>
 <div class="hud" id="wasd"><b>W</b><b>A</b><b>S</b><b>D</b> fly &nbsp;·&nbsp; <b>Q</b><b>E</b> climb &amp; dive</div>
@@ -3543,51 +3543,32 @@ var bgSq=function(x,s){return{pts:[[x,s,-s],[x,-s,-s],[x,-s,s],[x,s,s]]};};
    plane lives in the anatomy. o.queen keeps every facet and opens the
    throne eye; a fleet diamond may leave a face bare. */
 var bgDiamond=function(parts,L,R,o){
-  o=o||{};
-  const rr=(a,b)=>a+R()*(b-a);
-  const hx=L/2,hy=L*(o.hy||0.27),hz=L*(o.hz||0.34);
-  const eps=0.02,queen=!!o.queen;
-  const fore=[],aft=[];
-  fore.push({k:"loft",sec:[bgDia(0,hy,hz),bgDia(hx*0.55,hy*0.5,hz*0.5),bgDia(hx,hy*eps,hz*eps)]});
-  aft.push({k:"loft",sec:[bgDia(-hx,hy*eps,hz*eps),bgDia(-hx*0.55,hy*0.5,hz*0.5),bgDia(0,hy,hz)]});
-  const apex=s=>[s*hx,0,0];
-  const mid=[[0,0,-hz],[0,-hy,0],[0,0,hz],[0,hy,0]];
-  const rt=L*(queen?0.016:0.012);
-  const half={"1":fore,"-1":aft};
-  let apDone=false;
-  for(const s of[1,-1])for(let i=0;i<4;i++){
-    const A=apex(s),B=mid[i],C=mid[(i+1)%4];
-    const G=V.mul(V.add(A,V.add(B,C)),1/3);
-    let n=V.norm(V.cross(V.sub(B,A),V.sub(C,A)));
-    if(n[0]*G[0]+n[1]*G[1]+n[2]*G[2]<0)n=V.mul(n,-1);
-    const[t1,t2]=basis(n);
-    const tgt=half[String(s)];
-    if(s>0&&i===2&&!apDone){
-      apDone=true;
-      tgt.push({k:"disc",c:V.add(G,V.mul(n,L*0.012)),n,r:L*(queen?0.12:0.10),ri:L*(queen?0.038:0.045)});
-      tgt.push({k:"sphere",c:V.add(G,V.mul(n,-L*0.045)),r:L*(queen?0.078:0.062)});
-      if(queen)tgt.push({k:"sphere",c:[hx*0.12,0,0],r:L*0.055});
-      continue;
+  o=o||{};const hx=L*.5,hy=L*(o.hy||.27),hz=L*(o.hz||.34);
+  const v=[[hx,0,0],[-hx,0,0],[0,hy,0],[0,-hy,0],[0,0,hz],[0,0,-hz]];
+  // Dark Frontier: an open octahedral skeleton around a suspended core.
+  // No filled triangular faces or invented eye on the front facet.
+  const beam=(a,b,w)=>{const d=V.norm(V.sub(b,a)),[u,z]=basis(d);
+    parts.push({k:"box",c:V.mul(V.add(a,b),.5),u:V.mul(d,V.len(V.sub(b,a))*.5),v:V.mul(u,w),w:V.mul(z,w*.65)});
+  };
+  for(let a=0;a<6;a++)for(let b=a+1;b<6;b++){
+    if((a>>1)===(b>>1))continue;
+    beam(v[a],v[b],L*.020);
+    for(let j=1;j<5;j++){
+      const c=V.lerp(v[a],v[b],j/5),n=V.norm(c),[u,w]=basis(n);
+      parts.push({k:"box",c,u:V.mul(u,L*(.025+R()*.02)),v:V.mul(n,L*.018),w:V.mul(w,L*.023)});
     }
-    if(!queen&&R()<0.28)continue;
-    const npl=queen?2:(1+((R()*2)|0));
-    for(let j2=0;j2<npl;j2++){
-      const wa=rr(0.2,0.55),wb=rr(0.2,0.55),wc2=rr(0.2,0.55),ws=wa+wb+wc2;
-      const Q=V.add(V.mul(A,wa/ws),V.add(V.mul(B,wb/ws),V.mul(C,wc2/ws)));
-      const sz=L*rr(0.05,queen?0.08:0.10);
-      tgt.push({k:"box",c:V.add(Q,V.mul(n,L*0.006)),
-        u:V.mul(n,L*0.008),v:V.mul(t1,sz),w:V.mul(t2,sz*rr(0.4,1.0))});
-    }
-    if(queen||R()<0.4)
-      tgt.push({k:"tube",a:V.add(V.lerp(G,A,0.55),V.mul(n,L*0.006)),
-        b:V.add(V.lerp(G,V.lerp(B,C,queen?0.5:R()),0.6),V.mul(n,L*0.006)),
-        r1:L*0.008,r2:L*0.008});
   }
-  for(const s of[1,-1])for(let i=0;i<4;i++)
-    half[String(s)].push({k:"tube",a:apex(s),b:mid[i],r1:rt,r2:rt*0.6});
-  for(let i=0;i<4;i++)
-    aft.push({k:"tube",a:mid[i],b:mid[(i+1)%4],r1:rt,r2:rt});
-  bgShiftInto(parts,fore);bgShiftInto(parts,aft);
+  parts.push({k:"sphere",c:[0,0,0],r:L*.135});
+  for(const a of v){
+    beam(V.mul(a,.20),V.mul(a,.93),L*.022);
+    const n=V.norm(a),[u,w]=basis(n);
+    parts.push({k:"box",c:V.mul(a,.65),u:V.mul(n,L*.075),v:V.mul(u,L*.055),w:V.mul(w,L*.038)});
+    parts.push({k:"disc",c:V.mul(a,.28),n,r:L*.038,ri:L*.022});
+  }
+  for(const y of [-1,1])for(const z of [-1,1]){
+    const c=[hx*.92,hy*.18*y,hz*.18*z];
+    beam([hx*.76,hy*.17*y,hz*.17*z],c,L*.010);
+  }
 };
 
 var buildBorg=function(seed){
@@ -4677,7 +4658,7 @@ var impDagger=function(parts,L,o){
   let topY=0,aftX=0;
   for(const t of (o.terr||[])){
     const cx=L*t[0],hl=L*t[1],hw=zb*t[2],hh=L*t[3];
-    const by=ry(cx)*0.5;
+    const by=o.tower&&o.hb>.15&&L>500?Math.max(ry(cx)*.75,topY-L*.002):ry(cx)*.5;
     parts.push({k:"box",c:[cx,by+hh,0],u:[hl,0,0],v:[0,hh,0],w:[0,0,hw]});
     topY=by+hh*2;aftX=cx-hl;
   }
@@ -6109,31 +6090,26 @@ var minDone=function(parts,seed,pre,klass,crew){
    light neutron cannons around the nose. Pod first, then each blade
    with its root fairing as its own limb. */
 var minNial=function(parts,L,R){
-  const j=()=>1+(R()*2-1)*0.03;
-  parts.push({k:"lathe",c:[-L*0.34,0,0],axis:[1,0,0],prof:[
-    [0,L*0.008],[L*0.10,L*0.036],[L*0.24,L*0.058],[L*0.42,L*0.066],
-    [L*0.62,L*0.044],[L*0.80,L*0.018],[L*0.92,L*0.003]],
-    ell:[1.10,0.88]});
-  parts.push(CAP([L*0.20,L*0.048,0],[L*0.02,L*0.058,0],L*0.022));
-  parts.push(TUB([L*0.48,0,0],[L*0.64,0,0],L*0.010,L*0.0016));
-  /* three cannons, 120°, around the needle — the same law as the fins */
+  // Blunt cockpit, curved triad and paired tip housings, not a needle jet.
+  parts.push({k:"lathe",c:[-.45*L,0,0],axis:[1,0,0],prof:[
+    [0,.014*L],[.17*L,.054*L],[.45*L,.085*L],[.70*L,.102*L],[.82*L,.083*L],[.86*L,.025*L]]});
+  parts.push({k:"sphere",c:[.35*L,0,0],r:.083*L});
   for(let i=0;i<3;i++){
-    const a=i*2.0944,cy=Math.cos(a)*L*0.020,cz=Math.sin(a)*L*0.020;
-    parts.push(TUB([L*0.50,cy,cz],[L*0.60,cy*0.6,cz*0.6],L*0.0065,L*0.0026));
+    const a=i*Math.PI*2/3,d=[0,Math.cos(a),Math.sin(a)],t=[0,-Math.sin(a),Math.cos(a)];
+    const P=(x,r,z=0)=>V.add([x*L,0,0],V.add(V.mul(d,r*L),V.mul(t,z*L)));
+    const sec=[];
+    for(let j=0;j<=8;j++){
+      const f=j/8,r=.06+.34*f,x=-.03-.31*f+.10*Math.sin(f*Math.PI),w=.17-.08*f,h=.015*(1-f)+.008;
+      sec.push({pts:[P(x-w,r,-h),P(x+w,r,-h),P(x+w,r,h),P(x-w,r,h)]});
+    }
+    parts.push({k:"loft",sec});
+    for(const z of [-.035,.035]){
+      parts.push({k:"capsule",a:P(-.46,.40,z),b:P(-.21,.40,z),r:.027*L});
+      parts.push({k:"disc",c:P(-.185,.40,z),n:[1,0,0],r:.027*L,ri:.017*L});
+    }
+    parts.push({k:"capsule",a:P(.13,.11),b:P(.47,.12),r:.033*L});
+    parts.push({k:"disc",c:P(.50,.12),n:[1,0,0],r:.031*L,ri:.018*L});
   }
-  /* triad sits mid-aft so the needle pod leads; span matches G'Kane/Cults ~10 m beam */
-  const fin=dir=>{
-    const d=V.norm(dir);
-    const r0=V.add([-L*0.10,0,0],V.mul(d,L*0.040));
-    const fair=CAP(V.add(r0,[L*0.20,0,0]),V.add(r0,[-L*0.22,0,0]),L*0.016);
-    const bl=minBlade({root:r0,dir:d,len:L*0.28*j(),c0:L*0.38,c1:L*0.08,
-      sweep:L*0.34*j(),rake:1.48,bow:L*0.010,th0:L*0.015,th1:L*0.004,ns:6});
-    return [fair,bl];
-  };
-  for(const p of fin([0,1,0]))parts.push(p);
-  const vs=fin([0,-0.5,0.866]);
-  parts.push(vs[0]);parts.push(vs[1]);
-  parts.push(xMirZ(vs[0]));parts.push(minMirLoft(vs[1]));
   minFit(parts,L);
 };
 
@@ -6143,51 +6119,41 @@ var minNial=function(parts,L,R){
    silhouette is a bone-white fish, not a swallow. Triple housings
    along the spine, each its own reactor, each its own act of her death. */
 var minSharlin=function(parts,L,R,o){
-  const j=()=>1+(R()*2-1)*0.03;
-  /* one spindle: fat angelfish belly, long tapering head, a thin tail.
-     u-space is the keel; minFit locks the canon metre after the fins. */
-  parts.push({k:"lathe",c:[-L*0.42,0,0],axis:[1,0,0],prof:[
-    [0,L*0.012],[L*0.08,L*0.062],[L*0.18,L*0.118],[L*0.30,L*0.142],
-    [L*0.42,L*0.112],[L*0.54,L*0.058],[L*0.70,L*0.024],[L*0.84,L*0.008],
-    [L*0.94,L*0.0016]],
-    ell:[1.28,0.92]});
-  /* manta cowl amidships — the shoulders of the fish, never a hood on the nose */
-  const cowl=minBlade({root:[-L*0.02,L*0.006,0],dir:[0,0,1],
-    len:L*0.20*j(),c0:L*0.40,c1:L*0.10,sweep:L*0.14,rake:1.18,
-    bow:L*0.016,th0:L*0.032,th1:L*0.008,ns:5});
-  parts.push(cowl);parts.push(minMirLoft(cowl));
-  if(o.guns){
-    parts.push(minHousing(L*0.22,L*0.036,L*0.12,L*0.016,0.85,0.52));
-    parts.push(minHousing(L*0.04,L*0.082,L*0.13,L*0.020,0.85,0.52));
-    parts.push(minHousing(-L*0.14,L*0.100,L*0.13,L*0.020,0.85,0.52));
+  // The Sharlin is a tall, ribbed angelfish, not an enlarged Nial jet.
+  parts.push({k:"lathe",c:[-.38*L,0,0],axis:[1,0,0],prof:[
+    [0,.02*L],[.10*L,.11*L],[.27*L,.19*L],[.46*L,.21*L],
+    [.61*L,.17*L],[.74*L,.08*L],[.80*L,.025*L]],ell:[.85,1]});
+  for(const y of [-.12,0,.12]){
+    const pts=[];
+    for(let i=0;i<=12;i++){
+      const a=-Math.PI*.60+i/12*Math.PI*1.20;
+      pts.push([(.13+.21*Math.cos(a))*L,y*L,Math.sin(a)*.20*L]);
+    }
+    parts.push(shdLoft(pts,pts.map(()=>.026*L),pts.map(()=>.025*L)));
   }
-  /* gun spikes along the head */
-  for(const z of [1,-1]){
-    parts.push(TUB([L*0.28,-L*0.008,z*L*0.032],[L*0.40,-L*0.004,z*L*0.028],
-      L*0.007,L*0.0024));
-    parts.push(TUB([L*0.10,L*0.004,z*L*0.072],[L*0.20,L*0.004,z*L*0.066],
-      L*0.006,L*0.0024));
+  for(let i=0;i<3;i++){
+    const a=i*Math.PI*2/3,dir=[0,Math.cos(a),Math.sin(a)];
+    const pts=[],width=[],height=[];
+    // Tall curved blades have rounded tips and a forward swept leading edge.
+    for(let j=0;j<=10;j++){
+      const t=j/10,r=.14+.62*t;
+      pts.push([(-.11-.13*t+.11*t*t)*L,dir[1]*r*L,dir[2]*r*L]);
+      width.push((.13*(1-t)+.035)*L);height.push((.018*(1-t)+.006)*L);
+    }
+    // Cross section kept broad in X, thin around the radial direction.
+    const sec=pts.map((p,j)=>{const w=width[j],h=height[j],v=[0,-dir[2],dir[1]];
+      return {pts:[V.add(p,[w,0,0]),V.add(p,V.mul(v,h)),V.add(p,[-w,0,0]),V.sub(p,V.mul(v,h))]};});
+    parts.push({k:"loft",sec});
+    for(const sg of [-1,1]){
+      const p=V.add([.05*L,0,0],V.mul(dir,.34*L));
+      p[2]+=sg*.025*L;
+      parts.push(TUB(p,V.add(p,[.19*L,0,0]),.007*L,.003*L));
+    }
   }
-  /* three aft fins as the fish's tail — dorsal is a tall near-vertical sail
-     (Cults/3D Warehouse H≈1.95 km on a 1.6 km hull), not a swallow wing */
-  const rB=L*0.095,rootX=-L*0.12;
-  const mkFin=(dir,bow,span,swp)=>{
-    const d=V.norm(dir);
-    const r0=V.add([rootX,0,0],V.mul(d,rB*0.75));
-    const fair=CAP(V.add(r0,[L*0.16,0,0]),V.add(r0,[-L*0.18,0,0]),rB*0.40);
-    const bl=minBlade({root:r0,dir:d,len:(span||L*0.38)*j(),c0:L*0.36,c1:L*0.06,
-      sweep:(swp!=null?swp:L*0.32)*j(),rake:1.32,bow:bow,th0:L*0.016,th1:L*0.0038,ns:6});
-    return [fair,bl];
-  };
-  for(const p of mkFin([0,1,0],0,L*0.62,L*0.12))parts.push(p);
-  const vs=mkFin([0,-0.82,0.572],-L*0.010);
-  parts.push(vs[0]);parts.push(vs[1]);
-  parts.push(xMirZ(vs[0]));parts.push(minMirLoft(vs[1]));
-  if(o.sec2){
-    const s2=minBlade({root:[L*0.06,L*0.014,rB*0.50],dir:V.norm([0,0.40,0.917]),
-      len:L*0.13,c0:L*0.14,c1:L*0.036,sweep:L*0.06,rake:1.3,bow:0,
-      th0:L*0.006,th1:L*0.002,ns:4});
-    parts.push(s2);parts.push(minMirLoft(s2));
+  // Repeating fluted gills across the broad head, finite fixed count.
+  for(let i=0;i<12;i++){
+    const z=(i-5.5)*.027*L;
+    parts.push(CAP([.24*L,-.10*L,z],[.28*L,.10*L,z],.005*L));
   }
   minFit(parts,L);
 };
@@ -6238,8 +6204,9 @@ var shdChain=function(pts,w0,h0,w1,h1,tap){
     const u=V.norm(V.cross(A,d)),v=V.norm(V.cross(d,u));
     const k=Math.pow(1-t,tap==null?0.85:tap);
     const w=w1+(w0-w1)*k,h=h1+(h0-h1)*k;
-    sec.push({pts:[V.add(pts[i],V.mul(u,w)),V.add(pts[i],V.mul(v,h)),
-                   V.add(pts[i],V.mul(u,-w)),V.add(pts[i],V.mul(v,-h))]});
+    sec.push({pts:Array.from({length:8},(_,j)=>{
+      const a=j*Math.PI/4;return V.add(pts[i],V.add(V.mul(u,Math.cos(a)*w),V.mul(v,Math.sin(a)*h)));
+    })});
   }
   return {k:"loft",sec:sec};
 };
@@ -6250,8 +6217,9 @@ var shdLoft=function(pts,wAt,hAt){
     const A=Math.abs(d[1])>0.94?[1,0,0]:[0,1,0];
     const u=V.norm(V.cross(A,d)),v=V.norm(V.cross(d,u));
     const w=wAt[i],h=hAt[i];
-    sec.push({pts:[V.add(pts[i],V.mul(u,w)),V.add(pts[i],V.mul(v,h)),
-                   V.add(pts[i],V.mul(u,-w)),V.add(pts[i],V.mul(v,-h))]});
+    sec.push({pts:Array.from({length:8},(_,j)=>{
+      const a=j*Math.PI/4;return V.add(pts[i],V.add(V.mul(u,Math.cos(a)*w),V.mul(v,Math.sin(a)*h)));
+    })});
   }
   return {k:"loft",sec:sec};
 };
@@ -6368,31 +6336,25 @@ var shdVein=function(parts,u,y,zK){
 };
 
 var shdCrab=function(parts,L,o){
-  const u=1;
-  /* three knuckles, stacked with a gap you can see stars through.
-     each is a real U, open toward the kill, never an egg. */
-  shdShoe(parts,u,{y: 0.058,xF:0.22,xR:-0.18,zW:0.24,w0:0.058,h0:0.014});
-  shdShoe(parts,u,{y: 0.000,xF:0.24,xR:-0.20,zW:0.27,w0:0.062,h0:0.016});
-  shdShoe(parts,u,{y:-0.058,xF:0.18,xR:-0.16,zW:0.20,w0:0.050,h0:0.013});
-  /* the scream's mouth: the beam is born in the open U, between layers */
-  parts.push({k:"disc",c:[0.10*u,0.00,0],n:[1,0,0],r:0.022*u,ri:0.008*u});
-  parts.push({k:"tube",a:[0.06*u,0,0],b:[0.16*u,0,0],r1:0.014*u,r2:0.005*u});
-  for(const S of shdSPINES)shdPair(parts,u,S);
-  const nV=o&&o.veins||4;
-  for(let i=0;i<nV;i++){
-    const y=[0.072,0.004,-0.066,0.036][i%4];
-    const z=(i%2?1:-1)*(0.55+0.12*(i>>1));
-    shdVein(parts,u,y,z);
+  const u=L;
+  // Interlocking lobes: a single thick carapace, with an open forward cleft.
+  // The former three detached ribbon-horseshoes read as a wire basket.
+  shdShoe(parts,u,{y:.027,xF:.20,xR:-.19,zW:.20,w0:.069,h0:.035});
+  shdShoe(parts,u,{y:0,xF:.24,xR:-.22,zW:.23,w0:.080,h0:.040});
+  shdShoe(parts,u,{y:-.029,xF:.15,xR:-.17,zW:.17,w0:.064,h0:.032});
+  parts.push(shdLoft([[-.28*u,0,0],[-.16*u,0,0],[.02*u,0,0],[.16*u,0,0]],
+    [.035*u,.21*u,.20*u,.07*u],[.028*u,.078*u,.07*u,.022*u]));
+  for(const original of shdSPINES){
+    const S=JSON.parse(JSON.stringify(original));
+    // Broaden the root into the shell, keep a long continuous taper.
+    S.w0*=1.15;S.h0*=1.25;S.wt=.0007;S.ns=12;S.tap=1.15;
+    if(S.tip[0]<-.4){S.tip[0]*=1.25;S.c2[0]*=1.18;}
+    if(S.r[1]<-.04){S.tip[2]=.46;S.tip[1]=-.25;S.c2[2]=.35;S.c1[2]=.25;}
+    if(S.tip[0]>.3){S.tip[0]=.51;S.tip[2]=.23;S.c2[0]=.43;S.c2[2]=.28;}
+    shdPair(parts,u,S);
   }
-  const nT=o&&o.thorns||0;
-  for(let i=0;i<nT;i++){
-    const t=nT===1?0.5:i/(nT-1);
-    const x=-0.04+0.14*t,y=0.078+0.008*Math.sin(i*1.7);
-    const z=(i%2?1:-1)*0.06;
-    shdPair(parts,u,{r:[x,y,z],c1:[x-0.02,y+0.05,z*1.3],
-      c2:[x-0.05,y+0.08,z*1.4],tip:[x-0.08,y+0.10,z*1.25],
-      w0:0.006,h0:0.008,wt:0.002,ns:4});
-  }
+  // Flush ventral emitter in the cleft; no conventional cannon or windows.
+  parts.push({k:"disc",c:[.07*u,-.018*u,0],n:[1,0,0],r:.014*u,ri:.006*u});
   shdFit(parts,L);
 };
 
@@ -8580,7 +8542,7 @@ var moName=function(seed,bank){return bank[(seed>>>0)%bank.length];};
 var moNum=function(seed,mod){return (Math.imul((seed>>>0)^0x9E37,0x85EBCA6B)>>>0)%mod;};
 
 var moDone=function(parts,seed,klass,desig,massK,crew){
-  fleetKit(parts,seed,{style:"smooth"});
+  if(!/MONDOSHAWAN/.test(klass))fleetKit(parts,seed,{style:"smooth"});
   const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
   for(const p of parts)for(const e of partExtents(p)){
     const q=e[0],r=e[1];
@@ -8745,27 +8707,40 @@ var moRaider=function(parts,R,t){
 /* ---- SEED-ARK TENDER: the little brother of the great transport.
    Nothing projects, nothing points; the hull is an answer to a question
    no human shipwright ever asked. 55 m ---- */
+var moVessel=function(parts,L){
+  const U=L,ring=(x,r)=>moRing(x*U,0,r*U,r*U*.98,20);
+  // Heavy segmented nose, exposed waist, and smaller stern -- not a pill.
+  parts.push({k:"loft",sec:[ring(-.44,.024),ring(-.35,.105),ring(-.18,.161),ring(-.025,.164),ring(.04,.181)]});
+  parts.push({k:"loft",sec:[ring(-.01,.182),ring(.12,.201),ring(.27,.157),ring(.39,.086),ring(.49,.016)]});
+  // Longitudinal overlapping petal plates only on the armoured front half.
+  for(let k=0;k<10;k++){
+    const a=k*Math.PI/5,sec=[];
+    for(const [x,r] of [[.015,.189],[.13,.208],[.28,.161],[.40,.086],[.485,.015]]){
+      const pts=[];
+      for(const [ang,rad] of [[a-.25,r],[a,r+.008],[a+.25,r],[a,r-.01]])
+        pts.push([x*U,Math.sin(ang)*rad*U,Math.cos(ang)*rad*U]);
+      sec.push({pts});
+    }
+    parts.push({k:"loft",sec});
+    // Canted circumferential machinery bottles below the shell collar.
+    const radial=[0,Math.sin(a),Math.cos(a)];
+    const c=V.mul(radial,.163*U);
+    parts.push({k:"tube",a:[-.02*U,c[1],c[2]],b:[-.12*U,c[1]*1.18,c[2]*1.18],r1:.026*U,r2:.016*U});
+    const pts=[[-.10*U,c[1],c[2]],[-.22*U,c[1]*1.08,c[2]*1.08],[-.33*U,c[1]*.64,c[2]*.64]];
+    parts.push(enChain(pts,.008*U,.009*U,.007*U,.007*U,false));
+  }
+  // Circumferential collar, clustered inset fittings, pointed crown spines.
+  parts.push({k:"lathe",c:[-.018*U,0,0],axis:[1,0,0],prof:[[0,.177*U],[.012*U,.199*U],[.029*U,.195*U],[.033*U,.178*U]]});
+  for(let k=0;k<6;k++){
+    const a=k*Math.PI/3;
+    parts.push({k:"tube",a:[.35*U,Math.sin(a)*.10*U,Math.cos(a)*.10*U],b:[.47*U,Math.sin(a)*.057*U,Math.cos(a)*.057*U],r1:.005*U,r2:.001*U});
+    const y=Math.sin(a)*.116*U,z=Math.cos(a)*.116*U;
+    parts.push({k:"capsule",a:[-.27*U,y,z],b:[-.17*U,y,z],r:.019*U});
+  }
+};
 var moArk=function(parts,R,t){
-  const q=t;
-  moShellBody(parts,-23*q,0,46*q,13.5*q,0.80,7);
-  parts.push({k:"sphere",c:[21.5*q,0,0],r:7.5*q});
-  parts.push({k:"sphere",c:[-20.5*q,0,0],r:6.5*q});
-  /* three quiet domes down the spine, like vertebrae remembered */
-  parts.push({k:"sphere",c:[ 6*q,10.4*q,0],r:2.2*q});
-  parts.push({k:"sphere",c:[ 0*q,10.8*q,0],r:2.4*q});
-  parts.push({k:"sphere",c:[-6*q,10.3*q,0],r:2.2*q});
-  /* Egypt-landing struts: four long vertical legs with pad feet, the
-     film armadillo stands rather than crouches */
-  moMirRun(parts,()=>{
-    parts.push({k:"capsule",a:[ 8*q,-9.2*q,6*q],b:[ 8*q,-17.6*q,6.4*q],r:1.35*q});
-    parts.push({k:"sphere",c:[ 8*q,-18.2*q,6.4*q],r:1.85*q});
-    parts.push({k:"capsule",a:[-8*q,-9.2*q,6*q],b:[-8*q,-17.6*q,6.4*q],r:1.35*q});
-    parts.push({k:"sphere",c:[-8*q,-18.2*q,6.4*q],r:1.85*q});
-  });
-  moMirRun(parts,()=>{
-    parts.push({k:"capsule",a:[4*q,-2*q,12.5*q],b:[-6*q,-2*q,14.8*q],r:1.7*q});
-  });
-  return ["MONDOSHAWAN SHIP",0.22,6];
+  moVessel(parts,55*t);
+  return ["MONDOSHAWAN SHIP",.22,6];
 };
 
 /* ---- NEW YORK TRAFFIC: a sedan that forgot about roads. The skirt
@@ -8858,25 +8833,8 @@ var buildMondo=function(seed){
    learned to travel. It cannot fight back, and the silhouette says so
    from any range: no mast, no barrel, no seam of aggression. 200 m ---- */
 var moTransport=function(parts,R,t){
-  const q=t;
-  moShellBody(parts,-88*q,0,164*q,56*q,0.86,11,0.50,0.62);
-  /* the carapace crest: a second, smaller shell riding the spine aft */
-  moShellBody(parts,-60*q,32*q,110*q,26*q,0.62,5,0.55,0.58);
-  parts.push({k:"sphere",c:[72*q,0,0],r:30*q});
-  parts.push({k:"sphere",c:[-84*q,0,0],r:26*q});
-  /* strut blisters: the legs sleep inside the lower plating */
-  moMirRun(parts,()=>{
-    parts.push({k:"capsule",a:[ 34*q,-38*q,26*q],b:[ 34*q,-50*q,30*q],r:7*q});
-    parts.push({k:"capsule",a:[-42*q,-38*q,26*q],b:[-42*q,-50*q,30*q],r:7*q});
-  });
-  /* flank domes at the band joins — jewelry, not weapons */
-  moMirRun(parts,()=>{
-    for(let i=0;i<5;i++){
-      const x=(44-i*26)*q;
-      parts.push({k:"sphere",c:[x,4*q,52*q],r:4.2*q});
-    }
-  });
-  return ["MONDOSHAWAN HEAVY TRANSPORT",0.30,44];
+  moVessel(parts,200*t);
+  return ["MONDOSHAWAN HEAVY TRANSPORT",.30,44];
 };
 
 /* ---- EARTH FEDERAL BATTLE CRUISER: the fleet Earth found in a week.
@@ -9139,9 +9097,9 @@ var umTruss=function(parts,x0,x1,cy,cz,hw,hh,nb){
 var umCheyenne=function(parts,s){
   parts.push({k:"loft",sec:[
     umCham(-9.5*s,0.1*s,1.05*s,0.95*s,0.3),
-    umCham(-5*s,0.25*s,1.45*s,1.35*s,0.3),
-    umCham(0,0.35*s,1.65*s,1.5*s,0.3),
-    umCham(5.5*s,0.3*s,1.55*s,1.45*s,0.3),
+    umCham(-5*s,0.25*s,1.85*s,1.95*s,0.3),
+    umCham(0,0.35*s,2.0*s,2.1*s,0.3),
+    umCham(5.5*s,0.3*s,1.85*s,1.95*s,0.3),
     umCham(9*s,-0.2*s,1.15*s,1.05*s,0.3),
     umCham(12.3*s,-0.55*s,0.75*s,0.7*s,0.3)]});
   /* the greenhouse, stepped into the chin: pilots ride below the roofline */
@@ -9167,11 +9125,13 @@ var umCheyenne=function(parts,s){
       umFoil(0.9*s,-0.75*s,5.2*s,2.2*s,0.22*s)]});
     parts.push({k:"capsule",a:[2.0*s,-1.35*s,3.6*s],b:[-1.2*s,-1.35*s,3.6*s],r:0.55*s});
     parts.push({k:"disc",c:[2.02*s,-1.35*s,3.6*s],n:[1,0,0],r:0.54*s,ri:0.2*s});
-    /* wingtip tilt-nacelle, cruise trim, bolted on through a pylon */
-    parts.push({k:"box",c:[0.4*s,-0.7*s,5.4*s],u:[0.9*s,0,0],v:[0,0.28*s,0],w:[0,0,0.45*s]});
-    parts.push({k:"capsule",a:[2.3*s,-0.6*s,5.9*s],b:[-2.6*s,-0.6*s,5.9*s],r:0.88*s});
-    parts.push({k:"disc",c:[2.34*s,-0.6*s,5.9*s],n:[1,0,0],r:0.85*s,ri:0.3*s});
-    parts.push({k:"tube",a:[-2.6*s,-0.6*s,5.9*s],b:[-3.4*s,-0.6*s,5.9*s],r1:0.7*s,r2:0.48*s});
+    // Raised aft engine nacelles; folded weapon fairings above the wing.
+    parts.push({k:"capsule",a:[-1*s,2.1*s,2.5*s],b:[-6.8*s,2.1*s,2.5*s],r:.70*s});
+    parts.push({k:"disc",c:[-6.85*s,2.1*s,2.5*s],n:[-1,0,0],r:.69*s,ri:.45*s});
+    parts.push({k:"box",c:[-.6*s,3.2*s,3.1*s],u:[1.7*s,0,0],v:[0,1.25*s,0],w:[0,0,.28*s]});
+    parts.push({k:"loft",sec:[
+      umFoil(-10*s,1.3*s,1.9*s,2*s,.12*s),
+      umFoil(-11*s,3.3*s,3.4*s,1.2*s,.1*s)]});
     /* tail boom leaning in toward the shared stabilizer, fin at the end */
     parts.push({k:"box",c:[-7.6*s,0.5*s,1.8*s],u:[-3.8*s,0.1*s,0],v:[0,0.6*s,0],w:[0,0,0.5*s]});
     parts.push({k:"box",c:[-11.0*s,1.3*s,1.8*s],u:[1.0*s,0,0],v:[0,0.9*s,0],w:[0,0,0.18*s]});
@@ -9631,7 +9591,6 @@ var enHub=function(parts,c,rd,hd){
 };
 
 var enDone=function(parts,seed,klass,bank,crew,cyc){
-  fleetKit(parts,seed,{style:"smooth"});
   const bb=[[1e9,1e9,1e9],[-1e9,-1e9,-1e9]];
   for(const p of parts)for(const e of partExtents(p)){
     const q=e[0],r=e[1];
@@ -9649,120 +9608,86 @@ var enDone=function(parts,seed,klass,bank,crew,cyc){
 
 /* ---- the classes: one anatomy, three ages of it ---- */
 
+// Broad transverse ribs follow the actual bent hull, rather than six ropes.
+var enVertebrae=function(parts,C,U){
+  for(let i=2;i<C.n-2;i+=2){
+    const sec=[];
+    for(let j=0;j<=8;j++){
+      const psi=18+j*18;sec.push(enSurf(C,i,psi,1.012));
+    }
+    parts.push(enChain(sec,.0024*U,.003*U,.0024*U,.003*U,false));
+  }
+};
+var enHornHeads=function(parts,C,U,old){
+  for(const end of [0,C.n-1]){
+    const f=C.F[end],sg=end===0?-1:1;
+    const d=V.mul(f.d,sg),base=f.p;
+    // Flared terminal face, one longer and broader than its opposite.
+    const size=end===0?.82:1;
+    const neck=V.add(base,V.mul(d,.023*U));
+    const tip=V.add(neck,V.add(V.mul(d,.045*U*size),[0,.017*U,0]));
+    const frame={p:tip,d,u:f.u,v:f.v};
+    parts.push({k:"loft",sec:[enOval(f,C.ws[end],C.hs[end],16),
+      enOval({...frame,p:neck},.073*U*size,.053*U,16),
+      enOval(frame,.082*U*size,.044*U,16)],cap1:false});
+    // Recessed inner terminus preserves the distinctive hollow lip.
+    parts.push({k:"loft",cap0:false,sec:[enOval(frame,.068*U*size,.033*U,16),
+      enOval({...frame,p:V.sub(tip,V.mul(d,.015*U))},.052*U*size,.025*U,16)]});
+    if(old){
+      const c=V.add(base,V.mul(f.u,end===0?.052*U:-.052*U));
+      parts.push({k:"capsule",a:V.sub(c,V.mul(d,.033*U)),b:V.add(c,V.mul(d,.059*U)),r:.035*U});
+    }
+  }
+};
 var enJuggernaut=function(parts,U){
-  const C=enCroissant({U:U,A:0.545,B:0.27,aP:296.6,aS:56,nSec:21,
-    wTip:0.034,wMax:0.150,peak:0.47,sig:0.21,hLo:0.55,hHi:0.92,
-    rise:0.075,asymW:0.07,np:10});
-  enSkin(parts,C,[0,6,11,16,20]);
-  enRibs(parts,C,[46,88,130,168,232,296],1,19,0.0085*U);
-  enHub(parts,[C.cl[10][0]+C.ws[10]*0.18,C.cl[10][1]+C.hs[10]*0.62,C.cl[10][2]],
-    C.ws[10]*0.55,C.ws[10]*0.62);
-  /* three hangar mouths on the inner curve — the Prometheus croissant's
-     ground-level orifices, large enough to read as doors not pores */
-  enOrifices(parts,C,[7,10,13],-28,0.072*U,0.58);
+  const C=enCroissant({U,A:.34,B:.39,aP:302,aS:58,nSec:33,
+    wTip:.055,wMax:.115,peak:.49,sig:.31,hLo:.78,hHi:.92,
+    rise:.085,asymW:.05,np:16});
+  enSkin(parts,C,[0,8,16,24,32]);
+  enRibs(parts,C,[48,92,136,230,290],1,31,.003*U);
+  enVertebrae(parts,C,U);
+  enHornHeads(parts,C,U,false);
+  enHub(parts,[-.34*U,.073*U,0],.089*U,.035*U);
+  enOrifices(parts,C,[13,16,19],0,.036*U,.75);
+  minFit(parts,U);
 };
 
 var enSentinel=function(parts,U){
-  const C=enCroissant({U:U,A:0.545,B:0.27,aP:299,aS:52,nSec:21,
-    wTip:0.020,wMax:0.115,peak:0.47,sig:0.145,hLo:0.50,hHi:0.85,
-    rise:0.105,riseP:1.9,asymW:0.08,np:10});
-  enSkin(parts,C,[0,6,11,16,20]);
-  enRibs(parts,C,[52,96,140,250,290],1,19,0.0075*U);
-  /* the dorsal ridge: a sensory blade grown along the spine of the mass */
-  const fp=[];for(let i=8;i<=13;i++)fp.push(enSurf(C,i,90,0.98));
-  const FF=enFrames(fp),fsec=[];
-  const fh=[0.020,0.058,0.084,0.075,0.044,0.014];
-  for(let i=0;i<FF.length;i++){
-    const f=FF[i],w=0.006*U*(1-i*0.06),h=fh[i]*U;
-    fsec.push({pts:[V.add(f.p,V.mul(f.u,w)),V.add(f.p,V.mul(f.v,h)),
-      V.add(f.p,V.mul(f.u,-w)),V.add(f.p,V.mul(f.v,-0.004*U))]});
-  }
-  parts.push({k:"loft",sec:fsec});
-  enOrifices(parts,C,[7,10,13],-30,0.020*U,0.45);
+  enJuggernaut(parts,U);
+  // Noncanonical patrol variant: the same broad anatomy at a smaller scale.
 };
 
 var enSkiff=function(parts,U){
-  const C=enCroissant({U:U,A:0.44,B:0.42,aP:339,aS:18,nSec:17,
-    wTip:0.020,wMax:0.085,peak:0.50,sig:0.34,hLo:0.62,hHi:0.80,
-    rise:0.020,asymW:0.06,np:8});
-  enSkin(parts,C,[0,8,16]);
-  enRibs(parts,C,[60,110,285],1,15,0.006*U);
-  /* the rider's cavity: an open ring in the thick of the base, and the
-     suited Engineer a pale knuckle within it */
-  parts.push({k:"disc",c:enSurf(C,8,90,1.02),n:enNorm(C,8,90),r:0.060*U,ri:0.035*U});
-  parts.push({k:"sphere",c:enSurf(C,8,90,0.75),r:0.045*U});
+  const C=enCroissant({U,A:.31,B:.39,aP:307,aS:53,nSec:25,
+    wTip:.038,wMax:.083,peak:.5,sig:.34,hLo:.75,hHi:.85,rise:.05,np:12});
+  enSkin(parts,C,[0,8,16,24]);enVertebrae(parts,C,U);enHornHeads(parts,C,U,false);
 };
 
 var enDerelict=function(parts,U){
-  const jag=[1.12,0.66,1.04,0.58,1.10,0.72,0.94,0.62,1.06,0.70];
-  const C=enCroissant({U:U,A:0.545,B:0.31,aP:291,aS:61,nSec:21,
-    wTip:0.036,wMax:0.150,peak:0.47,sig:0.22,hLo:0.55,hHi:0.92,
-    rise:0.06,asymW:0.07,np:10});
-  /* the port horn ended long ago; the break calcified mid-scream */
-  enSkin(parts,C,[0,6,11,16,20],2,jag);
-  const f2=C.F[2],bd=V.mul(f2.d,-1);
-  for(let k=0;k<3;k++){
-    const off=V.add(V.mul(f2.u,(k-1)*0.35*C.ws[2]),V.mul(f2.v,(k%2?0.30:-0.25)*C.hs[2]));
-    const p0=V.add(f2.p,V.mul(off,0.6));
-    const p1=V.add(V.add(f2.p,V.mul(bd,(0.045+0.02*k)*U)),off);
-    parts.push(enChain([p0,V.add(p0,V.mul(bd,0.02*U)),p1],
-      0.012*U,0.015*U,0.003*U,0.003*U,false));
-  }
-  enRibs(parts,C,[46,88,130,168,232,296],3,19,0.0095*U);
-  /* Giger's pilot blister: the raised head the Nostromo party climbs into */
-  enHub(parts,[C.cl[10][0]+C.ws[10]*0.22,C.cl[10][1]+C.hs[10]*0.78,C.cl[10][2]],
-    C.ws[10]*0.88,C.ws[10]*0.95);
-  /* mouths frozen half-open, fossilized mid-dilation */
-  enOrifices(parts,C,[6,8,10,12,14,16],-30,0.030*U,0.60);
-  const CR=[[4,70],[5,150],[7,40],[9,110],[12,80],[14,150],[16,60]];
-  for(const cb of CR)parts.push({k:"sphere",c:enSurf(C,cb[0],cb[1],0.94),r:0.016*U});
+  // Alien (1979): intact asymmetric horseshoe with paired swollen horn ends,
+  // a low pilot blister and shoulder tubes, not a broken croissant and dome.
+  const C=enCroissant({U,A:.34,B:.41,aP:307,aS:52,nSec:33,
+    wTip:.046,wMax:.112,peak:.46,sig:.32,hLo:.80,hHi:.88,
+    rise:.115,riseP:2.6,asymW:.13,np:16});
+  enSkin(parts,C,[0,8,16,24,32]);
+  enRibs(parts,C,[38,74,110,146,238,290],1,31,.0028*U);
+  enVertebrae(parts,C,U);enHornHeads(parts,C,U,true);
+  enHub(parts,[-.34*U,.070*U,-.026*U],.099*U,.035*U);
+  parts.push({k:"disc",c:[-.34*U,.105*U,-.026*U],n:[0,1,0],r:.037*U,ri:.026*U});
+  for(const z of [-.22,.22])parts.push({k:"capsule",a:[-.38*U,.023*U,z*U],b:[-.17*U,.034*U,z*U],r:.040*U});
+  enOrifices(parts,C,[13,16,19],0,.027*U,.7);
+  minFit(parts,U);
 };
 
 var enSeeder=function(parts,U){
-  const C=enCroissant({U:U,A:0.56,B:0.27,aP:295,aS:57,nSec:19,
-    wTip:0.026,wMax:0.100,peak:0.47,sig:0.22,hLo:0.50,hHi:0.72,
-    rise:0.05,asymW:0.07,np:10});
-  enSkin(parts,C,[0,6,12,18]);
-  enRibs(parts,C,[60,110,250,290],1,17,0.007*U);
-  enOrifices(parts,C,[6,9,12],-30,0.022*U,0.45);
-  /* the flower: a petaled dome over the mass, set a breath off the
-     centreline — even the bloom refuses symmetry */
-  const rd=0.28*U,hd=0.17*U,xc=-0.22*U,zb=0.015*U,yb=0.055*U;
-  parts.push({k:"capsule",a:[xc,0.005*U,zb],b:[xc,yb+0.02*U,zb],r:0.062*U});
-  parts.push({k:"lathe",c:[xc,yb,zb],axis:[0,1,0],prof:[
-    [0,rd*0.97],[hd*0.30,rd*0.93],[hd*0.60,rd*0.76],[hd*0.85,rd*0.45],[hd,0]]});
-  parts.push({k:"disc",c:[xc,yb+0.006*U,zb],n:[0,1,0],r:rd*1.01,ri:rd*0.92});
-  for(let k=0;k<9;k++){
-    const th=k/9*2*Math.PI+0.35,pp=[];
-    for(let j=0;j<=4;j++){
-      const ph=(0.15+0.80*j/4)*Math.PI/2;
-      pp.push([xc+Math.cos(th)*rd*Math.sin(ph),yb+hd*Math.cos(ph)*0.98,
-               zb+Math.sin(th)*rd*Math.sin(ph)]);
-    }
-    parts.push(enChain(pp,0.010*U,0.014*U,0.010*U,0.014*U,true));
-  }
+  enJuggernaut(parts,U);
+  // Speculative carrier: low ventral cargo lobes retain the open horseshoe.
+  for(const z of [-.22,.22])parts.push({k:"capsule",a:[-.28*U,-.067*U,z*U],b:[-.10*U,-.056*U,z*U],r:.044*U});
 };
 
 var enArk=function(parts,U){
-  const C=enCroissant({U:U,A:0.545,B:0.26,aP:296.6,aS:56,nSec:23,
-    wTip:0.040,wMax:0.160,peak:0.47,sig:0.22,hLo:0.60,hHi:0.95,
-    rise:0.07,asymW:0.07,np:12});
-  enSkin(parts,C,[0,6,11,17,22]);
-  enRibs(parts,C,[40,72,104,136,168,232,268,304],1,21,0.011*U);
-  enHub(parts,[C.cl[11][0]+C.ws[11]*0.18,C.cl[11][1]+C.hs[11]*0.62,C.cl[11][2]],
-    C.ws[11]*0.60,C.ws[11]*0.62);
-  /* the terraced city nested in the crescent, a ziggurat seen from above */
-  parts.push({k:"lathe",c:[-0.10*U,-0.030*U,0.01*U],axis:[0,1,0],prof:[
-    [0,0.155*U],[0.040*U,0.150*U],[0.044*U,0.114*U],[0.068*U,0.110*U],
-    [0.072*U,0.076*U],[0.094*U,0.072*U],[0.098*U,0.040*U],[0.112*U,0]]});
-  parts.push({k:"disc",c:[-0.10*U,0.012*U,0.01*U],n:[0,1,0],r:0.170*U,ri:0.152*U});
-  parts.push({k:"disc",c:[-0.10*U,0.041*U,0.01*U],n:[0,1,0],r:0.128*U,ri:0.112*U});
-  /* docking recesses studding the inner curve — the hull that carries hulls */
-  const DK=[5,7,9,11,13,15,17];
-  for(let k=0;k<DK.length;k++){
-    const i=DK[k],ps=k%2?-8:14;
-    parts.push({k:"disc",c:enSurf(C,i,ps,1.02),n:enNorm(C,i,ps),r:0.030*U,ri:0.017*U});
-  }
+  enJuggernaut(parts,U);
+  for(const z of [-.26,.26])parts.push({k:"capsule",a:[-.39*U,.008*U,z*U],b:[-.12*U,.013*U,z*U],r:.039*U});
 };
 
 /* the order of battle: mostly Voidwrights docked in their pyramid rows,
@@ -9946,40 +9871,23 @@ var yjRidge=function(parts,xs,ys,u,v,w){
 /* ---- Youngblood Scout: the classic. A teardrop worn low, tusks
    almost meeting ahead of the cowl, locks streaming aft ---- */
 var yjScout=function(parts,R,L){
+  // 1987 vessel anatomy: broad domed shell, side nacelles and ventral keel.
+  parts.push({k:"lathe",c:[-.46*L,0,0],axis:[1,0,0],prof:[
+    [0,.035*L],[.12*L,.13*L],[.34*L,.20*L],[.62*L,.19*L],[.83*L,.10*L],[.96*L,.018*L]],ell:[.65,1]});
+  for(const z of [-1,1]){
+    parts.push({k:"box",c:[.02*L,-.015*L,z*.22*L],u:[.13*L,0,0],v:[0,.025*L,0],w:[0,0,.09*L]});
+    parts.push({k:"lathe",c:[-.22*L,-.018*L,z*.30*L],axis:[1,0,0],prof:[
+      [0,.025*L],[.06*L,.075*L],[.23*L,.080*L],[.36*L,.047*L]],ell:[.85,1]});
+    parts.push({k:"disc",c:[.14*L,-.018*L,z*.30*L],n:[1,0,0],r:.046*L,ri:.034*L});
+    parts.push({k:"tube",a:[.34*L,-.040*L,z*.055*L],b:[.44*L,-.045*L,z*.055*L],r1:.012*L,r2:.008*L});
+  }
+  for(let j=0;j<7;j++){
+    const x=(-.34+j*.055)*L,r=(.115+j*.010)*L;
+    parts.push({k:"lathe",c:[x,0,0],axis:[1,0,0],prof:[[0,r],[.009*L,r+.006*L],[.016*L,r]],ell:[.65,1]});
+  }
   parts.push({k:"loft",sec:[
-    yjFish(-L*0.30,L*0.010,L*0.040,L*0.026),
-    yjFish(-L*0.10,L*0.004,L*0.100,L*0.056),
-    yjFish(L*0.15,0,L*0.130,L*0.070),
-    yjFish(L*0.28,L*0.004,L*0.092,L*0.052),
-    yjFish(L*0.38,L*0.010,L*0.050,L*0.030),
-    yjFish(L*0.44,L*0.012,L*0.024,L*0.016)
-  ]});
-  parts.push({k:"sphere",c:[-L*0.305,L*0.008,0],r:L*0.026});
-  yjRidge(parts,[L*0.18,L*0.07,-L*0.04,-L*0.15],
-    [L*0.068,L*0.070,L*0.066,L*0.056],L*0.032,L*0.011,L*0.018);
-  parts.push({k:"box",c:[L*0.36,L*0.028,0],u:[L*0.05,0,0],v:[0,L*0.012,0],w:[0,0,L*0.030]});
-  /* each mandible its own run: hinged, not load-bearing, first to go.
-     Rooted at the cheek, bowed outboard, tips nearly meeting ahead of
-     the cowl — the mask's tusks at 28 metres */
-  /* mandible plates bowed out like a mask, thicker at the cheek — the
-     scout's face, first thing that reads as Yautja */
-  yjMirRun(parts,()=>{
-    yjHorn(parts,[L*0.12,-L*0.008,L*0.138],[L*0.40,-L*0.030,L*0.210],
-      [L*0.56,L*0.006,L*0.022],L*0.048,L*0.012);
-  });
-  yjMirRun(parts,()=>{
-    parts.push({k:"capsule",a:[L*0.05,-L*0.025,L*0.108],
-      b:[L*0.24,-L*0.025,L*0.108],r:L*0.011});
-    parts.push({k:"tube",a:[L*0.24,-L*0.025,L*0.108],
-      b:[L*0.30,-L*0.025,L*0.108],r1:L*0.009,r2:L*0.004});
-  });
-  yjMirRun(parts,()=>{
-    parts.push({k:"box",c:[-L*0.02,-L*0.006,L*0.112],
-      u:[L*0.085,0,0],v:[0,L*0.006,0],w:[0,0,L*0.007]});
-    parts.push({k:"box",c:[-L*0.19,-L*0.002,L*0.070],
-      u:[L*0.065,0,0],v:[0,L*0.005,0],w:[0,0,L*0.006]});
-  });
-  yjLocks(parts,R,-L*0.31,L*0.006,7,L*0.19,L*0.055,L*0.0055);
+    {pts:[[-.31*L,-.02*L,-.013*L],[.16*L,-.03*L,-.013*L],[.16*L,-.03*L,.013*L],[-.31*L,-.02*L,.013*L]]},
+    {pts:[[-.25*L,-.22*L,-.008*L],[-.07*L,-.20*L,-.008*L],[-.07*L,-.20*L,.008*L],[-.25*L,-.22*L,.008*L]]}]});
 };
 
 /* ---- Drop Pod: the one hull with no ornament at all. An ovoid,
@@ -10659,17 +10567,8 @@ var buildRebelHero=function(){
 };
 /* ---- 7 Minbari: DUKHAT'S BLADE — the Nial that outflew fleets ---- */
 var buildMinbariHero=function(seed){
-  const R=mulberry32((seed==null?0xD04A:seed)|0);
-  const parts=[],L=22.23;
-  minNial(parts,L,R);
-  /* a longer dorsal housing: the blade that led the fleet */
-  parts.push(minHousing(L*0.04,L*0.062,L*0.10,L*0.014,0.85,0.52));
-  heroFit(parts,L);
-  const mz=[];
-  for(let i=0;i<3;i++){
-    const a=i*2.0944,cy=Math.cos(a)*L*0.020,cz=Math.sin(a)*L*0.020;
-    mz.push([L*0.60,cy*0.6,cz*0.6]);
-  }
+  const parts=[],L=22.23;minNial(parts,L,mulberry32((seed==null?0xD04A:seed)|0));
+  const mz=parts.filter(p=>p.k==="disc"&&p.c[0]>0).map(p=>p.c.slice());
   return heroShip(parts,"DUKHAT'S BLADE","NIAL-CLASS FIGHTER",1,mz);
 };
 /* ---- 8 Shadows: THE GHOST — a named crab, extra thorns ---- */
@@ -10677,65 +10576,34 @@ var buildShadowHero=function(){
   const parts=[],L=180;
   shdCrab(parts,L,{veins:6,thorns:4});
   const bb=heroBB(parts);
-  const mz=[[bb[1][0]-(bb[1][0]-bb[0][0])*0.04,(bb[0][1]+bb[1][1])*0.5,0]];
+  const mz=[parts.find(p=>p.k==="disc").c.slice()];
   return heroShip(parts,"THE GHOST","SHADOW BATTLECRAB",1,mz);
 };
 /* ---- 9 EarthForce: Sheridan's White Star ---- */
 var buildEarthforceHero=function(){
-  /* WHITE STAR ONE — Ron Thornton's Minbari/Vorlon hybrid, rebuilt
-     to the Celestia Motherlode mesh on Sketchfab (uperesito, c85790ff).
-     Shark-fin dorsal, split beak, anhedral ventral wings, a greenhouse
-     bridge on struts. Working length 258 m (bridge-set scale). */
-  const L=100,parts=[];
-  /* the bone: flattened organic spindle, fattest just ahead of
-     amidships, needle nose, pinched tail */
-  parts.push({k:"lathe",c:[-L*0.48,0,0],axis:[1,0,0],prof:[
-    [0,L*0.007],[L*0.10,L*0.026],[L*0.26,L*0.050],[L*0.46,L*0.060],
-    [L*0.62,L*0.046],[L*0.78,L*0.026],[L*0.92,L*0.011],[L*0.98,L*0.0025]
-  ],ell:[1.42,0.70]});
-  /* ventral chin — the jaw that makes the split nose */
-  parts.push({k:"lathe",c:[L*0.16,-L*0.024,0],axis:[1,0,0],prof:[
-    [0,L*0.0035],[L*0.10,L*0.015],[L*0.22,L*0.013],[L*0.34,L*0.003]
-  ],ell:[0.58,1.18]});
-  /* dorsal shark-fin: root mid-forward, tip swept aft and tall */
-  const dChord=(x,y,ch,th)=>({pts:[
-    [x+ch,y,0],[x+ch*0.22,y,th],[x-ch*0.42,y,th*0.42],
-    [x-ch,y,0],[x-ch*0.42,y,-th*0.42],[x+ch*0.22,y,-th]]});
-  parts.push({k:"loft",sec:[
-    dChord(L*0.10,L*0.034,L*0.20,L*0.009),
-    dChord(L*0.04,L*0.090,L*0.155,L*0.0075),
-    dChord(-L*0.04,L*0.175,L*0.10,L*0.0055),
-    dChord(-L*0.15,L*0.305,L*0.038,L*0.0030)
-  ]});
-  parts.push({k:"box",c:[-L*0.02,L*0.046,0],u:[L*0.24,0,0],v:[0,L*0.012,0],w:[0,0,L*0.009]});
-  /* bridge greenhouse on two struts, just forward of the fin */
-  parts.push({k:"box",c:[L*0.18,L*0.080,0],u:[L*0.052,0,0],v:[0,L*0.020,0],w:[0,0,L*0.030]});
-  parts.push({k:"box",c:[L*0.205,L*0.072,0],u:[L*0.026,0,0],v:[0,L*0.012,0],w:[0,0,L*0.036]});
-  parts.push({k:"tube",a:[L*0.155,L*0.038,L*0.014],b:[L*0.155,L*0.070,L*0.014],r1:L*0.0065,r2:L*0.0048});
-  parts.push({k:"tube",a:[L*0.155,L*0.038,-L*0.014],b:[L*0.155,L*0.070,-L*0.014],r1:L*0.0065,r2:L*0.0048});
-  /* anhedral ventral wings — manta foils, swept aft */
-  const wChord=(x,y,z,ch,th)=>({pts:[
-    [x+ch,y,z],[x+ch*0.18,y+th,z],[x-ch*0.48,y+th*0.4,z],
-    [x-ch,y,z],[x-ch*0.48,y-th*0.4,z],[x+ch*0.18,y-th,z]]});
-  const vw={k:"loft",sec:[
-    wChord(-L*0.02,-L*0.018,L*0.040,L*0.11,L*0.009),
-    wChord(-L*0.16,-L*0.092,L*0.195,L*0.048,L*0.004)
-  ]};
-  parts.push(vw);parts.push(heroMir(vw));
-  const strake={k:"box",c:[-L*0.20,-L*0.026,L*0.042],
-    u:[L*0.09,0,0],v:[0,L*0.007,0],w:[0,-L*0.012,L*0.036]};
-  parts.push(strake);parts.push(heroMir(strake));
-  const gill={k:"box",c:[L*0.02,L*0.008,L*0.052],
-    u:[L*0.06,0,0],v:[0,L*0.010,0],w:[0,0,L*0.008]};
-  parts.push(gill);parts.push(heroMir(gill));
-  parts.push({k:"tube",a:[-L*0.44,L*0.006,L*0.015],b:[-L*0.535,L*0.006,L*0.015],r1:L*0.013,r2:L*0.009});
-  parts.push({k:"tube",a:[-L*0.44,L*0.006,-L*0.015],b:[-L*0.535,L*0.006,-L*0.015],r1:L*0.013,r2:L*0.009});
-  parts.push({k:"tube",a:[L*0.46,L*0.002,0],b:[L*0.545,-L*0.008,0],r1:L*0.007,r2:L*0.0026});
+  const parts=[],L=100;
+  // A broad split beak, arched bridge and swept loop wings frame real voids.
+  // The on-screen White Star's wing roots are not solid aircraft triangles.
+  parts.push({k:"lathe",c:[-.36*L,0,0],axis:[1,0,0],prof:[
+    [0,.028*L],[.16*L,.078*L],[.34*L,.125*L],[.55*L,.112*L],[.77*L,.014*L]],ell:[1.3,.45]});
+  for(const sign of [-1,1]){
+    const S=p=>[p[0]*L,p[1]*L,p[2]*L*sign];
+    const arch=shdBez(S([-.29,.04,.04]),S([-.24,.16,.27]),S([-.02,.07,.45]),S([.27,-.055,.44]),17);
+    parts.push(shdLoft(arch,arch.map((_,i)=>(.039-.018*i/16)*L),arch.map(()=>.018*L)));
+    const lower=shdBez(S([.30,-.012,.075]),S([.21,-.045,.23]),S([.14,-.075,.39]),S([.27,-.055,.44]),14);
+    parts.push(shdLoft(lower,lower.map((_,i)=>(.038-.012*i/13)*L),lower.map(()=>.013*L)));
+    const nose=shdBez(S([.10,0,.066]),S([.27,.012,.075]),S([.41,.010,.045]),S([.48,0,.019]),10);
+    parts.push(shdLoft(nose,nose.map((_,i)=>(.04*(1-i/9)+.002)*L),nose.map((_,i)=>(.022*(1-i/9)+.002)*L)));
+    parts.push({k:"tube",a:S([.22,-.055,.44]),b:S([.31,-.055,.44]),r1:.020*L,r2:.010*L});
+    parts.push(CAP(S([-.15,.06,.075]),S([-.08,.15,.035]),.012*L));
+  }
+  parts.push({k:"lathe",c:[-.20*L,.15*L,0],axis:[1,0,0],prof:[[0,.015*L],[.05*L,.042*L],[.13*L,.039*L],[.19*L,.009*L]],ell:[1.25,.55]});
+  const fin=shdBez([-.27*L,.05*L,0],[-.42*L,.15*L,0],[-.27*L,.28*L,0],[-.14*L,.27*L,0],12);
+  parts.push(shdLoft(fin,fin.map(()=>.008*L),fin.map((_,i)=>(.06*(1-i/11)+.008)*L)));
+  const mz=[[.48*L,0,.019*L],[.48*L,0,-.019*L],[.31*L,-.055*L,.44*L],[.31*L,-.055*L,-.44*L]];
+  const bb=heroBB(parts),scale=258/(bb[1][0]-bb[0][0]);
   heroFit(parts,258);
-  const G=258,mz=[];
-  heroBarrel(parts,mz,[G*0.44,-G*0.010,G*0.016],[G*0.51,-G*0.014,G*0.020],G*0.0055,G*0.0024);
-  heroBarrel(parts,mz,[G*0.44,-G*0.010,-G*0.016],[G*0.51,-G*0.014,-G*0.020],G*0.0055,G*0.0024);
-  return heroShip(parts,"WHITE STAR ONE","WHITE STAR",48,mz);
+  return heroShip(parts,"WHITE STAR ONE","WHITE STAR",48,mz.map(p=>p.map(v=>v*scale)));
 };
 /* ---- 10 Federation: USS ENTERPRISE NCC-1701, Constitution 305 m ---- */
 var buildFedHero=function(seed){
@@ -10778,12 +10646,9 @@ var buildBorgHero=function(seed){
 };
 /* ---- 13 Mondoshawan: the bronze ark, film armadillo ---- */
 var buildMondoHero=function(seed){
-  const R=mulberry32((seed==null?0xA24C:seed)|0);
-  const parts=[];
-  moArk(parts,R,1);
-  const mz=[];
-  heroBarrel(parts,mz,[18,2.2,12.2],[26,2.4,13.0],1.1,0.55);
-  heroBarrel(parts,mz,[18,2.2,-12.2],[26,2.4,-13.0],1.1,0.55);
+  const parts=[];moVessel(parts,55);
+  // Recessed combat-adaptation emitters in the collar; never giant guns.
+  const mz=[[1.5,2.0,9.8],[1.5,2.0,-9.8]];
   return heroShip(parts,"THE MONDOSHAWAN VESSEL","MONDOSHAWAN ARK",12,mz);
 };
 /* ---- 14 USCM: BUG STOMPER — Hudson's UD-4L Cheyenne ---- */
@@ -10805,16 +10670,8 @@ var buildEngineerHero=function(){
 };
 /* ---- 16 Yautja: the hunter's claw — named scout ---- */
 var buildYautjaHero=function(seed){
-  const R=mulberry32((seed==null?0x4A07:seed)|0);
-  const parts=[],L=26.92;
-  yjScout(parts,R,L);
-  parts.push({k:"box",c:[L*0.04,L*0.030,L*0.122],
-    u:[L*0.055,0,0],v:[0,L*0.028,0],w:[0,0,L*0.014]});
-  parts.push({k:"sphere",c:[L*0.04,L*0.045,L*0.130],r:L*0.030});
-  const mz=[
-    [L*0.30,-L*0.025,L*0.108],[L*0.30,-L*0.025,-L*0.108],
-    [L*0.44,L*0.012,0]
-  ];
+  const parts=[],L=26.92;yjScout(parts,mulberry32((seed==null?0x4A07:seed)|0),L);
+  const mz=[[.44*L,-.045*L,.055*L],[.44*L,-.045*L,-.055*L]];
   return heroShip(parts,"THE HUNTER'S CLAW","YAUTJA SCOUT SHIP",2,mz);
 };
 
@@ -11462,9 +11319,9 @@ const shipProg=compile(`#version 300 es
 layout(location=0) in vec3 aP;
 uniform mat4 uVP;uniform vec3 uPos;uniform vec2 uYaw;uniform vec4 uRot;
 uniform vec4 uAnim;uniform float uT;uniform float uCloak;
-out vec3 vW;out float vGrain;
+out vec3 vW;out vec3 vLocal;out float vGrain;
 void main(){
-  vec3 p=aP;
+  vec3 p=aP;vLocal=aP;
   /* the shoal is alive in the flesh: wings beat hardest at the tips, the
      body swims a travelling wave nose to tail, and the whole hide
      breathes — the yard's machines stay rigid, which is the point */
@@ -11521,8 +11378,9 @@ void main(){
   gl_Position=uVP*vec4(w,1.0);
 }`,`#version 300 es
 precision highp float;
-in vec3 vW;in float vGrain;
+in vec3 vW;in vec3 vLocal;in float vGrain;
 uniform vec3 uEye,uInk,uBg;
+uniform vec4 uMaterial;
 uniform float uFog,uIn,uHurt,uTone,uCloak,uT;
 out vec4 o;
 void main(){
@@ -11536,6 +11394,33 @@ void main(){
   /* a hit rings the whole hull for a breath */
   shade=mix(shade,1.0,uHurt);
   vec3 col=mix(uBg,uInk,clamp(shade,0.0,1.0));
+  // Object-space, derivative-filtered surface detail: no texture fetches,
+  // extra meshes or animated deformation. Distinct from battle FX emission.
+  vec3 p=vLocal/max(1.0,uMaterial.y);
+  if(uMaterial.x>0.5){
+    float spec=pow(max(dot(reflect(-normalize(vec3(.45,.8,.35)),N),Vd),0.0),18.0);
+    if(uMaterial.x<1.5){ // Shadow chitin: irregular dark cells with a subtle wet rim.
+      float vein=sin(p.x*95.0+sin(p.z*67.0))*sin(p.z*83.0+sin(p.y*75.0));
+      float seam=1.0-smoothstep(.045,.045+max(.03,fwidth(vein)*1.5),abs(vein));
+      col*=.78+.22*seam;col+=vec3(.12,.13,.18)*spec;
+    }else if(uMaterial.x<2.5){ // Giger's weathered ribbed metal, not glowing flesh.
+      float band=sin(atan(p.z,p.x)*76.0);
+      float seam=1.0-smoothstep(.06,.06+max(.04,fwidth(band)),abs(band));
+      col*=.84+.16*seam;col+=vec3(.06,.065,.05)*spec;
+    }else if(uMaterial.x<3.5){ // Mondoshawan bronze collar and aged panel seams.
+      float patina=.5+.5*sin(p.x*65.0)*sin(p.y*57.0+p.z*41.0);
+      col=mix(col,col*vec3(.58,.79,.70),patina*.22);col+=vec3(.14,.10,.035)*spec;
+    }else if(uMaterial.x<4.5){ // Minbari/Vorlon wave-like blue-violet plating.
+      float wave=.5+.5*sin(p.x*68.0+sin(p.y*40.0+p.z*40.0)*2.0);
+      col*=.84+.16*wave;col+=vec3(.06,.08,.12)*spec;
+    }else if(uMaterial.x<5.5){ // Borg machinery recesses, sparse green power points.
+      vec3 grid=abs(fract(p*47.0)-.5);
+      float seam=1.0-smoothstep(.035,.035+max(.015,fwidth(p.x)*47.0),min(grid.x,min(grid.y,grid.z)));
+      col*=.62+.38*seam;
+      float cell=fract(sin(dot(floor(p*47.0),vec3(17.13,31.71,91.3)))*43758.5);
+      col+=vec3(.015,.18,.035)*step(.985,cell)*seam;
+    }
+  }
   float fog=1.0-exp(-length(uEye-vW)*uFog);
   float a=1.0;
   if(uCloak>0.001){
@@ -11553,9 +11438,9 @@ void main(){
   }
   o=vec4(mix(col,uBg,fog*0.85),a);
 }`);
-const SU={vp:0,pos:0,yaw:0,rot:0,anim:0,t:0,eye:0,ink:0,bg:0,fog:0,inz:0,hurt:0,tone:0,cloak:0};
+const SU={material:0,vp:0,pos:0,yaw:0,rot:0,anim:0,t:0,eye:0,ink:0,bg:0,fog:0,inz:0,hurt:0,tone:0,cloak:0};
 for(const k of Object.keys(SU))SU[k]=gl.getUniformLocation(shipProg,
-  {vp:"uVP",pos:"uPos",yaw:"uYaw",rot:"uRot",anim:"uAnim",t:"uT",eye:"uEye",ink:"uInk",
+  {material:"uMaterial",vp:"uVP",pos:"uPos",yaw:"uYaw",rot:"uRot",anim:"uAnim",t:"uT",eye:"uEye",ink:"uInk",
    bg:"uBg",fog:"uFog",inz:"uIn",hurt:"uHurt",tone:"uTone",cloak:"uCloak"}[k]);
 const beamProg=compile(`#version 300 es
 layout(location=0) in vec3 aP;
@@ -12492,7 +12377,7 @@ const RACE_DEFS=[
    wpn:[[10,1],[18,6],[28,2],[40,3],[55,4],[70,5]],
    fire:"neutron",boom:"crystal",msl:false,
    doct:{CHARGE:1,FLANK:5,ENVELOP:2,SWARM:1,HUNT:4,SCREEN:1,FEIGN:3,MINE:1}},
-  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.70,0.22,0.08],form:"swarm",fleetK:0.16,fleetMin:32,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:1,tone:0.55,dust:0.8,spdCap:170,
+  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.70,0.22,0.08],form:"swarm",fleetK:0.16,fleetMin:32,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:0,tone:0.55,dust:0.8,spdCap:170,
    hpdiv:15,spdK:1600,spdCap:80,turnK:41,
    wpn:[[10,1],[18,2],[26,6],[38,3],[52,4],[78,5]],
    fire:"slicer",boom:"dissolve",msl:false,
@@ -12527,7 +12412,7 @@ const RACE_DEFS=[
    wpn:[[22,1],[32,2],[48,3],[62,4],[74,5],[84,6]],
    fire:"smart",boom:"cookoff",msl:true,
    doct:{CHARGE:4,FLANK:2,ENVELOP:1,SWARM:1,HUNT:3,SCREEN:3,FEIGN:1,MINE:2}},
-  {name:"THE ENGINEERS",fr:"aliens",mix:[0.45,0.35,0.20],form:"crescent",fleetK:0.8,hold:680,beam:[0.60,0.70,0.85],ion:[0.75,0.85,1.00],anim:1,tone:0.70,
+  {name:"THE ENGINEERS",fr:"aliens",mix:[0.45,0.35,0.20],form:"crescent",fleetK:0.8,hold:680,beam:[0.60,0.70,0.85],ion:[0.75,0.85,1.00],anim:0,tone:0.70,
    hpdiv:16,spdK:1300,spdCap:60,turnK:24,
    wpn:[[12,1],[22,2],[48,3],[60,4],[72,5],[82,6]],
    fire:"bio",boom:"fossil",msl:false,
@@ -16883,6 +16768,28 @@ gl.vertexAttribPointer(1,3,gl.FLOAT,false,28,16);
 gl.bindVertexArray(null);
 /* ===================== frame ===================== */
 let lastT=0,fpsA=60,statT=0;
+// Natural hull finishes in the default slate view. Other palettes remain
+// deliberate ink studies. Mixed fleets choose by class, not just allegiance.
+function hullFinish(s){
+  const klass=(s.meta&&s.meta.klass)||"";
+  let color=[.69,.72,.75],surface=0;
+  switch(s.race){
+    case 5:color=[.69,.72,.76];break;
+    case 6:color=[.76,.73,.67];break;
+    case 7:color=[.38,.62,.83];surface=4;break;
+    case 8:color=[.21,.22,.28];surface=1;break;
+    case 9:color=/WHITE STAR/.test(klass)?[.67,.54,.78]:[.54,.60,.68];surface=/WHITE STAR/.test(klass)?4:0;break;
+    case 10:color=[.77,.80,.81];break;
+    case 11:color=[.40,.51,.29];break;
+    case 12:color=[.32,.37,.34];surface=5;break;
+    case 13:color=/MONDOSHAWAN/.test(klass)?[.79,.61,.34]:/CAB|TAXI/.test(klass)?[.84,.62,.13]:[.72,.74,.72];surface=/MONDOSHAWAN/.test(klass)?3:0;break;
+    case 14:color=/CHEYENNE|DROPSHIP/.test(klass)?[.40,.45,.31]:[.52,.58,.63];break;
+    case 15:color=[.47,.48,.41];surface=2;break;
+    case 16:color=[.40,.43,.38];break;
+    case 17:color=/VORLON/.test(klass)?[.73,.58,.27]:[.57,.51,.62];break;
+  }
+  return {color,surface};
+}
 function frame(nowMs){
   requestAnimationFrame(frame);
   const wall=nowMs/1000;
@@ -16991,6 +16898,9 @@ function frame(nowMs){
   let alive=0;
   for(const s of ships){
     if(!s.vao)continue;
+    const finish=hullFinish(s),natural=palI===2&&s.race>=5;
+    gl.uniform3fv(SU.ink,natural?finish.color:inkc);
+    gl.uniform4f(SU.material,natural&&!s.dead?finish.surface:0,Math.max(1,s.slen),0,0);
     if(s.dead){
       /* a corpse drifts. She does not blink out — she speckles into dust. */
       if(!s.dustT&&now-(s.deadT||0)>12){
@@ -17049,6 +16959,7 @@ function frame(nowMs){
     gl.drawElements(gl.TRIANGLES,s.icount,gl.UNSIGNED_INT,0);
     if(ck>0.04){gl.depthMask(true);gl.disable(gl.BLEND);}
   }
+  gl.uniform3fv(SU.ink,inkc);gl.uniform4f(SU.material,0,1,0,0);
   drawBarrels(now,m,FRP);
   /* the litter of the war: charred pieces adrift, tumbling where they
      died — and beneath them the boneyard, every earlier piece kept */
