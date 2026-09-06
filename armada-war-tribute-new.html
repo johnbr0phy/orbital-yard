@@ -232,6 +232,24 @@ body.intro #wasd{
   font-family:"Saira Condensed",sans-serif;font-weight:700;font-size:64px;letter-spacing:0.12em;
   color:var(--ink);text-shadow:0 0 34px var(--bg),0 0 8px var(--bg)}
 #win .sub{font-size:15px;font-family:"IBM Plex Mono",monospace;letter-spacing:0.22em;margin-top:12px;opacity:0.85}
+
+/* Viewing controls stay at the edge; following does not depend on a panel. */
+#watchDock{position:fixed;left:20px;bottom:72px;z-index:9;max-width:calc(100vw - 40px);padding:10px 12px;background:#15202bef;border:1px solid #536677;border-radius:10px;color:#e8edf2;font:12px system-ui}
+#watchLabel{color:#acbdcb;margin-bottom:8px;max-width:540px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.watchButtons{display:flex;gap:5px;flex-wrap:wrap}
+#watchDock button,#card button,#flightTouch button{font:12px system-ui;color:#e8edf2;background:#263747;border:1px solid #597084;border-radius:5px;min-height:34px;padding:6px 11px;cursor:pointer}
+#watchDock button:hover,#card button:hover{background:#3a5165}#watchDock button:focus-visible,#card button:focus-visible{outline:2px solid #c5e4ff;outline-offset:3px}
+#watchDock button[aria-pressed=true]{background:#c0d3e2;color:#172535}
+#card{left:auto;right:20px;bottom:76px;width:280px;max-width:calc(100vw - 40px);max-height:58vh;overflow:auto;background:#15202bf5;border:1px solid #536677;border-radius:10px;padding:14px;color:#e8edf2;font:12px/1.5 system-ui;letter-spacing:0}
+#card h2{font:600 16px/1.25 system-ui;margin:0 28px 8px 0}#card .k{font-size:11px;color:#bccbd8;opacity:1}#cardX{position:absolute;right:7px;top:6px;border:0!important;min-height:28px!important;padding:2px 9px!important;font-size:20px!important}
+#crewPortrait{width:100%;height:auto;display:block;margin:12px 0 8px;border-radius:6px}#crewName{font-weight:600}#card details{margin-top:10px}#card summary{cursor:pointer;color:#b9cee0}#card .thought{font:12px/1.4 system-ui;min-height:0}
+#cockpitHud{position:fixed;inset:0;pointer-events:none;z-index:5;color:#d5e5ed;font:12px system-ui;box-shadow:inset 0 -90px 80px -45px #071019}
+#cockpitHud[hidden]{display:none}.cockpitBeam{position:absolute;inset:0;border:14px solid #233646;border-bottom-width:56px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 0,3% 5%,3% 86%,97% 86%,97% 5%,3% 5%)}
+.crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.65;font-size:25px}#flightStatus{position:absolute;left:50%;bottom:62px;transform:translateX(-50%)}.flightHelp{position:absolute;left:50%;top:115px;transform:translateX(-50%);background:#15202bde;padding:8px 12px;border-radius:5px;white-space:nowrap}
+#flightTouch{display:none;position:absolute;bottom:170px;right:12px;max-width:220px;gap:5px;flex-wrap:wrap;pointer-events:auto}
+body.piloting #head,body.piloting #score{opacity:.3}body.piloting #wasd{display:none}
+@media(max-width:820px){#watchDock{left:10px;bottom:95px;max-width:calc(100vw - 20px)}#card{right:10px;bottom:210px;max-height:42vh;width:250px}#watchDock button{padding:6px 8px}.flightHelp{white-space:normal;top:80px;width:70%;text-align:center}#flightTouch{display:flex}#flightStatus{bottom:220px}}
+
 </style>
 </head>
 <body>
@@ -256,7 +274,9 @@ body.intro #wasd{
   <button id="bCurate" title="Pick the navies yourself (N)">CURATE WAR</button>
   <button id="bPal">PALETTE</button>
 </div>
-<div id="card"></div>
+<nav id="watchDock" aria-label="Battle cameras"><div id="watchLabel">Watch the battle</div><div class="watchButtons"><button data-view="action">Action</button><button data-view="all">All ships</button><button data-view="top">Top down</button><button data-view="hero">Hero</button><button data-view="follow">Follow</button><button data-view="bridge">Crew</button><button data-view="fly">Take control</button></div></nav>
+<div id="cockpitHud" hidden><div class="cockpitBeam"></div><div class="crosshair">＋</div><div id="flightStatus">At the helm</div><div class="flightHelp">W / S throttle · A / D turn · ↑ / ↓ pitch · Space fire at forward target · Esc autopilot</div><div id="flightTouch"><button data-flight="w" aria-label="Increase throttle">Faster</button><button data-flight="s" aria-label="Decrease throttle">Slower</button><button data-flight="a" aria-label="Turn left">←</button><button data-flight="d" aria-label="Turn right">→</button><button data-flight="arrowup" aria-label="Pitch up">↑</button><button data-flight="arrowdown" aria-label="Pitch down">↓</button><button data-flight=" " aria-label="Fire">Fire</button></div></div>
+<div id="card" aria-label="Ship and crew"></div>
 <div id="win"></div>
 <div id="toast"></div>
 <div id="pick"><div class="panel">
@@ -274,6 +294,7 @@ body.intro #wasd{
   </div>
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
+<script src="armada-crew-new.js"></script>
 <script src="armada-battle-ai-new.js"></script>
 <script>
 "use strict";
@@ -13599,102 +13620,8 @@ function pickIntroHero(){
 }
 const INTRO_FLY=6.4;          /* seconds of film, from her jump to the hand-over */
 function beginIntro(){
-  /* empty sky. one named keel screams through. the camera takes the
-     chase, then speeds up onto her tail. ahead, the other navy jumps. */
-  const h=pickIntroHero();
-  if(!h)return false;
-  let n0=-1e18,n1=1e18;
-  for(const s of ships){
-    if(s.dead||!s.vao)continue;
-    const half=Math.max(s.exL||0,(s.slen||20)*0.5);
-    if(s.side===0){const n=s.x+half;if(n>n0)n0=n;}
-    else{const n=s.x-half;if(n<n1)n1=n;}
-  }
-  if(!(n0>-1e17)||!(n1<1e17))return false;
-  const L=h.slen||40;
-  const pass=Math.max(120,L*2.15);
-  const ar=(typeof innerWidth==="number"?innerWidth/Math.max(1,innerHeight):1.7);
-  const halfW=pass*Math.tan(0.44)*Math.max(1.15,ar);
-  const runUp=halfW+L*0.55+260;
-  const run=h.side===0?1:-1;
-  const foe=1-h.side;
-  /* SHE FLIES AT THE HEAD OF HER OWN NAVY. The opening used to set her
-     down alone in the middle of the neutral ground with everything she
-     cared about astern of her, so the instant the camera let go she put
-     the helm over and ran for home — which is a poor first impression of
-     a hero. Start her a length or two off her own front rank instead,
-     already pointed at the other fellow, and the first thing she does is
-     charge; the enemy then jumps in ahead of her, into her windscreen. */
-  const ownFront=h.side===0?n0:n1;
-  const foeFront=h.side===0?n1:n0;
-  const lead=L*2.2+180;
-  /* the run is a fixed length of film. Her speed is then whatever carries
-     her a little over half the crossing in that time — never a fixed
-     dash, which put a fast keel through the enemy line before the camera
-     had finished with her, and that is the OTHER way a hero ends up
-     pointing the wrong way. */
-  const gap0=Math.max(600,Math.abs(foeFront-(ownFront+run*lead)));
-  const dash=Math.max(150,Math.min(900,gap0*0.55/INTRO_FLY));
-  h.yaw=h.side?Math.PI:0;
-  h.yawV=0;h.pitch=0;h.roll=0;h.v=0;h.vy=0;
-  h.x=ownFront+run*lead;
-  h.delay=0.58;h.shed=0.05;h.lag=0;h.arr=false;
-  /* the camera waits down her line of flight; she screams past it */
-  cam.ex=h.x+run*runUp;
-  cam.ey=Math.max(28,L*0.14);
-  cam.ez=-Math.max(36,pass*0.06);
-  cam.yaw=Math.PI/2;
-  cam.pitch=-0.05;
-  h.y=cam.ey-Math.max(4,L*0.06);
-  h.z=cam.ez+pass;
-  /* HER FLIGHT COMES UP WITH HER. A squadron steers to a waypoint set
-     nine hundred metres ahead of its OWN centroid — so an ace dealt a
-     station at the head of the fleet, with her wing left back in the
-     ranks, is handed a waypoint that lies behind her, and the first
-     thing she does when the camera lets go is turn round and go and
-     find them. That is the flee. */
-  const wing=h.squad>=0?squads[h.squad]:null;
-  if(wing){
-    let k=0;
-    for(const id of wing.mem){
-      if(id===h.id)continue;
-      const m=ships[id];
-      if(!m||m.dead)continue;
-      k++;
-      const wide=(k%2)?1:-1,rank=Math.ceil(k/2);
-      m.x=h.x-run*(rank*L*2.6+140);
-      m.y=h.y+wide*rank*L*0.42;
-      m.z=h.z+wide*(rank*L*2.4+110);
-      m.yaw=h.yaw;m.yawV=0;m.pitch=0;m.roll=0;m.v=0;m.vy=0;
-      if(m.stn){m.stn[0]=m.x;m.stn[1]=m.y;m.stn[2]=m.z;}
-    }
-    wing.lead=h.id;
-    wing.adv=true;wing.tac="ADVANCE";wing.phase=0;
-  }
-  for(const s of ships){
-    if(s.id===h.id)continue;
-    const unique=!!(RACE_DEFS[s.race]||{}).unique;
-    const i=s.fo||0;
-    if(s.side===foe){
-      /* the other navy arrives AHEAD of her, while she is already running */
-      s.delay=unique?5.7+i*3.0:5.35+(s.delay||0)*0.22+combatRandom()*0.55;
-    }else{
-      /* and her own forms up at her back, a breath after she passes */
-      const inWing=!!(wing&&wing.mem.indexOf(s.id)>=0);
-      s.delay=unique?3.3+i*2.2
-        :inWing?1.05+combatRandom()*0.35
-        :1.75+(s.delay||0)*0.14+combatRandom()*0.6;
-    }
-    s.arr=false;
-  }
-  intro={
-    hero:h.id,foe,dash,catch:false,done:false,caughtT:0,
-    catchAt:h.delay+1.65,endAt:h.delay+INTRO_FLY,
-    dist0:pass,dist1:Math.max(42,L*3.8),h0:20,h1:Math.max(10,L*0.62)
-  };
-  sel=null;orb=null;card(null);
-  document.body.classList.add("intro");
-  return true;
+  // Open on the battle. The viewer can choose Hero without a forced fly-by.
+  return false;
 }
 function endIntro(){
   if(!intro||intro.done)return;
@@ -13704,7 +13631,7 @@ function endIntro(){
   intro=null;
   const h=ships[hid];
   if(h&&!h.dead&&caught){
-    sel=hid;orb=chaseCamInit(h);card(hid);updateHeroBtn();
+    sel=hid;orb=chaseCamInit(h);card(null);updateHeroBtn();
   }else if(!caught){
     frameTheWar();
     sel=null;orb=null;card(null);
@@ -14241,7 +14168,7 @@ function startWar(fresh){
   IONCOL=[RACE_DEFS[ra].ion,RACE_DEFS[rb].ion];
   makeCelestial(mulberry32((warSeed^0xC0FFEE)>>>0));
   cam.ex=0;cam.ey=420;cam.ez=1100;cam.yaw=-Math.PI/2;cam.pitch=-0.22;
-  forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
+  leaveHelm();watchMode="action";forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
   intro=null;document.body.classList.remove("intro");
   const bH=document.getElementById("bHero");if(bH){bH.classList.remove("on");bH.textContent="HEROES";}
   document.getElementById("win").style.display="none";
@@ -16417,7 +16344,7 @@ function simStep(now,dt){
     if(winner!=null||counts[side]<=0){ionState[side]=null;continue;}
     const lock=ionState[side];
     if(!lock&&now>=ionNext[side]){
-      const candidates=ships.filter(g=>g.side===side&&!g.dead&&g.vao&&(g.hulls||0)>=10&&!RACE_DEFS[g.race].unique);
+      const candidates=ships.filter(g=>g.side===side&&g.id!==pilotId&&!g.dead&&g.vao&&(g.hulls||0)>=10&&!RACE_DEFS[g.race].unique);
       candidates.sort((a,b)=>(b.ai?b.ai.budget[0]:0)-(a.ai?a.ai.budget[0]:0));
       for(const g of candidates){const next=battleAI.ionLock(g,side,now);if(next){ionState[side]=next;g.lastFire=now;break;}}
       if(!ionState[side])ionNext[side]=now+3;
@@ -16470,13 +16397,14 @@ function simStep(now,dt){
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;
       continue;
     }
+    if(s.id===pilotId){pilotStep(s,now,dt);continue;}
     s.cool-=dt;   /* cooldowns use simulation seconds; damage balances the denser cadence */
     if(s.err){
       s.err[0]=Math.max(-10,Math.min(10,s.err[0]+Math.sin(now*0.11+(s.wf||0))*dt*1.6));
       s.err[1]=Math.max(-7,Math.min(7,s.err[1]+Math.sin(now*0.08+(s.wf2||0))*dt*1.1));
       s.err[2]=Math.max(-10,Math.min(10,s.err[2]+Math.cos(now*0.10+(s.wf||1))*dt*1.6));
     }
-    debrisPilot(s,now);fireAtDebris(s,now);
+    leakHullDust(s,now);debrisPilot(s,now);fireAtDebris(s,now);
     if(fightsAsCrown(s)){megaStep(s,now,dt);continue;}
     const sq=s.squad>=0?squads[s.squad]:null;
     const plan=battleAI.destination(s,now,false);
@@ -16780,7 +16708,7 @@ function makeStars(){
 const cam={yaw:-Math.PI/2,pitch:-0.22,ex:0,ey:420,ez:1100};
 function renderPixelRatio(width,height,ratio){return Math.min(ratio||1,1.5,Math.sqrt(2400000/Math.max(1,width*height)));}
 let dpr=renderPixelRatio(innerWidth,innerHeight,devicePixelRatio),resolutionCheck=0;
-let sel=null,orb=null;
+let sel=null,orb=null,pilotId=null,watchMode="action",directorAt=0,watchGoal=null;
 const keys=new Set();
 function resize(){
   dpr=Math.min(dpr,renderPixelRatio(innerWidth,innerHeight,devicePixelRatio));
@@ -16798,7 +16726,7 @@ function camBasis(){
 function mat(){
   const [f,r,u]=camBasis();
   const e=[cam.ex,cam.ey,cam.ez];
-  const zn=0.6,zf=sceneR*9,t=1/Math.tan(0.44),ar=cvs.width/cvs.height;
+  const zn=0.6,zf=Math.max(sceneR*9,watchGoal?.far||0),t=1/Math.tan(0.44),ar=cvs.width/cvs.height;
   const vx=r,vy=u,vz=[-f[0],-f[1],-f[2]];
   const tx=-V.dot(vx,e),ty=-V.dot(vy,e),tz=-V.dot(vz,e);
   const A=t/ar,Bq=t,C=(zf+zn)/(zn-zf),D=2*zf*zn/(zn-zf);
@@ -16843,22 +16771,15 @@ function pickShip(px,py){
   return best;
 }
 function card(id){
-  const el=document.getElementById("card");
-  if(id==null||!ships[id]||!ships[id].meta){el.style.display="none";return;}
-  const s=ships[id];
-  el.style.display="block";
-  s.thAt=0;s.thLine=null;
-  el.innerHTML="<span id=\"cardX\" title=\"close\">×</span><h2>"+(s.hero?"★ ":"")+s.meta.desig+"</h2><div class=\"k\">"+s.meta.klass+(s.meta.refit?" · "+s.meta.refit.role:"")+(s.meta.structure?" · "+s.meta.structure.name:"")+(s.meta.architecture?" · "+s.meta.architecture:"")+
-    (s.hero?" · HERO":"")+
-    " · <span id=\"cmd\">"+(s.mood||"")+"</span>"+
-    " · "+RACE_DEFS[s.race].name+(s.race!==sideRace[s.side]?" · ANSWERING "+SIDE_NAME[s.side]+"'S CALL":"")+
-    "</div><div class=\"k\">"+Math.round(s.slen)+
-    " m · INTEGRITY <span id=\"chp\">"+Math.ceil(s.hp)+"/"+s.hpMax+"</span>"+
-    " · <span id=\"ckl\">"+(s.kills||0)+"</span> KILLS</div>"+
-    "<div class=\"thought\"><span class=\"lbl\">THINKING</span><span id=\"cth\">"+
-    craftThought(s,battleTime)+"</span></div><div id=\"cbrain\">"+battleReadout(s)+"</div>"+
-    "<button type=\"button\" id=\"brainSensors\" aria-pressed=\""+showSensors+"\">"+(showSensors?"HIDE SENSORS":"SHOW SENSORS")+"</button>";
-  document.getElementById("brainSensors").onclick=()=>{showSensors=!showSensors;card(id);};
+  const el=document.getElementById('card');
+  if(id==null||!ships[id]?.meta){el.style.display='none';return;}
+  const s=ships[id],crew=window.ArmadaCrew?.profile(s.seed??s.id,s.race);
+  el.style.display='block';s.thAt=0;s.thLine=null;
+  el.innerHTML='<button id="cardX" aria-label="Hide ship details">×</button><h2>'+s.meta.desig+'</h2><div class="k">'+s.meta.klass+'</div><div class="k">Integrity <span id="chp">'+Math.ceil(s.hp)+'/'+s.hpMax+'</span> · <span id="ckl">'+(s.kills||0)+'</span> victories</div>'+
+    (crew?'<canvas id="crewPortrait" aria-label="Generated '+crew.kind+' captain and bridge"></canvas><div id="crewName">'+crew.role+' '+crew.name+'</div><div class="k">'+crew.kind+' · Bridge crew</div>':'')+
+    '<details><summary>Ship status</summary><div class="thought"><span id="cth">'+craftThought(s,battleTime)+'</span></div><div id="cmd">'+(s.mood||'')+'</div><div id="cbrain">'+battleReadout(s)+'</div><button id="brainSensors">'+(showSensors?'Hide sensors':'Show sensors')+'</button></details>';
+  if(crew)window.ArmadaCrew.draw(document.getElementById('crewPortrait'),crew);
+  document.getElementById('brainSensors').onclick=()=>{showSensors=!showSensors;card(id);};
 }
 function battleReadout(s){
   const d=battleAI.describe(s),p=d.traits;
@@ -16915,26 +16836,81 @@ function followHero(){
   if(!hs.length){toast("NO HERO ON STATION");if(btn)btn.classList.remove("on");return;}
   const cur=sel!=null&&ships[sel]&&ships[sel].hero?hs.findIndex(h=>h.id===sel):-1;
   const i=(cur+1)%hs.length;
-  select(hs[i].id);
+  select(hs[i].id,false);
   toast("CHASE · "+heroShort(hs[i])+(hs.length>1?" · "+(i+1)+"/"+hs.length:""));
 }
-function select(id){
+function select(id,details=true){
+  if(pilotId!=null)leaveHelm();
+  watchMode="follow";
   if(intro&&!intro.done)endIntro();
   sel=id;
   if(id==null||!ships[id]||ships[id].dead){
     orb=null;card(null);sel=null;
-    updateHeroBtn();
+    updateHeroBtn();updateWatchDock();
     return;
   }
   orb=chaseCamInit(ships[id]);
-  card(id);
-  updateHeroBtn();
+  card(details?id:null);
+  updateHeroBtn();updateWatchDock();
 }
+function updateWatchDock(){
+  const s=sel!=null?ships[sel]:null;
+  document.getElementById('watchLabel').textContent=pilotId!=null?'At the helm · '+s?.meta?.desig:s?'Following '+s.meta.desig:watchMode==='top'?'Top-down battle view':watchMode==='all'?'All ships':'Battle director';
+  for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===watchMode));
+}
+function leaveHelm(){
+  pilotId=null;watchMode="follow";keys.clear();document.body.classList.remove('piloting');document.getElementById('cockpitHud').hidden=true;
+  if(sel!=null&&ships[sel])orb=chaseCamInit(ships[sel]);
+  updateWatchDock();
+}
+function setWatchView(mode){
+  if(mode==='bridge'){if(sel!=null)card(sel);else toast('Select a ship to meet its crew');return;}
+  if(mode==='hero'){followHero();watchMode='hero';updateWatchDock();return;}
+  if(mode==='follow'||mode==='fly'){
+    if(sel==null||!ships[sel]||ships[sel].dead){toast('Select a ship first');return;}
+    if(mode==='fly'){
+      const s=ships[sel];if(!s.arr||s.grace){toast('Wait for this ship to arrive');return;}
+      pilotId=sel;s.pilotThrottle=.7;card(null);watchMode='fly';document.body.classList.add('piloting');document.getElementById('cockpitHud').hidden=false;
+      document.getElementById('cockpitHud').style.color=window.ArmadaCrew?.profile(s.seed??s.id,s.race).color||'#d5e5ed';
+    }else{leaveHelm();orb=chaseCamInit(ships[sel]);watchMode='follow';}updateWatchDock();return;
+  }
+  leaveHelm();if(intro&&!intro.done)endIntro();sel=null;orb=null;card(null);watchMode=mode;directorAt=0;updateHeroBtn();updateWatchCamera(battleTime,1,true);updateWatchDock();
+}
+function updateWatchCamera(now,dt,force=false){
+  if(pilotId!=null){const s=ships[pilotId];if(!s||s.dead){leaveHelm();return;}const cp=Math.cos(s.pitch||0),sp=Math.sin(s.pitch||0),d=(s.nose||s.slen*.5)+Math.max(2,s.slen*.015);cam.ex=s.x+Math.cos(s.yaw)*cp*d;cam.ey=s.y+sp*d;cam.ez=s.z+Math.sin(s.yaw)*cp*d;cam.yaw=s.yaw;cam.pitch=s.pitch||0;return;}
+  if(sel!=null||!['all','top','action'].includes(watchMode)||!ships.length)return;
+  const move=()=>{if(!watchGoal)return;const k=force?1:1-Math.exp(-Math.max(0,dt)*2);for(const key of ['ex','ey','ez','pitch'])cam[key]+=(watchGoal[key]-cam[key])*k;let d=watchGoal.yaw-cam.yaw;while(d>Math.PI)d-=Math.PI*2;while(d< -Math.PI)d+=Math.PI*2;cam.yaw+=d*k;};
+  if(!force&&now<directorAt){move();return;}directorAt=now+.8;
+  const live=ships.filter(s=>!s.dead&&s.vao);if(!live.length)return;
+  let focus=live;
+  if(watchMode==='action'){const hot=live.filter(s=>now-(s.lastFire||-100)<3||now-s.hurtT<3);if(hot.length)focus=hot.slice(0,40);else focus=live.filter(s=>!s.hulls&&!s.hero);if(!focus.length)focus=live;}
+  const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];for(const s of focus)for(let a=0;a<3;a++){const v=[s.x,s.y,s.z][a],r=s.slen*.5;lo[a]=Math.min(lo[a],v-r);hi[a]=Math.max(hi[a],v+r);}
+  const c=lo.map((v,i)=>(v+hi[i])/2),radius=Math.max(200,Math.hypot(...hi.map((v,i)=>(v-lo[i])/2))),aspect=cvs.width/Math.max(1,cvs.height),distance=radius/(Math.sin(.44)*Math.min(1,aspect))*1.12;
+  const pitch=watchMode==='top'?-1.54:-.48,yaw=.65;watchGoal={far:distance+radius*2,ex:c[0]-Math.cos(yaw)*Math.cos(pitch)*distance,ey:c[1]-Math.sin(pitch)*distance,ez:c[2]-Math.sin(yaw)*Math.cos(pitch)*distance,yaw,pitch};move();
+}
+function pilotStep(s,now,dt){
+  const turn=Math.min(1.6,Math.max(.045,s.turn||.3)),steer=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
+  s.yaw+=steer*turn*dt;s.yawV=steer*turn;
+  s.pitch=Math.max(-1.15,Math.min(1.15,(s.pitch||0)+((keys.has('arrowup')?1:0)-(keys.has('arrowdown')?1:0))*turn*dt));
+  s.pilotThrottle=Math.max(0,Math.min(1,(s.pilotThrottle??.7)+((keys.has('w')?1:0)-(keys.has('s')?1:0))*dt*.45));
+  const cap=s.spdMax||s.spd||20;s.v=(s.v||0)+(cap*s.pilotThrottle-(s.v||0))*Math.min(1,dt*1.5);s.vy=Math.sin(s.pitch)*s.v;s.roll=-steer*.22;
+  s.x+=Math.cos(s.yaw)*Math.cos(s.pitch)*s.v*dt;s.z+=Math.sin(s.yaw)*Math.cos(s.pitch)*s.v*dt;s.y=Math.max(-sceneR*3,Math.min(sceneR*3,s.y+s.vy*dt));s.mood='PLAYER';
+  if(keys.has(' ')&&now>=(s.pilotShot||0)){
+    s.pilotShot=now+.3;const f=[Math.cos(s.yaw)*Math.cos(s.pitch),Math.sin(s.pitch),Math.sin(s.yaw)*Math.cos(s.pitch)];let target=null,best=.92;
+    for(const t of foeCache[1-s.side]){const d=[t.x-s.x,t.y-s.y,t.z-s.z],len=Math.hypot(...d);if(len<1||len>Math.max(1800,s.slen*2))continue;const dot=V.dot(d,f)/len;if(dot>best){best=dot;target=t;}}
+    if(target)raceFire(s,target,now,0,0,0);
+  }
+  leakHullDust(s,now);
+}
+for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>setWatchView(b.dataset.view);
+for(const b of document.querySelectorAll('[data-flight]')){b.onpointerdown=e=>{e.preventDefault();keys.add(b.dataset.flight);b.setPointerCapture(e.pointerId);};b.onpointerup=b.onpointercancel=()=>keys.delete(b.dataset.flight);}
+addEventListener('blur',()=>keys.clear());
 /* pointer + pinch */
 let pdown=null,pmoved=false;
 const ptrs=new Map();
 let pinch0=null;
 cvs.addEventListener("pointerdown",e=>{
+  if(pilotId!=null)return;watchMode="free";
   ptrs.set(e.pointerId,[e.clientX,e.clientY]);
   cvs.setPointerCapture(e.pointerId);
   if(ptrs.size===1){pdown=[e.clientX,e.clientY];pmoved=false;pinch0=null;}
@@ -16974,14 +16950,14 @@ cvs.addEventListener("pointerup",e=>{
   ptrs.delete(e.pointerId);
   if(ptrs.size<2)pinch0=null;
   if(ptrs.size===1)pdown=[...ptrs.values()][0];
-  if(pdown&&!pmoved&&ptrs.size===0)select(pickShip(e.clientX,e.clientY));
+  if(pdown&&!pmoved&&ptrs.size===0)(()=>{const id=pickShip(e.clientX,e.clientY);if(id!=null)select(id);})();
   if(ptrs.size===0)pdown=null;
 });
 cvs.addEventListener("pointercancel",e=>{
   ptrs.delete(e.pointerId);if(ptrs.size===0)pdown=null;pinch0=null;
 });
 cvs.addEventListener("wheel",e=>{
-  e.preventDefault();
+  e.preventDefault();watchMode="free";
   if(intro&&!intro.done)endIntro();
   if(sel!=null&&orb)orb.dist=Math.max(12,Math.min(sceneR*2,orb.dist*Math.exp(e.deltaY*0.0012*camLook)));
   else{
@@ -16990,8 +16966,11 @@ cvs.addEventListener("wheel",e=>{
   }
 },{passive:false});
 addEventListener("keydown",e=>{
+  if(e.target&&/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
   const k=e.key.toLowerCase();
+  if(pilotId!=null&&[' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
   keys.add(k);
+  if(pilotId==null&&sel==null&&["w","a","s","d","q","e"].includes(k))watchMode="free";
   if(k==="n")openPicker();
   if(k==="r")randomWar();
   if(k==="p"){palI=(palI+1)%PAL.length;applyPal();}
@@ -17002,7 +16981,9 @@ addEventListener("keydown",e=>{
   if(e.key==="Escape"){
     const pe=document.getElementById("pick");
     if(pe.classList.contains("on")&&ships.length)pe.classList.remove("on");
-    else select(null);
+    else if(pilotId!=null)leaveHelm();
+    else if(document.getElementById("card").style.display!=="none")card(null);
+    else setWatchView("all");
   }
 });
 addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
@@ -17058,7 +17039,7 @@ document.getElementById("bRand").addEventListener("click",()=>randomWar());
 document.getElementById("bCurate").addEventListener("click",()=>openPicker());
 document.getElementById("bPal").addEventListener("click",()=>{palI=(palI+1)%PAL.length;applyPal();});
 document.getElementById("card").addEventListener("click",e=>{
-  if(e.target&&e.target.id==="cardX")select(null);
+  if(e.target&&e.target.id==="cardX")card(null);
 });
 document.getElementById("score").addEventListener("click",e=>{
   const b=e.target.closest&&e.target.closest("[data-hid]");
@@ -17221,7 +17202,8 @@ function frame(nowMs){
   const now=battleTime,dt=stepped/30;
   /* camera: chase is the default hold — behind her, looking down her
      nose. Drag breaks into an orbit. Empty sky is free flight. */
-  if(sel!=null&&ships[sel]&&!ships[sel].dead){
+  if(pilotId!=null){updateWatchCamera(now,dt);}
+  else if(sel!=null&&ships[sel]&&!ships[sel].dead){
     const s=ships[sel];
     if(!orb)orb=chaseCamInit(s);
     let chaseK=6;
@@ -17266,7 +17248,8 @@ function frame(nowMs){
     if(keys.has("q"))cam.ey-=sp;
     if(keys.has("e"))cam.ey+=sp;
   }
-  if(camKick>0.4){
+  if(pilotId==null)updateWatchCamera(now,dt);
+  if(camKick>0.4&&pilotId==null){
     const k=camKick;
     cam.ex+=(Math.random()-0.5)*k;cam.ey+=(Math.random()-0.5)*k*0.55;cam.ez+=(Math.random()-0.5)*k;
     camKick*=Math.max(0,1-dt*4.2);
@@ -17316,6 +17299,7 @@ function frame(nowMs){
     if(!s.vao)continue;
     if(!s.dead&&warT0!==Infinity&&T-s.delay>=0){
       alive++;
+      if(s.id===pilotId)continue;
       if(!sphereVis(FRP,s.x,s.y,s.z,s.slen*.8))continue;
       const distance=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez),pixels=hullBerth(s)*cvs.height/Math.max(1,distance*.942);
       // At under five pixels a full mesh adds draw calls without readable detail.
@@ -17699,6 +17683,7 @@ function frame(nowMs){
   if(now-statT>0.25){
     statT=now;
     if(rosterDirty)rosterDraw();
+    if(pilotId!=null&&ships[pilotId])document.getElementById('flightStatus').textContent=ships[pilotId].meta.desig+' · '+Math.round(ships[pilotId].v||0)+' m/s · '+Math.round(ships[pilotId].hp/ships[pilotId].hpMax*100)+'% hull';
     // Reduce only after a sustained interval; no up/down framebuffer oscillation.
     if(wall-resolutionCheck>4){resolutionCheck=wall;if(fpsA<48&&dpr>.65){dpr=Math.max(.65,dpr*.85);resize();}}
     const st=document.getElementById("stat");
@@ -17714,7 +17699,7 @@ function frame(nowMs){
       if(md)md.textContent=ships[sel].mood||"";
       const th=document.getElementById("cth");
       if(th)th.textContent=craftThought(ships[sel],now);
-      const brain=document.getElementById("cbrain");if(brain)brain.innerHTML=battleReadout(ships[sel]);
+      const brain=document.getElementById("cbrain");if(brain&&brain.closest("details")?.open)brain.innerHTML=battleReadout(ships[sel]);
     }
   }
 }
