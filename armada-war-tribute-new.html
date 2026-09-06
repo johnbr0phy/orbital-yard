@@ -11425,7 +11425,15 @@ void main(){
   /* the shoal is alive in the flesh: wings beat hardest at the tips, the
      body swims a travelling wave nose to tail, and the whole hide
      breathes — the yard's machines stay rigid, which is the point */
-  if(uAnim.x>2.5){
+  if(uAnim.x>3.5){
+    // Smoothly anchored roots, travelling bends toward each free tentacle tip.
+    float S=max(4.0,uAnim.z),r=length(p)/S;
+    float w=smoothstep(0.24,0.52,r);
+    float t=uT*uAnim.w+uAnim.y;
+    float phase=atan(p.z,p.x)*2.0+r*8.0;
+    p.y+=sin(t+phase)*w*w*S*0.025;
+    p.z+=cos(t*0.83+phase)*w*w*S*0.018;
+  }else if(uAnim.x>2.5){
     /* earthforce spins her gravity ring: everything inside the band turns
        about the keel at one steady rate — the builder keeps the band clear
        of anything that is not ring or spoke, and the spine, being a body
@@ -12634,7 +12642,7 @@ const RACE_DEFS=[
    wpn:[[10,1],[18,6],[28,2],[40,3],[55,4],[70,5]],
    fire:"neutron",boom:"crystal",msl:false,
    doct:{CHARGE:1,FLANK:5,ENVELOP:2,SWARM:1,HUNT:4,SCREEN:1,FEIGN:3,MINE:1}},
-  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.70,0.22,0.08],form:"swarm",fleetK:0.16,fleetMin:32,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:0,tone:0.55,dust:0.8,spdCap:170,
+  {name:"THE SHADOWS",fr:"babylon 5",mix:[0.70,0.22,0.08],form:"swarm",fleetK:0.16,fleetMin:32,hold:80,beam:[0.72,0.30,1.00],ion:[0.85,0.40,1.00],anim:4,tone:0.55,dust:0.8,spdCap:170,
    hpdiv:15,spdK:1600,spdCap:80,turnK:41,
    wpn:[[10,1],[18,2],[26,6],[38,3],[52,4],[78,5]],
    fire:"slicer",boom:"dissolve",msl:false,
@@ -14963,10 +14971,18 @@ function boom(t,now){
     sparks(14,t.x,t.y,t.z,now+0.34,R2*2.8);
   }
 }
+// CPU counterpart of the Shadow vertex pose, also used by live beam origins.
+function shadowFlex(g,L,phase,now){
+  const S=Math.max(4,L),r=Math.hypot(...g)/S;
+  const u=Math.max(0,Math.min(1,(r-.24)/.28)),w=u*u*(3-2*u);
+  const t=now*.85+phase,a=Math.atan2(g[2],g[0])*2+r*8;
+  return [g[0],g[1]+Math.sin(t+a)*w*w*S*.025,g[2]+Math.cos(t*.83+a)*w*w*S*.018];
+}
 function gunWorld(s,g,now){
   /* local mount through the same roll/pitch the hull is drawn with,
      then the yaw that walks her around the sky */
-  let x=g[0],y=g[1],z=g[2];
+  const posed=s.race===8&&!s.dead?shadowFlex(g,s.slen||4,s.wf||0,now||0):g;
+  let x=posed[0],y=posed[1],z=posed[2];
   const pose=xPose(s,now||0);
   if(pose.ang){
     const c=Math.cos(pose.ang),si=Math.sin(pose.ang),ax=pose.ax;
@@ -17219,7 +17235,8 @@ function frame(nowMs){
     gl.uniform4f(SU.rot,pose.ax[0],pose.ax[1],pose.ax[2],pose.ang);
     const RDd=RACE_DEFS[s.race];
     const am=RDd.anim;
-    if(am===3)gl.uniform4f(SU.anim,3,s.ringX||0,s.ringW||0,0.55);
+    if(am===4)gl.uniform4f(SU.anim,4,s.wf||0,Math.max(4,s.slen),.85);
+    else if(am===3)gl.uniform4f(SU.anim,3,s.ringX||0,s.ringW||0,0.55);
     else if(am)gl.uniform4f(SU.anim,am,s.wf,Math.max(4,s.slen*0.35),
       Math.min(6,1.3+30/s.slen));
     else gl.uniform4f(SU.anim,0,0,1,0);

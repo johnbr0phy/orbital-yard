@@ -17,8 +17,8 @@ test('changed hero apertures track actual final geometry',()=>{
  assert.ok(run(`(()=>{const s=buildHero(7,42);return s.muzzles.length===3&&s.muzzles.every(p=>s.parts.some(q=>q.k==='disc'&&q.c.every((v,i)=>Math.abs(v-p[i])<1e-7)));})()`));
  assert.ok(run(`(()=>{const s=buildHero(9,42);return Math.abs(s.meta.length-258)<1e-6&&s.muzzles.every(p=>p.every((v,i)=>v>=s.bb[0][i]-1&&v<=s.bb[1][i]+1));})()`));
 });
-test('Borg diamond is open, Engineer horseshoe is broad, organic hulls stay rigid',()=>{
+test('Borg diamond is open, Engineer horseshoe is broad, Engineer hulls stay rigid and Shadows flex their tips',()=>{
  assert.ok(run(`(()=>{const s=buildHero(12,42);return !s.parts.some(p=>p.k==='loft')&&s.parts.some(p=>p.k==='sphere');})()`));
  assert.ok(run(`(()=>{const s=buildHero(15,42);return (s.bb[1][2]-s.bb[0][2])/(s.bb[1][0]-s.bb[0][0])>.65;})()`));
- assert.equal(run('RACE_DEFS[8].anim'),0);assert.equal(run('RACE_DEFS[15].anim'),0);
+ assert.equal(run('RACE_DEFS[8].anim'),4);assert.equal(run('RACE_DEFS[15].anim'),0);
 });
