@@ -7297,6 +7297,7 @@ var rebCorvette=function(parts,L){
     u:[10.0*s,0,0],v:[0,0.48*s,0],w:[0,0,16.0*s]});
   /* the engine wall: 4 over 3 over 4, every bell lit.
      Lathe bells pin xmin at -75 m without spherical padding. */
+  const driveStart=parts.length;
   const bell=(y,z,r)=>{
     parts.push({k:"lathe",c:[-75.0*s,y,z],axis:[1,0,0],prof:[
       [0,r*0.88],[1.1*s,r],[4.0*s,r*0.74],[10.4*s,r*0.46]
@@ -7309,6 +7310,7 @@ var rebCorvette=function(parts,L){
     bell(-8.40*s,z,rs);
   }
   for(const z of [-13.00*s,0,13.00*s]) bell(0,z,rl);
+  for(let i=driveStart;i<parts.length;i++)parts[i].driveGroup='cr90';
   /* two Taim & Bak H9 twins — dorsal and ventral, the teeth */
   const dual=(x,y,sgn)=>{
     parts.push({k:"lathe",c:[x,y,0],axis:[0,sgn,0],prof:[
@@ -8035,11 +8037,13 @@ var efOlympus=function(parts,L){
     efOct(-L*0.004,0,L*0.096,L*0.058)]});
   parts.push({k:"box",c:[-L*0.14,L*0.068,0],u:[L*0.05,0,0],v:[0,L*0.024,0],w:[0,0,L*0.030]});
   /* twin nacelles on stubs — the corvette's two hot spots */
+  const driveStart=parts.length;
   efMirRun(parts,()=>{
     parts.push({k:"box",c:[-L*0.25,0,L*0.112],u:[L*0.05,0,0],v:[0,L*0.018,0],w:[0,0,L*0.042]});
     parts.push({k:"capsule",a:[-L*0.40,0,L*0.150],b:[-L*0.14,0,L*0.150],r:L*0.036});
     parts.push({k:"tube",a:[-L*0.40,0,L*0.150],b:[-L*0.46,0,L*0.150],r1:L*0.028,r2:L*0.014});
   });
+  for(let i=driveStart;i<parts.length;i++)parts[i].driveGroup='olympus';
 };
 
 /* ---------------- SAGITTARIUS-CLASS MISSILE CRUISER ----------------
@@ -8118,8 +8122,10 @@ var efHyperion=function(parts,L){
     efOct(-L*0.18,0,L*0.080,L*0.046),
     efOct(-L*0.062,L*0.002,L*0.075,L*0.047)]});
   parts.push({k:"box",c:[-L*0.36,0,0],u:[L*0.022,0,0],v:[0,L*0.036,0],w:[0,0,L*0.092]});
+  const driveStart=parts.length;
   for(const zc of [-L*0.066,-L*0.024,L*0.024,L*0.066])
     parts.push({k:"tube",a:[-L*0.38,0,zc],b:[-L*0.43,0,zc],r1:L*0.020,r2:L*0.011});
+  for(let i=driveStart;i<parts.length;i++)parts[i].driveGroup='hyperion';
   /* working greeble: docking blisters and a conduit run */
   efMirRun(parts,()=>{
     parts.push({k:"box",c:[L*0.20,0,L*0.072],u:[L*0.06,0,0],v:[0,L*0.016,0],w:[0,0,L*0.008]});
@@ -10723,8 +10729,42 @@ function scaleRefit(parts,k){
     if(p.sec)for(const section of p.sec)section.pts=section.pts.map(sc);
   }
 }
-function applyFleetRefit(ship,race,seed,forced){
+// Replace explicitly authored propulsion assemblies, never guess engines from guns.
+function applyDriveLayout(ship,seed,forced){
+  const source=ship.parts.filter(p=>p.driveGroup);if(!source.length)return;
+  const family=source[0].driveGroup,mode=forced==null?(Math.imul(seed^0x51c73a9,1597334677)>>>0)%3:Number(forced);
+  const names={olympus:['TWIN DRIVE','STACKED QUAD DRIVE','WIDE QUAD DRIVE'],hyperion:['FOUR-BELL DRIVE','TRIPLE HEAVY DRIVE','SIX-BELL DRIVE'],cr90:['ELEVEN-BELL DRIVE','SIX HEAVY BELLS','FIFTEEN-BELL DRIVE']};
+  const counts={olympus:[2,4,4],hyperion:[4,3,6],cr90:[11,6,15]};
+  ship.meta.structure={family,index:mode,name:names[family][mode],engines:counts[family][mode],provenance:mode?'Speculative propulsion variant':'Original drive layout'};
+  if(!mode)return;
+  ship.parts=ship.parts.filter(p=>!p.driveGroup);
+  const put=p=>{p.driveGroup=family;p.refitPart=true;ship.parts.push(p);};
+  if(family==='olympus'){
+    const L=-source.find(p=>p.k==='capsule').a[0]/.40;
+    const stations=mode===1?[[-.063,-.15],[.063,-.15],[-.063,.15],[.063,.15]]:[[0,-.255],[0,-.135],[0,.135],[0,.255]];
+    // Spars run from the existing aft hull into every nacelle cradle.
+    if(mode===1){for(const z of [-.112,.112])put({k:'box',c:[-.25*L,0,z*L],u:[.05*L,0,0],v:[0,.081*L,0],w:[0,0,.042*L]});}
+    else put({k:'box',c:[-.25*L,0,0],u:[.05*L,0,0],v:[0,.018*L,0],w:[0,0,.255*L]});
+    for(const [y,z] of stations){
+      put({k:'capsule',a:[-.40*L,y*L,z*L],b:[-.14*L,y*L,z*L],r:.036*L});
+      put({k:'tube',a:[-.40*L,y*L,z*L],b:[-.46*L,y*L,z*L],r1:.028*L,r2:.014*L});
+    }
+  }else if(family==='hyperion'){
+    const L=-source[0].a[0]/.38;
+    const stations=mode===1?[[0,-.061],[0,0],[0,.061]]:[[-.023,-.061],[-.023,0],[-.023,.061],[.023,-.061],[.023,0],[.023,.061]];
+    for(const [y,z] of stations)put({k:'tube',a:[-.38*L,y*L,z*L],b:[(mode===1?-.48:-.445)*L,y*L,z*L],r1:(mode===1?.028:.019)*L,r2:(mode===1?.019:.012)*L});
+  }else{
+    const k=-source.find(p=>p.k==='lathe').c[0]/75,r=(mode===1?6.0:3.6)*k;
+    const zs=mode===1?[-16,0,16]:[-20,-10,0,10,20],ys=mode===1?[-7,7]:[-9,0,9];
+    for(const y of ys)for(const z of zs){
+      put({k:'lathe',c:[(mode===1?-80:-75)*k,y*k,z*k],axis:[1,0,0],prof:[[0,r*.88],[1.1*k,r],[4*k,r*.74],[(mode===1?15.4:10.4)*k,r*.46]]});
+      put({k:'disc',c:[-64.6*k,y*k,z*k],n:[1,0,0],r:r*.38,ri:r*.12});
+    }
+  }
+}
+function applyFleetRefit(ship,race,seed,forced,drive){
   if(!ship||ship.meta?.hero||ship.meta?.klass==='BABYLON 5'||ship.meta?.refit)return ship;
+  applyDriveLayout(ship,seed,drive);
   const R=mulberry32((seed^0x629ea735)>>>0),role=forced==null?Math.floor(R()*6):forced%6;
   const small=ship.meta.length<42,scale=small?.96+R()*.08:.82+R()*.36;
   ship.parts=ship.parts.filter(p=>!p.legacyKit);scaleRefit(ship.parts,scale);
@@ -12071,7 +12111,7 @@ onmessage=e=>{
       ringW:ship.meta.ringW||0,hero:!!(j.hero||(ship.meta&&ship.meta.hero)),
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length,
         beam:ship.meta.beam||0,height:ship.meta.height||0,hero:!!(ship.meta&&ship.meta.hero),
-        refit:ship.meta.refit,fo:ship.meta.fo,unique:!!ship.meta.unique,crew:ship.meta.crew}});
+        refit:ship.meta.refit,structure:ship.meta.structure,fo:ship.meta.fo,unique:!!ship.meta.unique,crew:ship.meta.crew}});
     tr.push(m.v.buffer,m.i.buffer);
   }
   postMessage({kind:"batch",genId:d.genId,out},tr);
@@ -16693,7 +16733,7 @@ function card(id){
   const s=ships[id];
   el.style.display="block";
   s.thAt=0;s.thLine=null;
-  el.innerHTML="<span id=\"cardX\" title=\"close\">×</span><h2>"+(s.hero?"★ ":"")+s.meta.desig+"</h2><div class=\"k\">"+s.meta.klass+(s.meta.refit?" · "+s.meta.refit.role:"")+
+  el.innerHTML="<span id=\"cardX\" title=\"close\">×</span><h2>"+(s.hero?"★ ":"")+s.meta.desig+"</h2><div class=\"k\">"+s.meta.klass+(s.meta.refit?" · "+s.meta.refit.role:"")+(s.meta.structure?" · "+s.meta.structure.name:"")+
     (s.hero?" · HERO":"")+
     " · <span id=\"cmd\">"+(s.mood||"")+"</span>"+
     " · "+RACE_DEFS[s.race].name+(s.race!==sideRace[s.side]?" · ANSWERING "+SIDE_NAME[s.side]+"'S CALL":"")+

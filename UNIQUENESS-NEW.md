@@ -34,3 +34,19 @@ Open [Ship study](https://johnbr0phy.github.io/orbital-yard/tribute-new-models.h
 Validated all 18 families for deterministic, finite meshes and bounded fitting counts. The six Hyperion configurations are geometrically distinct and add 48–144 triangles at review tessellation. Hero geometry remains byte-identical. Class-pool tests cover the common EarthForce, Rebel and Federation slots. Static WebGL review covered a Hyperion command ship, Rebel carrier conversion Minbari armored morph and seeded Nebulon-B support ship; a CPU contact sheet compared six EarthForce classes.
 
 The existing weapon, debris, paint, rendering and scaling checks pass. A bounded 26-ship Imperial/Rebel simulation produced 322 emissions in 40 simulated seconds, with 19 survivors and finite positions. This is a physics/combat regression check, not an FPS benchmark. The prior single-worker, prefracture, distant-ship and pixel-budget performance limits remain. Large-battle frame rate and balance across every new class combination have not been measured.
+
+## Structural propulsion variants
+
+A second pass replaces propulsion assemblies on three classes rather than adding more surface equipment:
+
+| Class | Original model layout | Speculative alternatives |
+| --- | --- | --- |
+| Olympus | Two nacelles | Four stacked nacelles on vertical cradles; four widely spaced nacelles on a transverse spar |
+| Hyperion | Four engine bells | Three larger, longer bells; six bells in two rows |
+| CR90 | Eleven bells | Six heavy bells; fifteen smaller bells |
+
+These alternatives are invented, not documented canonical modifications. The underlying class's forward hull and weapons remain; the tagged original drive assembly is removed before its replacement is built. Olympus changes its overall height or beam, with structural connections between its engines and existing aft hull. The seeded propulsion choice is independent of equipment refit, and appears in the battle ship card. Other classes retain their current propulsion layouts in this pass.
+
+The study defaults to Olympus sisters. Choose **Propulsion** to hold a layout fixed, or **Assigned layout** to let the hull seed choose. **Rear / engines** exposes the engine bank. **Original class** bypasses both equipment and propulsion modifications. Named heroes remain protected. These are visual alternatives, with updated geometric bounds but no new thrust or speed ability.
+
+Four additional tests verify actual engine counts, replacement rather than accumulation, unchanged forward geometry, deterministic choices and bounded mesh cost. At review quality the Olympus twin, stacked quad and wide quad models contain 624, 832 and 756 triangles respectively with line-service equipment. Static WebGL review checked stacked and wide Olympus layouts and the CR90 heavy bank. All previous regression checks pass; the updated bounded combat fixture produced 333 emissions and 17 survivors after 40 simulated seconds. No large-battle FPS claim is made.
