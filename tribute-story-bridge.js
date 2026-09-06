@@ -16,8 +16,9 @@
  view(mode){manualCamera=false;setWatchView(mode);},
  follow(id){if(ships[id]&&!ships[id].dead){select(id,false);return true;}return false;},
  fly(id){if(!ships[id]||ships[id].dead||!ships[id].arr||ships[id].grace)return false;select(id,false);setWatchView('fly');return pilotId===id;},
- crew(id){if(ships[id]&&!ships[id].dead){select(id,true);return true;}return false;},
+ crew(id){return visitBridge(id);},
+ speaker(id,cinematic){const s=ships[id];if(!s||s.dead)return false;interiorSpeaker={id,until:battleTime+12};if(cinematic&&pilotId==null)return visitBridge(id,true);return false;},
  order(id,mode){orders={id,mode};},
- portrait(canvas,id,t){const s=ships[id];if(s&&window.ArmadaCrew){const p=ArmadaCrew.profile(s.seed??s.id,s.race,s.meta?.klass||'');ArmadaCrew.draw(canvas,p,{fear:s.ai?.fear||0,hull:s.hp/s.hpMax,talking:false},t);}}
+ portrait(canvas,id,t){const s=ships[id];if(s&&window.ArmadaCrew){const p=ArmadaCrew.profile(s.seed??s.id,s.race,s.meta?.klass||'');ArmadaCrew.draw(canvas,p,{fear:s.ai?.fear||0,hull:s.hp/s.hpMax,talking:interiorSpeaker?.id===s.id&&t<interiorSpeaker.until},t);}}
  };
 })();

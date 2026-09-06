@@ -13,3 +13,13 @@ The cinematic controller holds shots for sixteen seconds, alternating establishe
 Validation: deterministic world generation, valid distinct factions, outcome and consequence rules, cross-side helm transfers, opening pause, retired identities, and existing battle renderer via browser. New files only. No change to the battle page’s default flow or fleet implementations.
 
 Voice playback now reports start/failure, retries the visible line on re-enabling, selects English device voices when available, and detects silent startup failures. An isolated in-app browser test emitted the speech start event after a direct click; automated tests cover mute, cancellation and failure reporting. This verifies the playback interface, not the device’s physical output volume.
+
+## Physical bridge prototype
+
+Nearby ships now receive an actual windowed cabin anchored from broad upward-facing hull triangles (a top-vertex fallback handles irregular organic meshes). This is a procedural cabin attachment, not a hand-authored reconstruction of every canonical bridge. Cabins include floor, roof, window framing, translucent glazing, a seat/plinth and consoles. Organic factions receive a ribbed variant. Crew uses the existing species-specific coloured triangle geometry in the world renderer, with emotion, head movement and speech-driven mouth animation. Mouth motion is procedural, not phoneme-aligned lip sync.
+
+Zooming a followed ship close enough shifts the orbit focus toward its cabin and allows sub-metre approach. Crew opens a cabin camera. Flight now places the camera at that cabin’s helm and hides the player’s own crew mesh; the ship’s physical weapon sockets remain unchanged. Story dialogue names both captain and ship and visits the cabin in Movie mode. A portrait remains available for communications during user-controlled flight/manual framing. Dragging, selecting and taking the helm cancel the director’s camera ownership.
+
+At most three nearby interiors render, with cached geometry uploads at 10 Hz and two draws per room (opaque crew/structure and glazing). Distant interiors, dead ships and cloaked ships are excluded. This is a bounded rendering cost, not a full-density FPS guarantee. New-battle cleanup drops the cached GPU buffers. The main battle page also supports the physical cabins.
+
+Tests cover hull-surface placement, finite bounded crew geometry for all 23 races, real camera/helm ownership, plus existing story, voice, flight, traffic and species checks. Browser inspection confirmed a captain and the real outside scene visible through the cabin windows.

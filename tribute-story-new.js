@@ -8,7 +8,11 @@ const narration=StoryVoice.createVoice(window,status=>{
  $('voice').setAttribute('aria-pressed',String(voice));text('voice',!voice?'Voices off':status==='speaking'?'Speaking…':status==='unavailable'?'Retry voices':'Voices on');
  $('voiceHelp').hidden=status!=='unavailable';
 });
-function say(name,line){text('speaker',name);text('line',line);$('subtitle').hidden=false;subtitleUntil=Date.now()+9000;if(voice)narration.speak(name,line);}
+function say(name,line){
+ const c=cast.find(c=>c.captain===name);text('speaker',name+(c?' · '+c.ship:''));text('line',line);$('subtitle').hidden=false;subtitleUntil=Date.now()+10000;
+ $('speakerFace').hidden=!c;if(c&&api){try{api.portrait($('speakerFace'),c.id,snap?.time||0);}catch{$('speakerFace').hidden=true;}if(api.speaker(c.id,movie)){lastDirected=c.id;nextShot=(snap?.time||0)-origin+12;}}
+ if(voice)narration.speak(name,line);
+}
 
 function once(key,name,line){if(spoken.has(key))return;spoken.add(key);say(name,line);}
 function load(world=u.current){
@@ -18,7 +22,7 @@ function load(world=u.current){
  text('decision','Protect the lead ship');$('decision').dataset.order='';text('save','Keep this universe');lastDirected=null;text('objective','Forging a new encounter');text('mode','Preparing the cast');
  narration.stop();frame.src='armada-war-tribute-new.html?story='+e.seed+'&release=story1';
 }
-frame.addEventListener('load',()=>{if(!frame.contentWindow||frame.src==='about:blank')return;try{const script=frame.contentDocument.createElement('script');script.src='tribute-story-bridge.js';script.onload=()=>{api=frame.contentWindow.StoryBridge;api.start(e);};script.onerror=()=>text('begin','Connection failed — refresh to retry');frame.contentDocument.body.appendChild(script);}catch(err){text('begin','Unable to load battle: '+err.message);}});
+frame.addEventListener('load',()=>{if(!frame.contentWindow||frame.src==='about:blank')return;try{const script=frame.contentDocument.createElement('script');script.src='tribute-story-bridge.js?release=physical-crew-1';script.onload=()=>{api=frame.contentWindow.StoryBridge;api.start(e);};script.onerror=()=>text('begin','Connection failed — refresh to retry');frame.contentDocument.body.appendChild(script);}catch(err){text('begin','Unable to load battle: '+err.message);}});
 function chooseCast(){const living=snap.ships.filter(s=>!s.dead),ours=living.filter(s=>s.side===0).sort((a,b)=>b.length-a.length),theirs=living.filter(s=>s.side===1).sort((a,b)=>b.length-a.length),hero=ours.find(s=>s.hero&&s.id!==ours[0]?.id)||ours.at(-1),enemyPilot=theirs.find(s=>s.hero&&s.id!==theirs[0]?.id)||theirs.at(-1);cast=[ours[0],hero,theirs[0],enemyPilot].filter(Boolean).filter((s,i,a)=>a.findIndex(x=>x.id===s.id)===i).map((s,i)=>({...s,role:['The keeper','The loyal wing','The adversary','The rival'][i],rememberedHp:s.hp}));renderCast();}
 function act(id,mode){if(!api)return;const ok=mode==='fly'?api.fly(id):mode==='crew'?api.crew(id):api.follow(id);if(!ok){say('Flight control','That ship is not available yet. Wait for its arrival.');return;}movie=false;text('mode',mode==='fly'?'You have the helm · Movie returns control to AI':'Following your chosen character');if(mode==='fly'){frame.contentWindow.focus();frame.focus();}for(const d of document.querySelectorAll('dialog[open]'))d.close();}
 function renderCast(){const box=$('cast');box.replaceChildren();for(const c of cast){const s=snap.ships.find(s=>s.id===c.id)||c,el=document.createElement('section');el.className='person'+(s.dead?' lost':'');const canvas=document.createElement('canvas');canvas.width=140;canvas.height=84;el.append(canvas);const title=document.createElement('strong');title.textContent=c.captain;el.append(title);const sub=document.createElement('small');sub.textContent=c.role+' · '+(s.dead?'Signal lost':s.fear>.6?'Afraid':s.hp/s.max<.5?'Wounded':'Steady');el.append(sub);const ship=document.createElement('small');ship.textContent=c.ship;el.append(ship);const meter=document.createElement('meter');meter.min=0;meter.max=s.max;meter.value=Math.max(0,s.hp);meter.setAttribute('aria-label','Hull integrity');el.append(meter);const controls=document.createElement('div');controls.className='actions';for(const [label,mode] of [['Follow','follow'],['Crew','crew'],['Fly','fly']]){const b=document.createElement('button');b.textContent=label;b.disabled=s.dead;b.onclick=()=>act(c.id,mode);controls.append(b);}el.append(controls);box.append(el);if(!s.dead)try{api.portrait(canvas,c.id,snap.time);}catch{canvas.hidden=true;}}}
@@ -32,6 +36,7 @@ function tick(){
  if(snap.pilot!=null){movie=false;text('mode','At the helm · You can switch to anyone');}
  // A click inside the battle hands framing to the viewer. Never steal it back.
  if(movie&&(snap.manual||snap.mode==='free'||(snap.selected!=null&&snap.selected!==lastDirected))){movie=false;text('mode','Your camera · Movie resumes the director');}
+ if(!$('speakerFace').hidden){const c=cast.find(c=>$('speaker').textContent.startsWith(c.captain+' ·'));if(c)try{api.portrait($('speakerFace'),c.id,snap.time);}catch{}}
  renderCast();const lead=snap.ships.find(s=>s.id===cast[0]?.id),target=snap.ships.find(s=>s.id===cast[2]?.id);
  if(!ended){text('objective',(e.kind==='hunt'?'Break the enemy command ship':'Keep '+cast[0].captain+' alive')+' · '+Math.max(0,Math.ceil(e.duration-elapsed))+'s until the route closes');const result=C.outcome(e,lead,target,elapsed);if(result)conclude(result);}
  if(Date.now()>subtitleUntil)$('subtitle').hidden=true;
