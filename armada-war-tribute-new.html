@@ -17139,7 +17139,7 @@ function select(id,details=true){
   if(intro&&!intro.done)endIntro();
   sel=id;
   if(id==null||!ships[id]||ships[id].dead){
-    orb=null;card(null);sel=null;
+    orb=null;card(null);sel=null;watchMode="free";
     updateHeroBtn();updateWatchDock();
     return;
   }
@@ -17149,7 +17149,7 @@ function select(id,details=true){
 }
 function updateWatchDock(){
   const s=sel!=null?ships[sel]:null;
-  document.getElementById('watchLabel').textContent=pilotId!=null?'At the helm · '+s?.meta?.desig:s?'Following '+s.meta.desig:watchMode==='top'?'Top-down battle view':watchMode==='all'?'All ships':'Battle director';
+  document.getElementById('watchLabel').textContent=pilotId!=null?'At the helm · '+s?.meta?.desig:s?'Following '+s.meta.desig:watchMode==='top'?'Top-down battle view':watchMode==='all'?'All ships':watchMode==='free'?'Free camera':'Battle director';
   for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===watchMode));
 }
 function leaveHelm(){
@@ -17374,7 +17374,7 @@ cvs.addEventListener("pointerup",e=>{
   ptrs.delete(e.pointerId);
   if(ptrs.size<2)pinch0=null;
   if(ptrs.size===1)pdown=[...ptrs.values()][0];
-  if(pdown&&!pmoved&&ptrs.size===0)(()=>{const id=pickShip(e.clientX,e.clientY);if(id!=null)select(id);})();
+  if(pdown&&!pmoved&&ptrs.size===0)(()=>{const id=pickShip(e.clientX,e.clientY);select(id);})();
   if(ptrs.size===0)pdown=null;
 });
 cvs.addEventListener("pointercancel",e=>{
