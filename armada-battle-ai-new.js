@@ -311,7 +311,7 @@
     }
     moveCapital(s,now,dt) {
       const p=this.destination(s,now,true),a=s.ai;
-      const goal=s.debrisGoal&&now<s.debrisUntil?s.debrisGoal:p.goal;
+      const goal=s.trafficGoal&&now<s.trafficUntil?s.trafficGoal:s.debrisGoal&&now<s.debrisUntil?s.debrisGoal:p.goal;
       let dx=goal[0]-s.x,dy=goal[1]-s.y,dz=goal[2]-s.z;
       for(const other of a.friends.slice(0,10)){
         const d=distance(s,other),safe=radius(s)+radius(other)+90;
@@ -329,6 +329,8 @@
       const transit=p.mode==='SEARCH'&&length(dx,dy,dz)>2000;
       if(transit){velocity=s.spd*(2.4+a.budget[2]/40);a.reason='Transit burn. Closing to sensor contact';}
       if(s.debrisGoal&&now<s.debrisUntil){velocity*=s.debrisBrake;a.reason="Avoiding debris corridor";}
+      if(s.trafficGoal&&now<s.trafficUntil)velocity*=s.trafficBrake;
+      if(now<(s.trafficBrakeUntil||0))velocity*=.1;
       if(s.stunT&&now<s.stunT)velocity*=.62;
       s.v=(s.v||0)+(velocity-(s.v||0))*Math.min(1,dt*.65);
       s.vy=(s.vy||0)+(clamp(dy*.15,-s.spd*.42,s.spd*.42)-(s.vy||0))*Math.min(1,dt*.8);
