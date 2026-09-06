@@ -11846,14 +11846,17 @@ void main(){
       // Chapter enamel on armour; graphite machinery and recessed launch decks.
       mask=max((1.0-smoothstep(-.20,-.13,p.y))*.65,(1.0-smoothstep(.02,.045,abs(p.y+.105)))*step(abs(p.x),.22)*step(.04,abs(p.z))*.6);
     }
-    vec3 pigment=mix(uInk,uTrim,clamp(mask,0.0,.98));
+    float paintStrength=(style>9.5&&style<14.5)||style==5.0?.72:.34;
+    float registration=step(.16+uPaint.y*.12,p.x)*step(p.x,.25+uPaint.y*.12);
+    if(style<9.5)mask*=mix(.55,1.0,registration);
+    vec3 pigment=mix(uInk,uTrim,clamp(mask*paintStrength,0.0,.78));
     if(style>14.5&&style<15.5){
       float badge=step(.25,p.x)*step(p.x,.38)*step(-.025,p.y)*max(step(abs(p.z),.009),step(abs(p.x-.31),.012)*step(abs(p.z),.037));
-      pigment=mix(pigment,vec3(.73,.71,.63),badge*.9);
+      pigment=mix(pigment,vec3(.73,.71,.63),badge*.35);
     }
     if(style>10.5&&style<11.5&&p.y>.075&&abs(p.z)<.135&&p.x<.04) pigment=vec3(.82,.85,.86);
     col=mix(uBg,pigment,clamp(shade,0.0,1.0));
-    float wear=step(.86,hash)*(style>14.5&&style<15.5?.035:.10);col*=1.0-wear;
+    float wear=step(.86,hash)*(style>14.5&&style<15.5?.025:.035);col*=1.0-wear;
     float spec=pow(max(dot(reflect(-normalize(vec3(.45,.8,.35)),N),Vd),0.0),mix(12.0,52.0,uPaint.x));
     col+=mix(vec3(.10),uInk*.32,.4)*spec*uPaint.x;
     // Small illuminated seams/windows; no full-hull neon or extra lights.
@@ -13435,13 +13438,17 @@ function setShipPace(s){
   /* the whole sky flies a tenth faster. One dial, laid on cruise and dash
      alike at the very end, so every band keeps its relation to every
      other and nothing has to be re-balanced against anything else. */
-  s.spd=cruise*PACE;
-  s.spdMax=Math.max(dash,cruise*1.06)*PACE;
+  // Interceptors cover ground quickly; capital pace and helm stay unchanged.
+  const fast=!s.hulls&&!s.steadyCapital&&(L<=95||(s.hero&&L<=300));
+  const sprint=fast?(L<=42?1.45:1.25):1;
+  s.spd=cruise*PACE*sprint;
+  s.spdMax=Math.max(dash,cruise*1.06)*PACE*(fast?sprint*1.12:1);
 }
 function craftWant(s,now,sq,mood,dist,boost){
   const cruise=s.spd,dash=s.spdMax||cruise*1.3;
   let k=boost||1;
   if(mood==="FLEE"||mood==="EVADE")k=Math.max(k,1.25);
+  if(!s.hulls&&!s.steadyCapital&&s.slen<=95&&dist>500&&['ATTACK','FLANK','SEARCH'].includes(mood))k=Math.max(k,dash/cruise*.93);
   if(mood==="DEFEND"||mood==="REGROUP")k*=.92;
   if(dist<45)k*=.65;
   return Math.max(cruise*.42,Math.min(dash,cruise*k));
@@ -17266,55 +17273,53 @@ function cinemaSpring(state,key,target,dt,rate){
 }
 function updateActionCamera(now,dt){
   dt=Math.max(0,Math.min(.1,dt));
-  const eligible=s=>s&&!s.dead&&s.vao&&s.arr&&!s.grace;
-  if(!actionCamera)actionCamera={clock:0,until:0,index:0,subject:null,partner:null,missing:0,
-    ex:cam.ex,ey:cam.ey,ez:cam.ez,yaw:cam.yaw,pitch:cam.pitch};
+  const live=ships.filter(s=>s&&!s.dead&&s.vao);if(!live.length)return;
+  const age=now-warT0,opening=Number.isFinite(age)&&age<10;
+  if(!actionCamera)actionCamera={clock:0,until:0,index:0,subject:null,kind:null};
   const a=actionCamera;a.clock+=dt;
+  const active=live.filter(s=>s.arr&&!s.grace),pool=active.length?active:live;
   let subject=ships[a.subject];
-  if(!eligible(subject))a.missing+=dt;else a.missing=0;
-  if(a.clock>=a.until||(!eligible(subject)&&a.missing>2)){
-    const live=ships.filter(eligible);if(!live.length)return;
-    const dogfight=a.index%3!==2;
-    let best=null,score=-Infinity;
-    for(const s of live){
-      const hot=(now-(s.lastFire??-100)<3?4:0)+(now-(s.hurtT??-100)<3?2:0);
-      const small=s.slen<180,near=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez);
-      const value=hot+(dogfight===small?3:0)+(s.id!==a.subject?2:0)-Math.log1p(near/1500);
-      if(value>score){score=value;best=s;}
-    }
-    subject=best;a.subject=best.id;a.partner=null;a.missing=0;
-    // One local opponent makes a readable dogfight; distant enemies cannot zoom the shot out.
-    let closest=Math.max(350,Math.min(2200,best.slen*6));
-    for(const t of live)if(t.side!==best.side){const d=Math.hypot(t.x-best.x,t.y-best.y,t.z-best.z);if(d<closest){closest=d;a.partner=t.id;}}
-    a.kind=a.index++%3;a.started=a.clock;a.until=a.clock+12+(a.index%3)*2;
-    a.angle=cam.yaw+Math.PI;a.orbitSign=a.index%2?1:-1;
-    if(a.tx==null){const d=Math.max(100,Math.hypot(cam.ex-best.x,cam.ey-best.y,cam.ez-best.z));
-      a.tx=cam.ex+Math.cos(cam.yaw)*Math.cos(cam.pitch)*d;a.ty=cam.ey+Math.sin(cam.pitch)*d;a.tz=cam.ez+Math.sin(cam.yaw)*Math.cos(cam.pitch)*d;}
+  const cut=a.kind==null||a.clock>=a.until||(!opening&&a.kind==='arrival')||(!subject&&!['all','top','arrival'].includes(a.kind))||subject?.dead;
+  if(cut){
+    // Editorial cuts change scale; smooth motion happens inside each shot.
+    const deck=['chase','wide','all','chase','capital','top'];
+    a.kind=opening?'arrival':deck[a.index++%deck.length];
+    a.started=a.clock;a.until=a.clock+({arrival:10,chase:6,wide:7,all:6,capital:9,top:5}[a.kind]);
+    let best=pool[0],score=-Infinity;
+    for(const ship of pool){const small=ship.slen<180,hot=(now-(ship.lastFire??-100)<3?5:0)+(now-(ship.hurtT??-100)<2?2:0);
+      const value=hot+(a.kind==='capital'?!small*6:small*5)+(ship.id!==a.subject?2:0)+(ship.hero?1:0);
+      if(value>score){score=value;best=ship;}}
+    subject=best;a.subject=best.id;a.heading=best.yaw||0;a.partner=null;
+    let nearest=Math.max(500,Math.min(1800,best.slen*8));
+    for(const t of pool)if(t.side!==best.side){const d=Math.hypot(t.x-best.x,t.y-best.y,t.z-best.z);if(d<nearest){nearest=d;a.partner=t.id;}}
+    const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
+    for(const ship of live)for(let i=0;i<3;i++){const v=[ship.x,ship.y,ship.z][i],r=ship.slen*.6;lo[i]=Math.min(lo[i],v-r);hi[i]=Math.max(hi[i],v+r);}
+    a.center=lo.map((v,i)=>(v+hi[i])/2);a.radius=Math.max(200,Math.hypot(...hi.map((v,i)=>(v-lo[i])/2)));
   }
-  if(!subject||a.tx==null)return;
-  // Briefly linger on a destroyed ship before easing into the next shot.
-  const t=ships[a.partner],pair=eligible(subject)&&eligible(t)&&Math.hypot(t.x-subject.x,t.y-subject.y,t.z-subject.z)<Math.max(700,subject.slen*9)?t:null;
-  const center=[subject.x,subject.y,subject.z],r=Math.max(35,subject.slen*.65);
-  let radius=r;
-  if(pair){const d=Math.hypot(pair.x-center[0],pair.y-center[1],pair.z-center[2]);radius=Math.max(r,d*.5+Math.max(subject.slen,pair.slen)*.6);for(let i=0;i<3;i++)center[i]=(center[i]+[pair.x,pair.y,pair.z][i])*.5;}
-  const aspect=cvs.width/Math.max(1,cvs.height),distance=Math.max(150,radius/(Math.sin(.44)*Math.min(1,aspect))*1.3);
-  // Matching position/aim damping keeps the frame composed during long transitions.
-  // A short motion lead compensates tracking lag without copying a fighter's turns.
-  const lead=(subject.v||0)*1.1,heading=subject.yaw||0;
-  center[0]+=Math.cos(heading)*lead;center[1]+=(subject.vy||0)*1.1;center[2]+=Math.sin(heading)*lead;
-  const age=a.clock-a.started,angle=a.angle+a.orbitSign*age*(a.kind===1?.025:.055);
-  const elevation=.22+.10*Math.sin(age*.10+a.kind),dolly=1+.055*Math.sin(age*.16);
-  const want=[center[0]+Math.cos(angle)*distance*dolly,center[1]+distance*elevation,center[2]+Math.sin(angle)*distance*dolly];
-  for(let i=0;i<3;i++){cinemaSpring(a,['tx','ty','tz'][i],center[i],dt,1.8);cinemaSpring(a,['ex','ey','ez'][i],want[i],dt,1.8);}
+  const u=Math.max(0,a.clock-a.started),aspect=cvs.width/Math.max(1,cvs.height);
+  let center=[subject.x,subject.y,subject.z],radius=Math.max(28,subject.slen*.65),want;
+  if(['arrival','all','top'].includes(a.kind)){
+    center=a.center.slice();radius=a.radius;
+    const d=radius/(Math.sin(.44)*Math.min(1,aspect))*1.12,angle=.92+u*.009;
+    want=a.kind==='top'?[center[0]+d*.04,center[1]+d,center[2]+d*.05]:[center[0]+Math.cos(angle)*d*.25,center[1]+d*.38,center[2]+Math.sin(angle)*d*1.2];
+  }else{
+    const partner=ships[a.partner];
+    if(a.kind==='wide'&&partner&&!partner.dead){const d=Math.hypot(partner.x-subject.x,partner.y-subject.y,partner.z-subject.z);radius=Math.max(radius,d*.5+partner.slen*.6);center=center.map((v,i)=>(v+[partner.x,partner.y,partner.z][i])*.5);}
+    let d=Math.max(85,radius/(Math.sin(.44)*Math.min(1,aspect))*(a.kind==='wide'?1.65:1.3));
+    // A close offset chase shows the hull sweeping past its surroundings.
+    // The camera follows the course gently, never copying roll or fighter jinks.
+    let delta=Math.atan2(Math.sin(subject.yaw-a.heading),Math.cos(subject.yaw-a.heading));a.heading+=delta*(1-Math.exp(-dt*.8));
+    const angle=a.kind==='chase'?a.heading+Math.PI+.38:a.heading+1.05+u*.025;
+    want=[center[0]+Math.cos(angle)*d,center[1]+d*(a.kind==='chase'?.24:.38),center[2]+Math.sin(angle)*d];
+  }
+  const rate=a.kind==='chase'?5:2;
+  for(let i=0;i<3;i++){const pk=['ex','ey','ez'][i],tk=['tx','ty','tz'][i];if(cut){a[pk]=want[i];a[tk]=center[i];a[pk+'V']=a[tk+'V']=0;}else{cinemaSpring(a,pk,want[i],dt,rate);cinemaSpring(a,tk,center[i],dt,rate);}}
   const dx=a.tx-a.ex,dy=a.ty-a.ey,dz=a.tz-a.ez;
-  let yaw=Math.atan2(dz,dx);while(yaw-a.yaw>Math.PI)yaw-=Math.PI*2;while(yaw-a.yaw< -Math.PI)yaw+=Math.PI*2;
-  // Limit the requested pan so even a new subject behind the camera cannot whip the view.
-  const limit=(v,n)=>Math.max(-n,Math.min(n,v));
-  cinemaSpring(a,'yaw',a.yaw+limit(yaw-a.yaw,.32),dt,2);
-  cinemaSpring(a,'pitch',a.pitch+limit(Math.atan2(dy,Math.hypot(dx,dz))-a.pitch,.22),dt,2);
+  a.yaw=Math.atan2(dz,dx);a.pitch=Math.atan2(dy,Math.hypot(dx,dz));
   for(const k of ['ex','ey','ez','yaw','pitch'])cam[k]=a[k];
-  watchGoal={far:distance+radius*3};
+  watchGoal={far:Math.hypot(dx,dy,dz)+radius*3};
 }
+
 function updateWatchCamera(now,dt,force=false){
   if(pilotId!=null){const s=ships[pilotId];if(!s||s.dead){leaveHelm();return;}const cp=Math.cos(s.pitch||0),sp=Math.sin(s.pitch||0),d=(s.nose||s.slen*.5)+Math.max(2,s.slen*.015);cam.ex=s.x+Math.cos(s.yaw)*cp*d;cam.ey=s.y+sp*d;cam.ez=s.z+Math.sin(s.yaw)*cp*d;cam.yaw=s.yaw;cam.pitch=s.pitch||0;return;}
   if(sel!=null||!['all','top','action'].includes(watchMode)||!ships.length)return;
@@ -17705,8 +17710,13 @@ function hullFinish(s){
   if(r===22&&/FALCON/.test(klass)){pattern=12;}
   if(r===22&&/STARSHIP/.test(klass)){color=[.66,.70,.74];pattern=13;gloss=.95;}
   let hash=0;for(let i=0;i<klass.length;i++)hash=(Math.imul(hash,31)+klass.charCodeAt(i))>>>0;
-  if(s.meta?.refit){const tint=.94+((s.meta.refit.seed>>>4)%13)/100;color=color.map(c=>Math.min(1,c*tint));}
-  return {color,trim,accent,pattern,surface,gloss,seed:((hash+(s.meta?.refit?.seed||0))%997)/997};
+  // Stable vessel identity, independent of frame time and array position.
+  const vessel=(Math.imul((s.meta?.liverySeed??s.seed??0)^hash,1664525)+1013904223)>>>0;
+  const unit=(vessel%65521)/65521,tone=.92+unit*.13,warm=((vessel>>>16)%101-50)/4000;
+  const muted=(rgb,k)=>{const grey=rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;return rgb.map(v=>grey+(v-grey)*k);};
+  color=muted(color,.62).map((v,i)=>Math.max(.02,Math.min(.94,v*tone+(i===0?warm:i===2?-warm:0))));
+  trim=muted(trim,.55);accent=muted(accent,.75);gloss*=.68+unit*.16;
+  return {color,trim,accent,pattern,surface,gloss,seed:unit};
 }
 
 function frame(nowMs){
