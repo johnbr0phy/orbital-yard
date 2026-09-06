@@ -244,11 +244,16 @@ body.intro #wasd{
 #card h2{font:600 16px/1.25 system-ui;margin:0 28px 8px 0}#card .k{font-size:11px;color:#bccbd8;opacity:1}#cardX{position:absolute;right:7px;top:6px;border:0!important;min-height:28px!important;padding:2px 9px!important;font-size:20px!important}
 #crewPortrait{width:100%;height:auto;display:block;margin:12px 0 8px;border-radius:6px}#crewName{font-weight:600}#card details{margin-top:10px}#card summary{cursor:pointer;color:#b9cee0}#card .thought{font:12px/1.4 system-ui;min-height:0}
 #cockpitHud{position:fixed;inset:0;pointer-events:none;z-index:5;color:#d5e5ed;font:12px system-ui;box-shadow:inset 0 -90px 80px -45px #071019}
+#helmPortrait{position:absolute;right:5%;bottom:125px;width:155px;height:auto;border:1px solid #354e5c;border-radius:5px}@media(max-width:650px){#helmPortrait{width:105px;bottom:205px}}
+#flightInstruments{position:absolute;inset:0;width:100%;height:100%}#flightReadouts{position:absolute;left:5%;top:34%;line-height:1.8;font:12px monospace;white-space:pre-line;text-shadow:0 1px 3px #000}#flightTarget{position:absolute;right:5%;top:34%;max-width:210px;font:12px monospace;line-height:1.8;text-align:right;white-space:pre-line;text-shadow:0 1px 3px #000}#flightTouch{pointer-events:auto}#cockpitHud #flightStatus{bottom:100px}@media(max-width:650px){#flightReadouts,#flightTarget{font-size:10px;top:23%;max-width:125px}.flightHelp{display:none}#flightTouch{bottom:48px;flex-wrap:wrap;max-width:95%}}
 #cockpitHud[hidden]{display:none}.cockpitBeam{position:absolute;inset:0;border:14px solid #233646;border-bottom-width:56px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 0,3% 5%,3% 86%,97% 86%,97% 5%,3% 5%)}
 .crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.65;font-size:25px}#flightStatus{position:absolute;left:50%;bottom:62px;transform:translateX(-50%)}.flightHelp{position:absolute;left:50%;top:115px;transform:translateX(-50%);background:#15202bde;padding:8px 12px;border-radius:5px;white-space:nowrap}
 #flightTouch{display:none;position:absolute;bottom:170px;right:12px;max-width:220px;gap:5px;flex-wrap:wrap;pointer-events:auto}
-body.piloting #head,body.piloting #score{opacity:.3}body.piloting #wasd{display:none}
+body.piloting #brand,body.piloting #score,body.piloting #bar,body.piloting #watchDock{display:none}body.piloting #wasd{display:none}
 @media(max-width:820px){#watchDock{left:10px;bottom:95px;max-width:calc(100vw - 20px)}#card{right:10px;bottom:210px;max-height:42vh;width:250px}#watchDock button{padding:6px 8px}.flightHelp{white-space:normal;top:80px;width:70%;text-align:center}#flightTouch{display:flex}#flightStatus{bottom:220px}}
+
+#helmLeave{position:absolute;right:25px;top:22px;pointer-events:auto;background:#203342;color:#d5e2ea;border:1px solid #68828e;border-radius:4px;padding:10px;cursor:pointer}#helmLeave:focus-visible,#flightTouch button:focus-visible{outline:2px solid #ccecf1}
+@media(max-width:820px){#flightTouch{left:12px;right:12px;bottom:65px;max-width:none;justify-content:center}#cockpitHud #flightStatus{bottom:220px;max-width:60%;text-align:center}#helmPortrait{bottom:265px;width:110px}.flightHelp{display:none}}
 
 </style>
 </head>
@@ -256,7 +261,7 @@ body.piloting #head,body.piloting #score{opacity:.3}body.piloting #wasd{display:
 <canvas id="gl"></canvas>
 <div class="hud" id="brand">
   <div class="t">ORBITAL YARD — THE TRIBUTE WAR</div>
-  <div class="s"><a href="index.html">&larr; the yard</a> · every fleet we grew up with · <a href="tribute-new-models.html">ship study</a> · <a href="https://github.com/johnbr0phy/orbital-yard" target="_blank" rel="noopener">GitHub</a> · <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">@JohnBr0</a></div>
+  <div class="s"><a href="index.html">&larr; the yard</a> · every fleet we grew up with · <a href="tribute-new-models.html">ship study</a> · <a href="tribute-new-crew.html">captains</a> · <a href="https://github.com/johnbr0phy/orbital-yard" target="_blank" rel="noopener">GitHub</a> · <a href="https://x.com/JohnBr0" target="_blank" rel="noopener">@JohnBr0</a></div>
   <div class="s2"><a href="index.html">&larr; the yard</a> · <a href="tribute-new-models.html">ship study</a> · ★ heroes</div>
 </div>
 <div class="hud" id="stat"></div>
@@ -275,7 +280,7 @@ body.piloting #head,body.piloting #score{opacity:.3}body.piloting #wasd{display:
   <button id="bPal">PALETTE</button>
 </div>
 <nav id="watchDock" aria-label="Battle cameras"><div id="watchLabel">Watch the battle</div><div class="watchButtons"><button data-view="action">Action</button><button data-view="all">All ships</button><button data-view="top">Top down</button><button data-view="hero">Hero</button><button data-view="follow">Follow</button><button data-view="bridge">Crew</button><button data-view="fly">Take control</button></div></nav>
-<div id="cockpitHud" hidden><div class="cockpitBeam"></div><div class="crosshair">＋</div><div id="flightStatus">At the helm</div><div class="flightHelp">W / S throttle · A / D turn · ↑ / ↓ pitch · Space fire at forward target · Esc autopilot</div><div id="flightTouch"><button data-flight="w" aria-label="Increase throttle">Faster</button><button data-flight="s" aria-label="Decrease throttle">Slower</button><button data-flight="a" aria-label="Turn left">←</button><button data-flight="d" aria-label="Turn right">→</button><button data-flight="arrowup" aria-label="Pitch up">↑</button><button data-flight="arrowdown" aria-label="Pitch down">↓</button><button data-flight=" " aria-label="Fire">Fire</button></div></div>
+<div id="cockpitHud" hidden><div class="cockpitBeam"></div><button id="helmLeave">Autopilot · Esc</button><div class="crosshair">┼</div><canvas id="flightInstruments" aria-label="Flight attitude and target bearing"></canvas><div id="flightReadouts"></div><div id="flightTarget"></div><canvas id="helmPortrait" width="520" height="300" aria-label="Your captain reacting on the bridge"></canvas><div id="flightStatus">At the helm</div><div class="flightHelp">Drag sky to steer · W/S throttle · A/D yaw · ↑/↓ pitch · Shift boost · X brake · T target · Space fire · Esc autopilot</div><div id="flightTouch"><button data-flight="w" aria-label="Increase throttle">Faster</button><button data-flight="s" aria-label="Decrease throttle">Slower</button><button data-flight="a" aria-label="Turn left">←</button><button data-flight="d" aria-label="Turn right">→</button><button data-flight="arrowup" aria-label="Pitch up">↑</button><button data-flight="arrowdown" aria-label="Pitch down">↓</button><button data-flight="shift" aria-label="Boost">Boost</button><button data-flight="x" aria-label="Brake">Brake</button><button id="flightNext">Target</button><button data-flight=" " aria-label="Fire">Fire</button><button id="flightExit">Autopilot</button></div></div>
 <div id="card" aria-label="Ship and crew"></div>
 <div id="win"></div>
 <div id="toast"></div>
@@ -295,7 +300,7 @@ body.piloting #head,body.piloting #score{opacity:.3}body.piloting #wasd{display:
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
 <script src="armada-systems-new.js"></script>
-<script src="armada-crew-new.js"></script>
+<script src="armada-crew-new.js?v=helm-3d-2"></script>
 <script src="armada-battle-ai-new.js"></script>
 <script>
 "use strict";
@@ -8252,14 +8257,15 @@ var efNova=function(parts,L){
       parts.push({k:"tube",a:[xc,-L*0.052,L*0.114],b:[xc+L*0.058,-L*0.052,L*0.114],r1:L*0.005,r2:L*0.003});
     }
   });
-  /* stern: the belt closes down and the engines hide inside it */
-  parts.push({k:"loft",sec:[
-    efOct(-L*0.48,0,L*0.090,L*0.060,0.20),
-    efOct(-L*0.38,0,L*0.108,L*0.072,0.20)]});
-  parts.push({k:"box",c:[-L*0.49,0,0],u:[L*0.012,0,0],v:[0,L*0.052,0],w:[0,0,L*0.078]});
-  for(const zc of [-L*0.058,-L*0.020,L*0.020,L*0.058])
-    for(const yc of [-L*0.026,L*0.026])
-      parts.push({k:"tube",a:[-L*0.502,yc,zc],b:[-L*0.528,yc,zc],r1:L*0.014,r2:L*0.008});
+  /* Four large drive bells and a broad transom distinguish the older gunship
+     from the Omega's narrow girder waist and rotating habitat. */
+  parts.push({k:'box',c:[-L*.43,0,0],u:[L*.065,0,0],v:[0,L*.064,0],w:[0,0,L*.16]});
+  for(const z of [-.12,-.04,.04,.12])parts.push({k:'tube',a:[-L*.48,0,L*z],b:[-L*.57,0,L*z],r1:L*.032,r2:L*.022});
+  for(const sign of [-1,1])for(const x of [-.19,.02,.23]){
+    parts.push({k:'box',c:[L*x,0,sign*L*.126],u:[L*.035,0,0],v:[0,L*.032,0],w:[0,0,L*.04]});
+    for(const y of [-.015,.015])parts.push({k:'tube',a:[L*(x+.025),L*y,sign*L*.151],b:[L*(x+.12),L*y,sign*L*.151],r1:L*.009,r2:L*.006});
+  }
+
 };
 
 /* ===================== the yard gates ===================== */
@@ -10757,15 +10763,28 @@ function applyFleetRefit(ship,race,seed,forced,drive){
   ship.meta.refit={role:organic?['BASE MORPH','LONG-RANGE MORPH','BROOD / TRANSPORT MORPH','SENSORY CREST','ARMORED CARAPACE','SEEDER / SUPPORT MORPH'][role]:REFIT_NAMES[role],index:role,seed:seed>>>0,scale,addedParts:ship.parts.length-originalCount,provenance:'Procedural refit'};
   return ship;
 }
+// Explorer survey ship: long skeletal yard, crosswise habitat and distant engine raft.
+function efExplorer(parts,L){
+  efTruss(parts,-L*.38,L*.30,L*.028,L*.028,8);
+  parts.push({k:'box',c:[-L*.035,0,0],u:[L*.335,0,0],v:[0,L*.012,0],w:[0,0,L*.012]});
+  parts.push({k:'loft',sec:[efOct(L*.27,0,L*.055,L*.045),efOct(L*.42,0,L*.052,L*.036),efOct(L*.50,0,L*.022,L*.022)]});
+  for(const sign of [-1,1]){
+    parts.push({k:'box',c:[L*.13,0,sign*L*.08],u:[L*.023,0,0],v:[0,L*.023,0],w:[0,0,L*.08]});
+    parts.push({k:'box',c:[L*.13,0,sign*L*.16],u:[L*.075,0,0],v:[0,L*.025,0],w:[0,0,L*.03]});
+    for(const x of [-.24,-.08])parts.push({k:'capsule',a:[L*(x-.035),-L*.025,sign*L*.036],b:[L*(x+.035),-L*.025,sign*L*.036],r:L*.023});
+  }
+  parts.push({k:'box',c:[-L*.4,0,0],u:[L*.04,0,0],v:[0,L*.039,0],w:[0,0,L*.11]});
+  for(const z of [-.077,-.026,.026,.077])parts.push({k:'tube',a:[-L*.44,0,z*L],b:[-L*.51,0,z*L],r1:L*.022,r2:L*.014});
+}
 // Explicit class library makes cruiser silhouettes available to both muster and study.
 function buildEarthforceClass(seed,type){
-  const rows=[['OLYMPUS-CLASS CORVETTE',efOlympus,43,0],['SAGITTARIUS-CLASS MISSILE CRUISER',efSagittarius,60.5,0],['HYPERION-CLASS HEAVY CRUISER',efHyperion,108.7,1025],['OMEGA-CLASS DESTROYER',efOmega,121.5,1100],['NOVA-CLASS DREADNOUGHT',efNova,420,1502],['AVENGER-CLASS HEAVY CARRIER',efAvenger,108,0],['WARLOCK-CLASS ADVANCED DESTROYER',efWarlock,180,0],['POSEIDON-CLASS SUPERCARRIER',efPoseidon,269,0]];
+  const rows=[['OLYMPUS-CLASS CORVETTE',efOlympus,43,0],['SAGITTARIUS-CLASS MISSILE CRUISER',efSagittarius,60.5,0],['HYPERION-CLASS HEAVY CRUISER',efHyperion,108.7,1025],['OMEGA-CLASS DESTROYER',efOmega,121.5,1100],['NOVA-CLASS DREADNOUGHT',efNova,420,1502],['AVENGER-CLASS HEAVY CARRIER',efAvenger,108,1400],['WARLOCK-CLASS ADVANCED DESTROYER',efWarlock,180,1992],['POSEIDON-CLASS SUPERCARRIER',efPoseidon,269,1300],['EXPLORER-CLASS SURVEY SHIP',efExplorer,600,6000]];
   const row=rows[type%rows.length],parts=[];row[1](parts,row[2]);let scale=1;if(row[3])scale=efFit(parts,row[3]);
   const ring=type===3?[row[2]*.055*scale,row[2]*.075*scale]:null;
   return efDone(parts,seed,row[0],.09,Math.round(row[2]*8),ring);
 }
 var earthforceMegaOriginal=buildEarthforceMega;
-buildEarthforceMega=function(seed,nH){if(nH>=50)return earthforceMegaOriginal(seed,nH);const pool=nH<20?[2,3,5,6]:[3,4,6,7];return buildEarthforceClass(seed,pool[(Math.imul(seed,2654435761)>>>0)%pool.length]);};
+buildEarthforceMega=function(seed,nH){if(nH>=50)return earthforceMegaOriginal(seed,nH);const R=mulberry32((seed^0xEA5F10)>>>0),pool=nH<20?[2,2,3,4,5,6,7]:[2,3,3,4,4,5,6,6,7];const type=R()<.025?8:pool[Math.floor(R()*pool.length)];return buildEarthforceClass(seed,type);};
 // Rebel heavy hulls: class-specific connected structures, assembled once in the forge.
 // Layouts are original yard refits inspired by the screen/licensed silhouettes.
 function rebHeavyHull(parts,L,type,layout=0){
@@ -16709,6 +16728,8 @@ function makeStars(){
 const cam={yaw:-Math.PI/2,pitch:-0.22,ex:0,ey:420,ez:1100};
 function renderPixelRatio(width,height,ratio){return Math.min(ratio||1,1.5,Math.sqrt(2400000/Math.max(1,width*height)));}
 let dpr=renderPixelRatio(innerWidth,innerHeight,devicePixelRatio),resolutionCheck=0;
+let crewShown=null,crewFrameAt=0,flightFrameAt=0;
+const helmPointer={id:null,x:0,y:0,ox:0,oy:0};
 let sel=null,orb=null,pilotId=null,watchMode="action",directorAt=0,watchGoal=null;
 const keys=new Set();
 function resize(){
@@ -16773,13 +16794,13 @@ function pickShip(px,py){
 }
 function card(id){
   const el=document.getElementById('card');
-  if(id==null||!ships[id]?.meta){el.style.display='none';return;}
+  if(id==null||!ships[id]?.meta){el.style.display='none';crewShown=null;return;}
   const s=ships[id],crew=window.ArmadaCrew?.profile(s.seed??s.id,s.race);
   el.style.display='block';s.thAt=0;s.thLine=null;
   el.innerHTML='<button id="cardX" aria-label="Hide ship details">×</button><h2>'+s.meta.desig+'</h2><div class="k">'+s.meta.klass+'</div><div class="k">Integrity <span id="chp">'+Math.ceil(s.hp)+'/'+s.hpMax+'</span> · <span id="ckl">'+(s.kills||0)+'</span> victories</div>'+
     (crew?'<canvas id="crewPortrait" aria-label="Generated '+crew.kind+' captain and bridge"></canvas><div id="crewName">'+crew.role+' '+crew.name+'</div><div class="k">'+crew.kind+' · Bridge crew</div>':'')+
     '<details><summary>Ship status</summary><div class="thought"><span id="cth">'+craftThought(s,battleTime)+'</span></div><div id="cmd">'+(s.mood||'')+'</div><div id="cbrain">'+battleReadout(s)+'</div><button id="brainSensors">'+(showSensors?'Hide sensors':'Show sensors')+'</button></details>';
-  if(crew)window.ArmadaCrew.draw(document.getElementById('crewPortrait'),crew);
+  if(crew){crewShown={id,profile:crew};updateCrewPortrait(battleTime,true);}
   document.getElementById('brainSensors').onclick=()=>{showSensors=!showSensors;card(id);};
 }
 function battleReadout(s){
@@ -16860,7 +16881,7 @@ function updateWatchDock(){
   for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===watchMode));
 }
 function leaveHelm(){
-  pilotId=null;watchMode="follow";keys.clear();document.body.classList.remove('piloting');document.getElementById('cockpitHud').hidden=true;
+  pilotId=null;watchMode="follow";keys.clear();helmPointer.id=null;helmPointer.x=helmPointer.y=0;document.body.classList.remove('piloting');document.getElementById('cockpitHud').hidden=true;
   if(sel!=null&&ships[sel])orb=chaseCamInit(ships[sel]);
   updateWatchDock();
 }
@@ -16871,7 +16892,7 @@ function setWatchView(mode){
     if(sel==null||!ships[sel]||ships[sel].dead){toast('Select a ship first');return;}
     if(mode==='fly'){
       const s=ships[sel];if(!s.arr||s.grace){toast('Wait for this ship to arrive');return;}
-      pilotId=sel;s.pilotThrottle=.7;card(null);watchMode='fly';document.body.classList.add('piloting');document.getElementById('cockpitHud').hidden=false;
+      pilotId=sel;flightFrameAt=crewFrameAt=0;s.pilotThrottle=Math.max(0,Math.min(1,(s.v||0)/(s.spdMax||s.spd||20)));s.pilotBoost??=1;s.pilotYawRate=0;s.pilotPitchRate=0;card(null);watchMode='fly';document.body.classList.add('piloting');document.getElementById('cockpitHud').hidden=false;
       document.getElementById('cockpitHud').style.color=window.ArmadaCrew?.profile(s.seed??s.id,s.race).color||'#d5e5ed';
     }else{leaveHelm();orb=chaseCamInit(ships[sel]);watchMode='follow';}updateWatchDock();return;
   }
@@ -16889,20 +16910,57 @@ function updateWatchCamera(now,dt,force=false){
   const c=lo.map((v,i)=>(v+hi[i])/2),radius=Math.max(200,Math.hypot(...hi.map((v,i)=>(v-lo[i])/2))),aspect=cvs.width/Math.max(1,cvs.height),distance=radius/(Math.sin(.44)*Math.min(1,aspect))*1.12;
   const pitch=watchMode==='top'?-1.54:-.48,yaw=.65;watchGoal={far:distance+radius*2,ex:c[0]-Math.cos(yaw)*Math.cos(pitch)*distance,ey:c[1]-Math.sin(pitch)*distance,ez:c[2]-Math.sin(yaw)*Math.cos(pitch)*distance,yaw,pitch};move();
 }
+function pilotTarget(s,cycle=false){
+  const f=[Math.cos(s.yaw)*Math.cos(s.pitch||0),Math.sin(s.pitch||0),Math.sin(s.yaw)*Math.cos(s.pitch||0)],range=Math.max(1800,s.slen*2);
+  const candidates=foeCache[1-s.side].filter(t=>!t.dead&&t.arr&&!t.grace).map(t=>{const d=[t.x-s.x,t.y-s.y,t.z-s.z],distance=Math.hypot(...d);return {t,distance,dot:V.dot(d,f)/Math.max(1,distance)};}).filter(t=>t.distance<=range).sort((a,b)=>b.dot-a.dot||a.distance-b.distance);
+  let current=candidates.find(t=>t.t.id===s.pilotTarget);
+  if(cycle){const i=candidates.indexOf(current);current=candidates[(i+1)%candidates.length];}
+  if(!current)current=candidates[0];s.pilotTarget=current?.t.id??null;return current;
+}
 function pilotStep(s,now,dt){
-  const turn=Math.min(1.6,Math.max(.045,s.turn||.3)),steer=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
-  s.yaw+=steer*turn*dt;s.yawV=steer*turn;
-  s.pitch=Math.max(-1.15,Math.min(1.15,(s.pitch||0)+((keys.has('arrowup')?1:0)-(keys.has('arrowdown')?1:0))*turn*dt));
-  s.pilotThrottle=Math.max(0,Math.min(1,(s.pilotThrottle??.7)+((keys.has('w')?1:0)-(keys.has('s')?1:0))*dt*.45));
-  const cap=s.spdMax||s.spd||20;s.v=(s.v||0)+(cap*s.pilotThrottle-(s.v||0))*Math.min(1,dt*1.5);s.vy=Math.sin(s.pitch)*s.v;s.roll=-steer*.22;
+  const turn=Math.min(1.6,Math.max(.045,s.turn||.3)),limit=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const steer=limit((keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0)+helmPointer.x,-1,1);
+  const pitch=limit((keys.has('arrowup')?1:0)-(keys.has('arrowdown')?1:0)+helmPointer.y,-1,1),response=1-Math.exp(-dt*5);
+  s.pilotYawRate=(s.pilotYawRate||0)+(steer*turn-(s.pilotYawRate||0))*response;s.pilotPitchRate=(s.pilotPitchRate||0)+(pitch*turn-(s.pilotPitchRate||0))*response;
+  s.yaw+=s.pilotYawRate*dt;s.yawV=s.pilotYawRate;s.pitch=limit((s.pitch||0)+s.pilotPitchRate*dt,-1.45,1.45);
+  s.pilotThrottle=limit((s.pilotThrottle??.7)+((keys.has('w')?1:0)-(keys.has('s')?1:0))*dt*.45,0,1);
+  if(keys.has('x'))s.pilotThrottle=0;
+  s.pilotBoost??=1;if(s.pilotBoost<=.02)s.pilotBoostLock=true;if(!keys.has('shift')&&s.pilotBoost>.2)s.pilotBoostLock=false;const boost=keys.has('shift')&&!s.pilotBoostLock&&s.pilotBoost>.02&&s.pilotThrottle>.05;
+  s.pilotBoost=limit(s.pilotBoost+dt*(boost?-.26:.12),0,1);s.pilotBoosting=boost;
+  const cap=s.spdMax||s.spd||20,accel=keys.has('x')?3:1.5;s.v=(s.v||0)+(cap*s.pilotThrottle*(boost?1.65:1)-(s.v||0))*(1-Math.exp(-dt*accel));s.vy=Math.sin(s.pitch)*s.v;s.roll+=( -steer*.22-(s.roll||0))*response;
   s.x+=Math.cos(s.yaw)*Math.cos(s.pitch)*s.v*dt;s.z+=Math.sin(s.yaw)*Math.cos(s.pitch)*s.v*dt;s.y=Math.max(-sceneR*3,Math.min(sceneR*3,s.y+s.vy*dt));s.mood='PLAYER';
   if(keys.has(' ')&&now>=(s.pilotShot||0)){
-    s.pilotShot=now+.3;const f=[Math.cos(s.yaw)*Math.cos(s.pitch),Math.sin(s.pitch),Math.sin(s.yaw)*Math.cos(s.pitch)];let target=null,best=.92;
-    for(const t of foeCache[1-s.side]){const d=[t.x-s.x,t.y-s.y,t.z-s.z],len=Math.hypot(...d);if(len<1||len>Math.max(1800,s.slen*2))continue;const dot=V.dot(d,f)/len;if(dot>best){best=dot;target=t;}}
-    if(target)raceFire(s,target,now,0,0,0);
+    s.pilotShot=now+.3;const target=pilotTarget(s);if(target&&target.dot>.92)raceFire(s,target.t,now,0,0,0);
   }
   leakHullDust(s,now);
 }
+function updateCrewPortrait(now,force=false){
+  if(!window.ArmadaCrew||(!crewShown&&pilotId==null)||(!force&&now<crewFrameAt))return;crewFrameAt=now+.1;
+  const s=ships[crewShown?.id??pilotId],canvas=document.getElementById(crewShown?'crewPortrait':'helmPortrait');if(!s||!canvas)return;
+  const profile=crewShown?.profile||(s.crewProfile??=window.ArmadaCrew.profile(s.seed??s.id,s.race));
+  const d=battleAI.describe(s),state={fear:d.fear,hull:s.hp/s.hpMax,hit:s.hp<s.hpMax?Math.max(0,1-(now-(s.hurtT??-100))/1.5):0,firing:now-(s.lastFire??-100)<1};
+  const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.ArmadaCrew.draw(canvas,profile,state,reduced?0:now);
+}
+function drawFlightHUD(now){
+  if(pilotId==null||now<flightFrameAt)return;flightFrameAt=now+.08;const s=ships[pilotId];if(!s||s.dead)return;
+  const target=pilotTarget(s),canvas=document.getElementById('flightInstruments'),c=canvas.getContext('2d');
+  document.getElementById('flightReadouts').textContent='SPEED  '+Math.round(s.v||0)+' m/s\nTHROTTLE  '+Math.round(s.pilotThrottle*100)+'%\nBOOST  '+Math.round((s.pilotBoost??1)*100)+'%'+(s.pilotBoosting?'  BURN':'')+'\nHULL  '+Math.max(0,Math.round(s.hp/s.hpMax*100))+'%';
+  const aim=target&&target.dot>.92;document.getElementById('flightTarget').textContent=target?target.t.meta.desig+'\n'+Math.round(target.distance)+' m · '+Math.max(0,Math.round(target.t.hp/target.t.hpMax*100))+'% hull\n'+(aim?'IN FIRING ARC · Space':'TURN TO TARGET'):'No target in range\nT · cycle targets';
+  if(!c||!c.clearRect)return;const w=Math.min(1280,cvs.width),h=Math.round(w*cvs.height/cvs.width);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}c.clearRect(0,0,w,h);c.strokeStyle='#a7ced4';c.fillStyle='#c2dde1';c.lineWidth=1;c.font='12px monospace';
+  c.save();c.translate(w/2,h/2);c.rotate((s.roll||0)*.6);
+  for(let deg=-60;deg<=60;deg+=15){const y=(s.pitch-deg*Math.PI/180)*h*.7;if(Math.abs(y)>h*.25)continue;c.globalAlpha=deg===0?.8:.35;c.beginPath();c.moveTo(-95,y);c.lineTo(-35,y);c.moveTo(35,y);c.lineTo(95,y);c.stroke();c.fillText(String(deg),102,y+4);}c.restore();c.globalAlpha=.8;
+  c.fillText('HDG '+String(Math.round((s.yaw*180/Math.PI%360+360)%360)).padStart(3,'0'),w/2-32,h*.16);
+  if(target){const m=mat(),t=target.t,cw=m[3]*t.x+m[7]*t.y+m[11]*t.z+m[15],px=(m[0]*t.x+m[4]*t.y+m[8]*t.z+m[12])/Math.max(1,Math.abs(cw)),py=(m[1]*t.x+m[5]*t.y+m[9]*t.z+m[13])/Math.max(1,Math.abs(cw));
+   const x=Math.max(w*.12,Math.min(w*.88,w/2+px*w/2)),y=Math.max(h*.2,Math.min(h*.75,h/2-py*h/2));c.strokeStyle=aim?'#f3cb87':'#9fb4c6';c.strokeRect(x-13,y-13,26,26);if(cw<0)c.fillText('BEHIND',x-22,y+29);
+  }c.globalAlpha=1;
+}
+cvs.addEventListener('pointerdown',e=>{if(pilotId==null)return;helmPointer.id=e.pointerId;helmPointer.ox=e.clientX;helmPointer.oy=e.clientY;cvs.setPointerCapture(e.pointerId);});
+cvs.addEventListener('pointermove',e=>{if(pilotId==null||helmPointer.id!==e.pointerId)return;helmPointer.x=Math.max(-1,Math.min(1,(e.clientX-helmPointer.ox)/100));helmPointer.y=Math.max(-1,Math.min(1,(helmPointer.oy-e.clientY)/100));});
+function releaseHelmPointer(){helmPointer.id=null;helmPointer.x=helmPointer.y=0;}
+cvs.addEventListener('pointerup',releaseHelmPointer);cvs.addEventListener('pointercancel',releaseHelmPointer);cvs.addEventListener('lostpointercapture',releaseHelmPointer);
+document.getElementById('flightNext').onclick=()=>{if(pilotId!=null)pilotTarget(ships[pilotId],true);};document.getElementById('flightExit').onclick=leaveHelm;document.getElementById('helmLeave').onclick=leaveHelm;
+addEventListener('blur',releaseHelmPointer);
 for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>setWatchView(b.dataset.view);
 for(const b of document.querySelectorAll('[data-flight]')){b.onpointerdown=e=>{e.preventDefault();keys.add(b.dataset.flight);b.setPointerCapture(e.pointerId);};b.onpointerup=b.onpointercancel=()=>keys.delete(b.dataset.flight);}
 addEventListener('blur',()=>keys.clear());
@@ -16971,6 +17029,7 @@ addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
   if(pilotId!=null&&[' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
   keys.add(k);
+  if(pilotId!=null&&k==='t'&&!e.repeat)pilotTarget(ships[pilotId],true);
   if(pilotId==null&&sel==null&&["w","a","s","d","q","e"].includes(k))watchMode="free";
   if(k==="n")openPicker();
   if(k==="r")randomWar();
@@ -17685,6 +17744,7 @@ function frame(nowMs){
     }
   }
   gl.bindVertexArray(null);
+  updateCrewPortrait(now);drawFlightHUD(now);
   if(now-statT>0.25){
     statT=now;
     if(rosterDirty)rosterDraw();
