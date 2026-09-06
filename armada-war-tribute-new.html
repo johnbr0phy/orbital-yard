@@ -300,7 +300,7 @@ body.piloting #brand,body.piloting #score,body.piloting #bar,body.piloting #watc
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
 <script src="armada-systems-new.js?v=muted-worlds-1"></script>
-<script src="armada-crew-new.js?v=helm-3d-2"></script>
+<script src="armada-crew-new.js?v=species-3d-1"></script>
 <script src="armada-battle-ai-new.js"></script>
 <script>
 "use strict";
@@ -16866,7 +16866,7 @@ function pickShip(px,py){
 function card(id){
   const el=document.getElementById('card');
   if(id==null||!ships[id]?.meta){el.style.display='none';crewShown=null;return;}
-  const s=ships[id],crew=window.ArmadaCrew?.profile(s.seed??s.id,s.race);
+  const s=ships[id],crew=window.ArmadaCrew?.profile(s.seed??s.id,s.race,s.meta?.klass||"");
   el.style.display='block';s.thAt=0;s.thLine=null;
   el.innerHTML='<button id="cardX" aria-label="Hide ship details">×</button><h2>'+s.meta.desig+'</h2><div class="k">'+s.meta.klass+'</div><div class="k">Integrity <span id="chp">'+Math.ceil(s.hp)+'/'+s.hpMax+'</span> · <span id="ckl">'+(s.kills||0)+'</span> victories</div>'+
     (crew?'<canvas id="crewPortrait" aria-label="Generated '+crew.kind+' captain and bridge"></canvas><div id="crewName">'+crew.role+' '+crew.name+'</div><div class="k">'+crew.kind+' · Bridge crew</div>':'')+
@@ -16965,7 +16965,7 @@ function setWatchView(mode){
     if(mode==='fly'){
       const s=ships[sel];if(!s.arr||s.grace){toast('Wait for this ship to arrive');return;}
       pilotId=sel;flightFrameAt=crewFrameAt=0;s.pilotThrottle=Math.max(0,Math.min(1,(s.v||0)/(s.spdMax||s.spd||20)));s.pilotBoost??=1;s.pilotYawRate=0;s.pilotPitchRate=0;card(null);watchMode='fly';document.body.classList.add('piloting');document.getElementById('cockpitHud').hidden=false;
-      document.getElementById('cockpitHud').style.color=window.ArmadaCrew?.profile(s.seed??s.id,s.race).color||'#d5e5ed';
+      document.getElementById('cockpitHud').style.color=window.ArmadaCrew?.profile(s.seed??s.id,s.race,s.meta?.klass||"").color||'#d5e5ed';
     }else{leaveHelm();orb=chaseCamInit(ships[sel]);watchMode='follow';}updateWatchDock();return;
   }
   leaveHelm();if(intro&&!intro.done)endIntro();sel=null;orb=null;card(null);watchMode=mode;directorAt=0;actionCamera=null;updateHeroBtn();updateWatchCamera(battleTime,1,true);updateWatchDock();
@@ -17068,7 +17068,7 @@ function pilotStep(s,now,dt){
 function updateCrewPortrait(now,force=false){
   if(!window.ArmadaCrew||(!crewShown&&pilotId==null)||(!force&&now<crewFrameAt))return;crewFrameAt=now+.1;
   const s=ships[crewShown?.id??pilotId],canvas=document.getElementById(crewShown?'crewPortrait':'helmPortrait');if(!s||!canvas)return;
-  const profile=crewShown?.profile||(s.crewProfile??=window.ArmadaCrew.profile(s.seed??s.id,s.race));
+  const profile=crewShown?.profile||(s.crewProfile??=window.ArmadaCrew.profile(s.seed??s.id,s.race,s.meta?.klass||""));
   const d=battleAI.describe(s),state={fear:d.fear,hull:s.hp/s.hpMax,hit:s.hp<s.hpMax?Math.max(0,1-(now-(s.hurtT??-100))/1.5):0,firing:now-(s.lastFire??-100)<1};
   const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   window.ArmadaCrew.draw(canvas,profile,state,reduced?0:now);
