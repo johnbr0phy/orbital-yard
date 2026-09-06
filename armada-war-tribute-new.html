@@ -10677,7 +10677,7 @@ var EXTRA_CLASSES=[
  ['ROMULAN SHUTTLE','ROMULAN SCOUT','ROMULAN BIRD-OF-PREY','VALDORE WARBIRD',"D’DERIDEX WARBIRD"],
  ["JEM'HADAR SHUTTLE","JEM'HADAR ATTACK SHIP","JEM'HADAR HEAVY ESCORT","JEM'HADAR BATTLECRUISER","JEM'HADAR BATTLESHIP"],
  ['THUNDERHAWK GUNSHIP','HUNTER DESTROYER','GLADIUS FRIGATE','NOVA FRIGATE','STRIKE CRUISER','BATTLE BARGE','VANGUARD LIGHT CRUISER','XIPHON INTERCEPTOR','CAESTUS ASSAULT RAM','STORM EAGLE','GLORIANA BATTLESHIP'],
- ['SPORE DRONE','ATTACK ORGANISM','KRAKEN BIO-SHIP','VANGUARD DRONE SHIP','TYRANID CRUISER','HIVE SHIP'],
+ ['SPORE DRONE','ATTACK ORGANISM','KRAKEN BIO-SHIP','VANGUARD DRONE SHIP','RAZORFIEND CRUISER','HIVE SHIP','VOID PROWLER','DEVOURER CRUISER','BOARDING WORM','ESCORT DRONE'],
  ['OPTIMUS BLASTER','OPTIMUS HEAVY','FALCON 9','FALCON HEAVY','STARSHIP','STARSHIP / SUPER HEAVY','ROADSTER / STARMAN']
 ];
 function buildExtraClass(race,seed,type,hero=false){
@@ -10785,24 +10785,56 @@ function buildExtraClass(race,seed,type,hero=false){
    if(gloriana){for(const p of parts){for(const key of ["a","b","c","u","v","w"])if(p[key])p[key][0]*=1.35;if(p.sec)for(const sec of p.sec)for(const v of sec.pts)v[0]*=1.35;if(p.pts)for(const v of p.pts)v[0]*=1.35;}for(const p of [...muzzles,...engines])p[0]*=1.35; }
   }
  }else if(race===21){
-  L=[19,33,150,240,650,1300][type];const big=type>=4,belly=big?16:10,plates=4+variant+(big?3:0);
-  pod(-3,0,0,41,belly,belly*.8);pod(31,-2,0,19,belly*.65,belly*.72);
-  // Overlapping dorsal carapaces, a ribbed belly and hooked jaws.
-  for(let i=0;i<plates;i++){const x=-31+i*55/(plates-1),h=belly*Math.sqrt(Math.max(.2,1-(x/48)**2));
-   body([[x-10,h*.32,0,h*.78,h*.92],[x,h*.53,0,h*.77,h],[x+6,h*.53,0,h*.46,h*.7]],8);
-   for(const sign of [-1,1])tube([x,-h*.35,sign*h*.6],[x+5,-h*.95,sign*h*.35],1.3,.7);
-  }
-  for(const sign of [-1,1]){
-   tube([30,-3,sign*6],[48,-9,sign*12],3,2);tube([48,-9,sign*12],[54,-4,sign*5],2,.1);
-   const limbs=type===0?2:big?4:3;
-   for(let i=0;i<limbs;i++){const x=18-i*15,z=sign*(belly*.7),reach=(22+variant*5)*(1-i*.08);
-    tube([x,-3,z],[x+5,-11,sign*reach],3.5,2.4);tube([x+5,-11,sign*reach],[x+22,-15,sign*(reach+4)],2.4,1.2);tube([x+22,-15,sign*(reach+4)],[x+28,-5,sign*reach],1.2,.05);
+  L=[19,33,150,240,650,1300,420,920,35,210][type];
+  const big=[4,5,6,7].includes(type),hive=type===5,feeder=type===3||type===6;
+  const girth=([17,7,11,9,15,23,12,20,6,12][type])*(.92+R()*.16);
+  const curve=(pts,r)=>{for(let i=0;i<pts.length-1;i++)tube(pts[i],pts[i+1],r*(1-i/(pts.length-1)),Math.max(.08,r*(1-(i+1)/(pts.length-1))));};
+  const feeler=(x,y,z,len,spread,phase)=>{const pts=[];for(let i=0;i<5;i++){const t=i/4;pts.push([x+len*t,y-Math.sin(t*2.6)*8+t*t*5,z+spread*t+Math.sin(t*4+phase)*t*4]);}curve(pts,2.2);};
+  if(type===0){
+   // A floating spore bladder, not a miniature cruiser.
+   pod(0,0,0,18,17,16);
+   for(let i=0;i<10;i++){const a=i*Math.PI/5;curve([[0,Math.sin(a)*13,Math.cos(a)*13],[9,Math.sin(a)*25,Math.cos(a)*25],[16,Math.sin(a)*29,Math.cos(a)*29]],2.6);}
+   muzzles.push([18,0,0]);
+  }else if(type===8){
+   // Boarding organism: long flexible segmented worm with a toothed mouth.
+   for(let i=0;i<8;i++)pod(-34+i*9,Math.sin(i*.65)*4,0,6,4+i*.55,4+i*.55);
+   for(let i=0;i<8;i++){const a=i*Math.PI/4;curve([[29,3+Math.sin(a)*7,Math.cos(a)*7],[43,3+Math.sin(a)*10,Math.cos(a)*10],[48,3+Math.sin(a)*3,Math.cos(a)*3]],1.8);}
+   muzzles.push([42,3,0]);
+  }else{
+   // Deep living belly, an arched overlapping dorsal shell and tapering tail.
+   body([[-48,-1,0,1,1],[-32,1,0,girth*.6,girth*.65],[-14,2,0,girth,girth],[9,1,0,girth*.85,girth*.86],[29,-2,0,girth*.57,girth*.6],[39,-4,0,2,3]],12);
+   const plates=(big?6:4)+variant;
+   for(let i=0;i<plates;i++){
+    const x=-34+i*61/(plates-1),arch=Math.sqrt(Math.max(.12,1-((x+5)/42)**2)),h=girth*arch;
+    body([[x-9,h*.38,0,h*.7,h*.92],[x-3,h*.62,0,h*.69,h*1.05],[x+5,h*.55,0,h*.3,h*.72]],10);
+    // Swept dorsal horns and pale ventral rib hooks follow each segment.
+    if(i%2===0)curve([[x,h*1.08,0],[x-7,h*1.6,0],[x-15,h*1.85,0]],2.4);
+    for(const sign of [-1,1])curve([[x,-h*.12,sign*h*.8],[x+2,-h*.9,sign*h*.65],[x+7,-h*1.14,sign*h*.3]],1.8);
    }
-   gun([32,2,sign*5],[47,1,sign*5],2.5);
-   // Tapered aft tendrils have four segments, never per-frame mesh rebuilds.
-   for(let i=0;i<2;i++){let a=[-30,-3-i*4,sign*(4+i*3)];for(let j=0;j<4;j++){const b=[-40-j*8,-4-i*5+Math.sin(j*.9+i)*6,sign*(7+i*5+j*2)];tube(a,b,2.8-j*.65,Math.max(.05,2.15-j*.65));a=b;}}
+   for(const sign of [-1,1]){
+    // Open mouth framed by curved mandibles rather than a solid nose block.
+    curve([[25,-3,sign*girth*.43],[40,-8,sign*13],[49,-5,sign*10],[46,0,sign*4]],3.2);
+    muzzles.push([39,-4,sign*4]);
+    const claws=type===2?3:big?4:1;
+    for(let i=0;i<claws;i++){
+     const x=18-i*15,reach=(type===2?35:hive?31:24)+variant*3;
+     curve([[x,-2,sign*girth*.72],[x-7,-5,sign*reach*.8],[x+3,-9,sign*reach],[x+22,-8,sign*(reach*.65)],[x+27,-3,sign*(reach*.4)]],type===2?4:3);
+    }
+    const tentacles=feeder?4:hive?3:1;
+    for(let i=0;i<tentacles;i++)feeler(feeder?26:-30,-4-i*3,sign*(5+i*3),feeder?40+i*5:-32-i*5,sign*(10+i*5),i);
+    if(type===7||hive){
+     // Brood chambers hanging below the carapace identify carriers at a glance.
+     for(let i=0;i<3;i++)pod(-24+i*18,-girth*.72,sign*girth*.65,8,girth*.52,6);
+    }
+    if(type===1){
+     plate([[-27,0,sign*5],[-32,2,sign*33],[11,1,sign*19],[24,0,sign*4]],.7);
+    }
+    if(type===9){
+     // Escort drone's swollen acid sacs and fleshy forward weapon ducts.
+     pod(9,-3,sign*12,15,8,7);curve([[20,-3,sign*12],[32,-4,sign*14],[44,-4,sign*11]],3.5);muzzles.push([44,-4,sign*11]);
+    }
+   }
   }
-  if(type===0)for(let i=0;i<8;i++){const a=i/8*6.283;tube([0,Math.sin(a)*8,Math.cos(a)*8],[5,Math.sin(a)*24,Math.cos(a)*24],2,.1);}
  }else{
   L=[6,8,70,72,120,210,8][type];
   if(type<=1){
@@ -10845,14 +10877,15 @@ function buildExtraClass(race,seed,type,hero=false){
  }
  const scale=heroFit(parts,L*(.94+R()*.12)),bb=heroBB(parts);
  const names=['IRW KHOPESH','VICTORY IS LIFE',"MACRAGGE’S HONOUR",'THE GREAT DEVOURER',"ELON'S ROADSTER"];
- const meta={klass,desig:hero?names[row]:klass+' '+String(seed>>>0).slice(-5),hero,length:bb[1][0]-bb[0][0],beam:bb[1][2]-bb[0][2],height:bb[1][1]-bb[0][1],crew:race===21||race===22?1:Math.max(4,Math.round(L*1.5)),nativeMuzzles:true,liverySeed:seed>>>0,extraClass:type,architecture:['PATROL CONFIGURATION','WIDE ASSEMBLY','HEAVY CONFIGURATION'][variant]};
+ const meta={klass,desig:hero?names[row]:klass+' '+String(seed>>>0).slice(-5),hero,length:bb[1][0]-bb[0][0],beam:bb[1][2]-bb[0][2],height:bb[1][1]-bb[0][1],crew:race===21||race===22?1:Math.max(4,Math.round(L*1.5)),nativeMuzzles:true,liverySeed:seed>>>0,extraClass:type,architecture:race===21?['LEAN PREDATOR MORPH','EXTENDED FEEDER MORPH','HEAVY CARAPACE MORPH'][variant]:['PATROL CONFIGURATION','WIDE ASSEMBLY','HEAVY CONFIGURATION'][variant]};
  meta.mass=Math.max(1,meta.length*meta.beam*meta.height*.035);
  return {parts,bb,meta,muzzles:muzzles.map(q=>q.map(v=>v*scale)),exhaust:engines.map(q=>q.map(v=>v*scale))};
 }
 function buildExtra(race,seed,hulls=0,hero=false){
  const R=mulberry32((seed^0xADC73)>>>0),row=race-18;
- const pools=[[0,1,2,3,4],[0,1,2,3,4],[0,1,2,3,4,5,6,7,8,9],[0,1,2,3,4,5],[0,0,0,1,2,3,4,5]];
+ const pools=[[0,1,2,3,4],[0,1,2,3,4],[0,1,2,3,4,5,6,7,8,9],[0,1,2,3,4,5,6,7,8,9],[0,0,0,1,2,3,4,5]];
  let type=hero?[4,4,10,5,6][row]:hulls?(hulls>=50?[4,4,5,5,5][row]:[3,3,4,4,4][row]):pools[row][Math.floor(R()*pools[row].length)];
+ if(race===21&&hulls&&hulls<50&&!hero)type=[4,6,7][Math.floor(R()*3)];
  return buildExtraClass(race,seed,type,hero);
 }
 
@@ -11702,7 +11735,12 @@ void main(){
   /* the shoal is alive in the flesh: wings beat hardest at the tips, the
      body swims a travelling wave nose to tail, and the whole hide
      breathes — the yard's machines stay rigid, which is the point */
-  if(uAnim.x>3.5){
+  if(uAnim.x>4.5){
+    float S=max(4.0,uAnim.z),t=uT*uAnim.w+uAnim.y;
+    float w=max(smoothstep(.20,.48,-p.x/S),smoothstep(.14,.32,abs(p.z)/S));
+    p.y+=sin(t+p.x/S*9.0+p.z/S*4.0)*w*w*S*.012;
+    p.z+=cos(t*.8+p.x/S*7.0)*w*w*S*.008;
+  }else if(uAnim.x>3.5){
     // Smoothly anchored roots, travelling bends toward each free tentacle tip.
     float S=max(4.0,uAnim.z),r=length(p)/S;
     float w=smoothstep(0.24,0.52,r);
@@ -11803,7 +11841,7 @@ void main(){
     if(style>10.5&&style<11.5)mask=max(step(abs(abs(p.x)-.28),.085)*step(p.y,-.07)*step(.14,abs(p.z)),step(.025,p.y)*step(abs(p.x),.20));
     if(style>11.5&&style<12.5)mask=max((1.0-smoothstep(.015,.023,abs(p.x-.18)))*.95,step(.47,-p.x));
     if(style>12.5&&style<13.5)mask=step(.01,p.y)*.94;
-    if(style>13.5&&style<14.5)mask=smoothstep(.0,.055,p.y)*.85;
+    if(style>13.5&&style<14.5)mask=smoothstep(-.005,.055,p.y)*.94;
     if(style>14.5&&style<15.5){
       // Chapter enamel on armour; graphite machinery and recessed launch decks.
       mask=max((1.0-smoothstep(-.20,-.13,p.y))*.65,(1.0-smoothstep(.02,.045,abs(p.y+.105)))*step(abs(p.x),.22)*step(.04,abs(p.z))*.6);
@@ -11821,6 +11859,7 @@ void main(){
     // Small illuminated seams/windows; no full-hull neon or extra lights.
     float lights=step(.966,hash)*(1.0-smoothstep(.025,.075,abs(fract(q.x)-.5)));
     if(uMaterial.x==1.0||uMaterial.x==2.0)lights*=.08;
+    if(style>13.5&&style<14.5)lights=0.0;
     if(style>14.5&&style<15.5)lights*=.22;
     col+=uAccent*lights*.22*(1.0-uMaterial.w);
     if(style>7.5&&style<8.5){float hazard=step(.5,fract((p.x+p.z)*42.0))*stripe*step(.15,p.x);col=mix(col,vec3(.67,.48,.12)*shade,hazard*.7);}
@@ -13084,7 +13123,7 @@ RACE_DEFS.push(
 {name:"ROMULAN STAR EMPIRE",fr:"star trek",mix:[0.18, 0.44, 0.38],form:"packs",fleetK:0.48,hold:580,beam:[0.35, 0.95, 0.48],ion:[0.35, 0.95, 0.48],anim:0,tone:1,hpdiv:18,spdK:1450,spdCap:74,turnK:36,cloak:true,msl:true,fire:"disruptor",boom:"warp",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
 {name:"THE DOMINION",fr:"star trek",mix:[0.22, 0.5, 0.28],form:"groups",fleetK:0.65,hold:420,beam:[0.62, 0.51, 1],ion:[0.62, 0.51, 1],anim:0,tone:1,hpdiv:20,spdK:1550,spdCap:82,turnK:40,cloak:false,msl:true,fire:"phaser",boom:"warp",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
 {name:"SPACE MARINES",fr:"warhammer 40,000",mix:[0.38, 0.37, 0.25],form:"wall",fleetK:0.55,hold:460,beam:[1, 0.7, 0.38],ion:[1, 0.7, 0.38],anim:0,tone:1,hpdiv:13,spdK:1150,spdCap:58,turnK:25,cloak:false,msl:true,fire:"smart",boom:"cookoff",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
-{name:"TYRANIDS",fr:"warhammer 40,000",mix:[0.62, 0.26, 0.12],form:"swarm",fleetK:0.8,hold:260,beam:[0.68, 0.92, 0.27],ion:[0.68, 0.92, 0.27],anim:0,tone:1,hpdiv:19,spdK:1500,spdCap:78,turnK:38,cloak:false,msl:false,fire:"bio",boom:"burst",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
+{name:"TYRANIDS",fr:"warhammer 40,000",mix:[0.62, 0.26, 0.12],form:"swarm",fleetK:0.8,hold:260,beam:[0.68, 0.92, 0.27],ion:[0.68, 0.92, 0.27],anim:5,tone:1,hpdiv:19,spdK:1500,spdCap:78,turnK:38,cloak:false,msl:false,fire:"bio",boom:"burst",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
 {name:"TESLA",fr:"the electric armada",mix:[0.76, 0.16, 0.08],form:"swarm",fleetK:0.9,hold:480,beam:[0.35, 0.8, 1],ion:[0.35, 0.8, 1],anim:0,tone:1,hpdiv:26,spdK:1700,spdCap:90,turnK:44,cloak:false,msl:true,fire:"pulse",boom:"cookoff",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}}
 );
 const battleAI=new ArmadaBattleAI.FleetMinds(RACE_DEFS);
@@ -15342,6 +15381,7 @@ function shadowFlex(g,L,phase,now){
 }
 function animatedMount(s,g,now){
   const am=(RACE_DEFS[s.race]||{}).anim;if(s.dead||!am)return g;
+  if(am===5){const S=Math.max(4,s.slen||4),smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);},w=Math.max(smooth(.20,.48,-g[0]/S),smooth(.14,.32,Math.abs(g[2])/S)),t=now*.65+(s.wf||0);return [g[0],g[1]+Math.sin(t+g[0]/S*9+g[2]/S*4)*w*w*S*.012,g[2]+Math.cos(t*.8+g[0]/S*7)*w*w*S*.008];}
   if(am===4)return shadowFlex(g,s.slen||4,s.wf||0,now);
   let [x,y,z]=g;
   if(am===3){if(Math.abs(x-(s.ringX||0))<(s.ringW||0)){const a=now*.55,c=Math.cos(a),sn=Math.sin(a);return [x,y*c-z*sn,y*sn+z*c];}return g;}
@@ -17658,6 +17698,7 @@ function hullFinish(s){
     else if(/TRIUMVIRON/.test(klass)){color=[.67,.30,.22];trim=[.29,.11,.13];accent=[.98,.53,.26];}
     else if(/FIRST BORN|LORIEN/.test(klass)){color=[.59,.46,.29];trim=[.30,.38,.22];accent=[.74,.88,.39];}
   }
+  if(r===21){const brood=(s.meta?.liverySeed??s.seed??0)%3;[color,trim]=[[[.65,.61,.51],[.27,.22,.32]],[[.61,.55,.43],[.37,.19,.17]],[[.48,.51,.42],[.19,.27,.24]]][brood];accent=[.48,.58,.25];gloss=.22;surface=0;}
   if(r===20){const chapter=/GLORIANA/.test(klass)?0:(s.meta?.liverySeed??s.seed??0)%4;color=[[.39,.49,.62],[.57,.34,.31],[.37,.49,.40],[.42,.43,.45]][chapter];trim=[.26,.28,.30];pattern=15;gloss=.18;}
   if(r===22&&/ROADSTER/.test(klass)){color=[.78,.075,.065];trim=[.08,.10,.12];pattern=11;gloss=.95;}
   if(r===22&&/OPTIMUS/.test(klass)){pattern=10;}
@@ -17829,7 +17870,8 @@ function frame(nowMs){
     gl.uniform4f(SU.rot,pose.ax[0],pose.ax[1],pose.ax[2],pose.ang);
     const RDd=RACE_DEFS[s.race];
     const am=RDd.anim;
-    if(am===4)gl.uniform4f(SU.anim,4,s.wf||0,Math.max(4,s.slen),.85);
+    if(am===5)gl.uniform4f(SU.anim,5,s.wf||0,Math.max(4,s.slen),.65);
+    else if(am===4)gl.uniform4f(SU.anim,4,s.wf||0,Math.max(4,s.slen),.85);
     else if(am===3)gl.uniform4f(SU.anim,3,s.ringX||0,s.ringW||0,0.55);
     else if(am)gl.uniform4f(SU.anim,am,s.wf,Math.max(4,s.slen*0.35),
       Math.min(6,1.3+30/s.slen));
