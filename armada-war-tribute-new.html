@@ -14257,8 +14257,8 @@ function startWar(fresh){
   IONCOL=[RACE_DEFS[ra].ion,RACE_DEFS[rb].ion];
   makeCelestial(mulberry32((warSeed^0xC0FFEE)>>>0));
   cam.ex=0;cam.ey=420;cam.ez=1100;cam.yaw=-Math.PI/2;cam.pitch=-0.22;
-  leaveHelm();watchMode="action";forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
-  intro=null;document.body.classList.remove("intro");
+  leaveHelm();watchMode="action";actionCamera=null;forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
+  intro=null;updateWatchDock();document.body.classList.remove("intro");
   const bH=document.getElementById("bHero");if(bH){bH.classList.remove("on");bH.textContent="HEROES";}
   document.getElementById("win").style.display="none";
   if(typeof wasdHint!=="undefined")wasdHint.arm();
@@ -16801,6 +16801,7 @@ let dpr=renderPixelRatio(innerWidth,innerHeight,devicePixelRatio),resolutionChec
 let crewShown=null,crewFrameAt=0,flightFrameAt=0;
 const helmPointer={id:null,x:0,y:0,ox:0,oy:0};
 let sel=null,orb=null,pilotId=null,watchMode="action",directorAt=0,watchGoal=null;
+let actionCamera=null;
 const keys=new Set();
 function resize(){
   dpr=Math.min(dpr,renderPixelRatio(innerWidth,innerHeight,devicePixelRatio));
@@ -16967,16 +16968,74 @@ function setWatchView(mode){
       document.getElementById('cockpitHud').style.color=window.ArmadaCrew?.profile(s.seed??s.id,s.race).color||'#d5e5ed';
     }else{leaveHelm();orb=chaseCamInit(ships[sel]);watchMode='follow';}updateWatchDock();return;
   }
-  leaveHelm();if(intro&&!intro.done)endIntro();sel=null;orb=null;card(null);watchMode=mode;directorAt=0;updateHeroBtn();updateWatchCamera(battleTime,1,true);updateWatchDock();
+  leaveHelm();if(intro&&!intro.done)endIntro();sel=null;orb=null;card(null);watchMode=mode;directorAt=0;actionCamera=null;updateHeroBtn();updateWatchCamera(battleTime,1,true);updateWatchDock();
+}
+// The director holds a subject, rather than chasing a changing fleet bounding box.
+// Critically damped motion preserves velocity across shots and variable render rates.
+function cinemaSpring(state,key,target,dt,rate){
+  const vk=key+'V',v=state[vk]||0,d=state[key]-target,e=Math.exp(-rate*dt),j=(v+rate*d)*dt;
+  state[key]=target+(d+j)*e;state[vk]=(v-rate*j)*e;
+}
+function updateActionCamera(now,dt){
+  dt=Math.max(0,Math.min(.1,dt));
+  const eligible=s=>s&&!s.dead&&s.vao&&s.arr&&!s.grace;
+  if(!actionCamera)actionCamera={clock:0,until:0,index:0,subject:null,partner:null,missing:0,
+    ex:cam.ex,ey:cam.ey,ez:cam.ez,yaw:cam.yaw,pitch:cam.pitch};
+  const a=actionCamera;a.clock+=dt;
+  let subject=ships[a.subject];
+  if(!eligible(subject))a.missing+=dt;else a.missing=0;
+  if(a.clock>=a.until||(!eligible(subject)&&a.missing>2)){
+    const live=ships.filter(eligible);if(!live.length)return;
+    const dogfight=a.index%3!==2;
+    let best=null,score=-Infinity;
+    for(const s of live){
+      const hot=(now-(s.lastFire??-100)<3?4:0)+(now-(s.hurtT??-100)<3?2:0);
+      const small=s.slen<180,near=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez);
+      const value=hot+(dogfight===small?3:0)+(s.id!==a.subject?2:0)-Math.log1p(near/1500);
+      if(value>score){score=value;best=s;}
+    }
+    subject=best;a.subject=best.id;a.partner=null;a.missing=0;
+    // One local opponent makes a readable dogfight; distant enemies cannot zoom the shot out.
+    let closest=Math.max(350,Math.min(2200,best.slen*6));
+    for(const t of live)if(t.side!==best.side){const d=Math.hypot(t.x-best.x,t.y-best.y,t.z-best.z);if(d<closest){closest=d;a.partner=t.id;}}
+    a.kind=a.index++%3;a.started=a.clock;a.until=a.clock+12+(a.index%3)*2;
+    a.angle=cam.yaw+Math.PI;a.orbitSign=a.index%2?1:-1;
+    if(a.tx==null){const d=Math.max(100,Math.hypot(cam.ex-best.x,cam.ey-best.y,cam.ez-best.z));
+      a.tx=cam.ex+Math.cos(cam.yaw)*Math.cos(cam.pitch)*d;a.ty=cam.ey+Math.sin(cam.pitch)*d;a.tz=cam.ez+Math.sin(cam.yaw)*Math.cos(cam.pitch)*d;}
+  }
+  if(!subject||a.tx==null)return;
+  // Briefly linger on a destroyed ship before easing into the next shot.
+  const t=ships[a.partner],pair=eligible(subject)&&eligible(t)&&Math.hypot(t.x-subject.x,t.y-subject.y,t.z-subject.z)<Math.max(700,subject.slen*9)?t:null;
+  const center=[subject.x,subject.y,subject.z],r=Math.max(35,subject.slen*.65);
+  let radius=r;
+  if(pair){const d=Math.hypot(pair.x-center[0],pair.y-center[1],pair.z-center[2]);radius=Math.max(r,d*.5+Math.max(subject.slen,pair.slen)*.6);for(let i=0;i<3;i++)center[i]=(center[i]+[pair.x,pair.y,pair.z][i])*.5;}
+  const aspect=cvs.width/Math.max(1,cvs.height),distance=Math.max(150,radius/(Math.sin(.44)*Math.min(1,aspect))*1.3);
+  // Matching position/aim damping keeps the frame composed during long transitions.
+  // A short motion lead compensates tracking lag without copying a fighter's turns.
+  const lead=(subject.v||0)*1.1,heading=subject.yaw||0;
+  center[0]+=Math.cos(heading)*lead;center[1]+=(subject.vy||0)*1.1;center[2]+=Math.sin(heading)*lead;
+  const age=a.clock-a.started,angle=a.angle+a.orbitSign*age*(a.kind===1?.025:.055);
+  const elevation=.22+.10*Math.sin(age*.10+a.kind),dolly=1+.055*Math.sin(age*.16);
+  const want=[center[0]+Math.cos(angle)*distance*dolly,center[1]+distance*elevation,center[2]+Math.sin(angle)*distance*dolly];
+  for(let i=0;i<3;i++){cinemaSpring(a,['tx','ty','tz'][i],center[i],dt,1.8);cinemaSpring(a,['ex','ey','ez'][i],want[i],dt,1.8);}
+  const dx=a.tx-a.ex,dy=a.ty-a.ey,dz=a.tz-a.ez;
+  let yaw=Math.atan2(dz,dx);while(yaw-a.yaw>Math.PI)yaw-=Math.PI*2;while(yaw-a.yaw< -Math.PI)yaw+=Math.PI*2;
+  // Limit the requested pan so even a new subject behind the camera cannot whip the view.
+  const limit=(v,n)=>Math.max(-n,Math.min(n,v));
+  cinemaSpring(a,'yaw',a.yaw+limit(yaw-a.yaw,.32),dt,2);
+  cinemaSpring(a,'pitch',a.pitch+limit(Math.atan2(dy,Math.hypot(dx,dz))-a.pitch,.22),dt,2);
+  for(const k of ['ex','ey','ez','yaw','pitch'])cam[k]=a[k];
+  watchGoal={far:distance+radius*3};
 }
 function updateWatchCamera(now,dt,force=false){
   if(pilotId!=null){const s=ships[pilotId];if(!s||s.dead){leaveHelm();return;}const cp=Math.cos(s.pitch||0),sp=Math.sin(s.pitch||0),d=(s.nose||s.slen*.5)+Math.max(2,s.slen*.015);cam.ex=s.x+Math.cos(s.yaw)*cp*d;cam.ey=s.y+sp*d;cam.ez=s.z+Math.sin(s.yaw)*cp*d;cam.yaw=s.yaw;cam.pitch=s.pitch||0;return;}
   if(sel!=null||!['all','top','action'].includes(watchMode)||!ships.length)return;
+  if(watchMode==='action'){updateActionCamera(now,force?0:dt);return;}
   const move=()=>{if(!watchGoal)return;const k=force?1:1-Math.exp(-Math.max(0,dt)*2);for(const key of ['ex','ey','ez','pitch'])cam[key]+=(watchGoal[key]-cam[key])*k;let d=watchGoal.yaw-cam.yaw;while(d>Math.PI)d-=Math.PI*2;while(d< -Math.PI)d+=Math.PI*2;cam.yaw+=d*k;};
   if(!force&&now<directorAt){move();return;}directorAt=now+.8;
   const live=ships.filter(s=>!s.dead&&s.vao);if(!live.length)return;
   let focus=live;
-  if(watchMode==='action'){const hot=live.filter(s=>now-(s.lastFire||-100)<3||now-s.hurtT<3);if(hot.length)focus=hot.slice(0,40);else focus=live.filter(s=>!s.hulls&&!s.hero);if(!focus.length)focus=live;}
+
   const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];for(const s of focus)for(let a=0;a<3;a++){const v=[s.x,s.y,s.z][a],r=s.slen*.5;lo[a]=Math.min(lo[a],v-r);hi[a]=Math.max(hi[a],v+r);}
   const c=lo.map((v,i)=>(v+hi[i])/2),radius=Math.max(200,Math.hypot(...hi.map((v,i)=>(v-lo[i])/2))),aspect=cvs.width/Math.max(1,cvs.height),distance=radius/(Math.sin(.44)*Math.min(1,aspect))*1.12;
   const pitch=watchMode==='top'?-1.54:-.48,yaw=.65;watchGoal={far:distance+radius*2,ex:c[0]-Math.cos(yaw)*Math.cos(pitch)*distance,ey:c[1]-Math.sin(pitch)*distance,ez:c[2]-Math.sin(yaw)*Math.cos(pitch)*distance,yaw,pitch};move();
@@ -17384,8 +17443,8 @@ function frame(nowMs){
     if(keys.has("q"))cam.ey-=sp;
     if(keys.has("e"))cam.ey+=sp;
   }
-  if(pilotId==null)updateWatchCamera(now,dt);
-  if(camKick>0.4&&pilotId==null){
+  if(pilotId==null)updateWatchCamera(now,elapsed);
+  if(camKick>0.4&&pilotId==null&&watchMode!=="action"){
     const k=camKick;
     cam.ex+=(Math.random()-0.5)*k;cam.ey+=(Math.random()-0.5)*k*0.55;cam.ez+=(Math.random()-0.5)*k;
     camKick*=Math.max(0,1-dt*4.2);
