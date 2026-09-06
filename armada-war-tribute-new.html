@@ -11783,20 +11783,24 @@ const FU={vp:gl.getUniformLocation(flashProg,"uVP"),t:gl.getUniformLocation(flas
   c1:gl.getUniformLocation(flashProg,"uC1")};
 const starProg=compile(`#version 300 es
 layout(location=0) in vec4 aS;
-uniform mat4 uVP;uniform vec3 uOrigin;
+uniform mat4 uVP;uniform vec3 uOrigin;uniform float uPx;
 out float vS;
-void main(){gl_Position=uVP*vec4(aS.xyz+uOrigin,1.0);gl_PointSize=aS.w;vS=aS.w;}`,`#version 300 es
+void main(){gl_Position=uVP*vec4(aS.xyz+uOrigin,1.0);gl_PointSize=aS.w<0.0?clamp(-aS.w*uPx/max(gl_Position.w,1.0),1.0,144.0):aS.w;vS=aS.w;}`,`#version 300 es
 precision highp float;
 in float vS;
 uniform vec3 uInk;out vec4 o;
 void main(){
   float r=length(gl_PointCoord-0.5);
   if(r>0.5)discard;
+  if(vS<0.0){
+    float soft=exp(-r*r*22.0)*(1.0-smoothstep(.32,.5,r));
+    o=vec4(vec3(.39,.43,.49),soft*.045);return;
+  }
   /* the bigger the star, the brighter she burns */
   float b=0.25+0.6*clamp((vS-0.8)/3.0,0.0,1.0);
   o=vec4(uInk,b*(1.0-r*1.4));
 }`);
-const USorigin=gl.getUniformLocation(starProg,"uOrigin");
+const USorigin=gl.getUniformLocation(starProg,"uOrigin"),USpx=gl.getUniformLocation(starProg,"uPx");
 const USvp=gl.getUniformLocation(starProg,"uVP"),USink=gl.getUniformLocation(starProg,"uInk");
 /* ===================== the sky sometimes has company =====================
    Roughly every other war is fought under something enormous: a cratered
@@ -16787,12 +16791,28 @@ function stepBattleWrecks(now,dt){
   if(anyGone)wrecks=wrecks.filter(w=>!w.gone);
 }
 /* ===================== stars ===================== */
-let starVao=null,starVbo=null,starN=0;
+let starVao=null,starVbo=null,starN=0,skyDustN=0;
+function galacticDust(seed){
+  const R=mulberry32((seed^0x6A1AC71C)>>>0);
+  if(R()>.42)return new Float32Array(0);
+  const tilt=.3+R()*1.1,heading=R()*Math.PI*2,phase=R()*Math.PI*2,count=320,data=new Float32Array(count*4);
+  // An irregular great-circle band, split around a dark central dust lane.
+  // All clouds are authored once per system; the sky follows camera translation.
+  for(let i=0;i<count;i++){
+    const a=R()*Math.PI*2,side=R()<.5?-1:1,lat=side*(.025+R()*.065)+Math.sin(a*3+phase)*.02;
+    const d=sceneR*6,x=Math.cos(a)*Math.cos(lat),y=Math.sin(lat),z=Math.sin(a)*Math.cos(lat);
+    const yy=y*Math.cos(tilt)-z*Math.sin(tilt),zz=y*Math.sin(tilt)+z*Math.cos(tilt);
+    data[i*4]=(x*Math.cos(heading)-zz*Math.sin(heading))*d;data[i*4+1]=yy*d;data[i*4+2]=(x*Math.sin(heading)+zz*Math.cos(heading))*d;
+    data[i*4+3]=-sceneR*(.35+R()*.42)*(.72+.28*Math.sin(a*2+phase)**2);
+  }
+  return data;
+}
 function makeStars(){
   const R=mulberry32((warSeed^0x57A2)>>>0);
   starN=starSystem?.starCount||2800;
   if(starVao)gl.deleteVertexArray(starVao);if(starVbo)gl.deleteBuffer(starVbo);
-  const a=new Float32Array(starN*4);
+  const dust=galacticDust(warSeed);skyDustN=dust.length/4;
+  const a=new Float32Array(starN*4+dust.length);a.set(dust,starN*4);
   for(let i=0;i<starN;i++){
     const u=R()*2-1,ph=R()*Math.PI*2,rr2=Math.sqrt(1-u*u),d=sceneR*(3+R()*5);
     a[i*4]=Math.cos(ph)*rr2*d;a[i*4+1]=u*d;a[i*4+2]=Math.sin(ph)*rr2*d;
@@ -17498,12 +17518,14 @@ function frame(nowMs){
   const FRP=frustumPlanes(m);
   gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   gl.enable(gl.DEPTH_TEST);
-  /* stars */
+  /* stars and occasional faint galactic dust */
   gl.useProgram(starProg);
+  gl.uniform1f(USpx,cvs.height);
   gl.uniformMatrix4fv(USvp,false,m);
   gl.uniform3fv(USink,starSystem?.starTint||inkc);gl.uniform3f(USorigin,cam.ex,cam.ey,cam.ez);
   gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
   gl.bindVertexArray(starVao);
+  if(skyDustN){gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.drawArrays(gl.POINTS,starN,skyDustN);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}
   gl.drawArrays(gl.POINTS,0,starN);gl.uniform3f(USorigin,0,0,0);
   gl.depthMask(true);gl.disable(gl.BLEND);
   drawWorlds(m,now,false);
