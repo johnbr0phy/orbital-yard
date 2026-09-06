@@ -12869,8 +12869,8 @@ function trafficPilot(s,now){
     const other=trafficBodies.get(t.id)||trafficBox(t,now),ov=trafficVelocity(other.o);
     const relative=V.sub(vel,ov),delta=V.sub(start,[other.o.x,other.o.y,other.o.z]),vv=V.dot(relative,relative),time=vv?Math.max(0,Math.min(horizon,-V.dot(delta,relative)/vv)):0;
     if(V.len(V.add(delta,V.mul(relative,time)))>Math.hypot(...own.e)+Math.hypot(...other.e)+20)continue;
-    const future={...other,o:{...other.o,x:other.o.x+ov[0]*horizon,y:other.o.y+ov[1]*horizon,z:other.o.z+ov[2]*horizon}};
-    const projected={...own,o:{...s,x:end[0],y:end[1],z:end[2]}},hit=trafficContact(projected,future,V.mul(vel,horizon),V.mul(ov,horizon),20);
+    const future={...other,o:{x:other.o.x+ov[0]*horizon,y:other.o.y+ov[1]*horizon,z:other.o.z+ov[2]*horizon}};
+    const projected={...own,o:{x:end[0],y:end[1],z:end[2]}},hit=trafficContact(projected,future,V.mul(vel,horizon),V.mul(ov,horizon),20);
     if(hit&&hit.enter<soon){soon=hit.enter;threat=other;}
   }
   if(!threat){if(now>(s.trafficUntil||0))s.trafficGoal=null;return;}
@@ -15438,16 +15438,21 @@ function lerp3(a,b,u){
   return [a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,a[2]+(b[2]-a[2])*u];
 }
 // Weapons use hull/class hardware; pilot traits still govern the decision to fire.
+function isOptimus(s){return s.race===22&&/OPTIMUS/i.test(s.meta?.klass||'');}
 function weaponProfile(s){
+  const cached=s.weaponHardware;
+  if(cached&&cached.meta===s.meta&&cached.race===s.race&&cached.hulls===s.hulls&&cached.length===s.slen)return cached.profile;
   const name=((s.meta&&s.meta.klass)||'')+' '+((s.meta&&s.meta.desig)||'');
   const fx=(RACE_DEFS[s.race]||RACE_DEFS[0]).fire;
-  const fixed=s.race===6?/\b[ABUXY]-WING\b/i.test(name):!s.hulls&&s.slen<120&&!/FALCON|CORVETTE|TRANSPORT|SHUTTLE/i.test(name);
+  const fixed=isOptimus(s)?false:s.race===6?/\b[ABUXY]-WING\b/i.test(name):!s.hulls&&s.slen<120&&!/FALCON|CORVETTE|TRANSPORT|SHUTTLE/i.test(name);
   const beam=['phaser','song','neutron','slicer','cutter'].includes(fx)&&!(/DEFIANT/i.test(name));
-  return {fx,fixed,mode:beam?'beam':'bolt',
+  const profile={fx,fixed,mode:beam?'beam':'bolt',
     width:Math.max(.65,Math.min(12,(s.slen||20)*(beam?.004:.008))),
     speed:fixed&&(s.race===5||s.race===6)?800:fx==='pulse'?850:fx==='disruptor'?1000:fx==='smart'||fx==='junk'?650:1400,
     duration:fx==='neutron'?.75:fx==='song'?.65:fx==='phaser'?.48:.32,
     color:s.race===5?[.40,1,.45]:s.race===6?[1,.22,.16]:fx==='laser'?[1,.22,.16]:(RACE_DEFS[s.race]||RACE_DEFS[0]).beam};
+  if(isOptimus(s)){profile.width=1.15;profile.speed=1050;}
+  s.weaponHardware={meta:s.meta,race:s.race,hulls:s.hulls,length:s.slen,profile};return profile;
 }
 function weaponExtents(s){return [Math.max(4,s.exL||s.slen*.5),Math.max(2,s.exY||s.slen*.14),Math.max(2,s.exZ||s.slen*.14)];}
 function weaponLocal(s,p,now){
@@ -15478,14 +15483,14 @@ function barrelFrame(s,muz,now){
 }
 function weaponMuzzle(s,muz,now){return barrelFrame(s,muz,now).tip;}
 function seatBattleMounts(s){
-  if(s.race===8||weaponProfile(s).fixed||RACE_DEFS[s.race].unique||!s.mountSites?.length)return;
+  if(s.race===8||isOptimus(s)||weaponProfile(s).fixed||RACE_DEFS[s.race].unique||!s.mountSites?.length)return;
   const nearest=p=>{let best=s.mountSites[0],d=Infinity;for(const q of s.mountSites){const n=(p[0]-q[0])**2+(p[1]-q[1])**2+(p[2]-q[2])**2;if(n<d){d=n;best=q;}}return best.slice();};
   s.guns=(s.guns||[]).map(nearest);
   for(const mount of [...(s.turrets||[]),...(s.lances||[])]){const p=nearest([mount.lx,mount.ly,mount.lz]);[mount.lx,mount.ly,mount.lz]=p;}
   s.barrelMounts=null;s.fireL=null;
 }
 function shipBarrels(s){
-  if(s.race===8||weaponProfile(s).fixed||RACE_DEFS[s.race].unique)return [];
+  if(s.race===8||isOptimus(s)||weaponProfile(s).fixed||RACE_DEFS[s.race].unique)return [];
   if(s.barrelMounts)return s.barrelMounts;
   const map=new Map();
   const add=g=>map.set(g.join(','),g.slice());
@@ -15603,7 +15608,7 @@ function turretTrack(s,muz,aim,now,target){
   if(!track){const e=weaponExtents(s),n=muz.map((v,i)=>v/(e[i]*e[i]));track={dir:V.len(n)>1e-6?V.norm(n):[1,0,0],at:now-1/30};tracks.set(key,track);}
   track.muz=muz; if(target!=null)track.target=target;
   const angle=Math.acos(Math.max(-1,Math.min(1,V.dot(track.dir,desired))));
-  const step=Math.min(.1,Math.max(0,now-track.at))*(s.slen>300?.9:2.4);track.at=now;
+  const step=Math.min(.1,Math.max(0,now-track.at))*(isOptimus(s)?6:s.slen>300?.9:2.4);track.at=now;
   if(angle<=step)track.dir=desired;
   else if(step>0){
     let axis=V.cross(track.dir,desired);if(V.len(axis)<1e-6)axis=basis(track.dir)[0];axis=V.norm(axis);
@@ -15720,7 +15725,7 @@ class WeaponSpatialIndex{
     const ax=Math.floor(minX/512),bx=Math.floor(maxX/512),ay=Math.floor(minY/512),by=Math.floor(maxY/512),az=Math.floor(minZ/512),bz=Math.floor(maxZ/512);
     if((bx-ax+1)*(by-ay+1)*(bz-az+1)>128){for(const e of this.items)add(e);}
     else{for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const cell=this.cells.get(x+','+y+','+z);if(cell)for(const e of cell)add(e);}for(const e of this.large)add(e);}
-    out.sort((a,b)=>a.order-b.order);return out.map(e=>e.ship);
+    out.sort((a,b)=>a.order-b.order);for(let i=0;i<out.length;i++)out[i]=out[i].ship;return out;
   }
 }
 const projectileIndex=[new WeaponSpatialIndex(),new WeaponSpatialIndex()];
@@ -15863,6 +15868,11 @@ function raceFire(s,t,now,nx,ny,nz){
   const muz0=solution.muz;
   const o0=weaponMuzzle(s,muz0,now);
   nx=o0[0];ny=o0[1];nz=o0[2];
+  if(isOptimus(s)){
+    if(fireBeam(s,t,now,nx,ny,nz,.34,false,muz0))s.cool=.22+combatRandom()*.10;
+    else s.cool=.06;
+    return;
+  }
   if(w===0&&solution.profile.fixed&&(s.race===5||s.race===6)){
     // More individual bolts, comparable sustained damage, every shot aligned.
     fireBeam(s,t,now,nx,ny,nz,.14,false);
