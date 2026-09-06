@@ -1,0 +1,32 @@
+# Five more Tribute New fleets
+
+Adds race IDs 18–22 without changing the existing IDs. All five appear in Curate War, random battles, reinforcements, the ship study and captain study. Each has a named hero. Tesla is the requested fictional combined Tesla/SpaceX army, not a claim about real military equipment.
+
+| Fleet | Class roster | Battle identity |
+| --- | --- | --- |
+| Romulan Star Empire | Shuttle, scout, Bird-of-Prey, Valdore, D'deridex | Green disruptors, ambush AI, cloaking including capital hulls. The D'deridex has separated upper/lower wings and an empty central volume. |
+| Dominion | Shuttle, attack ship, heavy escort, battlecruiser, battleship | Violet beam weapons and aggressive, disciplined pack attacks. Curved shoulders and swept outboard drives distinguish it from Starfleet saucers. |
+| Space Marines | Thunderhawk, Hunter, Gladius, Nova, strike cruiser, battle barge | Heavy armour, broadside AI, kinetic bursts and missiles. Hunter torpedo shoulders, Gladius wings and Nova lance/drive outriggers distinguish escorts. |
+| Tyranids | Spore drone, attack organism, Kraken, Vanguard drone, cruiser, hive ship | Swarm AI, biological plasma and organic destruction. Overlapping carapaces, ribs, jaws, hooked limbs and aft tendrils. |
+| Tesla | Optimus Blaster, Optimus Heavy, Falcon 9, Falcon Heavy, Starship, Starship/Super Heavy, Roadster/Starman | Robot-heavy muster, rapid blue pulses, fast skirmishing and rocket exhaust. Roadster hero has an open cockpit, driver, windscreen frame and four wheels. |
+
+## Interpretation and references
+
+These are low-poly procedural interpretations. Lengths are compressed for the game's formations, rather than a canonical scale chart. Seeded configurations vary proportions, wing spans, armour banks, carapace counts, limb reach and drive layouts. New hulls bypass generic random block refits and preserve their authored weapon sockets.
+
+- [StarTrek.com: The Starships of the Dominion War](https://www.startrek.com/news/the-starships-of-the-dominion-war): Romulan and Dominion vessel families and tactical context.
+- [StarTrek.com: Inside the Romulan Warbird Valdore](https://www.startrek.com/news/inside-the-romulan-warbird-valdore): Valdore reference.
+- [StarTrek.com: The Dominion](https://www.startrek.com/news/star-trek-101-the-dominion): Jem'Hadar and Dominion context.
+- [Battlefleet Gothic Remastered: Space Marines](https://battlefleet-game.org/fleet-lists/space-marines/): barge, cruiser and escort roster. This is a community presentation of the tabletop fleet, not a new GW release.
+- [Battlefleet Gothic Remastered: Tyranids](https://battlefleet-game.org/fleet-lists/tyranids/) and [archived Fanatic Tyranid tactics](https://www.specialist-arms.com/fanatic/07tt.pdf): hive, cruiser, Kraken and Vanguard distinctions.
+- [SpaceX Falcon user's guide](https://www.spacex.com/assets/media/falcon-users-guide-2025-05-09.pdf), [Starship user's guide](https://www.spacex.com/media/starship_users_guide_v1.pdf): rocket structure and silhouette references.
+- [SpaceX: Falcon Heavy & Starman](https://www.youtube.com/watch?v=A0FZIwabctw): the original Roadster payload, not the newer Roadster concept.
+- [Tesla AI & Robotics](https://www.tesla.com/AI): Optimus body reference.
+
+Dominion heavy escort and the two small Tyranid organism labels are game adaptations, not claims of canonical named ship classes. Tesla weapons, flight-capable Optimus and alternative Starship drive configurations are fictional. Hero names other than the Roadster/Starman are original fleet flavour. Captains are seeded Romulans, Jem'Hadar, helmeted Astartes, Tyranid synapse organisms, Optimus or Starman; no external portrait requests.
+
+## Validation and cost
+
+`extra-fleets.test.cjs` checks all 29 classes for finite, bounded geometry and deterministic generation; real worker output in all three muster bands; native guns; fleet composition, heroes, AI/weapon coverage and cloaking; and new crew anatomy. Each class stays below 4,000 triangles at gallery quality. The battle retains its lower mesh quality, one forge worker, existing culling/distant-ship batching, engine/effect buffers and debris limits. No per-frame ship mesh generation or new render passes.
+
+Also checked existing traffic, weapons, paint, crew, pilot firing, rendering and debris tests. Reviewed the actual WebGL ship previews and 3D crew contact sheet, plus a bounded small Tesla/Tyranid battle. This is not a full-fleet FPS benchmark.

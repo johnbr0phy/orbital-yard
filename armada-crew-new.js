@@ -1,8 +1,8 @@
 /* Seeded crew studies: the same feature-by-feature principle as /faces,
    projected as shaded 3D geometry only for the visible captain. Original interpretations, with no portrait service. */
 (function(root){
- const races=['Yard','Shoal','Lattice','Drift','Choir','Imperial','Rebel','Minbari','Shadow','Earthforce','Federation','Klingon','Borg','Mondoshawan','Colonial Marine','Engineer','Yautja','First One'];
- const colors=['#76b9c4','#80bca0','#c3a7eb','#deab73','#e9d495','#9db3d4','#d39975','#86cad6','#a184c7','#9bafd2','#dcb871','#c29b70','#8fca94','#cfb876','#abb78a','#b8ced1','#c5b187','#d7bde6'];
+ const races=['Yard','Shoal','Lattice','Drift','Choir','Imperial','Rebel','Minbari','Shadow','Earthforce','Federation','Klingon','Borg','Mondoshawan','Colonial Marine','Engineer','Yautja','First One','Romulan','Dominion','Space Marine','Tyranid','Tesla'];
+ const colors=['#76b9c4','#80bca0','#c3a7eb','#deab73','#e9d495','#9db3d4','#d39975','#86cad6','#a184c7','#9bafd2','#dcb871','#c29b70','#8fca94','#cfb876','#abb78a','#b8ced1','#c5b187','#d7bde6','#74aa83','#afa0cf','#8dabc8','#b09cb8','#b6cbd4'];
  function rng(seed){return()=>{seed|=0;seed=seed+0x6d2b79f5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
  function profile(seed,race,klass=""){
   const R=rng((seed^Math.imul(race+1,2654435761))>>>0),pick=a=>a[Math.floor(R()*a.length)];
@@ -12,11 +12,13 @@
   const S=rng(seed^0x71ca9),choose=a=>a[Math.floor(S()*a.length)];
   p.species=['Human','Shoal cephalopod','Lattice intelligence','Human','Choir radial','Human',
    choose(['Human','Mon Calamari','Sullustan',"Twi'lek"]),'Minbari','Shadow','Human',
-   choose(['Human','Vulcan','Andorian']),'Klingon','Borg','Mondoshawan','Human','Engineer','Yautja','Ancient presence'][race];
+   choose(['Human','Vulcan','Andorian']),'Klingon','Borg','Mondoshawan','Human','Engineer','Yautja','Ancient presence','Romulan',"Jem’Hadar",'Adeptus Astartes','Tyranid synapse beast','Optimus'][race];
   if(race===6&&/MC[378]|MON CAL|HOME ONE|LIBERTY/i.test(klass))p.species='Mon Calamari';
   if(race===13&&klass)p.species=/MANGALORE/i.test(klass)?'Mangalore':/MONDOSHAWAN/i.test(klass)?'Mondoshawan':'Human';
   if(race===17&&/VORLON|KOSH/i.test(klass))p.species='Vorlon encounter suit';
   if(race===17&&!klass)p.species=choose(['Vorlon encounter suit','Ancient presence']);
+  if(race===22&&/ROADSTER|STARMAN/i.test(klass)){p.species='Starman';p.name='Starman';}
+  if(race===21)p.role='Synapse';if(race===22)p.role='Autopilot';
   p.substrate=race===12?choose(['Human','Vulcan','Klingon']):p.species;
   p.crest=.75+S()*.5;p.tendril=.75+S()*.5;p.plate=.8+S()*.4;
   p.role=race===8?'Shadow presence':race===17?'Presence':race===12?'Command node':p.role;
@@ -29,7 +31,7 @@
  // Local 3D ellipsoids and wedges. Depth sorting and directional lighting give
  // noses, ears and cheeks actual depth as the head turns, without another GL context.
  function geometry(p,state={},time=0){
-  const e=emotion(state),m=[],phase=p.marks[0]*6.28,blink=Math.pow(Math.max(0,Math.cos(time*1.7+phase)),40),human=p.species==='Human',skin=p.species==='Mangalore'?'#9b8874':p.species==='Engineer'?'#ccd0c9':p.species==='Minbari'?'#c5b4a3':p.species==='Andorian'?'#679bac':p.species==="Twi'lek"?['#81aa79','#a57e66','#7d9da9'][p.seed%3]:p.species==='Borg'?'#a2aaa1':p.species==='Klingon'?'#a47d60':human||p.species==='Vulcan'?p.skin:p.color;
+  const e=emotion(state),m=[],phase=p.marks[0]*6.28,blink=Math.pow(Math.max(0,Math.cos(time*1.7+phase)),40),human=p.species==='Human',skin=p.species==='Mangalore'?'#9b8874':p.species==='Engineer'?'#ccd0c9':p.species==='Minbari'?'#c5b4a3':p.species==='Andorian'?'#679bac':p.species==="Twi'lek"?['#81aa79','#a57e66','#7d9da9'][p.seed%3]:p.species==='Borg'?'#a2aaa1':p.species==='Klingon'?'#a47d60':p.species==='Jem’Hadar'?'#aaa59b':human||p.species==='Vulcan'||p.species==='Romulan'?p.skin:p.color;
   const w=38*p.jaw,h=54*p.forehead;
   function ell(cx,cy,cz,rx,ry,rz,col,nu=12,nv=8){for(let j=0;j<nv;j++)for(let i=0;i<nu;i++){const pt=(a,b)=>{const u=a/nu*6.283,v=b/nv*Math.PI;return [cx+Math.sin(v)*Math.cos(u)*rx,cy+Math.cos(v)*ry,cz+Math.sin(v)*Math.sin(u)*rz];};const a=pt(i,j),b=pt(i+1,j),c=pt(i+1,j+1),d=pt(i,j+1);m.push({v:[a,b,c],col},{v:[a,c,d],col});}}
 
@@ -41,6 +43,31 @@
    for(const i of [0,rings.length-1])for(let k=0;k<sides;k++)m.push({v:[points[i],rings[i][k],rings[i][(k+1)%sides]],col});
   }
   const pulse=Math.sin(time*1.3+phase),sp=p.species;
+  if(sp==='Tyranid synapse beast'){
+   const shell=['#62436f','#703638','#716444'][p.seed%3],bone='#bcb494';
+   ell(0,-63,-4,61*p.jaw,44,36,shell,10,6);ell(0,13,-10,37*p.jaw,65*p.crest,34,shell,10,7);
+   for(let i=0;i<4;i++)ell(0,38+i*10,-8-i*5,38-i*4,15,33,shell,10,5);
+   ell(0,-11,25,27,31,22,bone,10,6);ell(0,-16,44,22,10+e.fear*3,4,'#241b25',10,5);
+   for(const sign of [-1,1]){
+    for(let i=0;i<3;i++){ell(sign*(17+i*5),18-i*7,32,4,2.5,3,'#dfba51',6,4);tube([[sign*(9+i*6),-10,44],[sign*(9+i*6),-22,44]],[2,0],bone);}
+    tube([[sign*24,-20,23],[sign*43,-35,42],[sign*21,-50+e.fear*4,53]],[9,5,0],bone);
+    tube([[sign*43,-60,0],[sign*80,-27,15],[sign*72,13,36]],[13,8,0],shell);
+   }return m;
+  }
+  if(sp==='Adeptus Astartes'||sp==='Optimus'||sp==='Starman'){
+   const marine=sp==='Adeptus Astartes',robot=sp==='Optimus',armor=marine?['#315987','#813b38','#435b45'][p.seed%3]:'#c7cdd0';
+   ell(0,-73,-4,marine?68:49,45,32,armor,10,6);
+   for(const sign of [-1,1])ell(sign*(marine?61:44),-61,1,marine?30:20,31,31,armor,10,6);
+   ell(0,0,0,36*p.jaw,49*p.forehead,32,armor,12,8);
+   if(robot){ell(0,5,26,29,35,11,'#11191f',12,7);ell(0,18,36,12,1.2,1,'#9dbdcc',8,4);}
+   else if(marine){
+    for(const sign of [-1,1]){ell(sign*16,12,30,12,4,4,e.hurt>.5?'#ffc785':'#d55242',8,4);tube([[sign*30,-8,16],[sign*27,-36,24],[sign*12,-43,30]],[7,6,5],'#303a42');}
+    ell(0,-21,30,17,15,12,armor,8,5);for(let i=0;i<5;i++)tube([[(i-2)*5,-16,41],[(i-2)*5,-31,39]],[1.2,1.2],'#151d23');
+    tube([[0,43,-15],[0,48,8],[0,31,29]],[5,5,4],'#c9b26b');
+   }else ell(0,8,26,29,23,11,'#17252e',12,7);
+   return m;
+  }
+
   if(sp==='Shadow'){
    const chitin='#30323b',ridge='#53515c';
    ell(0,-31,-8,27*p.jaw,43,25,chitin,10,7);ell(0,10,4,19,33,21,chitin,10,6);
@@ -144,7 +171,9 @@
   if(sp==='Klingon'||p.substrate==='Klingon')for(let i=0;i<6;i++){
    const y=21+i*6,z=32-i*2;tube([[-15+i,y-2,z-2],[0,y+3,z+5],[15-i,y-2,z-2]],[2,4*p.crest,2],'#795840');
   }
-  if(sp==='Vulcan'||p.substrate==='Vulcan')for(const sign of [-1,1])tube([[sign*w,0,3],[sign*(w+11),26,0],[sign*(w+9),36,-2]],[8,4,0],skin);
+  if(sp==='Romulan'||sp==='Vulcan'||p.substrate==='Vulcan')for(const sign of [-1,1])tube([[sign*w,0,3],[sign*(w+11),26,0],[sign*(w+9),36,-2]],[8,4,0],skin);
+  if(sp==='Romulan'){for(const sign of [-1,1])tube([[sign*25,35,21],[sign*9,24,33],[0,20,34]],[3,4,2],skin);ell(0,43,-3,37*p.jaw,16,29,'#272b2b',12,6);}
+  if(sp==='Jem’Hadar'){for(const sign of [-1,1])for(let i=0;i<5;i++)tube([[sign*(22+i*2),28-i*11,20],[sign*(37+i*2),25-i*11,23]],[4,0],'#b9b3a5');tube([[0,37,19],[0,19,34],[0,1,40]],[5,6,3],'#b9b3a5');}
   if(sp==='Andorian')for(const sign of [-1,1]){const sway=Math.sin(time+sign)*2;tube([[sign*19,h*.8,0],[sign*24,h+12,8],[sign*(26+sway),h+25,14]],[5,3,2],skin);ell(sign*(26+sway),h+25,15,4,4,3,'#9fc4cc',8,4);}
   if(sp==="Twi'lek")for(const sign of [-1,1])tube([[sign*24,36,-15],[sign*44,8,-18],[sign*49,-39,0],[sign*(53+pulse*3),-84,12]],[17,16,11,2],skin);
   if(sp==='Borg'){
@@ -161,7 +190,7 @@
   const c=canvas.getContext('2d');if(!c)return;if(canvas.width!==520){canvas.width=520;canvas.height=300;}
   const e=emotion(state),R=rng(p.seed^712987);c.fillStyle='#0b131b';c.fillRect(0,0,520,300);
   c.strokeStyle=e.hurt>.3?'#cc6856':p.color;c.lineWidth=2;
-  const alienRoom=[1,2,4,8,15,17].includes(p.race);
+  const alienRoom=[1,2,4,8,15,17,21].includes(p.race);
   if(alienRoom){c.lineWidth=5;for(let j=0;j<7;j++){const x=25+j*78;c.beginPath();c.moveTo(x,260);c.bezierCurveTo(260+(x-260)*.4,130,x,40,260+(x-260)*.7,0);c.stroke();}c.lineWidth=2;}
   else for(let j=0;j<3+p.bridge;j++)c.strokeRect(10+j*510/(3+p.bridge),14,490/(3+p.bridge),146);
   for(let i=0;i<35;i++){c.fillStyle='#91a7b7';c.fillRect(R()*520,24+R()*120,2,2);}

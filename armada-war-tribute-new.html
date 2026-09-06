@@ -300,8 +300,8 @@ body.piloting #brand,body.piloting #score,body.piloting #bar,body.piloting #watc
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
 <script src="armada-systems-new.js?v=muted-worlds-1"></script>
-<script src="armada-crew-new.js?v=species-3d-1"></script>
-<script src="armada-battle-ai-new.js?v=traffic-2"></script>
+<script src="armada-crew-new.js?v=fleets-23"></script>
+<script src="armada-battle-ai-new.js?v=fleets-23"></script>
 <script>
 "use strict";
 /* ===================== vector ===================== */
@@ -10665,10 +10665,165 @@ var buildHero=function(f,seed){
     case 15:return buildEngineerHero(seed);
     case 16:return buildYautjaHero(seed);
     case 17:return buildFirstonesHero(seed);
+    case 18:case 19:case 20:case 21:case 22:return buildExtra(f,seed,0,true);
     default:return buildYardHero(seed);
   }
 };
 /*__HEROES_END__*/
+/* Five additional tribute navies. Class silhouettes are reference-led; seeded
+   configurations and compressed battle lengths are deliberate game adaptations.
+   Geometry is built once in the worker, with native weapon/engine sockets. */
+var EXTRA_CLASSES=[
+ ['ROMULAN SHUTTLE','ROMULAN SCOUT','ROMULAN BIRD-OF-PREY','VALDORE WARBIRD',"D’DERIDEX WARBIRD"],
+ ["JEM'HADAR SHUTTLE","JEM'HADAR ATTACK SHIP","JEM'HADAR HEAVY ESCORT","JEM'HADAR BATTLECRUISER","JEM'HADAR BATTLESHIP"],
+ ['THUNDERHAWK GUNSHIP','HUNTER DESTROYER','GLADIUS FRIGATE','NOVA FRIGATE','STRIKE CRUISER','BATTLE BARGE'],
+ ['SPORE DRONE','ATTACK ORGANISM','KRAKEN BIO-SHIP','VANGUARD DRONE SHIP','TYRANID CRUISER','HIVE SHIP'],
+ ['OPTIMUS BLASTER','OPTIMUS HEAVY','FALCON 9','FALCON HEAVY','STARSHIP','STARSHIP / SUPER HEAVY','ROADSTER / STARMAN']
+];
+function buildExtraClass(race,seed,type,hero=false){
+ const R=mulberry32((seed^Math.imul(race,73471))>>>0),parts=[],muzzles=[],engines=[];
+ const row=race-18,klass=EXTRA_CLASSES[row][type],variant=Math.floor(R()*3);
+ // Work in a common 100-unit keel, then scale the entire connected assembly.
+ const box=(x,y,z,a,b,c)=>parts.push({k:'box',c:[x,y,z],u:[a,0,0],v:[0,b,0],w:[0,0,c]});
+ const tube=(a,b,r1,r2=r1)=>parts.push({k:'tube',a,b,r1,r2});
+ const plate=(pts,th=1)=>parts.push({k:'panel',pts,n:[0,1,0],th});
+ const body=(sections,n=10)=>parts.push({k:'loft',sec:sections.map(([x,y,z,ry,rz])=>({pts:Array.from({length:n},(_,i)=>[x,y+Math.sin(i/n*6.283185)*ry,z+Math.cos(i/n*6.283185)*rz])}))});
+ const pod=(x,y,z,l,h,w)=>body([[x-l,y,z,.3,.3],[x-l*.65,y,z,h*.8,w*.8],[x,y,z,h,w],[x+l*.7,y,z,h*.65,w*.65],[x+l,y,z,.3,.3]]);
+ const gun=(a,b,r=.8)=>{tube(a,b,r,r*.65);muzzles.push(b.slice());};
+ const drive=(x,y,z,r)=>{tube([x+3,y,z],[x,y,z],r*.65,r);parts[parts.length-1].driveGroup='extra';engines.push([x,y,z,r]);};
+ let L;
+ if(race===18){
+  L=[24,100,210,650,1100][type];
+  const span=(type===4?42:type===3?58:30)*( .93+R()*.14),sweep=-8-variant*5;
+  if(type===4){
+   // Double hull enclosing a genuinely empty centre, joined only at the bow,
+   // stern and outboard nacelles: the defining D'deridex negative space.
+   pod(-36,0,0,12,10,16);pod(37,0,0,14,9,15);
+   for(const sign of [-1,1])for(const level of [-1,1]){
+    const wing=[[42,0,0,4,8],[19,level*16,sign*span*.45,3,span*.30],[-9,level*20,sign*span*.68,3.5,span*.34],[-34,0,sign*span*.83,5,9]];
+    body(wing);}
+   for(const sign of [-1,1]){pod(-28,0,sign*span*.88,18,5,7);drive(-47,0,sign*span*.88,3.5);gun([35,3,sign*9],[49,3,sign*9]);}
+  }else{
+   pod(6,0,0,43,6,9);pod(39,0,0,13,7,11);
+   for(const sign of [-1,1]){
+    body([[20,0,sign*5,3,5],[sweep,5,sign*span*.65,3,span*.34],[-25,1,sign*span,2,4]]);
+    pod(-19,1,sign*span,17,3.5,4.5);drive(-37,1,sign*span,2.5);gun([-3,3,sign*span],[0,3,sign*span]);
+    if(type===3)plate([[-14,4,sign*span*.4],[-42,7,sign*span*.87],[-28,1,sign*span*.9]],1.8);
+   }
+  }
+
+ }else if(race===19){
+  L=[28,110,230,620,1250][type];const broad=type>=3,span=(broad?38:31)+variant*4;
+  // Beetle bow, narrow waist, swept nacelle arms, forked stern. Larger hulls
+  // gain a second shoulder pair and command deck, not a saucer silhouette.
+  pod(22,0,0,29,broad?11:9,broad?22:17);pod(-23,0,0,27,5,8);
+  for(const sign of [-1,1]){
+   body([[18,0,sign*10,4,6],[-4,-2,sign*span*.7,4,span*.3],[-35,-1,sign*span,3,5]]);
+   pod(-30,-1,sign*span,19,4,5);drive(-50,-1,sign*span,3.5);gun([-7,2,sign*(span-3)],[1,2,sign*(span-3)],1.2);
+   if(broad){body([[28,3,sign*12,3,6],[7,9,sign*span*.9,3,9],[-12,8,sign*span,2,3]]);gun([11,10,sign*span],[25,10,sign*span],1.4);}
+  }
+  if(type===4){pod(-4,12,0,26,6,13);pod(-8,-10,0,30,5,18);}
+  for(let i=0;i<4;i++)body([[8+i*7,7,0,3,17-i*2],[12+i*7,8,0,2,16-i*2]],8);
+ }else if(race===20){
+  L=[29,130,190,240,780,1500][type];
+  if(type===0){
+   box(0,0,0,37,7,8);box(24,8,0,10,4,7);box(39,-4,0,8,3,7);
+   for(const sign of [-1,1]){plate([[8,0,sign*5],[-18,0,sign*39],[-35,0,sign*39],[-25,0,sign*5]],3);drive(-32,0,sign*17,5);box(-26,8,sign*9,5,10,1);gun([17,-3,sign*9],[45,-3,sign*9],1.8);}
+   gun([3,9,0],[22,9,0],2.5);
+  }else{
+   const capital=type>=4,width=capital?14:8;
+   box(-8,0,0,34,8,width);box(21,-1,0,12,10,width+2);
+   body([[29,-1,0,10,width+2],[45,-2,0,14,width+4],[52,-3,0,9,4]],4);
+   const banks=capital?5+variant:3;
+   for(const sign of [-1,1]){
+    box(-9,0,sign*(width+2),24,6,3);
+    for(let i=0;i<banks;i++){const x=-29+i*9;box(x,2,sign*(width+4),3,5,3);gun([x,2,sign*(width+5)],[x+5,2,sign*(width+7)],1.5);}
+    // Flying buttresses join the cathedral deck to the armoured shoulders.
+    for(let i=0;i<3;i++)tube([-23+i*12,8,sign*width],[-23+i*12,18,sign*4],1.3);
+    if(capital)box(-4,-5,sign*(width+8),17,3,4);
+   }
+   box(-16,13,0,17,6,7);box(-23,24,0,6,9,6);box(-23,31,0,10,2,9);
+   for(let i=0;i<(capital?4:2);i++){const x=-31+i*11;box(x,22,0,2,8,2);tube([x,30,0],[x,37+(i%2)*5,0],2,0);}
+   if(type===5){box(-1,17,0,8,9,9);box(-1,27,0,12,2,11);}
+   for(const y of [-4,4])for(const z of (capital?[-9,0,9]:[-4,4]))drive(-46,y,z,3.4);
+   gun([39,8,0],[53,8,0],type===3?3:2);
+   if(type===1)for(const sign of [-1,1]){box(36,-5,sign*9,15,3,3);gun([40,-5,sign*9],[54,-5,sign*9],2.2);}
+   if(type===2)for(const sign of [-1,1]){plate([[-28,0,sign*8],[-38,-2,sign*24],[0,-2,sign*21],[11,0,sign*8]],3);drive(-39,-2,sign*20,3);}
+   if(type===3){gun([-3,14,0],[42,14,0],3.3);for(const sign of [-1,1]){box(-22,-5,sign*17,14,4,5);tube([-16,0,sign*7],[-22,-5,sign*17],3);drive(-39,-5,sign*17,4);}}
+
+  }
+ }else if(race===21){
+  L=[19,33,150,240,650,1300][type];const big=type>=4,belly=big?16:10,plates=4+variant+(big?3:0);
+  pod(-3,0,0,41,belly,belly*.8);pod(31,-2,0,19,belly*.65,belly*.72);
+  // Overlapping dorsal carapaces, a ribbed belly and hooked jaws.
+  for(let i=0;i<plates;i++){const x=-31+i*55/(plates-1),h=belly*Math.sqrt(Math.max(.2,1-(x/48)**2));
+   body([[x-10,h*.32,0,h*.78,h*.92],[x,h*.53,0,h*.77,h],[x+6,h*.53,0,h*.46,h*.7]],8);
+   for(const sign of [-1,1])tube([x,-h*.35,sign*h*.6],[x+5,-h*.95,sign*h*.35],1.3,.7);
+  }
+  for(const sign of [-1,1]){
+   tube([30,-3,sign*6],[48,-9,sign*12],3,2);tube([48,-9,sign*12],[54,-4,sign*5],2,.1);
+   const limbs=type===0?2:big?4:3;
+   for(let i=0;i<limbs;i++){const x=18-i*15,z=sign*(belly*.7),reach=(22+variant*5)*(1-i*.08);
+    tube([x,-3,z],[x+5,-11,sign*reach],3.5,2.4);tube([x+5,-11,sign*reach],[x+22,-15,sign*(reach+4)],2.4,1.2);tube([x+22,-15,sign*(reach+4)],[x+28,-5,sign*reach],1.2,.05);
+   }
+   gun([32,2,sign*5],[47,1,sign*5],2.5);
+   // Tapered aft tendrils have four segments, never per-frame mesh rebuilds.
+   for(let i=0;i<2;i++){let a=[-30,-3-i*4,sign*(4+i*3)];for(let j=0;j<4;j++){const b=[-40-j*8,-4-i*5+Math.sin(j*.9+i)*6,sign*(7+i*5+j*2)];tube(a,b,2.8-j*.65,Math.max(.05,2.15-j*.65));a=b;}}
+  }
+  if(type===0)for(let i=0;i<8;i++){const a=i/8*6.283;tube([0,Math.sin(a)*8,Math.cos(a)*8],[5,Math.sin(a)*24,Math.cos(a)*24],2,.1);}
+ }else{
+  L=[6,8,70,72,120,210,8][type];
+  if(type<=1){
+   // Upright free-flying Optimus: white torso, black face, articulated limbs,
+   // boots and a forward-facing blaster in each hand. +X is forward.
+   box(0,9,0,6,12,9);box(0,-6,0,5,5,7);pod(0,30,0,6,9,7);
+   box(5.5,30,0,1,5,5); // visor, picked out by the Tesla material mask
+   for(const sign of [-1,1]){
+    tube([0,16,sign*10],[-2,1,sign*(15+variant)],3,2.5);
+    tube([-2,1,sign*(15+variant)],[14,1,sign*(15+variant)],2.5,2);
+    box(14,1,sign*(15+variant),3,3,3);gun([15,2,sign*(15+variant)],[30,2,sign*(15+variant)],type===1?2.5:1.6);
+    tube([0,-10,sign*5],[-4,-25,sign*6],3.5,2.5);tube([-4,-25,sign*6],[0,-39,sign*7],2.5,2);box(4,-41,sign*7,6,2,3);drive(-6,7,sign*7,2);
+   }
+   if(type===1){box(-7,8,0,4,12,10);gun([0,20,12],[27,20,12],3);}
+  }else if(type===6){
+   // The original open-top Roadster, including four wheels and Starman.
+   body([[-43,0,0,4,13],[-31,1,0,7,18],[14,0,0,6,18],[42,-1,0,4,14],[48,-1,0,2,9]],8);
+   box(-19,7,0,16,2,17);box(27,6,0,16,2,15);
+   for(const x of [-27,28])for(const sign of [-1,1]){parts.push({k:'lathe',c:[x,-4,sign*17],axis:[0,0,sign],prof:[[0,7],[4,7],[5,6]]});}
+   for(const sign of [-1,1]){tube([7,6,sign*15],[1,19,sign*13],1,1);tube([1,19,sign*13],[1,19,0],1,1);}
+   box(-9,10,-7,6,7,5);pod(-6,22,-7,5,6,5);tube([-4,12,-11],[5,10,-12],2,1.5);tube([-4,12,-3],[5,10,-2],2,1.5);
+   for(const sign of [-1,1]){gun([21,1,sign*17],[42,1,sign*17],1.5);drive(-43,0,sign*11,3);}
+  }else{
+   const star=type>=4,rad=star?9:4,stack=type===5;
+   const rocket=(z,booster=false)=>{
+    body([[-46,0,z,rad,rad],[booster?26:star?26:30,0,z,rad,rad],[booster?33:40,0,z,rad*.72,rad*.72],[booster?34:49,0,z,.15,.15]],12);
+    for(let i=0;i<6;i++)body([[-36+i*11,0,z,rad*1.015,rad*1.015],[-35.6+i*11,0,z,rad*1.015,rad*1.015]],12);
+    const bells=star?(variant===2?9:6):9;
+    for(let i=0;i<bells;i++){const a=i/bells*6.283;drive(-49,Math.sin(a)*rad*.58,z+Math.cos(a)*rad*.58,rad*.22);}
+    if(star&&!booster)for(const sign of [-1,1]){
+     plate([[-37,0,z+sign*rad],[-42,0,z+sign*rad*2.4],[-12,0,z+sign*rad*2.0],[-9,0,z+sign*rad]],1);
+     plate([[28,0,z+sign*rad*.8],[23,0,z+sign*rad*1.8],[37,0,z+sign*rad*1.5],[39,0,z+sign*rad*.6]],.8);
+    }
+   };
+   rocket(0);
+   if(type===3){for(const sign of [-1,1]){rocket(sign*10,true);box(-15,0,sign*5,15,2,2);}}
+   if(stack){engines.length=0;body([[-120,0,0,rad,rad],[-47,0,0,rad,rad]],12);for(let i=0;i<12;i++){const a=i/12*6.283;drive(-124,Math.sin(a)*6,Math.cos(a)*6,1.7);}}
+   for(const sign of [-1,1])gun([28,0,sign*rad],[43,0,sign*rad],star?1.2:.7);
+  }
+ }
+ const scale=heroFit(parts,L*(.94+R()*.12)),bb=heroBB(parts);
+ const names=['IRW KHOPESH','VICTORY IS LIFE','SWORD OF MACRAGGE','THE GREAT DEVOURER',"ELON'S ROADSTER"];
+ const meta={klass,desig:hero?names[row]:klass+' '+String(seed>>>0).slice(-5),hero,length:bb[1][0]-bb[0][0],beam:bb[1][2]-bb[0][2],height:bb[1][1]-bb[0][1],crew:race===21||race===22?1:Math.max(4,Math.round(L*1.5)),nativeMuzzles:true,extraClass:type,architecture:['PATROL CONFIGURATION','WIDE ASSEMBLY','HEAVY CONFIGURATION'][variant]};
+ meta.mass=Math.max(1,meta.length*meta.beam*meta.height*.035);
+ return {parts,bb,meta,muzzles:muzzles.map(q=>q.map(v=>v*scale)),exhaust:engines.map(q=>q.map(v=>v*scale))};
+}
+function buildExtra(race,seed,hulls=0,hero=false){
+ const R=mulberry32((seed^0xADC73)>>>0),row=race-18;
+ const pools=[[0,1,2,3,4],[0,1,2,3,4],[0,1,2,3,4,5],[0,1,2,3,4,5],[0,0,0,1,2,3,4,5]];
+ let type=hero?[4,4,5,5,6][row]:hulls?(hulls>=50?[4,4,5,5,5][row]:[3,3,4,4,4][row]):pools[row][Math.floor(R()*pools[row].length)];
+ return buildExtraClass(race,seed,type,hero);
+}
+
 
 /* Fleet refits: seeded, load-time construction. The class is established;
    the mission configuration is an original procedural interpretation. */
@@ -10718,6 +10873,7 @@ function applyDriveLayout(ship,seed,forced){
 }
 function applyFleetRefit(ship,race,seed,forced,drive){
   if(!ship||ship.meta?.hero||ship.meta?.klass==='BABYLON 5'||ship.meta?.refit)return ship;
+  if(race>=18)return ship; // These hulls already have seeded structural configurations.
   applyDriveLayout(ship,seed,drive);
   const R=mulberry32((seed^0x629ea735)>>>0),role=forced==null?Math.floor(R()*6):forced%6;
   const nebulon=/NEBULON-B/.test(ship.meta.klass);
@@ -10886,7 +11042,7 @@ buildFedMega=function(seed,nH){if(nH>=50)return fedMegaOriginal(seed,nH);const R
    pyramid, not a lottery. Every hull a yard can lay falls in one of
    three bands — small craft, escorts, capitals — and the fleet's mix
    table, not the class dice, decides how many of each band sail. ---- */
-var fleetBandOf=function(L,race){return L<=42?0:L<=(race===7?650:95)?1:2;};
+var fleetBandOf=function(L,race){return L<=42?0:L<=(race===7?650:race>=18&&race<=21?300:95)?1:2;};
 function loftPolyAtX(p,x){
   const secs=p.sec;if(!secs||secs.length<2)return null;
   const xs=secs.map(sc=>{
@@ -11007,6 +11163,7 @@ function seatTurrets(ship){
 }
 // Exhaust outlets are found once at forge time, never by scanning live triangles.
 function enginePorts(ship,race){
+  if(ship.exhaust)return ship.exhaust;
   if(![5,6,9,14].includes(race))return [];
   const ports=[];
   for(const p of ship.parts){
@@ -11024,7 +11181,7 @@ function armShip(ship,race,hulls){
      Heroes bring their own guns: do not harvest engines as muzzles
      and do not bolt a pair of side plates onto an ace. */
   const parts=ship.parts;if(!parts||!parts.length)return;
-  if(ship.meta&&ship.meta.hero&&ship.muzzles&&ship.muzzles.length)return;
+  if((ship.meta?.hero||ship.meta?.nativeMuzzles)&&ship.muzzles?.length)return;
   // Shadows emit from their native flush aperture; never add mechanical mounts.
   if(race===8){ship.muzzles=parts.filter(p=>p.k==='disc'&&!p.refitPart&&p.n?.[0]>0&&p.n[1]===0&&p.n[2]===0).map(p=>p.c.slice());return;}
   seatTurrets(ship);
@@ -11608,7 +11765,15 @@ void main(){
     else if(style<7.5&&style>6.5)mask=max(panel*.3,smoothstep(.08,.15,abs(p.z))*(1.0-smoothstep(-.08,.04,p.x))*.65);
     else if(style<8.5&&style>7.5)mask=max(panel*.4,stripe*.8);
     else if(style<9.5&&style>8.5)mask=step(.5,fract(p.x*22.0)+fract(p.z*22.0))*stripe;
+    // Tesla masks follow local anatomy: visor / joints, tyres / cabin,
+    // rocket interstage. One material pass, no extra meshes or textures.
+    if(style>9.5&&style<10.5)mask=max(step(.48,p.y)*step(-.17,p.x),max(step(p.y,-.20)*.85,step(.29,abs(p.z))*.8));
+    if(style>10.5&&style<11.5)mask=max(step(abs(abs(p.x)-.28),.085)*step(p.y,-.07)*step(.14,abs(p.z)),step(.025,p.y)*step(abs(p.x),.20));
+    if(style>11.5&&style<12.5)mask=max((1.0-smoothstep(.015,.023,abs(p.x-.18)))*.95,step(.47,-p.x));
+    if(style>12.5&&style<13.5)mask=step(.01,p.y)*.94;
+    if(style>13.5&&style<14.5)mask=smoothstep(.0,.055,p.y)*.85;
     vec3 pigment=mix(uInk,uTrim,clamp(mask,0.0,.98));
+    if(style>10.5&&style<11.5&&p.y>.075&&abs(p.z)<.135&&p.x<.04) pigment=vec3(.82,.85,.86);
     col=mix(uBg,pigment,clamp(shade,0.0,1.0));
     float wear=step(.86,hash)*.10;col*=1.0-wear;
     float spec=pow(max(dot(reflect(-normalize(vec3(.45,.8,.35)),N),Vd),0.0),mix(12.0,52.0,uPaint.x));
@@ -12015,6 +12180,7 @@ const baseRaceBuild=(f,seed,hulls,hero)=>{
     case 15:return hulls?buildEngineerMega(seed,hulls):buildEngineer(seed);
     case 16:return hulls?buildYautjaMega(seed,hulls):buildYautja(seed);
     case 17:return hulls?buildFirstonesMega(seed,hulls):buildFirstones(seed);
+    case 18:case 19:case 20:case 21:case 22:return buildExtra(f,seed,hulls,hero);
     default:return hulls?buildMegaShip(seed,hulls):buildShip(seed,P,NL);
   }
 };
@@ -12831,6 +12997,13 @@ const RACE_DEFS=[
    wpn:[[10,1],[22,6],[34,2],[48,5],[60,4],[72,3]],
    fire:"song",boom:"flash",msl:false,
    doct:{CHARGE:1,FLANK:2,ENVELOP:4,SWARM:0,HUNT:5,SCREEN:1,FEIGN:2,MINE:0}}];
+RACE_DEFS.push(
+{name:"ROMULAN STAR EMPIRE",fr:"star trek",mix:[0.18, 0.44, 0.38],form:"packs",fleetK:0.48,hold:580,beam:[0.35, 0.95, 0.48],ion:[0.35, 0.95, 0.48],anim:0,tone:1,hpdiv:18,spdK:1450,spdCap:74,turnK:36,cloak:true,msl:true,fire:"disruptor",boom:"warp",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
+{name:"THE DOMINION",fr:"star trek",mix:[0.22, 0.5, 0.28],form:"groups",fleetK:0.65,hold:420,beam:[0.62, 0.51, 1],ion:[0.62, 0.51, 1],anim:0,tone:1,hpdiv:20,spdK:1550,spdCap:82,turnK:40,cloak:false,msl:true,fire:"phaser",boom:"warp",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
+{name:"SPACE MARINES",fr:"warhammer 40,000",mix:[0.38, 0.37, 0.25],form:"wall",fleetK:0.55,hold:460,beam:[1, 0.7, 0.38],ion:[1, 0.7, 0.38],anim:0,tone:1,hpdiv:13,spdK:1150,spdCap:58,turnK:25,cloak:false,msl:true,fire:"smart",boom:"cookoff",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
+{name:"TYRANIDS",fr:"warhammer 40,000",mix:[0.62, 0.26, 0.12],form:"swarm",fleetK:0.8,hold:260,beam:[0.68, 0.92, 0.27],ion:[0.68, 0.92, 0.27],anim:0,tone:1,hpdiv:19,spdK:1500,spdCap:78,turnK:38,cloak:false,msl:false,fire:"bio",boom:"burst",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
+{name:"TESLA",fr:"the electric armada",mix:[0.76, 0.16, 0.08],form:"swarm",fleetK:0.9,hold:480,beam:[0.35, 0.8, 1],ion:[0.35, 0.8, 1],anim:0,tone:1,hpdiv:26,spdK:1700,spdCap:90,turnK:44,cloak:false,msl:true,fire:"pulse",boom:"cookoff",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}}
+);
 const battleAI=new ArmadaBattleAI.FleetMinds(RACE_DEFS);
 let battleTime=0,battleAccumulator=0;
 let combatRandom=ArmadaBattleAI.random(1),debrisRandom=ArmadaBattleAI.random(2);
@@ -14420,6 +14593,7 @@ function onWorkerMsg(e){
         }
       }
     }
+    if(s.race===18)s.canCloak=true;
     if((RACE_DEFS[s.race]||{}).unique){
       s.hpMax=s.hp=Math.max(s.hpMax||1,240+Math.round(s.slen*0.12));
       s.turn=Math.min(0.32,Math.max(0.08,70/Math.max(80,s.slen)));
@@ -14889,7 +15063,7 @@ function craftThought(s,now){
 }
 const MAX_FLASHES=224,MAX_ENGINE_SPRITES=192;
 function flash(x,y,z,t0,size,c){if(flashes.length<MAX_FLASHES)flashes.push({x,y,z,t0,size,c,seed:Math.random()});}
-function deathEffectKind(race){return race===8||race===1?12:race===12?13:race===10?11:race===7||race===15?14:10;}
+function deathEffectKind(race){return race===8||race===1||race===21?12:race===12?13:race===10?11:race===7||race===15?14:10;}
 function effectLife(kind){return kind>=10?1.35:kind>2.5?2.15:.8;}
 // Three nested glow samples per outlet; shared flash buffer and draw call, no particles.
 function appendEngineBurns(now,planes,offset){
@@ -17366,9 +17540,14 @@ function hullFinish(s){
     [[.53,.58,.59],[.21,.28,.28],[.76,.60,.24],8,0,.30],
     [[.53,.54,.43],[.24,.27,.21],[.45,.50,.28],2,2,.55],
     [[.41,.49,.45],[.28,.24,.19],[.28,.77,.62],3,0,.80],
-    [[.60,.43,.57],[.30,.19,.35],[.83,.57,.32],2,4,.80]
+    [[.60,.43,.57],[.30,.19,.35],[.83,.57,.32],2,4,.80],
+    [[.32,.52,.35],[.12,.25,.19],[.35,.95,.48],7,0,.65],
+    [[.49,.46,.61],[.25,.22,.36],[.67,.53,1],1,0,.65],
+    [[.20,.34,.62],[.68,.51,.22],[1,.54,.22],1,0,.35],
+    [[.65,.57,.43],[.32,.15,.35],[.74,.88,.26],14,0,.5],
+    [[.81,.83,.85],[.12,.14,.17],[.32,.75,1],0,0,.85]
   ];
-  const r=Math.max(0,Math.min(17,s.race||0)),row=families[r];
+  const r=Math.max(0,Math.min(families.length-1,s.race||0)),row=families[r];
   let [color,trim,accent,pattern,surface,gloss]=row;
   if(r===5&&/TIE/.test(klass)){color=[.61,.69,.77];trim=[.045,.07,.095];pattern=5;accent=[.85,.17,.13];}
   if(r===6&&/X-WING|T-65|YT-1300/.test(klass)){pattern=6;trim=[.60,.17,.13];}
@@ -17394,6 +17573,10 @@ function hullFinish(s){
     else if(/TRIUMVIRON/.test(klass)){color=[.67,.30,.22];trim=[.29,.11,.13];accent=[.98,.53,.26];}
     else if(/FIRST BORN|LORIEN/.test(klass)){color=[.59,.46,.29];trim=[.30,.38,.22];accent=[.74,.88,.39];}
   }
+  if(r===22&&/ROADSTER/.test(klass)){color=[.78,.075,.065];trim=[.08,.10,.12];pattern=11;gloss=.95;}
+  if(r===22&&/OPTIMUS/.test(klass)){pattern=10;}
+  if(r===22&&/FALCON/.test(klass)){pattern=12;}
+  if(r===22&&/STARSHIP/.test(klass)){color=[.66,.70,.74];pattern=13;gloss=.95;}
   let hash=0;for(let i=0;i<klass.length;i++)hash=(Math.imul(hash,31)+klass.charCodeAt(i))>>>0;
   if(s.meta?.refit){const tint=.94+((s.meta.refit.seed>>>4)%13)/100;color=color.map(c=>Math.min(1,c*tint));}
   return {color,trim,accent,pattern,surface,gloss,seed:((hash+(s.meta?.refit?.seed||0))%997)/997};
