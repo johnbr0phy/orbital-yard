@@ -119,7 +119,7 @@ test('Imperial and Rebel fighters launch their green and red physical bolts',()=
  const b=scene();
  b.run('raceFire(fighter,enemy,2,0,0,0)');
  assert.ok(b.run('tracers[0].col[1]>tracers[0].col[0]&&Math.abs(tracers[0].damage-.084)<1e-10'));
- b.run('fighter.race=6;raceFire(fighter,enemy,2.5,0,0,0)');
+ b.run('fighter.race=6;fighter.meta.klass="T-65 X-WING";raceFire(fighter,enemy,2.5,0,0,0)');
  assert.ok(b.run('tracers[1].col[0]>tracers[1].col[1]&&tracers[1].vx===800'));
 });
 test('a close fighter pass extends then reacquires without an instantaneous turn',()=>{

@@ -6992,10 +6992,10 @@ var rebUwing=function(parts,L){
   parts.push({k:"box",c:[-13.3*s,0.2*s,0],u:[0.5*s,0,0],v:[0,1.0*s,0],w:[0,0,1.3*s]});
   /* engines on the shoulders */
   const nac=()=>{
-    const z=4.0*s;
+    for(const offset of [0,1.9]){const z=(3.7+offset)*s;
     parts.push({k:"capsule",a:[6.5*s,0.2*s,z],b:[-7.5*s,0.2*s,z],r:1.15*s});
     parts.push({k:"disc",c:[6.6*s,0.2*s,z],n:[1,0,0],r:1.05*s,ri:0.40*s});
-    rebBell(parts,-7.5*s,0.2*s,z,0.80*s);
+    rebBell(parts,-7.5*s,0.2*s,z,0.80*s);}
   };
   rebMirRun(parts,nac);
   /* the long swing-wings, swept full aft */
@@ -10670,6 +10670,7 @@ function applyFleetRefit(ship,race,seed,forced,drive){
   const R=mulberry32((seed^0x629ea735)>>>0),role=forced==null?Math.floor(R()*6):forced%6;
   const nebulon=/NEBULON-B/.test(ship.meta.klass);
   if(nebulon){ship.parts=[];rebNebulon(ship.parts,ship.meta.length,role);ship.meta.architecture=['ESCORT KEEL','EXTENDED BOOM','HANGAR KEEL','SPLIT KEEL','ARMORED KEEL','MEDICAL POD BANKS'][role];}
+  if(ship.meta.rebelHull!=null){ship.parts=[];rebHeavyHull(ship.parts,ship.meta.designLength,ship.meta.rebelHull,role);ship.meta.architecture=['STANDARD ASSEMBLY','EXTENDED DRIVE ASSEMBLY','WIDE CARRIER ASSEMBLY','COMMAND ASSEMBLY','HEAVY ASSEMBLY','SUPPORT ASSEMBLY'][role];}
   const small=ship.meta.length<42,scale=small?.96+R()*.08:.82+R()*.36;
   ship.parts=ship.parts.filter(p=>!p.legacyKit);scaleRefit(ship.parts,scale);
   if(ship.muzzles)ship.muzzles=ship.muzzles.map(p=>p.map(v=>v*scale));
@@ -10698,7 +10699,7 @@ function applyFleetRefit(ship,race,seed,forced,drive){
   };
   const pod=(c,len,w,h)=>{put({k:'loft',sec:[{pts:[[c[0]-len*.5,c[1],c[2]-w*.55],[c[0]-len*.5,c[1]+h*.55,c[2]],[c[0]-len*.5,c[1],c[2]+w*.55],[c[0]-len*.5,c[1]-h*.25,c[2]]]},{pts:[[c[0],c[1],c[2]-w],[c[0],c[1]+h,c[2]],[c[0],c[1],c[2]+w],[c[0],c[1]-h*.25,c[2]]]},{pts:[[c[0]+len*.5,c[1],c[2]-w*.3],[c[0]+len*.5,c[1]+h*.3,c[2]],[c[0]+len*.5,c[1],c[2]+w*.3],[c[0]+len*.5,c[1]-h*.15,c[2]]]}]});};
   const station=(u,z=0)=>{let x=cx+L*u;if(ship.meta.ringW&&Math.abs(x-ship.meta.ringX)<ship.meta.ringW+L*.10)x=cx-L*.32;return root(x,cz+z);};
-  if(!nebulon&&!small&&role){
+  if(!nebulon&&ship.meta.rebelHull==null&&!small&&role){
     if(organic){
       // Sympathetic growth: broad carapace lobes / petal fins, never metal boxes.
       const count=role===4||role===5?3:role===3?1:2;
@@ -10743,13 +10744,67 @@ function buildEarthforceClass(seed,type){
 }
 var earthforceMegaOriginal=buildEarthforceMega;
 buildEarthforceMega=function(seed,nH){if(nH>=50)return earthforceMegaOriginal(seed,nH);const pool=nH<20?[2,3,5,6]:[3,4,6,7];return buildEarthforceClass(seed,pool[(Math.imul(seed,2654435761)>>>0)%pool.length]);};
+// Rebel heavy hulls: class-specific connected structures, assembled once in the forge.
+// Layouts are original yard refits inspired by the screen/licensed silhouettes.
+function rebHeavyHull(parts,L,type,layout=0){
+  const k=L,wide=layout===2?1.18:layout===4?1.08:1,stretch=layout===1?1.12:1;
+  const box=(x,y,z,hx,hy,hz)=>parts.push({k:'box',c:[x*k,y*k,z*k],u:[hx*k,0,0],v:[0,hy*k,0],w:[0,0,hz*k]});
+  const hull=(rows,z=0)=>parts.push({k:'loft',sec:rows.map(([x,y,w,h])=>{const a=rebHomeOval(x*k,y*k,w*k,h*k,z*k);return a;})});
+  const pod=(x0,x1,y,z,r)=>parts.push({k:'lathe',c:[x0*k,y*k,z*k],axis:[1,0,0],ell:[1,.85],prof:[[0,r*.4],[(x1-x0)*.2,r],[(x1-x0)*.7,r*.9],[x1-x0,r*.12]].map(q=>q.map(v=>v*k))});
+  const fin=(x0,x1,y0,y1,z0,z1,w)=>parts.push({k:'loft',sec:[rebFoilSec(x0*k,y0*k,z0*k,w*k,.009*k),rebFoilSec(x1*k,y1*k,z1*k,w*.4*k,.004*k)]});
+  const engines=(x,y,span,n,r)=>{for(let i=0;i<n;i++){const z=(i-(n-1)/2)*span;pod(x,x+.14,y,z,r*1.3);rebBell(parts,x*k,y*k,z*k,r*k);}};
+  const blade=(x,y,depth,width)=>parts.push({k:'loft',sec:[[x,y,.09,width],[x+.025,y-depth*.5,.065,width*.7],[x+.045,y-depth,.035,width*.4]].map(([a,b,hx,hz])=>({pts:[[(a-hx)*k,b*k,-hz*k],[(a+hx)*k,b*k,-hz*k],[(a+hx)*k,b*k,hz*k],[(a-hx)*k,b*k,hz*k]]}))});
+  if(type===0){ // Liberty: manta wings grow continuously out of a broad cruiser body.
+    hull([[-.47,0,.06,.035],[-.32,0,.115,.06],[-.10,.01,.13,.065],[.20,.01,.105,.045],[.40,0,.065,.026],[.48,0,.025,.013],[.50,0,.008,.006]]);
+    for(const side of [-1,1]){fin(-.12,-.29,0,-.025,side*.07,side*.31*wide,.23);pod(-.32,.18,.02,side*.095,.031);}
+    engines(-.49,0,.044,layout===1?6:4,.024);engines(-.44,.043,.045,2,.015);
+  }else if(type===1){ // MC75: deep city hull and the unmistakable suspended command tower.
+    hull([[-.46,.025,.04,.045],[-.30,.045,.10,.12],[-.05,.065,.115,.14],[.22,.06,.095,.11],[.39,.035,.070,.075],[.47,.025,.040,.048],[.50,.02,.012,.018]]);
+    blade(.12,-.025,layout===3?.36:.29,.034);pod(.07,.27,-.30,0,.027);
+    for(const side of [-1,1]){pod(-.30,.25,.07,side*.088,.031);box(-.10,-.066,side*.064,.105,.009,.018);}
+    engines(-.47,.02,.043,layout===1?6:4,.023);
+  }else if(type===7){ // MC30: narrow fast torpedo frigate, shoulders and separated drives.
+    hull([[-.40,0,.035,.025],[-.25,0,.075,.048],[.12,0,.07,.041],[.40,0,.038,.028],[.49,0,.003,.005]]);
+    for(const side of [-1,1]){fin(-.21,-.34,0,-.014,side*.045,side*.14*wide,.15);pod(-.46,-.03,0,side*.105,.033);}
+    engines(-.48,0,.21,2,.027);if(layout===1)engines(-.43,.039,.09,2,.016);
+  }else if(type===8){ // Assault frigate II: bulbous prow, deep keel, swept engine outriggers.
+    hull([[-.34,0,.047,.05],[-.12,.03,.125,.12],[.13,.035,.15,.145],[.34,.02,.13,.12],[.45,.015,.075,.075],[.49,0,.027,.035]]);
+    blade(.08,-.07,layout===4?.30:.24,.046);
+    for(const side of [-1,1]){fin(-.20,-.43,0,-.13,side*.045,side*.18*wide,.14);pod(-.48,-.27,-.12,side*.18*wide,.038);rebBell(parts,-.48*k,-.12*k,side*.18*wide*k,.030*k);}
+    engines(-.40,.04,.07,layout===1?4:2,.023);
+  }else if(type===9||type===10){ // Dreadnaught and stripped, re-engined Assault Frigate I.
+    hull([[-.46,0,.055,.07],[-.31,0,.072,.075],[-.12,0,.044,.047],[.17,0,.075,.07],[.39,0,.07,.06],[.47,0,.044,.043],[.49,0,.020,.026]]);
+    for(let i=0;i<5;i++)box(-.30+i*.14,.045,0,.045,.026,.061);
+    blade(.23,-.03,.13,.035);
+    if(type===9){engines(-.49,0,.038,3,.022);box(-.32,-.05,0,.09,.025,.056);}
+    else {for(const side of [-1,1]){fin(-.32,-.43,0,0,side*.04,side*.24*wide,.13);engines(-.48,side*.065,.08,2,.022);pod(-.48,-.27,0,side*.22*wide,.03);rebBell(parts,-.48*k,0,side*.22*wide*k,.024*k);}for(let i=0;i<4;i++)box(-.12+i*.055,-.05,0,.009,.018,.048);}
+  }else { // Marauder: low armored arrowhead with twin offset drive booms.
+    hull([[-.42,0,.035,.026],[-.16,0,.115,.035],[.16,0,.075,.025],[.49,0,.008,.01]]);
+    for(const side of [-1,1]){pod(-.48,.05,0,side*.094,.023);rebBell(parts,-.48*k,0,side*.094*k,.019*k);}
+    box(-.10,.04,0,.085,.015,.035);
+  }
+  // The keel is a stack of inhabited decks and weapon shelves, not a blank fin.
+  if(type===1||type===8){for(let j=0;j<5;j++)for(const side of [-1,1]){const y=-.10-j*.038;pod(.04+j*.005,.22-j*.012,y,side*(.032-j*.003),.012);}}
+  // Raised, overlapping armor follows the hull rather than random floating greebles.
+  // Embedded hull blisters and uninterrupted armor ribs follow the actual surface.
+  const base=parts.slice();
+  for(let i=0;i<18;i++){const x=(-.31+(i%9)*.085)*k,z=(i<9?1:-1)*(.033+(i%3)*.016)*k,hit=hullDeckAt(base,x,z,true);if(hit.y!=null)pod(x/k-.04,x/k+.035,hit.y/k-.004,z/k,.009+(i%3)*.002);}
+  if(layout===3){const hit=hullDeckAt(base,-.12*k,0,true);if(hit.y!=null){box(-.12,hit.y/k+.012,0,.055,.02,.022);box(-.13,hit.y/k+.04,0,.017,.018,.008);}}
+  if(layout===4){for(const side of [-1,1])pod(-.20,.26,.01,side*.074,.035);}
+  if(layout===2||layout===5){for(const side of [-1,1]){pod(-.22,.13,-.02,side*.10,.026);box(-.05,-.035,side*.10,.115,.009,.032);}}
+  if(stretch!==1)for(const p of parts){for(const key of ['a','b','c'])if(p[key])p[key][0]*=stretch;if(p.u)p.u[0]*=stretch;if(p.sec)for(const q of p.sec)for(const v of q.pts)v[0]*=stretch;if(p.prof&&p.axis?.[0]===1)for(const v of p.prof)v[0]*=stretch;}
+}
+
 var rebelMegaOriginal=buildRebelMega;
 function buildRebelClass(seed,type){
-  if(type<3)return rebelMegaOriginal(seed,[10,25,50][type]);
-  const parts=[],rows=[[rebNebulon,300,'EF76','NEBULON-B ESCORT FRIGATE',REBN_NEB],[rebPelta,116,'PLT','PELTA-CLASS FRIGATE',REBN_PELTA],[rebCorvette,150,'CR90','CR90-CLASS CORVETTE',REBN_CR90],[rebHammer,78,'SPH','SPHYRNA-CLASS HAMMERHEAD CORVETTE',REBN_HAM]];
-  const row=rows[(type-3)%rows.length];row[0](parts,row[1]);return rebDone(parts,seed,row[2],row[3],.08,700,false,row[4]);
+  if(type===2)return rebelMegaOriginal(seed,50);
+  const heavy={0:[1200,'MC80','MC80 LIBERTY-CLASS STAR CRUISER',5400],1:[1200,'MC75','MC75 ORDNANCE-CLASS STAR CRUISER',3200],7:[550,'MC30','MC30C FRIGATE',820],8:[700,'AF2','ASSAULT FRIGATE MARK II',4800],9:[600,'DRD','DREADNAUGHT-CLASS HEAVY CRUISER',16000],10:[700,'AF1','ASSAULT FRIGATE MARK I',5000],11:[195,'MAR','MARAUDER-CLASS CORVETTE',177]};
+  const parts=[];
+  if(heavy[type]){const row=heavy[type];rebHeavyHull(parts,row[0],type,0);const ship=rebDone(parts,seed,row[1],row[2],.08,row[3],false,REBN_MC80);ship.meta.rebelHull=type;ship.meta.designLength=row[0];return ship;}
+  const rows=[[rebNebulon,300,'EF76','NEBULON-B ESCORT FRIGATE',REBN_NEB,900],[rebPelta,116,'PLT','PELTA-CLASS FRIGATE',REBN_PELTA,900],[rebCorvette,150,'CR90','CR90-CLASS CORVETTE',REBN_CR90,120],[rebHammer,78,'SPH','SPHYRNA-CLASS HAMMERHEAD CORVETTE',REBN_HAM,35]];
+  const row=rows[(type-3)%rows.length];row[0](parts,row[1]);return rebDone(parts,seed,row[2],row[3],.08,row[5],false,row[4]);
 }
-buildRebelMega=function(seed,nH){return buildRebelClass(seed,(Math.imul(seed,2246822519)>>>0)%(nH<20?5:3));};
+buildRebelMega=function(seed,nH){const pool=nH<20?[3,4,7,8,9,10,11]:nH<40?[0,1,7,8,9,10]:[0,1,2];return buildRebelClass(seed,pool[(Math.imul(seed,2246822519)>>>0)%pool.length]);};
 var fedMegaOriginal=buildFedMega;
 buildFedMega=function(seed,nH){if(nH>=50)return fedMegaOriginal(seed,nH);const R=mulberry32(seed),parts=[],pool=nH<25?[[fedAmbassador,193],[fedNebula,220],[fedExcelsior,230],[fedAkira,190]]:[[fedGalaxy,615],[fedNebula,440],[fedExcelsior,460]];const row=pool[(Math.imul(seed,3266489917)>>>0)%pool.length],cls=row[0](parts,R,row[1]);return fedDone(parts,seed,cls[0],cls[1],cls[2],cls[3]);};
 
@@ -10894,11 +10949,12 @@ function armShip(ship,race,hulls){
   const found=[];
   const pushM=(x,y,z)=>{
     for(const q of found)
-      if(Math.hypot(q[0]-x,q[1]-y,q[2]-z)<L*0.04)return;
+      if(Math.hypot(q[0]-x,q[1]-y,q[2]-z)<L*(race===6?.004:.04))return;
     found.push([x,y,z]);
   };
   for(const p of parts){
     if(p.refitPart)continue;
+    if(race===6&&!/\b[ABUXY]-WING\b/.test(ship.meta.klass))continue;
     if(p.k==="tube"||p.k==="capsule"){
       const r1=p.k==="capsule"?p.r:p.r1,r2=p.k==="capsule"?p.r:p.r2;
       const lo=Math.min(r1,r2),hi=Math.max(r1,r2);
@@ -14947,7 +15003,7 @@ function lerp3(a,b,u){
 function weaponProfile(s){
   const name=((s.meta&&s.meta.klass)||'')+' '+((s.meta&&s.meta.desig)||'');
   const fx=(RACE_DEFS[s.race]||RACE_DEFS[0]).fire;
-  const fixed=!s.hulls&&s.slen<120&&!/FALCON|CORVETTE|TRANSPORT|SHUTTLE/i.test(name);
+  const fixed=s.race===6?/\b[ABUXY]-WING\b/i.test(name):!s.hulls&&s.slen<120&&!/FALCON|CORVETTE|TRANSPORT|SHUTTLE/i.test(name);
   const beam=['phaser','song','neutron','slicer','cutter'].includes(fx)&&!(/DEFIANT/i.test(name));
   return {fx,fixed,mode:beam?'beam':'bolt',
     width:Math.max(.65,Math.min(12,(s.slen||20)*(beam?.004:.008))),

@@ -58,3 +58,12 @@ The user-supplied visual reference exposed a problem in the previous base model:
 Nebulon-B refits now rebuild assemblies rather than adding the generic deck housings. The six selectable configurations are escort keel, extended boom, hangar keel, split keel, armored keel and medical pod banks. The alternative assemblies are speculative visual designs, not assertions of documented canonical variants or new combat abilities. The study starts on Nebulon-B sisters and labels its Refit choices accordingly. These same assemblies are used by the battle forge.
 
 Three tests verify six distinct finite meshes, the thin exposed boom/deep blade/compact seven-engine stern, and replacement of generic refit fittings. All previous regression checks pass. Static WebGL inspection covered the gray base silhouette; CPU contact sheets compared all six configurations. Each configuration remains below 6,000 triangles at study quality. The existing forge-worker and distant-rendering limits remain; large-battle FPS has not been remeasured.
+
+
+## Rebel fleet expansion
+
+The battle muster and ship study now include MC30c, Assault Frigate Mk II, Dreadnaught, Assault Frigate Mk I and Marauder. Liberty has a broad winged hull; MC75 has a deep body and suspended command tower. U-wing shoulders now carry four engines. New heavy hull refits rebuild their assembly: extended drives, broader carrier shoulders, command structures, armor and support pods. These are procedural interpretations and invented refits, not claims of exact canon geometry or statistics.
+
+Visual references: [Liberty](https://www.fantasyflightgames.com/en/news/2016/6/29/the-liberty/), [MC30](https://www.fantasyflightgames.com/en/news/2015/9/23/race-into-battle/), [Assault Frigate II](https://www.fantasyflightgames.com/edge_news.asp?eidn=5348), [Profundity](https://www.starwars.com/databank/profundity), and the user's Empire at War comparison chart. Dreadnaught, Assault Frigate I and Marauder interpretations follow the chart's Legends/game fleet mix. Nominal dimensions and crew are game model metadata.
+
+Validation: 42 new heavy-hull/refit combinations produce finite meshes below 4,500 triangles at review quality; all five new classes are reachable by battle selection. A bounded 26-ship CPU combat check passes. No large-fleet GPU frame-rate claim is made. Existing forge and rendering performance limits remain in place.
