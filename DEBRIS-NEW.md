@@ -45,3 +45,12 @@ All checks ran serially with a 256 MB Node heap and an 8-second wall timeout per
 - All 57 model-study mesh checks pass; ship geometry and materials were not changed in this pass.
 
 These are focused physics/logic and geometry checks. No full-fleet stress test, long GPU soak or comprehensive balance evaluation was run. More and longer-lived obstacles can change battle outcomes.
+
+
+## Bounded death effects and exhaust
+
+Thermal ruptures cool from a brief bright core to uneven orange ejecta; reactor failures bloom blue, Shadows dissipate in violet, Borg discharge green, and Minbari/Engineer failures produce cold flashes. Existing class death sequences now use these distinct shaders. Death sparks travel outward as short fragments rather than stationary rays.
+
+Exhaust comes from authored Rebel bells and Earthforce/CR90 drive assemblies, follows the ship pose, and grows with speed. Unsupported outlets receive no guessed plume. Organic ships get no rocket exhaust. Outlet discovery happens in the forge worker.
+
+Hard limits: 224 queued flashes, 192 engine sprites, 15 outlets per hull, subpixel exhaust culled. Both effects share one existing sprite draw and reusable buffer. Standard explosion sprites are capped at 240 pixels; engine glow at 72 pixels. No new debris physics, texture loads or simulation particles. Budget and combat regressions pass; the shader was inspected with an 18-sprite isolated preview. Large-fleet GPU frame rate has not been benchmarked.

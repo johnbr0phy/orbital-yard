@@ -6521,7 +6521,7 @@ var rebProfR=function(prof,t){
 /* an engine bell: throat, flare, glow ring */
 var rebBell=function(parts,x,y,z,r){
   parts.push({k:"tube",a:[x,y,z],b:[x-r*2.3,y,z],r1:r*0.55,r2:r});
-  parts.push({k:"disc",c:[x-r*2.3,y,z],n:[1,0,0],r:r*0.92,ri:r*0.34});
+  parts.push({k:"disc",enginePort:true,c:[x-r*2.3,y,z],n:[1,0,0],r:r*0.92,ri:r*0.34});
 };
 
 /* Mon Calamari skin: the blisters are the city, laid down by a fixed
@@ -10931,6 +10931,18 @@ function seatTurrets(ship){
     for(const p of group)partNudge(p,dy,dz);
   }
 }
+// Exhaust outlets are found once at forge time, never by scanning live triangles.
+function enginePorts(ship,race){
+  if(![5,6,9,14].includes(race))return [];
+  const ports=[];
+  for(const p of ship.parts){
+    if(p.enginePort)ports.push([...p.c,p.r]);
+    else if(p.driveGroup&&p.k==='tube'&&p.b[0]<p.a[0])ports.push([...p.b,p.r2]);
+    else if(p.driveGroup==='cr90'&&p.k==='lathe')ports.push([...p.c,p.prof[0][1]]);
+  }
+  const unique=[];for(const p of ports.sort((a,b)=>b[3]-a[3]))if(!unique.some(q=>Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2])<Math.min(p[3],q[3])))unique.push(p);
+  return unique.slice(0,15);
+}
 function armShip(ship,race,hulls){
   /* a shot is a thing a mount throws. Harvest the barrels and tentacle
      mouths the yard already grew; if a hull was born without one, bolt
@@ -11601,13 +11613,15 @@ out float vA;out float vC;out float vO;out float vSeed;
 void main(){
   float age=uT-aF.w;
   float kind=aS.y;
-  float life=kind>2.5?2.15:0.8;
+  float life=kind>=10.0?1.35:kind>2.5?2.15:0.8;
   if(age<0.0||age>life){gl_Position=vec4(2.0,2.0,2.0,1.0);gl_PointSize=0.0;vA=0.0;vC=0.0;vO=0.0;vSeed=0.0;return;}
   gl_Position=uVP*vec4(aF.xyz,1.0);
   float o2=age/life;
-  vA=exp(-age*(kind>2.5?1.8:5.0))*(1.0-smoothstep(0.70,1.0,o2));
+  vA=exp(-age*(kind>=10.0?3.0:kind>2.5?1.8:5.0))*(1.0-smoothstep(0.70,1.0,o2));
   vC=kind;vO=o2;vSeed=aS.z;
-  gl_PointSize=clamp(aS.x*(0.25+2.6*o2)*uPx/max(gl_Position.w,1.0),1.0,kind>2.5?1800.0:560.0);
+  gl_PointSize=clamp(aS.x*(0.25+2.6*o2)*uPx/max(gl_Position.w,1.0),1.0,kind>=10.0?240.0:kind>2.5?640.0:320.0);
+  if(kind>11.5&&kind<12.5)gl_PointSize=clamp(aS.x*(1.1-.7*o2)*uPx/max(gl_Position.w,1.0),1.0,240.0);
+  if(kind>=20.0){vA=1.0;gl_PointSize=clamp(aS.x*uPx/max(gl_Position.w,1.0),1.0,72.0);}
 }`,`#version 300 es
 precision highp float;
 in float vA;in float vC;in float vO;in float vSeed;
@@ -11618,7 +11632,24 @@ void main(){
   float r=length(d)*2.0;
   vec3 col;
   float rw=0.9;
-  if(vC>8.5){
+  if(vC>=20.0){
+    if(r>1.0)discard;
+    vec3 flame=mix(vec3(.25,.48,1.0),vec3(.88,.96,1.0),exp(-r*r*14.0));
+    o=vec4(flame,exp(-r*r*6.0)*(1.0-vSeed*.8));return;
+  }else if(vC>=10.0){
+    // Uneven expanding ejecta cool rapidly in vacuum; no persistent fireball ring.
+    float lobe=.84+.10*sin(a*5.0+vSeed*37.0)+.06*sin(a*9.0-vO*3.0);
+    r/=lobe;
+    if(vC>12.5&&vC<13.5)r=mix(r,max(abs(d.x),abs(d.y))*2.0,.55);
+    if(r>1.0)discard;
+    vec3 cool=vC>13.5?vec3(.28,.62,.90):vC>12.5?vec3(.18,.78,.22):vC>11.5?vec3(.32,.10,.46):vC>10.5?vec3(.16,.48,1.0):vec3(.95,.23,.045);
+    float grain=.72+.28*sin(d.x*37.0+vSeed*31.0)*sin(d.y*29.0-vO*5.0);
+    float core=exp(-r*r*20.0)*exp(-vO*12.0);
+    float gas=exp(-r*r*4.0)*grain*(1.0-vO);
+    col=mix(cool,vec3(1.0,.97,.9),core);
+    if(vC>11.5&&vC<12.5){core*=.15;gas*=.65;}
+    o=vec4(col,(core+gas*.65)*vA);return;
+  }else if(vC>8.5){
     /* ice bloom — Thoughtforce, the Hand */
     float spike=0.78+0.22*sin(a*2.0+vSeed*31.0);
     r/=max(spike,0.25);
@@ -12048,6 +12079,7 @@ onmessage=e=>{
     }else ship=raceBuild(j.f,seed,j.hulls);
     armShip(ship,j.f,j.hulls||0);
     const c=centre(ship);
+    const exhaust=enginePorts(ship,j.f).map(q=>[q[0]-c[0],q[1]-c[1],q[2]-c[2],q[3]]);
     const guns=(ship.muzzles||[]).map(q=>[q[0]-c[0],q[1]-c[1],q[2]-c[2]]);
     const m=packMesh(ship,c,0.32);
     /* carve her pieces NOW, at the forge — so the moment she dies, her
@@ -12076,7 +12108,7 @@ onmessage=e=>{
     // before combat. Do not sort/split thousands of triangles on a kill frame.
     const readyFrags=fractureMesh(frags,ship.meta.length>=180?32:6);
     for(const f of readyFrags)tr.push(f.v.buffer,f.i.buffer);
-    out.push({id:j.id,seed:seed,mesh:m,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,
+    out.push({id:j.id,seed:seed,mesh:m,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,exhaust,
       ringX:ship.meta.ringX!==undefined?ship.meta.ringX-c[0]:0,
       ringW:ship.meta.ringW||0,hero:!!(j.hero||(ship.meta&&ship.meta.hero)),
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length,
@@ -14285,7 +14317,7 @@ function onWorkerMsg(e){
     s.meta=rec.meta;s.slen=rec.meta.length;s.nose=rec.nose;
     if(rec.seed!=null)s.seed=rec.seed>>>0;   /* the forge may have re-cut it */
     s.ringX=rec.ringX||0;s.ringW=rec.ringW||0;   /* earthforce turns a ring here */
-    s.guns=rec.guns||[];s.gunI=0;
+    s.guns=rec.guns||[];s.exhaust=rec.exhaust||[];s.gunI=0;
     s.fragData=rec.frags||null;s.fragReady=!!rec.fragReady;
     s.hullMesh=s.slen>=180?{v:m.v,i:m.i}:null;
     s.rad=Math.max(s.slen*0.32,(rec.meta.beam||0)*0.38,(rec.meta.height||0)*0.38);
@@ -14811,7 +14843,31 @@ function craftThought(s,now){
   s.thLine=line;s.thKey=key;s.thHard=hard;s.thAt=now;
   return line;
 }
-function flash(x,y,z,t0,size,c){flashes.push({x,y,z,t0,size,c,seed:Math.random()});}
+const MAX_FLASHES=224,MAX_ENGINE_SPRITES=192;
+function flash(x,y,z,t0,size,c){if(flashes.length<MAX_FLASHES)flashes.push({x,y,z,t0,size,c,seed:Math.random()});}
+function deathEffectKind(race){return race===8||race===1?12:race===12?13:race===10?11:race===7||race===15?14:10;}
+function effectLife(kind){return kind>=10?1.35:kind>2.5?2.15:.8;}
+// Three nested glow samples per outlet; shared flash buffer and draw call, no particles.
+function appendEngineBurns(now,planes,offset){
+  let count=0;
+  for(const s of ships){
+    if(s.dead||!s.vao||!s.arr||s.grace||s.cloakAmt>.05||!s.exhaust?.length)continue;
+    if(now-warT0<(s.delay||0)||!sphereVis(planes,s.x,s.y,s.z,hullBerth(s)))continue;
+    const distance=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez);
+    const throttle=Math.max(.18,Math.min(1.4,(s.v||0)/Math.max(1,s.spd||1)));
+    for(const port of s.exhaust){
+      if(count+3>MAX_ENGINE_SPRITES)return offset+count;
+      if(port[3]*cvs.height/Math.max(1,distance)<1.2)continue;
+      for(let j=0;j<3;j++){
+        const local=[port[0]-port[3]*j*(1+throttle)*.8,port[1],port[2]],pos=gunWorld(s,local,now),i=(offset+count++)*7;
+        flPool[i]=pos[0];flPool[i+1]=pos[1];flPool[i+2]=pos[2];flPool[i+3]=now;
+        flPool[i+4]=port[3]*(j===0?3.8:j===1?2.8:1.6)*(1+.04*Math.sin(now*13+(s.wf||0)));
+        flPool[i+5]=20;flPool[i+6]=j/3;
+      }
+    }
+  }
+  return offset+count;
+}
 function boltSkin(a,b,r,n){
   /* a cylinder of lines: world-metre radius so a crown bolt reads at 40 km */
   const dir=V.norm(V.sub(b,a));
@@ -14844,18 +14900,19 @@ function boom(t,now){
   const big=Math.max(46,t.slen*(t.hulls?3.0:2.0));
   const cy=Math.cos(t.yaw),sy=Math.sin(t.yaw);
   const st=(RACE_DEFS[t.race]||{}).boom||"fireball";
+  const deathFlash=(x,y,z,time,size,c)=>flash(x,y,z,time,Math.min(size,Math.max(30,t.slen*1.1)),c===2?deathEffectKind(t.race):c);
   const verse=(Math.random()*3)|0;
   const sparks=(n,x,y,z,t0,len)=>{
-    for(let i=0;i<n;i++){
+    for(let i=0;i<Math.min(n,8)&&beams.length<400;i++){
       const az=Math.random()*6.283,el=(Math.random()-0.5)*2;
       const dv=[Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az)];
       const L2=len*(0.6+Math.random()*0.9);
-      beams.push({a:[x,y,z],b:[x+dv[0]*L2,y+dv[1]*L2,z+dv[2]*L2],t0,spark:true});
+      beams.push({a:[x,y,z],b:[x+dv[0]*L2,y+dv[1]*L2,z+dv[2]*L2],t0,spark:true,ejecta:true});
     }
   };
   const cluster=(n,spread,t0a,t0b,s0,s1)=>{
     for(let i=0;i<n;i++)
-      flash(t.x+(Math.random()-0.5)*spread,t.y+(Math.random()-0.5)*spread*0.7,
+      deathFlash(t.x+(Math.random()-0.5)*spread,t.y+(Math.random()-0.5)*spread*0.7,
             t.z+(Math.random()-0.5)*spread,now+t0a+Math.random()*(t0b-t0a),
             s0+Math.random()*(s1-s0),2);
   };
@@ -14866,13 +14923,13 @@ function boom(t,now){
       const dv=V.add(V.mul(u2,Math.cos(a2)),V.mul(v2,Math.sin(a2)));
       const L2=R2*2.6;
       beams.push({a:[t.x,t.y,t.z],
-        b:[t.x+dv[0]*L2,t.y+dv[1]*L2,t.z+dv[2]*L2],t0:now,spark:true});
-      flash(t.x+dv[0]*L2*0.7,t.y+dv[1]*L2*0.7,t.z+dv[2]*L2*0.7,now+0.12,R2*0.5,2);
+        b:[t.x+dv[0]*L2,t.y+dv[1]*L2,t.z+dv[2]*L2],t0:now,spark:true,ejecta:true});
+      deathFlash(t.x+dv[0]*L2*0.7,t.y+dv[1]*L2*0.7,t.z+dv[2]*L2*0.7,now+0.12,R2*0.5,2);
     }
   };
   if(st==="dissolve"){
     /* Shadows: no fire, only the scream going out — dust and a dark bloom */
-    flash(t.x,t.y,t.z,now,big*0.55,2);
+    deathFlash(t.x,t.y,t.z,now,big*0.55,2);
     dustBurst(t.x,t.y,t.z,0,0,0,28,now);
     dustBurst(t.x,t.y,t.z,cy*6,2,sy*6,18,now);
     cluster(4,R2,0,0.4,R2*0.2,R2*0.5);
@@ -14880,12 +14937,12 @@ function boom(t,now){
   }
   if(st==="cleave"){
     /* Borg: she comes apart on the lattice, cubes of fire */
-    flash(t.x,t.y,t.z,now,big*0.8,2);
+    deathFlash(t.x,t.y,t.z,now,big*0.8,2);
     for(const ax of [[1,0,0],[0,1,0],[0,0,1],[-1,0.4,0.3]]){
       const n=V.norm(ax),L2=R2*2.2;
       beams.push({a:[t.x-n[0]*L2*0.4,t.y-n[1]*L2*0.4,t.z-n[2]*L2*0.4],
-        b:[t.x+n[0]*L2,t.y+n[1]*L2,t.z+n[2]*L2],t0:now,spark:true});
-      flash(t.x+n[0]*R2,t.y+n[1]*R2,t.z+n[2]*R2,now+0.08,R2*0.6,2);
+        b:[t.x+n[0]*L2,t.y+n[1]*L2,t.z+n[2]*L2],t0:now,spark:true,ejecta:true});
+      deathFlash(t.x+n[0]*R2,t.y+n[1]*R2,t.z+n[2]*R2,now+0.08,R2*0.6,2);
     }
     cluster(3,R2,0,0.2,R2*0.4,R2*0.8);
     return;
@@ -14893,28 +14950,28 @@ function boom(t,now){
   if(st==="warp"){
     /* Federation: the core goes first — a white ring, then the hull */
     ring();
-    flash(t.x,t.y,t.z,now,big*0.5,2);
-    flash(t.x,t.y,t.z,now+0.28,big*1.6,2);
+    deathFlash(t.x,t.y,t.z,now,big*0.5,2);
+    deathFlash(t.x,t.y,t.z,now+0.28,big*1.6,2);
     sparks(12,t.x,t.y,t.z,now+0.28,R2*2.8);
     return;
   }
   if(st==="crystal"){
     /* Minbari: one clean annihilation, then bone-shards */
-    flash(t.x,t.y,t.z,now,big*1.8,2);
+    deathFlash(t.x,t.y,t.z,now,big*1.8,2);
     sparks(18,t.x,t.y,t.z,now,R2*3.4);
     dustBurst(t.x,t.y,t.z,0,0,0,8,now);
     return;
   }
   if(st==="tie"){
     /* Imperial: the cockpit blooms; the sails just fall off */
-    flash(t.x+cy*t.slen*0.15,t.y,t.z+sy*t.slen*0.15,now,big*0.9,2);
+    deathFlash(t.x+cy*t.slen*0.15,t.y,t.z+sy*t.slen*0.15,now,big*0.9,2);
     sparks(6,t.x,t.y,t.z,now,R2*1.6);
     if(verse){cluster(3,R2*1.2,0.05,0.2,R2*0.5,R2*1.1);}
     return;
   }
   if(st==="burst"){
     /* Shoal: a living thing ruptures — mist, not magazines */
-    flash(t.x,t.y,t.z,now,big*0.7,2);
+    deathFlash(t.x,t.y,t.z,now,big*0.7,2);
     dustBurst(t.x,t.y,t.z,0,4,0,24,now);
     dustBurst(t.x,t.y,t.z,cy*8,0,sy*8,14,now);
     cluster(6,R2*1.4,0,0.35,R2*0.3,R2*0.8);
@@ -14922,34 +14979,34 @@ function boom(t,now){
   }
   if(st==="shatter"){
     /* Lattice: a crystal failing along its grain */
-    flash(t.x,t.y,t.z,now,big*0.7,2);
+    deathFlash(t.x,t.y,t.z,now,big*0.7,2);
     sparks(22,t.x,t.y,t.z,now,R2*4.2);
     ring();
     return;
   }
   if(st==="flash"){
     /* Choir: she simply becomes light */
-    flash(t.x,t.y,t.z,now,big*1.9,2);
+    deathFlash(t.x,t.y,t.z,now,big*1.9,2);
     cluster(4,R2*0.8,0,0.15,R2*0.4,R2*0.9);
     return;
   }
   if(st==="cloakpop"){
     /* Yautja: the shimmer fails, then the hunter burns */
     sparks(16,t.x,t.y,t.z,now,R2*2.0);
-    flash(t.x,t.y,t.z,now+0.12,big*1.1,2);
+    deathFlash(t.x,t.y,t.z,now+0.12,big*1.1,2);
     cluster(5,R2,0.12,0.35,R2*0.5,R2*1.2);
     return;
   }
   if(st==="fossil"){
     /* Engineers: she calcifies, then cracks */
     cluster(8,R2*1.6,0,0.9,R2*0.3,R2*0.7);
-    flash(t.x,t.y,t.z,now+0.85,big*1.15,2);
+    deathFlash(t.x,t.y,t.z,now+0.85,big*1.15,2);
     sparks(8,t.x,t.y,t.z,now+0.85,R2*1.8);
     return;
   }
   if(st==="bronze"){
     /* Mondoshawan: a muted gold bloom, no shrapnel */
-    flash(t.x,t.y,t.z,now,big*1.2,2);
+    deathFlash(t.x,t.y,t.z,now,big*1.2,2);
     cluster(3,R2,0,0.2,R2*0.5,R2*0.9);
     return;
   }
@@ -14958,18 +15015,18 @@ function boom(t,now){
     for(let i=0;i<7;i++){
       const u=i/6-0.5;
       const bx=t.x+cy*u*t.slen*0.9,bz=t.z+sy*u*t.slen*0.9;
-      flash(bx,t.y,bz,now+i*0.09,R2*(0.8+Math.random()*0.9),2);
+      deathFlash(bx,t.y,bz,now+i*0.09,R2*(0.8+Math.random()*0.9),2);
       sparks(3,bx,t.y,bz,now+i*0.09,R2*1.4);
     }
-    flash(t.x,t.y,t.z,now+0.62,big*1.1,2);
+    deathFlash(t.x,t.y,t.z,now+0.62,big*1.1,2);
   }else if(verse===1){
-    flash(t.x,t.y,t.z,now,big,2);
+    deathFlash(t.x,t.y,t.z,now,big,2);
     cluster(5,R2*1.6,0,0.28,R2*0.9,R2*1.8);
     sparks(8,t.x,t.y,t.z,now,R2*2.2);
   }else{
-    flash(t.x,t.y,t.z,now,big*0.6,2);
+    deathFlash(t.x,t.y,t.z,now,big*0.6,2);
     sparks(5,t.x,t.y,t.z,now,R2*1.5);
-    flash(t.x,t.y,t.z,now+0.34,big*1.5,2);
+    deathFlash(t.x,t.y,t.z,now+0.34,big*1.5,2);
     sparks(14,t.x,t.y,t.z,now+0.34,R2*2.8);
   }
 }
@@ -16588,7 +16645,7 @@ function simStep(now,dt){
   collide(now);
   if(showSensors&&sel!=null&&ships[sel]&&!ships[sel].dead)drawBattleSensors(ships[sel],now);
   beams=beams.filter(b2=>now-b2.t0<(b2.coherent?b2.life:b2.ion?(b2.fo?2.15:1.55):b2.fo?(b2.arc?1.4:1.8):b2.rail?0.38:b2.arc?0.22:b2.stun?0.45:b2.spark?0.42:b2.phaser?0.5:b2.cut?0.55:b2.turbo?0.38:b2.pulse?0.18:b2.heavy?0.62:0.16));
-  if(flashes.length>1400)flashes.splice(0,flashes.length-1400);
+  if(flashes.length>MAX_FLASHES)flashes.length=MAX_FLASHES;
 }
 function stepBattleWrecks(now,dt){
   uploadDebris(now);
@@ -17305,8 +17362,10 @@ function frame(nowMs){
     /* explosion sparks: ember streaks, no faction colour */
     {
       const sarr=[];
-      for(const b of beams)if(b.spark&&b.t0<=now)
-        sarr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
+      for(const b of beams)if(b.spark&&b.t0<=now){
+        if(b.ejecta){const u=Math.min(1,(now-b.t0)/.42),tail=Math.max(0,u-.12);for(const f of [tail,u])for(let j=0;j<3;j++)sarr.push(b.a[j]+(b.b[j]-b.a[j])*f);}
+        else sarr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
+      }
       if(sarr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
         gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(sarr),gl.STREAM_DRAW);
@@ -17530,18 +17589,18 @@ function frame(nowMs){
     gl.depthMask(true);gl.disable(gl.BLEND);
   }
   /* flashes: arrivals, impacts, deaths */
-  if(flashes.length){
-    const live=[];
-    for(const f2 of flashes)if(now-f2.t0<(f2.c>2.5?2.15:0.8))live.push(f2);
-    flashes=live;
-    if(live.length){
-      const nfl=Math.min(live.length,1600);
+  {
+    let kept=0;for(let i=0;i<flashes.length;i++){const f=flashes[i];if(now-f.t0<effectLife(f.c))flashes[kept++]=f;}flashes.length=kept;
+    const live=flashes;
+    {
+      const nfl=Math.min(live.length,MAX_FLASHES);
       for(let i=0;i<nfl;i++){
         const f2=live[i];
         flPool[i*7]=f2.x;flPool[i*7+1]=f2.y;flPool[i*7+2]=f2.z;flPool[i*7+3]=f2.t0;
         flPool[i*7+4]=f2.size;flPool[i*7+5]=f2.c;flPool[i*7+6]=f2.seed||0;
       }
-      const arr=flPool.subarray(0,nfl*7);
+      const totalEffects=appendEngineBurns(now,FRP,nfl);
+      const arr=flPool.subarray(0,totalEffects*7);
       gl.useProgram(flashProg);
       gl.uniformMatrix4fv(FU.vp,false,m);
       gl.uniform1f(FU.t,now);
@@ -17552,7 +17611,7 @@ function frame(nowMs){
       gl.bindVertexArray(flVao);
       gl.bindBuffer(gl.ARRAY_BUFFER,flVbo);
       gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STREAM_DRAW);
-      gl.drawArrays(gl.POINTS,0,live.length);
+      gl.drawArrays(gl.POINTS,0,totalEffects);
       gl.depthMask(true);gl.disable(gl.BLEND);
     }
   }
