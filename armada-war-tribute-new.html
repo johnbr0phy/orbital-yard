@@ -15932,13 +15932,8 @@ function fireIonFrom(g,side,now,lock){
 }
 function ionWarning(lock,g,now){
   if(now-lock.last<.15)return;lock.last=now;
-  const m=weaponMuzzle(g,lock.muz||fireLocal(g),now),p=lock.point;
+  const m=weaponMuzzle(g,lock.muz||fireLocal(g),now);
   flash(m[0],m[1],m[2],now,60+140*(now-lock.started)/(lock.fire-lock.started),4);
-  for(let i=0;i<20;i++){
-    const a=i/20*Math.PI*2,b=(i+.7)/20*Math.PI*2;
-    beams.push({a:[p[0]+Math.cos(a)*lock.radius,p[1],p[2]+Math.sin(a)*lock.radius],
-      b:[p[0]+Math.cos(b)*lock.radius,p[1],p[2]+Math.sin(b)*lock.radius],t0:now,spark:true});
-  }
 }
 function megaStep(s,now,dt){
   battleAI.moveCapital(s,now,dt);
