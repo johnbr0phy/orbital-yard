@@ -7344,163 +7344,65 @@ var rebCorvette=function(parts,L){
   });
 };
 
-/* ---- Nebulon-B: two ships and the courage between them. The boom
-   is laid as its own run so she breaks where she always breaks.
-   ESB Redemption: 300 × 72 × 166 m. Stacked forward blade, thin
-   boom, wide aft house with seven bells; the mast pins the height. */
-var rebNebulon=function(parts,L){
-  const s=L/300;
-  /* chamfered slab — vertices reach hw, hh, so the pins are honest */
-  const blk=(x,cy,hw,hh)=>{
-    const f=0.93;
-    return {pts:[
-      [x,cy-hh*f, hw],[x,cy-hh, hw*f],[x,cy-hh,-hw*f],[x,cy-hh*f,-hw],
-      [x,cy+hh*f,-hw],[x,cy+hh,-hw*f],[x,cy+hh, hw*f],[x,cy+hh*f, hw]
-    ]};
+// Reference-led silhouette: upper bow, narrow descending blade, exposed boom,
+// compact machinery stern. Alternate assemblies are speculative, not canon.
+var rebNebulon=function(parts,L,layout=0){
+  const k=L/300,put=p=>parts.push(p);
+  const box=(x,y,z,hx,hy,hz)=>put({k:'box',c:[x*k,y*k,z*k],u:[hx*k,0,0],v:[0,hy*k,0],w:[0,0,hz*k]});
+  const beam=(a,b,r)=>put({k:'capsule',a:a.map(v=>v*k),b:b.map(v=>v*k),r:r*k});
+  const oval=(x0,x1,y,z,r,flat=1)=>put({k:'lathe',c:[x0*k,y*k,z*k],axis:[1,0,0],ell:[1,flat],prof:[[0,r*.25],[(x1-x0)*.14,r*.85],[(x1-x0)*.42,r],[(x1-x0)*.80,r*.82],[x1-x0,r*.13]].map(q=>q.map(v=>v*k))});
+  const loft=rows=>put({k:'loft',sec:rows.map(([x,y,w,h])=>rebOct(x*k,y*k,w*k,h*k))});
+  const front=layout===1?12:0,fx=x=>x+front;
+  // Flattened rounded upper hull; the descending blade occupies only its rear third.
+  oval(fx(40),150,22,0,18,1.10);
+  loft([[fx(42),17,9,12],[fx(62),22,17,19],[fx(85),25,17,18],[fx(112),25,13,12],[148,24,2,4]]);
+  for(const z of [-1,1]){
+    oval(fx(52),fx(126),17,z*13,5,1.1);
+    beam([fx(49),34,z*10],[fx(111),35,z*8],1.3);
+  }
+  // Swept vertical keel: shoulders, waist and a narrow foot, rather than a solid brick.
+  const blade=(z,depth,width)=>{
+    const rows=[[fx(64),27,20,13],[fx(78),-14,19,11],[fx(82),-51,15,8],[fx(84),-depth,8,4]];
+    put({k:'loft',sec:rows.map(([x,y,hx,hz])=>({pts:[[ (x-hx)*k,y*k,(z-hz*width)*k],[(x+hx)*k,y*k,(z-hz*width)*k],[(x+hx)*k,y*k,(z+hz*width)*k],[(x-hx)*k,y*k,(z+hz*width)*k]]}))});
   };
-  /* ---- forward stacked blade: a cleaver, not a gem. Bow face pins
-     +X at 150 m; keel station pins ymin at −52 m ---- */
-  parts.push({k:"loft",sec:[
-    blk( 50*s, 20*s, 11.5*s, 48*s),
-    blk( 68*s, 14*s, 15.0*s, 60*s),
-    blk( 90*s, 13*s, 17.0*s, 65*s),
-    blk(118*s, 14*s, 16.4*s, 62*s),
-    blk(140*s, 16*s, 12.8*s, 58*s),
-    blk(150*s, 18*s,  8.5*s, 54*s)
-  ]});
-  parts.push({k:"box",c:[149.55*s,18*s,0],
-    u:[0.45*s,0,0],v:[0,50*s,0],w:[0,0,7.6*s]});
-  /* roof plate — a deck, not a dome */
-  parts.push({k:"box",c:[96*s,76.6*s,0],
-    u:[32*s,0,0],v:[0,1.5*s,0],w:[0,0,14.2*s]});
-  parts.push({k:"box",c:[90*s,-51.4*s,0],
-    u:[20*s,0,0],v:[0,0.60*s,0],w:[0,0,8.0*s]});
-  /* deck bands wrap the slab so the side reads as stacked cities */
-  for(const [y,h,x,hx,hz] of [
-    [70, 1.8,  96, 36, 16.4],
-    [48, 1.5,  98, 38, 16.6],
-    [24, 1.4,  98, 40, 16.8],
-    [ 2, 1.4,  96, 38, 16.6],
-    [-22,1.5,  92, 34, 16.0],
-    [-44,1.7,  88, 28, 14.8]
-  ]) parts.push({k:"box",c:[x*s,y*s,0],
-      u:[hx*s,0,0],v:[0,h*s,0],w:[0,0,hz*s]});
-  /* ventral hangar as a boxy chin in the boom-side notch */
-  parts.push({k:"box",c:[64*s,-34*s,0],
-    u:[12*s,0,0],v:[0,8*s,0],w:[0,0,9.5*s]});
-  parts.push({k:"box",c:[58*s,-28*s,0],
-    u:[6*s,0,0],v:[0,4.5*s,0],w:[0,0,7.0*s]});
-  /* stacked side modules — terraces proud of the blade */
-  rebMirRun(parts,()=>{
-    parts.push({k:"box",c:[108*s, 36*s, 18.6*s],
-      u:[22*s,0,0],v:[0,8.5*s,0],w:[0,0,3.6*s]});
-    parts.push({k:"box",c:[ 96*s,  8*s, 18.8*s],
-      u:[24*s,0,0],v:[0,9.0*s,0],w:[0,0,4.0*s]});
-    parts.push({k:"box",c:[ 88*s,-20*s, 17.8*s],
-      u:[18*s,0,0],v:[0,7.5*s,0],w:[0,0,3.2*s]});
-  });
-  /* bridge terrace, halfway down the fore, not a tower */
-  parts.push({k:"box",c:[124*s, 18*s, 0],
-    u:[14*s,0,0],v:[0,7.0*s,0],w:[0,0,14.0*s]});
-  parts.push({k:"box",c:[132*s, 28*s, 0],
-    u:[7.0*s,0,0],v:[0,3.4*s,0],w:[0,0,9.0*s]});
-  /* XI7s on the flanks — inset, they do not pin */
-  rebMirRun(parts,()=>{
-    for(const [x,y] of [[134,6],[100,40],[82,-24]]){
-      parts.push({k:"box",c:[x*s,y*s,18.2*s],
-        u:[2.6*s,0,0],v:[0,1.7*s,0],w:[0,0,2.0*s]});
-      parts.push({k:"lathe",c:[x*s,y*s,20.2*s],axis:[0,0,1],prof:[
-        [0,1.5*s],[1.1*s,1.7*s],[2.2*s,0.7*s]
-      ]});
-    }
-  });
-  /* bow sensor farm, flush with the face */
-  parts.push({k:"tube",a:[146*s,40*s,0],b:[149.4*s,44*s,0],r1:0.60*s,r2:0.22*s});
-  rebMirRun(parts,()=>{
-    parts.push({k:"tube",a:[146*s,10*s,4.0*s],b:[149.2*s,8*s,4.2*s],r1:0.42*s,r2:0.16*s});
-  });
-  /* comms mast on the roof, aft of the peak — pins ymax at 114 m */
-  parts.push({k:"lathe",c:[80*s,78*s,0],axis:[0,1,0],prof:[
-    [0,2.8*s],[5*s,1.8*s],[18*s,0.95*s],[35.4*s,0.50*s],[36.0*s,0.08*s]
-  ]});
-  parts.push({k:"box",c:[80*s,109.2*s,0],
-    u:[0.65*s,0,0],v:[0,0.55*s,0],w:[0,0,6.4*s]});
-  rebMirRun(parts,()=>{
-    parts.push({k:"disc",c:[80*s,108.4*s,5.0*s],n:[0,0,1],r:2.6*s,ri:0.55*s});
-  });
-  /* a smaller radar dish on the bow roof */
-  parts.push({k:"lathe",c:[132*s,74*s,0],axis:[0,1,0],prof:[
-    [0,1.1*s],[4.5*s,0.7*s],[8.0*s,0.18*s]
-  ]});
-  parts.push({k:"disc",c:[132*s,82.2*s,0],n:[0,1,0],r:3.4*s,ri:0.6*s});
-  /* ---- the spine boom — daylight above it, daylight below it ---- */
-  parts.push({k:"loft",sec:[
-    rebOct(-70*s, 2.0*s, 5.5*s, 5.5*s),
-    rebOct(-10*s, 1.2*s, 4.6*s, 4.6*s),
-    rebOct( 50*s, 2.0*s, 5.5*s, 5.5*s)
-  ]});
-  parts.push({k:"box",c:[-68*s,2*s,0],
-    u:[3.0*s,0,0],v:[0,7.2*s,0],w:[0,0,7.2*s]});
-  parts.push({k:"box",c:[ 48*s,2*s,0],
-    u:[3.0*s,0,0],v:[0,7.2*s,0],w:[0,0,7.2*s]});
-  parts.push({k:"box",c:[-10*s,2*s,0],
-    u:[3.6*s,0,0],v:[0,6.4*s,0],w:[0,0,6.4*s]});
-  parts.push({k:"tube",a:[-68*s, 8.2*s, 3.0*s],b:[48*s, 8.0*s, 3.0*s],r1:1.05*s,r2:1.05*s});
-  parts.push({k:"tube",a:[-68*s,-4.5*s,-2.4*s],b:[48*s,-4.2*s,-2.4*s],r1:0.85*s,r2:0.85*s});
-  /* docking hardpoints — an X-wing hangs here in the last shot */
-  rebMirRun(parts,()=>{
-    parts.push({k:"box",c:[-8*s,-8.4*s,7.2*s],
-      u:[9*s,0,0],v:[0,1.3*s,0],w:[0,0,1.4*s]});
-    parts.push({k:"box",c:[18*s,-8.2*s,7.0*s],
-      u:[6*s,0,0],v:[0,1.2*s,0],w:[0,0,1.3*s]});
-  });
-  /* rescue pods on the boom — Andersson 1986f7b / ESB Redemption */
-  for(const x of [-40*s,-10*s,20*s])
-    parts.push({k:"capsule",a:[x,6.4*s,0],b:[x+9*s,6.4*s,0],r:2.1*s});
-  /* ---- aft engine house. Wall vertices pin the 72 m beam ---- */
-  parts.push({k:"loft",sec:[
-    blk(-132*s, 10*s, 36.0*s, 40*s),
-    blk(-112*s, 10*s, 35.4*s, 40*s),
-    blk( -90*s,  9*s, 26.0*s, 34*s),
-    blk( -70*s,  5*s, 13.5*s, 18*s)
-  ]});
-  parts.push({k:"box",c:[-131.2*s,10*s,0],
-    u:[1.0*s,0,0],v:[0,38*s,0],w:[0,0,35.2*s]});
-  /* ventral keel under the house — the outboard-motor skeg */
-  parts.push({k:"box",c:[-108*s,-32.4*s,0],
-    u:[16*s,0,0],v:[0,2.4*s,0],w:[0,0,9.0*s]});
-  /* deflector tower on the roof — the lump people take for a bridge */
-  parts.push({k:"box",c:[-104*s, 54*s, 0],
-    u:[12*s,0,0],v:[0,4.5*s,0],w:[0,0,10*s]});
-  parts.push({k:"lathe",c:[-104*s, 58.5*s, 0],axis:[0,1,0],prof:[
-    [0, 8.5*s],[4.5*s, 9.2*s],[10*s, 6.0*s],[14.5*s, 0.4*s]
-  ]});
-  /* discharge vanes, low on the house, inside the beam */
-  rebMirRun(parts,()=>{
-    parts.push({k:"box",c:[-100*s,-24*s, 30.2*s],
-      u:[18*s,0,0],v:[0,1.4*s,-0.2*s],w:[0,0.2*s,5.0*s]});
-    parts.push({k:"box",c:[-96*s, 22*s, 32.0*s],
-      u:[10*s,0,0],v:[0,8*s,0],w:[0,0,3.6*s]});
-  });
-  /* a pair of RH8s on the house flanks */
-  rebMirRun(parts,()=>{
-    parts.push({k:"box",c:[-96*s, 8*s, 32.4*s],
-      u:[3.2*s,0,0],v:[0,2.2*s,0],w:[0,0,2.4*s]});
-  });
-  /* seven Kuat Galaxy-15s, 2-3-2. Lathe bells pin xmin at −150 m */
-  const bell=(y,z,r)=>{
-    parts.push({k:"lathe",c:[-150*s,y,z],axis:[1,0,0],prof:[
-      [0, r*0.92],[2.2*s, r],[8.0*s, r*0.86],[18.0*s, r*0.52]
-    ]});
-    parts.push({k:"disc",c:[-132*s,y,z],n:[1,0,0],r:r*0.34,ri:r*0.12});
-  };
-  bell( 28*s,  18*s, 8.5*s);
-  bell( 28*s, -18*s, 8.5*s);
-  bell(  6*s,  24*s, 9.0*s);
-  bell(  6*s,   0,  11.0*s);
-  bell(  6*s, -24*s, 9.0*s);
-  bell(-16*s,  16*s, 8.0*s);
-  bell(-16*s, -16*s, 8.0*s);
+  const split=layout===3,depth=layout===4?95:layout===2?97:112;
+  if(split){blade(-13,101,.52);blade(13,101,.52);box(fx(80),-44,0,12,4,16);}else blade(0,depth,1);
+  // Distinct tiers of pods project beyond the keel edge and leave dark gaps.
+  const rows=layout===5?[-10,-31,-53,-75]:[-7,-25,-43,-64,-84];
+  for(let j=0;j<rows.length;j++)for(const side of [-1,1]){
+    const y=rows[j],z=side*(split?18:10),length=(layout===5?50:layout===2?57:42)-j*3+(side===1?5:-3);
+    if(layout===2){box(fx(79),y,z, length*.46,4.5,7);box(fx(79)+length*.43,y,z,1,3,5.2);}
+    else oval(fx(72)-length*.28,fx(72)+length*.72,y,z,layout===5?6.8:5.2,layout===5?1:.80);
+    beam([fx(72),y,0],[fx(72),y,z],2.6);
+    if(j%2===0)box(fx(63),y-6,z,9,1.2,6);
+  }
+  // Belly machinery and irregular foot extensions retain the downward taper.
+  for(const side of [-1,1]){oval(fx(65),fx(107),-90,side*8,4.2,.8);beam([fx(85),-94,side*5],[fx(95),-depth-3,side*4],1.5);}
+  if(layout===4)for(const y of [-8,-29,-50])for(const side of [-1,1])box(fx(82),y,side*12,19,8,2);
+  // Tall thin antenna at the forward shoulder, plus a shorter navigation mast.
+  put({k:'loft',sec:[{pts:[[fx(64)*k,37*k,-2*k],[fx(75)*k,37*k,-2*k],[fx(75)*k,37*k,2*k],[fx(64)*k,37*k,2*k]]},{pts:[[fx(70)*k,84*k,-.5*k],[fx(71)*k,84*k,-.5*k],[fx(71)*k,84*k,.5*k],[fx(70)*k,84*k,.5*k]]}]});
+  beam([fx(111),35,0],[fx(111),50,0],.7);
+  // High, thin connecting boom with narrow service conduits and collars.
+  loft([[-84,17,4.6,4.6],[-30,16,3.4,3.4],[fx(43),17,4.6,4.6]]);
+  for(const x of [-74,-24,fx(36)])box(x,17,0,2,5.5,5.5);
+  beam([-81,21,-3],[fx(43),21,-3],.9);beam([-81,13,3],[fx(43),13,3],.7);
+  if(layout===1)for(const z of [-1,1])beam([-79,17,z*4],[fx(40),17,z*4],1.2);
+  // Compact tapered engine house; layered plates follow its shrinking shoulders.
+  loft([[-134,12,25,20],[-120,12,26,23],[-102,13,21,18],[-81,17,7,7]]);
+  for(const z of [-1,1]){
+    for(let j=0;j<3;j++)box(-120+j*7,24-j*9,z*(21-j*2),10,2,4);
+    oval(-129,-100,-2,z*17,6,.8);
+    put({k:'panel',pts:[[-126*k,-6*k,z*19*k],[-107*k,-7*k,z*18*k],[-116*k,-38*k,z*17*k]],n:[0,0,1],th:1.2*k});
+  }
+  box(-111,35,0,8,2,6);beam([-111,37,0],[-111,48,0],1);box(-111,43,0,3,1,3);
+  // Seven bells seated in the stern transom, separated from weapon assemblies.
+  for(const [y,z,r] of [[24,-12,5.8],[24,12,5.8],[11,-18,6.2],[11,0,7.0],[11,18,6.2],[-3,-11,5.7],[-3,11,5.7]]){
+    put({k:'lathe',c:[-150*k,y*k,z*k],axis:[1,0,0],prof:[[0,r*.85],[2,r],[8,r*.75],[16,r*.48]].map(q=>q.map(v=>v*k)),refitPart:true});
+  }
+  // Small flank batteries: explicit barrels keep sensor and pod shapes unarmed.
+  for(const side of [-1,1])for(const [x,y,z] of [[fx(94),13,17],[fx(83),-38,16],[-115,18,25]]){
+    box(x,y,side*z,2,1.8,2);beam([x,y,side*z],[x+6,y,side*z],.6);
+  }
 };
 
 /* ---- the Mon Cal profiles: whales that chose a side ---- */
@@ -10766,6 +10668,8 @@ function applyFleetRefit(ship,race,seed,forced,drive){
   if(!ship||ship.meta?.hero||ship.meta?.klass==='BABYLON 5'||ship.meta?.refit)return ship;
   applyDriveLayout(ship,seed,drive);
   const R=mulberry32((seed^0x629ea735)>>>0),role=forced==null?Math.floor(R()*6):forced%6;
+  const nebulon=/NEBULON-B/.test(ship.meta.klass);
+  if(nebulon){ship.parts=[];rebNebulon(ship.parts,ship.meta.length,role);ship.meta.architecture=['ESCORT KEEL','EXTENDED BOOM','HANGAR KEEL','SPLIT KEEL','ARMORED KEEL','MEDICAL POD BANKS'][role];}
   const small=ship.meta.length<42,scale=small?.96+R()*.08:.82+R()*.36;
   ship.parts=ship.parts.filter(p=>!p.legacyKit);scaleRefit(ship.parts,scale);
   if(ship.muzzles)ship.muzzles=ship.muzzles.map(p=>p.map(v=>v*scale));
@@ -10794,7 +10698,7 @@ function applyFleetRefit(ship,race,seed,forced,drive){
   };
   const pod=(c,len,w,h)=>{put({k:'loft',sec:[{pts:[[c[0]-len*.5,c[1],c[2]-w*.55],[c[0]-len*.5,c[1]+h*.55,c[2]],[c[0]-len*.5,c[1],c[2]+w*.55],[c[0]-len*.5,c[1]-h*.25,c[2]]]},{pts:[[c[0],c[1],c[2]-w],[c[0],c[1]+h,c[2]],[c[0],c[1],c[2]+w],[c[0],c[1]-h*.25,c[2]]]},{pts:[[c[0]+len*.5,c[1],c[2]-w*.3],[c[0]+len*.5,c[1]+h*.3,c[2]],[c[0]+len*.5,c[1],c[2]+w*.3],[c[0]+len*.5,c[1]-h*.15,c[2]]]}]});};
   const station=(u,z=0)=>{let x=cx+L*u;if(ship.meta.ringW&&Math.abs(x-ship.meta.ringX)<ship.meta.ringW+L*.10)x=cx-L*.32;return root(x,cz+z);};
-  if(!small&&role){
+  if(!nebulon&&!small&&role){
     if(organic){
       // Sympathetic growth: broad carapace lobes / petal fins, never metal boxes.
       const count=role===4||role===5?3:role===3?1:2;
@@ -12111,7 +12015,7 @@ onmessage=e=>{
       ringW:ship.meta.ringW||0,hero:!!(j.hero||(ship.meta&&ship.meta.hero)),
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length,
         beam:ship.meta.beam||0,height:ship.meta.height||0,hero:!!(ship.meta&&ship.meta.hero),
-        refit:ship.meta.refit,structure:ship.meta.structure,fo:ship.meta.fo,unique:!!ship.meta.unique,crew:ship.meta.crew}});
+        refit:ship.meta.refit,structure:ship.meta.structure,architecture:ship.meta.architecture,fo:ship.meta.fo,unique:!!ship.meta.unique,crew:ship.meta.crew}});
     tr.push(m.v.buffer,m.i.buffer);
   }
   postMessage({kind:"batch",genId:d.genId,out},tr);
@@ -16733,7 +16637,7 @@ function card(id){
   const s=ships[id];
   el.style.display="block";
   s.thAt=0;s.thLine=null;
-  el.innerHTML="<span id=\"cardX\" title=\"close\">×</span><h2>"+(s.hero?"★ ":"")+s.meta.desig+"</h2><div class=\"k\">"+s.meta.klass+(s.meta.refit?" · "+s.meta.refit.role:"")+(s.meta.structure?" · "+s.meta.structure.name:"")+
+  el.innerHTML="<span id=\"cardX\" title=\"close\">×</span><h2>"+(s.hero?"★ ":"")+s.meta.desig+"</h2><div class=\"k\">"+s.meta.klass+(s.meta.refit?" · "+s.meta.refit.role:"")+(s.meta.structure?" · "+s.meta.structure.name:"")+(s.meta.architecture?" · "+s.meta.architecture:"")+
     (s.hero?" · HERO":"")+
     " · <span id=\"cmd\">"+(s.mood||"")+"</span>"+
     " · "+RACE_DEFS[s.race].name+(s.race!==sideRace[s.side]?" · ANSWERING "+SIDE_NAME[s.side]+"'S CALL":"")+
@@ -17064,6 +16968,7 @@ function hullFinish(s){
   if(r===6&&/X-WING|T-65|YT-1300/.test(klass)){pattern=6;trim=[.60,.17,.13];}
   if(r===6&&/Y-WING/.test(klass)){trim=[.82,.59,.16];pattern=1;}
   if(r===6&&/A-WING/.test(klass)){color=[.73,.24,.18];trim=[.85,.82,.69];pattern=6;}
+  if(r===6&&/NEBULON-B/.test(klass)){color=[.64,.65,.63];trim=[.43,.45,.44];accent=[.38,.72,.86];pattern=3;gloss=.24;}
   if(r===6&&/MON CAL|MC[0-9]/.test(klass)){color=[.67,.66,.58];trim=[.45,.39,.28];pattern=3;}
   if(r===9&&/WHITE STAR/.test(klass)){color=[.68,.62,.82];trim=[.26,.40,.52];accent=[.42,.80,.77];surface=4;pattern=2;gloss=.8;}
   if(r===9&&/STARFURY|THUNDERBOLT/.test(klass)){color=[.69,.72,.72];trim=[.71,.38,.12];pattern=1;}
