@@ -9,3 +9,5 @@ Select an arrived ship, then Take control. W/S changes throttle; A/D turns; up/d
 Validation: deterministic crew diversity across every fleet, independent panel closing/follow state, camera presets, player control through real simulation ticks, weapon and damage regressions, and a bounded 26-ship combat exchange. Layout and crew styles inspected in isolated Canvas/HTML previews; no large-fleet GPU stress run.
 
 Latest validation: helm/crew, Earthforce capital mix, watch, propulsion, mount seating, rendering, effects, weapons, hull damage, systems, scaling and uniqueness suites passed. A broader battle-ai suite exceeded an 8-second resource limit and was stopped; it did not report a test assertion failure. HUD, captain diversity and class silhouettes were checked in isolated previews. Full-fleet GPU performance was not benchmarked.
+
+Physical worlds: C toggles cruise (also available on touch). The HUD reports nearest-world surface distance. Cruise slows on approach and swept contacts stop the ship outside the surface. Braking, reducing throttle and firing cancel cruise; returning to autopilot resets it.

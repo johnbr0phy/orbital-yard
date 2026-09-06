@@ -20,13 +20,30 @@
   if(style===3){body(5,angle-.27,el+.12,.82,5.6);body(5,angle+.12,el+.20,.57,5.9);main=body(2,angle+.55,el-.26,.68);moons(main,2);}
   if(style===4){main=body(2,angle,el,1.27);moons(main,3);body(0,angle-.68,el+.14,.45,6,{rings:true});}
   if(style===5){main=body(3,angle+.1,el,1.1,5,{rings:R()<.6});moons(main,7);}
-  if(style===6){body(5,angle,el,1.12,5.8);main=body(1,angle+.035,el-.018,.82,4.4);moons(main,2);}
+  if(style===6){body(5,angle,el,1.12,6.3);main=body(1,angle+.035,el-.018,.75,4.1);moons(main,2);}
   if(style===7){main=body(4,angle+.15,el,.98);body(5,angle-.48,el+.2,.62,6);body(4,angle+.6,el-.27,.37);moons(main,3);}
   // Secondary worlds give the opposite fleet and the tactical overhead camera a sky too.
   body(pick([0,1,2,3]),angle+Math.PI,el+.12,.72+R()*.30,5.5,{rings:R()<.35});
   body(pick([0,1,3]),angle,-1.05,.65+R()*.32,5.4);
+  // Physical worlds cannot intersect. Preserve the sky layout while separating nearby moons.
+  for(let pass=0;pass<12;pass++)for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++){
+   const a=bodies[i],b=bodies[j],v=b.p.map((x,k)=>x-a.p[k]),d=Math.hypot(...v),need=a.radius+b.radius+.08;
+   if(d<need)b.p=b.p.map((x,k)=>x+(d?v[k]/d:k===0?1:0)*(need-d));
+  }
+  bodies.forEach((b,i)=>b.name=(b.moon?'Moon':['Gas giant','Rocky world','Ocean world','Ice world','Volcanic world','Star'][b.kind])+' '+String(i+1).padStart(2,'0'));
   const sun=bodies.find(b=>b.kind===5),light=sun?sun.p:[-3,5,1];
   return {seed:seed>>>0,style,name:names[style],bodies,light,starCount:1800+Math.floor(R()*1200),starTint:pick([[.76,.84,1],[1,.89,.74],[.84,.92,1]])};
  }
- const api={generate};if(typeof module==='object')module.exports=api;else root.ArmadaSystems=api;
+
+ function worlds(system,scale){return system.bodies.map(b=>({...b,center:b.p.map(v=>v*scale),radius:b.radius*scale}));}
+ function nearest(bodies,p){let result=null;for(const b of bodies){const distance=Math.hypot(...p.map((v,i)=>v-b.center[i]))-b.radius;if(!result||distance<result.distance)result={body:b,distance};}return result;}
+ // Swept sphere contact prevents high-speed cruise tunnelling through a world.
+ function move(bodies,start,end,margin=0){
+  let p=start.slice();for(let pass=0;pass<3;pass++){let changed=false;for(const b of bodies){const v=p.map((x,i)=>x-b.center[i]),d=Math.hypot(...v),r=b.radius+margin;if(d<r){p=b.center.map((x,i)=>x+(d?v[i]/d:i===1?1:0)*(r+.05));changed=true;}}if(!changed)break;}
+  const v=end.map((x,i)=>x-p[i]),a=v.reduce((n,x)=>n+x*x,0);let hit=null,t=1;
+  if(a>1e-12)for(const body of bodies){const o=p.map((x,i)=>x-body.center[i]),r=body.radius+margin,b=2*o.reduce((n,x,i)=>n+x*v[i],0),c=o.reduce((n,x)=>n+x*x,0)-r*r,disc=b*b-4*a*c;
+   if(disc<0)continue;const entry=(-b-Math.sqrt(disc))/(2*a);if(entry>=0&&entry<t){t=entry;hit=body;}}
+  return {position:p.map((x,i)=>x+v[i]*Math.max(0,t-(hit?.000001:0))),hit};
+ }
+ const api={generate,worlds,nearest,move};if(typeof module==='object')module.exports=api;else root.ArmadaSystems=api;
 })(typeof window==='object'?window:globalThis);
