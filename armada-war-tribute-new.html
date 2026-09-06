@@ -15415,6 +15415,7 @@ function pinBeams(now){
     const s=ships[b.from];
     if(!s||s.dead||!s.vao){if(b.coherent)b.t0=-Infinity;continue;}
     if(b.coherent){
+      if(b.manual){b.a=weaponMuzzle(s,b.muz,now);continue;}
       const dw=b.debrisUid==null?null:wrecks.find(w=>w.uid===b.debrisUid&&!w.gone&&!w.dustT);
       const t=b.debrisUid==null?ships[b.target]:(dw?debrisProxy(dw):null);
       if(!t||t.dead||t.grace||!mountFaces(s,t,b.muz,now)){b.t0=-Infinity;continue;}
@@ -17047,6 +17048,37 @@ function pilotTarget(s,cycle=false){
   if(cycle){const i=candidates.indexOf(current);current=candidates[(i+1)%candidates.length];}
   if(!current)current=candidates[0];s.pilotTarget=current?.t.id??null;return current;
 }
+// Player fire is a physical shot, not an AI request that requires a target lock.
+function pilotFire(s,now){
+  if(s.dead||!s.arr||s.grace)return false;
+  const profile=weaponProfile(s),forward=[Math.cos(s.yaw)*Math.cos(s.pitch||0),Math.sin(s.pitch||0),Math.sin(s.yaw)*Math.cos(s.pitch||0)];
+  const range=Math.max(1800,Math.min(9000,s.slen*3)),aim=V.add([s.x,s.y,s.z],V.mul(forward,range+Math.max(s.nose||0,s.slen*.5)));
+  const guide={x:aim[0],y:aim[1],z:aim[2]},muz=weaponMount(s,guide,now);
+  if(!muz){s.pilotWeapon='NO FORWARD MOUNT';return false;}
+  const ion=ionState.some(lock=>lock&&lock.gun===s.id&&lock.muz&&lock.muz.join(',')===muz.join(','));
+  if(ion){s.pilotWeapon='MOUNT CHARGING';return false;}
+  if(!profile.fixed&&!RACE_DEFS[s.race].unique){
+    const ready=turretTrack(s,muz,aim,now,-1),track=s.weaponTracks.get(muz.join(','));track.holdPoint=aim;track.holdUntil=now+.15;
+    if(!ready){s.pilotWeapon='TURRETS ALIGNING';return false;}
+  }
+  if(now<(s.pilotShot||0)){s.pilotWeapon='RECHARGING';return false;}
+  const o=weaponMuzzle(s,muz,now),dir=profile.fixed||RACE_DEFS[s.race].unique?forward:barrelFrame(s,muz,now).dir;
+  const damage=profile.fixed?.14:.6;
+  if(profile.mode==='bolt'){
+    tracers.push({x:o[0],y:o[1],z:o[2],vx:dir[0]*profile.speed,vy:dir[1]*profile.speed,vz:dir[2]*profile.speed,
+      t0:now,life:Math.min(8,range/profile.speed),side:s.side,race:s.race,from:s.id,dead:false,energy:true,
+      damage,heavy:false,width:profile.width,col:profile.color});
+  }else{
+    const end=V.add(o,V.mul(dir,range));let victim=null,u=1;
+    for(const t of foeCache[1-s.side]){if(t.dead||!t.arr||t.grace)continue;const hit=weaponSegmentHit(o,end,t,now,profile.width);if(hit!==null&&hit<u){u=hit;victim=t;}}
+    const debris=firstDebrisHit(o,end,now,profile.width,s.id);
+    if(debris&&debris.u<u){u=debris.u;victim=null;damageDebris(debris.w,damage,now,lerp3(o,end,u));}
+    const hit=lerp3(o,end,u);pushFork(s,muz,o,hit,{t0:now,target:null,manual:true,life:profile.duration,wid:profile.width,col:profile.color});
+    if(victim)weaponImpact(s,victim,now,hit,damage,false);
+  }
+  s.lastFire=now;s.weaponShot=(s.weaponShot||0)+1;s.pilotWeapon='FIRING';
+  s.cool=profile.mode==='beam'?profile.duration+.2:profile.fixed?.14:.32;s.pilotShot=now+s.cool;return true;
+}
 function pilotStep(s,now,dt){
   const turn=Math.min(1.6,Math.max(.045,s.turn||.3)),limit=(v,a,b)=>Math.max(a,Math.min(b,v));
   const steer=limit((keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0)+helmPointer.x,-1,1);
@@ -17060,9 +17092,8 @@ function pilotStep(s,now,dt){
   if(keys.has(' ')||keys.has('x')||keys.has('s'))s.pilotCruise=false;
   const near=worldClearance([s.x,s.y,s.z]),normalCap=s.spdMax||s.spd||20,cap=s.pilotCruise?Math.min(Math.max(normalCap*30,2400),Math.max(normalCap,(near?.distance??1e6)*.25)):normalCap,accel=keys.has('x')?3:1.5;s.v=(s.v||0)+(cap*s.pilotThrottle*(boost?1.65:1)-(s.v||0))*(1-Math.exp(-dt*accel));s.vy=Math.sin(s.pitch)*s.v;s.roll+=( -steer*.22-(s.roll||0))*response;
   const from=[s.x,s.y,s.z],to=[s.x+Math.cos(s.yaw)*Math.cos(s.pitch)*s.v*dt,s.y+s.vy*dt,s.z+Math.sin(s.yaw)*Math.cos(s.pitch)*s.v*dt],contact=worldMove(from,to,Math.max(s.nose||0,s.slen*.6)+4);[s.x,s.y,s.z]=contact.position;if(contact.hit){s.v=0;s.vy=0;s.pilotThrottle=0;s.pilotCruise=false;}s.mood='PLAYER';
-  if(keys.has(' ')&&now>=(s.pilotShot||0)){
-    s.pilotShot=now+.3;const target=pilotTarget(s);if(target&&target.dot>.92)raceFire(s,target.t,now,0,0,0);
-  }
+  if(keys.has(' '))pilotFire(s,now);else s.pilotWeapon=now<(s.pilotShot||0)?'RECHARGING':'READY';
+
   leakHullDust(s,now);
 }
 function updateCrewPortrait(now,force=false){
@@ -17078,7 +17109,8 @@ function drawFlightHUD(now){
   const target=pilotTarget(s),canvas=document.getElementById('flightInstruments'),c=canvas.getContext('2d');
   document.getElementById('flightReadouts').textContent='SPEED  '+Math.round(s.v||0)+' m/s\nTHROTTLE  '+Math.round(s.pilotThrottle*100)+'%\nBOOST  '+Math.round((s.pilotBoost??1)*100)+'%'+(s.pilotBoosting?'  BURN':'')+'\nHULL  '+Math.max(0,Math.round(s.hp/s.hpMax*100))+'%';
   const nearWorld=worldClearance([s.x,s.y,s.z]);if(nearWorld)document.getElementById('flightReadouts').textContent+='\n'+(s.pilotCruise?'CRUISE':'C · CRUISE')+'\n'+nearWorld.body.name+'\n'+Math.max(0,nearWorld.distance/1000).toFixed(1)+' km to surface';
-  const aim=target&&target.dot>.92;document.getElementById('flightTarget').textContent=target?target.t.meta.desig+'\n'+Math.round(target.distance)+' m · '+Math.max(0,Math.round(target.t.hp/target.t.hpMax*100))+'% hull\n'+(aim?'IN FIRING ARC · Space':'TURN TO TARGET'):'No target in range\nT · cycle targets';
+  document.getElementById('flightReadouts').textContent+='\nWEAPONS  '+(now-(s.lastFire??-100)<.12?'FIRING':s.pilotWeapon||'READY');
+  const aim=target&&target.dot>.92;document.getElementById('flightTarget').textContent=target?target.t.meta.desig+'\n'+Math.round(target.distance)+' m · '+Math.max(0,Math.round(target.t.hp/target.t.hpMax*100))+'% hull\n'+(aim?'IN FIRING ARC · Space':'TURN TO TARGET'):'MANUAL FIRE · Hold Space\nT · cycle targets';
   if(!c||!c.clearRect)return;const w=Math.min(1280,cvs.width),h=Math.round(w*cvs.height/cvs.width);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}c.clearRect(0,0,w,h);c.strokeStyle='#a7ced4';c.fillStyle='#c2dde1';c.lineWidth=1;c.font='12px monospace';
   c.save();c.translate(w/2,h/2);c.rotate((s.roll||0)*.6);
   for(let deg=-60;deg<=60;deg+=15){const y=(s.pitch-deg*Math.PI/180)*h*.7;if(Math.abs(y)>h*.25)continue;c.globalAlpha=deg===0?.8:.35;c.beginPath();c.moveTo(-95,y);c.lineTo(-35,y);c.moveTo(35,y);c.lineTo(95,y);c.stroke();c.fillText(String(deg),102,y+4);}c.restore();c.globalAlpha=.8;
@@ -17093,7 +17125,7 @@ function releaseHelmPointer(){helmPointer.id=null;helmPointer.x=helmPointer.y=0;
 cvs.addEventListener('pointerup',releaseHelmPointer);cvs.addEventListener('pointercancel',releaseHelmPointer);cvs.addEventListener('lostpointercapture',releaseHelmPointer);
 document.getElementById('flightCruise').onclick=()=>{if(pilotId!=null){const s=ships[pilotId];s.pilotCruise=!s.pilotCruise;s.pilotThrottle=1;}};
 document.getElementById('flightNext').onclick=()=>{if(pilotId!=null)pilotTarget(ships[pilotId],true);};document.getElementById('flightExit').onclick=leaveHelm;document.getElementById('helmLeave').onclick=leaveHelm;
-addEventListener('blur',releaseHelmPointer);
+addEventListener('blur',()=>{keys.clear();releaseHelmPointer();});
 for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>setWatchView(b.dataset.view);
 for(const b of document.querySelectorAll('[data-flight]')){b.onpointerdown=e=>{e.preventDefault();keys.add(b.dataset.flight);b.setPointerCapture(e.pointerId);};b.onpointerup=b.onpointercancel=()=>keys.delete(b.dataset.flight);}
 addEventListener('blur',()=>keys.clear());
@@ -17159,7 +17191,7 @@ cvs.addEventListener("wheel",e=>{
 },{passive:false});
 addEventListener("keydown",e=>{
   if(e.target&&/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
-  const k=e.key.toLowerCase();
+  const k=e.code==='Space'?' ':e.key.toLowerCase();
   if(pilotId!=null&&[' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
   keys.add(k);
   if(pilotId!=null&&k==='c'&&!e.repeat){const s=ships[pilotId];s.pilotCruise=!s.pilotCruise;s.pilotThrottle=1;}
@@ -17180,7 +17212,7 @@ addEventListener("keydown",e=>{
     else setWatchView("all");
   }
 });
-addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
+addEventListener("keyup",e=>keys.delete(e.code==='Space'?' ':e.key.toLowerCase()));
 /* five seconds parked after the war begins; the first flight key ends it.
    Tribute opens on the muster sheet, so the clock does not start on load. */
 const wasdHint=(()=>{

@@ -11,7 +11,7 @@ const source = html.slice(html.indexOf('\n<script>\n') + 10, html.lastIndexOf('<
 new vm.Script(source, {filename: 'armada-war-tribute.html'});
 
 function loadBattle() {
-  const elements = new Map(), jobs = [], blobs = new Map();
+  const elements = new Map(), jobs = [], blobs = new Map(), events = new Map();
   const noop = () => {};
   const gl = new Proxy({}, {get: (o, k) => {
     if (k in o) return o[k];
@@ -37,7 +37,7 @@ function loadBattle() {
     location:{hostname:'localhost',protocol:'http:',search:'',pathname:'/'},
     localStorage:storage,sessionStorage:storage,URLSearchParams,
     navigator:{hardwareConcurrency:3},innerWidth:1280,innerHeight:720,devicePixelRatio:1,
-    addEventListener:noop,requestAnimationFrame:noop,cancelAnimationFrame:noop,
+    addEventListener:(type,fn)=>{if(!events.has(type))events.set(type,[]);events.get(type).push(fn);},requestAnimationFrame:noop,cancelAnimationFrame:noop,
     setTimeout:noop,clearTimeout:noop,setInterval:noop,clearInterval:noop,
     matchMedia:()=>({matches:false,addEventListener:noop}),
     Blob:class {constructor(parts){this.source=parts.join('');}},
@@ -81,7 +81,7 @@ function loadBattle() {
       if(jobs.length)flush();
     }
   }
-  return {run,start,step,flush,context,elements};
+  return {run,start,step,flush,context,elements,dispatch:(type,event={})=>{for(const fn of events.get(type)||[])fn(event);}};
 }
 module.exports = {loadBattle};
 if(require.main===module){
