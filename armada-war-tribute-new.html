@@ -10939,6 +10939,8 @@ function armShip(ship,race,hulls){
      and do not bolt a pair of side plates onto an ace. */
   const parts=ship.parts;if(!parts||!parts.length)return;
   if(ship.meta&&ship.meta.hero&&ship.muzzles&&ship.muzzles.length)return;
+  // Shadows emit from their native flush aperture; never add mechanical mounts.
+  if(race===8){ship.muzzles=parts.filter(p=>p.k==='disc'&&!p.refitPart&&p.n?.[0]>0&&p.n[1]===0&&p.n[2]===0).map(p=>p.c.slice());return;}
   seatTurrets(ship);
   const bb=ship.bb||[[0,0,0],[1,1,1]];
   const L=Math.max(8,bb[1][0]-bb[0][0]);
@@ -15051,12 +15053,12 @@ function barrelFrame(s,muz,now){
   const local=fixed?[1,0,0]:track?track.dir:V.len(normal)>0?normal:[1,0,0];
   const dir=V.norm(V.sub(gunWorld(s,local,now),[s.x,s.y,s.z]));
   const up=V.norm(V.sub(gunWorld(s,[0,1,0],now),[s.x,s.y,s.z]));
-  const shape=barrelShape(s),length=fixed?0:shape.length;
+  const shape=barrelShape(s),length=fixed||s.race===8?0:shape.length;
   return {pivot,dir,up,tip:V.add(pivot,V.mul(dir,length)),length,radius:shape.radius,style:shape.style};
 }
 function weaponMuzzle(s,muz,now){return barrelFrame(s,muz,now).tip;}
 function shipBarrels(s){
-  if(weaponProfile(s).fixed||RACE_DEFS[s.race].unique)return [];
+  if(s.race===8||weaponProfile(s).fixed||RACE_DEFS[s.race].unique)return [];
   if(s.barrelMounts)return s.barrelMounts;
   const map=new Map();
   const add=g=>map.set(g.join(','),g.slice());
