@@ -1,0 +1,13 @@
+# Stories from the void — separate prototype
+
+Open `tribute-story-new.html`. The existing battle page is unchanged. A same-origin iframe loads it, and a story-only bridge exposes snapshots, cameras, orders and helm transfers. Only that frame gets the story UI overrides and guarded simulation startup.
+
+The page generates 23 crossover home systems, opposing factions, motives, a cargo and a timed survival or command-target objective. Actual damage, deaths and elapsed simulation time determine outcomes. Orders affect escort destinations or the lead ship’s withdrawal. You can fly any arrived living ship, on either side. Manual selection/flight stops automatic camera changes; Movie returns control to the AI. Four featured characters have stable per-universe identities and species-specific existing crew portraits. Confirmed deaths retire those identities in subsequent chapters.
+
+Home-system jumps load a new encounter and retain the chronicle; leaving unfinished work records withdrawal. Secured routes have a longer window; contested systems muster more ships. Every fresh page generates a new universe. Keep this universe stores its seed, world conditions, lost characters and chronicle locally; Resume starts the saved chapter, not a frame-exact combat save. There is no continuous interstellar flight or planet landing in this prototype.
+
+This version uses procedural combinations and short event-driven dialogue, not an LLM. Device speech is opt-in browser speech synthesis, not ElevenLabs; voice availability and quality depend on the device. No keys or paid generation are used. A real AI/ElevenLabs integration needs a server-held key, authentication, bounded generation, audio caching and cancellation of stale lines. Do not put provider secrets in the public GitHub Pages files. The user’s logged-in ElevenLabs developer page was inspected read-only; no key was created or copied.
+
+The cinematic controller holds shots for sixteen seconds, alternating established subjects and the existing action/overview cameras. This is a live prototype, not a replay editor. Dialogue reacts to injuries, death, progress and orders. Characters have stable identities and recorded survival, but autonomous long-term relationship simulation and generative plots are future work.
+
+Validation: deterministic world generation, valid distinct factions, outcome and consequence rules, cross-side helm transfers, opening pause, retired identities, and existing battle renderer via browser. New files only. No change to the battle page’s default flow or fleet implementations.
