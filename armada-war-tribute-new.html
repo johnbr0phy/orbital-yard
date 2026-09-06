@@ -11706,7 +11706,12 @@ void main(){
   float r=length(d)*2.0;
   vec3 col;
   float rw=0.9;
-  if(vC>=20.0){
+  if(vC>20.5){
+    if(r>1.0)discard;
+    float core=exp(-r*r*28.0),halo=exp(-r*r*7.0);
+    vec3 charge=mix(vec3(.18,.55,.76),vec3(.84,.96,1.0),core*(.35+.65*vSeed));
+    o=vec4(charge,(halo*.32+core*.65)*(.18+.82*vSeed));return;
+  }else if(vC>=20.0){
     if(r>1.0)discard;
     vec3 flame=mix(vec3(.25,.48,1.0),vec3(.88,.96,1.0),exp(-r*r*14.0));
     o=vec4(flame,exp(-r*r*6.0)*(1.0-vSeed*.8));return;
@@ -16031,10 +16036,18 @@ function fireIonFrom(g,side,now,lock){
   }
   kickCam(15);
 }
-function ionWarning(lock,g,now){
-  if(now-lock.last<.15)return;lock.last=now;
-  const m=weaponMuzzle(g,lock.muz||fireLocal(g),now);
-  flash(m[0],m[1],m[2],now,60+140*(now-lock.started)/(lock.fire-lock.started),4);
+function appendIonCharges(now,offset){
+  // At most two persistent muzzle glows. No expanding explosions or trails
+  // left behind when the charging ship moves or its turret turns.
+  for(const lock of ionState){
+    if(!lock||now<lock.started||offset>=flPool.length/7)continue;
+    const g=ships[lock.gun];if(!g||g.dead||!g.vao)continue;
+    const m=weaponMuzzle(g,lock.muz||fireLocal(g),now),q=Math.max(0,Math.min(1,(now-lock.started)/Math.max(.001,lock.fire-lock.started))),progress=q*q*(3-2*q);
+    const size=Math.max(4,Math.min(42,barrelShape(g).radius*7))*(.7+.3*progress),i=offset++*7;
+    flPool[i]=m[0];flPool[i+1]=m[1];flPool[i+2]=m[2];flPool[i+3]=now;
+    flPool[i+4]=size;flPool[i+5]=21;flPool[i+6]=progress;
+  }
+  return offset;
 }
 function megaStep(s,now,dt){
   battleAI.moveCapital(s,now,dt);
@@ -16443,7 +16456,6 @@ function simStep(now,dt){
       if(!g||g.dead){ionState[side]=null;ionNext[side]=now+12;continue;}
       if(now>lock.fire+1){ionState[side]=null;ionNext[side]=now+3;continue;}
       const aligned=ionBarrel(lock,g,now);
-      ionWarning(lock,g,now);
       if(now>=lock.fire&&aligned){fireIonFrom(g,side,now,lock);ionState[side]=null;ionNext[side]=now+38+combatRandom()*16;}
     }
   }
@@ -17876,7 +17888,7 @@ function frame(nowMs){
         flPool[i*7]=f2.x;flPool[i*7+1]=f2.y;flPool[i*7+2]=f2.z;flPool[i*7+3]=f2.t0;
         flPool[i*7+4]=f2.size;flPool[i*7+5]=f2.c;flPool[i*7+6]=f2.seed||0;
       }
-      const totalEffects=appendEngineBurns(now,FRP,nfl);
+      const totalEffects=appendIonCharges(now,appendEngineBurns(now,FRP,nfl));
       const arr=flPool.subarray(0,totalEffects*7);
       gl.useProgram(flashProg);
       gl.uniformMatrix4fv(FU.vp,false,m);
