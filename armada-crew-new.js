@@ -151,7 +151,7 @@
   const nx=(p.nose-.5)*5,nw=6*p.noseWidth,ny=-10*p.noseLength,nz=35+14*p.noseBridge;
   const nose=[[0,19,29],[-nw,ny,32],[nx,ny+3,nz],[nw,ny,32],[0,ny-5,35]];
   for(const ids of [[0,1,2],[0,2,3],[1,4,2],[2,4,3]])m.push({v:ids.map(i=>nose[i]),col:skin});
-  const mouthY=-37-e.fear*2,opening=.7+e.fear*3+e.hurt*4+(state.talking?(1+Math.sin(time*17)+.5*Math.sin(time*29))*2.2:0);
+  const mouthY=-37-e.fear*2,opening=.7+e.fear*3+e.hurt*4;
   ell(0,mouthY,32,14*p.mouthWidth,opening,2.8,'#40272b',10,4);
   ell(0,mouthY-opening-1,32,13*p.mouthWidth,1.5*p.lip,3,'#ac7566',10,4);
   if((human||sp==='Vulcan'||sp==='Andorian'||sp==='Klingon')&&p.hair>.14){const col=sp==='Andorian'?'#d4dedc':p.age>.7?'#9a9995':p.hair>.7?'#865c3c':'#302c2d';

@@ -300,8 +300,7 @@ body.piloting #brand,body.piloting #score,body.piloting #bar,body.piloting #watc
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
 <script src="armada-systems-new.js?v=muted-worlds-1"></script>
-<script src="armada-crew-new.js?v=physical-crew-1"></script>
-<script src="armada-interiors-new.js?v=physical-crew-1"></script>
+<script src="armada-crew-new.js?v=marine-liveries-2"></script>
 <script src="armada-battle-ai-new.js?v=traffic-flow-3"></script>
 <script>
 "use strict";
@@ -14445,8 +14444,6 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
   return out;
 }
 function disposeShips(){
-  if(typeof interiorRenderer!=='undefined')interiorRenderer?.dispose();
-  if(typeof bridgeShot!=='undefined')bridgeShot=null;
   for(const s of ships)if(s.vao){gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);}
   for(const w of wrecks){gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);}
   wrecks=[];debrisQueue=[];
@@ -14771,7 +14768,6 @@ function onWorkerMsg(e){
     seatBattleMounts(s);
     setShipPace(s);
     battleAI.equip(s);
-    if(window.ArmadaInteriors)s.interior=ArmadaInteriors.layout(s,m);
     forged++;
     if(warT0!==Infinity&&(RACE_DEFS[s.race]||{}).fire==="cutter")scatterBorg();
   }
@@ -17111,7 +17107,7 @@ function camBasis(){
 function mat(){
   const [f,r,u]=camBasis();
   const e=[cam.ex,cam.ey,cam.ez];
-  const zn=(pilotId!=null||bridgeShot||(orb&&orb.dist<40))?.08:.6,zf=Math.max(sceneR*9,watchGoal?.far||0,Math.hypot(...e)+sceneR*10),t=1/Math.tan(0.44),ar=cvs.width/cvs.height;
+  const zn=0.6,zf=Math.max(sceneR*9,watchGoal?.far||0,Math.hypot(...e)+sceneR*10),t=1/Math.tan(0.44),ar=cvs.width/cvs.height;
   const vx=r,vy=u,vz=[-f[0],-f[1],-f[2]];
   const tx=-V.dot(vx,e),ty=-V.dot(vy,e),tz=-V.dot(vz,e);
   const A=t/ar,Bq=t,C=(zf+zn)/(zn-zf),D=2*zf*zn/(zn-zf);
@@ -17225,7 +17221,6 @@ function followHero(){
   toast("CHASE · "+heroShort(hs[i])+(hs.length>1?" · "+(i+1)+"/"+hs.length:""));
 }
 function select(id,details=true){
-  bridgeShot=null;
   if(pilotId!=null)leaveHelm();
   watchMode="follow";
   if(intro&&!intro.done)endIntro();
@@ -17251,8 +17246,7 @@ function leaveHelm(){
   updateWatchDock();
 }
 function setWatchView(mode){
-  if(mode!=='bridge')bridgeShot=null;
-  if(mode==='bridge'){if(sel!=null){if(!visitBridge(sel))card(sel);}else toast('Select a ship to meet its crew');return;}
+  if(mode==='bridge'){if(sel!=null)card(sel);else toast('Select a ship to meet its crew');return;}
   if(mode==='hero'){followHero();watchMode='hero';updateWatchDock();return;}
   if(mode==='follow'||mode==='fly'){
     if(sel==null||!ships[sel]||ships[sel].dead){toast('Select a ship first');return;}
@@ -17321,23 +17315,8 @@ function updateActionCamera(now,dt){
   for(const k of ['ex','ey','ez','yaw','pitch'])cam[k]=a[k];
   watchGoal={far:distance+radius*3};
 }
-let interiorRenderer=null,bridgeShot=null,interiorSpeaker=null;
-function visitBridge(id,speaking=false){
- const s=ships[id];if(!s||s.dead||!s.interior||pilotId!=null)return false;
- select(id,false);orb.chase=false;const r=s.interior,H=r.h,arrival=gunWorld(s,[r.center[0]+H*2.8,r.center[1]+H*.78,r.center[2]+H*.35],battleTime,true);[cam.ex,cam.ey,cam.ez]=arrival;orb.dist=H*1.35;orb.yaw=s.yaw+.2;orb.pitch=.08;bridgeShot={id,until:speaking?battleTime+12:Infinity};watchMode='bridge';return true;
-}
-function interiorCamera(s,now,dt){
- const r=s.interior,H=r.h,[x,y,z]=r.center,eye=gunWorld(s,[x+H*1.3,y+H*.68,z+H*.25],now,true),target=gunWorld(s,[x-H*.1,y+H*.58,z],now,true),k=1-Math.exp(-Math.max(0,dt)*5);
- for(let i=0;i<3;i++)cam[['ex','ey','ez'][i]]+=(eye[i]-cam[['ex','ey','ez'][i]])*k;
- const d=target.map((v,i)=>v-[cam.ex,cam.ey,cam.ez][i]);cam.yaw=Math.atan2(d[2],d[0]);cam.pitch=Math.atan2(d[1],Math.hypot(d[0],d[2]));
-}
-function drawInteriors(m,now){
- if(!window.ArmadaInteriors||!window.ArmadaCrew)return;
- const close=ships.filter(s=>s.interior&&s.vao&&!s.dead&&s.arr&&!s.grace&&!(s.cloakAmt>.1)).map(s=>({s,d:Math.hypot(...gunWorld(s,s.interior.center,now,true).map((v,i)=>v-[cam.ex,cam.ey,cam.ez][i]))})).filter(q=>q.d<q.s.interior.h*65||q.s.id===pilotId).sort((a,b)=>a.d-b.d).slice(0,3).map(q=>q.s);
- interiorRenderer??=ArmadaInteriors.createRenderer(gl);interiorRenderer.draw(close,m,now,xPose,s=>ArmadaCrew.profile(s.seed??s.id,s.race,s.meta?.klass||''),ArmadaCrew.geometry,pilotId,interiorSpeaker&&now<interiorSpeaker.until?interiorSpeaker.id:null);gl.useProgram(shipProg);
-}
 function updateWatchCamera(now,dt,force=false){
-  if(pilotId!=null){const s=ships[pilotId];if(!s||s.dead){leaveHelm();return;}if(s.interior){const r=s.interior,H=r.h,eye=gunWorld(s,[r.center[0]+H*.35,r.center[1]+H*.66,r.center[2]],now,true),target=gunWorld(s,[r.center[0]+H*4,r.center[1]+H*.66,r.center[2]],now,true);[cam.ex,cam.ey,cam.ez]=eye;cam.yaw=Math.atan2(target[2]-eye[2],target[0]-eye[0]);cam.pitch=Math.atan2(target[1]-eye[1],Math.hypot(target[0]-eye[0],target[2]-eye[2]));return;}const cp=Math.cos(s.pitch||0),sp=Math.sin(s.pitch||0),d=(s.nose||s.slen*.5)+Math.max(2,s.slen*.015);cam.ex=s.x+Math.cos(s.yaw)*cp*d;cam.ey=s.y+sp*d;cam.ez=s.z+Math.sin(s.yaw)*cp*d;cam.yaw=s.yaw;cam.pitch=s.pitch||0;return;}
+  if(pilotId!=null){const s=ships[pilotId];if(!s||s.dead){leaveHelm();return;}const cp=Math.cos(s.pitch||0),sp=Math.sin(s.pitch||0),d=(s.nose||s.slen*.5)+Math.max(2,s.slen*.015);cam.ex=s.x+Math.cos(s.yaw)*cp*d;cam.ey=s.y+sp*d;cam.ez=s.z+Math.sin(s.yaw)*cp*d;cam.yaw=s.yaw;cam.pitch=s.pitch||0;return;}
   if(sel!=null||!['all','top','action'].includes(watchMode)||!ships.length)return;
   if(watchMode==='action'){updateActionCamera(now,force?0:dt);return;}
   const move=()=>{if(!watchGoal)return;const k=force?1:1-Math.exp(-Math.max(0,dt)*2);for(const key of ['ex','ey','ez','pitch'])cam[key]+=(watchGoal[key]-cam[key])*k;let d=watchGoal.yaw-cam.yaw;while(d>Math.PI)d-=Math.PI*2;while(d< -Math.PI)d+=Math.PI*2;cam.yaw+=d*k;};
@@ -17442,7 +17421,6 @@ let pdown=null,pmoved=false;
 const ptrs=new Map();
 let pinch0=null;
 cvs.addEventListener("pointerdown",e=>{
-  bridgeShot=null;
   if(pilotId!=null)return;watchMode="free";
   ptrs.set(e.pointerId,[e.clientX,e.clientY]);
   cvs.setPointerCapture(e.pointerId);
@@ -17460,7 +17438,7 @@ cvs.addEventListener("pointermove",e=>{
     const p=[...ptrs.values()];
     const d=Math.hypot(p[0][0]-p[1][0],p[0][1]-p[1][1])||1;
     const ratio=d/pinch0;pinch0=d;
-    if(sel!=null&&orb)orb.dist=Math.max(.3,Math.min(sceneR*2,orb.dist/Math.pow(ratio,camLook)));
+    if(sel!=null&&orb)orb.dist=Math.max(12,Math.min(sceneR*2,orb.dist/Math.pow(ratio,camLook)));
     else{
       const [f]=camBasis(),k=(ratio-1)*Math.max(80,Math.hypot(cam.ex,cam.ey,cam.ez))*0.85*camLook;
       cam.ex+=f[0]*k;cam.ey+=f[1]*k;cam.ez+=f[2]*k;
@@ -17490,9 +17468,9 @@ cvs.addEventListener("pointercancel",e=>{
   ptrs.delete(e.pointerId);if(ptrs.size===0)pdown=null;pinch0=null;
 });
 cvs.addEventListener("wheel",e=>{
-  e.preventDefault();bridgeShot=null;watchMode="free";
+  e.preventDefault();watchMode="free";
   if(intro&&!intro.done)endIntro();
-  if(sel!=null&&orb)orb.dist=Math.max(.3,Math.min(sceneR*2,orb.dist*Math.exp(e.deltaY*0.0012*camLook)));
+  if(sel!=null&&orb)orb.dist=Math.max(12,Math.min(sceneR*2,orb.dist*Math.exp(e.deltaY*0.0012*camLook)));
   else{
     const [f]=camBasis(),k=-e.deltaY*0.6*camLook;
     cam.ex+=f[0]*k;cam.ey+=f[1]*k;cam.ez+=f[2]*k;
@@ -17759,9 +17737,7 @@ function frame(nowMs){
       chaseK=1.55+u*u*10;
     }
     const k=1-Math.exp(-dt*chaseK);
-    if(orb.chase&&s.interior&&orb.dist<s.slen*.7){orb.chase=false;orb.yaw=s.yaw+.4;orb.pitch=.25;}
-    if(bridgeShot&&bridgeShot.id===s.id&&now<bridgeShot.until){interiorCamera(s,now,dt);}
-    else if(orb.chase){
+    if(orb.chase){
       const cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
       const dist=orb.dist,h=orb.h||Math.max(10,s.slen*0.55);
       const want=[s.x-cy*dist,s.y+h,s.z-sy*dist];
@@ -17781,10 +17757,9 @@ function frame(nowMs){
       }
     }else{
       const cp=Math.cos(orb.pitch),sp=Math.sin(orb.pitch);
-      const blend=s.interior?Math.max(0,Math.min(1,1-orb.dist/Math.max(1,s.slen*.7))):0,anchor=s.interior?gunWorld(s,[s.interior.center[0],s.interior.center[1]+s.interior.h*.58,s.interior.center[2]],now,true):[s.x,s.y,s.z],focus=[s.x,s.y,s.z].map((v,i)=>v+(anchor[i]-v)*blend);
-      const want=[focus[0]+orb.dist*cp*Math.cos(orb.yaw),focus[1]+orb.dist*sp,focus[2]+orb.dist*cp*Math.sin(orb.yaw)];
+      const want=[s.x+orb.dist*cp*Math.cos(orb.yaw),s.y+orb.dist*sp,s.z+orb.dist*cp*Math.sin(orb.yaw)];
       cam.ex+=(want[0]-cam.ex)*k;cam.ey+=(want[1]-cam.ey)*k;cam.ez+=(want[2]-cam.ez)*k;
-      const dx=focus[0]-cam.ex,dy=focus[1]-cam.ey,dz=focus[2]-cam.ez;
+      const dx=s.x-cam.ex,dy=s.y-cam.ey,dz=s.z-cam.ez;
       cam.yaw=Math.atan2(dz,dx);
       cam.pitch=Math.atan2(dy,Math.hypot(dx,dz));
     }
@@ -17836,7 +17811,7 @@ function frame(nowMs){
     if(!s.vao)continue;
     if(!s.dead&&warT0!==Infinity&&T-s.delay>=0){
       alive++;
-      if(s.id===pilotId&&!s.interior)continue;
+      if(s.id===pilotId)continue;
       if(!sphereVis(FRP,s.x,s.y,s.z,s.slen*.8))continue;
       const distance=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez),pixels=hullBerth(s)*cvs.height/Math.max(1,distance*.942);
       // At under five pixels a full mesh adds draw calls without readable detail.
@@ -17916,7 +17891,6 @@ function frame(nowMs){
   gl.uniform3fv(SU.ink,inkc);gl.uniform4f(SU.material,0,1,-1,0);gl.uniform4f(SU.paint,0,0,0,0);
   drawDistantShips(m);
   drawBarrels(now,m,FRP);
-  drawInteriors(m,now);
   /* the litter of the war: charred pieces adrift, tumbling where they
      died — and beneath them the boneyard, every earlier piece kept */
   gl.uniform1f(SU.inz,1.0);
