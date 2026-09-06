@@ -6140,72 +6140,96 @@ var minNial=function(parts,L,R){
   minFit(parts,L);
 };
 
-/* ---- SHARLIN war cruiser, 1,600 m ----
-   Long tapering head, fat flattened angelfish body amidships, three
-   aft fins grown as sails (span first, a breath of rake) so the
-   silhouette is a bone-white fish, not a swallow. Triple housings
-   along the spine, each its own reactor, each its own act of her death. */
-var minSharlin=function(parts,L,R,o){
-  // The Sharlin is a tall, ribbed angelfish, not an enlarged Nial jet.
-  parts.push({k:"lathe",c:[-.38*L,0,0],axis:[1,0,0],prof:[
-    [0,.02*L],[.10*L,.11*L],[.27*L,.19*L],[.46*L,.21*L],
-    [.61*L,.17*L],[.74*L,.08*L],[.80*L,.025*L]],ell:[.85,1]});
-  for(const y of [-.12,0,.12]){
-    const pts=[];
-    for(let i=0;i<=12;i++){
-      const a=-Math.PI*.60+i/12*Math.PI*1.20;
-      pts.push([(.13+.21*Math.cos(a))*L,y*L,Math.sin(a)*.20*L]);
+/* Minbari hull studies: +X is the bow. These are original low-poly
+   interpretations of screen and licensed miniature silhouettes. */
+function minCurve(rows){
+  const out=[];for(let i=0;i<rows.length-1;i++)for(const t of [0,.5])out.push(rows[i].map((v,k)=>{if(k===0)return v+(rows[i+1][k]-v)*t;const a=rows[Math.max(0,i-1)][k],b=v,c=rows[i+1][k],d=rows[Math.min(rows.length-1,i+2)][k];return Math.max(.001,.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t));}));out.push(rows[rows.length-1]);return out;
+}
+function minBody(parts,L,sections,z=0,y=0){
+  sections=minCurve(sections);
+  parts.push({k:'loft',sec:sections.map(([x,w,h])=>({pts:Array.from({length:14},(_,i)=>{const a=i/14*Math.PI*2;return [x*L,(y+Math.sin(a)*h)*L,(z+Math.cos(a)*w)*L];})}))});
+}
+function minSail(parts,L,dir,span,sweep,chord,rootX,R){
+  const first=parts.length,d=V.norm(dir),v=[0,-d[2],d[1]],sec=[];
+  const stations=[[.08,.00,1],[.23,.02,.94],[.46,.22,.66],[.67,.55,.44],[.84,.82,.27],[1,1,.025]];
+  for(const [t,back,width] of minCurve(stations)){const c=[(rootX-sweep*back)*L,d[1]*span*t*L,d[2]*span*t*L],half=chord*width*L*.5,th=(.012*(1-t)+.002)*L;
+   sec.push({pts:[V.add(c,[half,0,0]),V.add(c,V.add([half*.35,0,0],V.mul(v,th))),V.add(c,V.add([-half*.55,0,0],V.mul(v,th))),V.add(c,[-half,0,0]),V.add(c,V.add([-half*.55,0,0],V.mul(v,-th))),V.add(c,V.add([half*.35,0,0],V.mul(v,-th)))]});
+  }parts.push({k:'loft',sec});
+  // A narrow raised ridge follows the leading edge and remains rooted in the sail.
+  for(let i=1;i<4;i++){const t=i*.17,r=span*t,x=rootX-sweep*t*t+chord*(1-t)*.2;
+    parts.push(CAP([x*L,d[1]*r*L,d[2]*r*L],[(x-.07)*L,d[1]*r*L,d[2]*r*L],.004*L));}
+  for(let i=first;i<parts.length;i++)parts[i].minSail=true;
+}
+function minGills(parts,L,beam,height,count){
+  for(const sign of [-1,1]){
+    // Two curved longitudinal armor lips enclose the dark ribbed flank.
+    for(const up of [-1,1]){
+      const sec=[];for(let i=0;i<=8;i++){const t=i/8,x=.40-.68*t,bulge=Math.sin(t*Math.PI*.88),z=sign*beam*bulge,y=up*height*bulge;
+       sec.push({pts:Array.from({length:8},(_,j)=>{const a=j/8*6.283;return [x*L,(y+Math.sin(a)*.022)*L,(z+Math.cos(a)*.026)*L];})});}
+      parts.push({k:'loft',sec});
     }
-    parts.push(shdLoft(pts,pts.map(()=>.026*L),pts.map(()=>.025*L)));
+    for(let i=1;i<count;i++){const t=i/count,x=.40-.68*t,f=Math.sin(t*Math.PI*.88),z=sign*beam*f;
+      parts.push(CAP([x*L,-height*f*L,z*L],[(x-.018)*L,height*f*L,z*L],L*.0055));}
   }
-  for(let i=0;i<3;i++){
-    const a=i*Math.PI*2/3,dir=[0,Math.cos(a),Math.sin(a)];
-    const pts=[],width=[],height=[];
-    // Tall curved blades have rounded tips and a forward swept leading edge.
-    for(let j=0;j<=10;j++){
-      const t=j/10,r=.14+.62*t;
-      pts.push([(-.11-.13*t+.11*t*t)*L,dir[1]*r*L,dir[2]*r*L]);
-      width.push((.13*(1-t)+.035)*L);height.push((.018*(1-t)+.006)*L);
-    }
-    // Cross section kept broad in X, thin around the radial direction.
-    const sec=pts.map((p,j)=>{const w=width[j],h=height[j],v=[0,-dir[2],dir[1]];
-      return {pts:[V.add(p,[w,0,0]),V.add(p,V.mul(v,h)),V.add(p,[-w,0,0]),V.sub(p,V.mul(v,h))]};});
-    parts.push({k:"loft",sec});
-    for(const sg of [-1,1]){
-      const p=V.add([.05*L,0,0],V.mul(dir,.34*L));
-      p[2]+=sg*.025*L;
-      parts.push(TUB(p,V.add(p,[.19*L,0,0]),.007*L,.003*L));
-    }
-  }
-  // Repeating fluted gills across the broad head, finite fixed count.
-  for(let i=0;i<12;i++){
-    const z=(i-5.5)*.027*L;
-    parts.push(CAP([.24*L,-.10*L,z],[.28*L,.10*L,z],.005*L));
-  }
+}
+var minSharlin=function(parts,L,R,o={}){
+  const span=.67+(R()-.5)*.07,beam=.17+(R()-.5)*.018;
+  minBody(parts,L,[[-.58,.003,.004],[-.37,.08,.07],[-.20,.135,.12],[.03,.145,.135],[.22,.11,.09],[.40,.035,.04],[.45,.008,.012]]);
+  minGills(parts,L,beam,.095,15);
+  // The lower pair form a narrow inverted V, not an equilateral fighter triad.
+  for(const d of [[0,1,0],[0,-.96,.28],[0,-.96,-.28]])minSail(parts,L,d,span,.25,.35,-.08,R);
+  for(const sign of [-1,1]){
+    minBody(parts,L,[[-.47,.002,.003],[-.27,.043,.037],[-.12,.052,.046],[.08,.02,.02]],sign*.18,-.085);
+    parts.push(CAP([.25*L,0,sign*.026*L],[.54*L,0,sign*.026*L],.008*L));
+    parts.push({k:'disc',c:[.542*L,0,sign*.026*L],n:[1,0,0],r:.01*L,ri:.006*L});
+  }minFit(parts,L);
+};
+function minTinashi(parts,L,R){
+  minBody(parts,L,[[-.51,.003,.003],[-.32,.075,.055],[-.08,.095,.082],[.24,.055,.05],[.51,.002,.004]]);
+  minGills(parts,L,.108,.055,12);
+  for(const d of [[0,1,0],[0,-.94,.34],[0,-.94,-.34]])minSail(parts,L,d,.37,.19,.25,-.20,R);
+  for(const sign of [-1,1])minBody(parts,L,[[-.23,.028,.025],[.12,.042,.034],[.55,.002,.002]],sign*.052,0);
   minFit(parts,L);
-};
-
-/* filmed order of battle: every regular hull is a Nial. j() is the whole
-   allowance a seed gets inside the class: a whisker of trim, nothing
-   that bends a proportion past the canon metre. */
+}
+function minTorotha(parts,L,R){
+  // Flat broad forward shell, pinched neck and a smaller raised aft shell.
+  minBody(parts,L,[[-.48,.025,.025],[-.35,.11,.048],[-.20,.052,.03],[-.03,.045,.029],[.12,.14,.055],[.31,.18,.065],[.50,.03,.014]]);
+  for(const sign of [-1,1]){
+    for(let i=0;i<5;i++){const x=.04+i*.055,w=.08+Math.sin(i/5*Math.PI)*.08;parts.push(CAP([x*L,.027*L,sign*.045*L],[(x+.035)*L,.02*L,sign*w*L],.009*L));}
+    minSail(parts,L,[0,.55,sign],.15,.12,.19,-.30,R);
+    parts.push(CAP([.22*L,0,sign*.105*L],[.51*L,0,sign*.105*L],.009*L));
+  }minFit(parts,L);
+}
+function minTigara(parts,L,R){
+  minBody(parts,L,[[-.48,.004,.006],[-.28,.105,.095],[-.02,.17,.13],[.22,.135,.09],[.43,.02,.018]]);
+  minGills(parts,L,.19,.075,10);
+  for(const d of [[0,1,0],[0,-.86,.5],[0,-.86,-.5]])minSail(parts,L,d,.44,.16,.34,-.17,R);
+  // A broad attack prow with paired forward lobes differentiates it from Tinashi.
+  for(const sign of [-1,1])minBody(parts,L,[[-.08,.03,.03],[.19,.055,.044],[.52,.005,.007]],sign*.105,0);
+  minFit(parts,L);
+}
+function minMorshin(parts,L,R){
+  // Carrier: low flowing dorsal shell over two long separated hangar cheeks.
+  minBody(parts,L,[[-.48,.01,.01],[-.30,.17,.065],[0,.22,.09],[.27,.16,.055],[.5,.014,.009]],0,.055);
+  for(const sign of [-1,1]){
+    minBody(parts,L,[[-.40,.025,.025],[-.24,.065,.07],[.10,.075,.075],[.40,.045,.04],[.48,.002,.003]],sign*.14,-.045);
+    minSail(parts,L,[0,.25,sign],.34,.15,.3,-.18,R);
+    for(let i=0;i<4;i++)parts.push(CAP([(-.18+i*.11)*L,.01*L,sign*.08*L],[(-.18+i*.11)*L,-.095*L,sign*.16*L],.009*L));
+  }
+  for(const x of [-.2,0,.2])parts.push(minHousing(x*L,.14*L,.18*L,.025*L));
+  minFit(parts,L);
+}
+function buildMinbariClass(seed,type){
+  const R=mulberry32((seed^0x71A5B1)>>>0),parts=[],rows=[['NIAL-CLASS HEAVY FIGHTER',22.23,minNial,1],['TISHAT-CLASS MEDIUM FIGHTER',16,minNial,1],['TOROTHA-CLASS ASSAULT FRIGATE',280,minTorotha,60],['TINASHI-CLASS WAR FRIGATE',560,minTinashi,150],['TIGARA-CLASS ATTACK CRUISER',850,minTigara,220],['MORSHIN-CLASS CARRIER',1200,minMorshin,350],['SHARLIN-CLASS WAR CRUISER',1600,minSharlin,600]];
+  const row=rows[type%rows.length],L=row[1]*(.96+R()*.08);row[2](parts,L,R);
+  if(type===1){for(const p of parts){if(p.k==='loft')for(const sc of p.sec)for(const v of sc.pts){v[1]*=.78;v[2]*=.78;}}}
+  const ship=minDone(parts,seed,type<2?'HF':type<4?'FF':'WC',row[0],row[3]);ship.meta.minbariClass=type;return ship;
+}
 var buildMinbari=function(seed){
-  const R=mulberry32(seed|0);
-  const j=()=>1+(R()*2-1)*0.03;
-  const parts=[];
-  R(); /* deal slot — one class, the table still turns */
-  minNial(parts,22.23*j(),R);
-  return minDone(parts,seed,"HF","NIAL-CLASS HEAVY FIGHTER",1);
+  const r=mulberry32((seed^0xCAF37)>>>0)();return buildMinbariClass(seed,r<.34?0:r<.46?1:r<.64?2:r<.82?3:r<.94?4:5);
 };
-
-/* the Sharlin at every appetite: 1,600 m of quiet, nH only a whisker
-   of secondary fin. Estimated filler (Troligan, Morshin) is not flown. */
 var buildMinbariMega=function(seed,nH){
-  const R=mulberry32(seed|0);
-  const j=()=>1+(R()*2-1)*0.03;
-  const parts=[];
-  minSharlin(parts,1600*j(),R,{guns:true,sec2:nH>=50});
-  return minDone(parts,seed,"WC","SHARLIN-CLASS WAR CRUISER",
-    Math.round(190+(nH||10)*4));
+  const r=mulberry32((seed^0x7A110)>>>0)();return buildMinbariClass(seed,nH>=50?6:r<.32?4:r<.64?5:6);
 };
 /*__RACE_MINBARI_END__*/
 /* =====================================================================
@@ -10705,6 +10729,15 @@ function applyFleetRefit(ship,race,seed,forced,drive){
   if(ship.meta.ringX!=null)ship.meta.ringX*=scale;if(ship.meta.ringW!=null)ship.meta.ringW*=scale;
   let bb=efBB(ship.parts),L=bb[1][0]-bb[0][0],B=bb[1][2]-bb[0][2],H=bb[1][1]-bb[0][1];
   const cx=(bb[1][0]+bb[0][0])*.5,cz=(bb[1][2]+bb[0][2])*.5;
+  if(race===7){
+    const shape=[[1,1,1],[1,.91,1.17],[.93,1.18,.91],[1.08,.94,1.28],[1.08,1.12,.82],[.94,1.06,1.08]][role];
+    if(!small)for(const p of ship.parts){const fy=shape[0]*(p.minSail?shape[2]:1),fz=shape[1]*(p.minSail?shape[2]:1),warp=v=>[v[0],v[1]*fy,v[2]*fz];
+      for(const key of ['a','b','c','u','v','w'])if(p[key])p[key]=warp(p[key]);if(p.sec)for(const sc of p.sec)sc.pts=sc.pts.map(warp);if(p.ell)p.ell=[p.ell[0]*fz,p.ell[1]*fy];
+    }
+    bb=efBB(ship.parts);ship.bb=bb;ship.meta.length=bb[1][0]-bb[0][0];ship.meta.beam=bb[1][2]-bb[0][2];ship.meta.height=bb[1][1]-bb[0][1];ship.meta.mass=(ship.meta.mass||1)*scale**3;
+    ship.meta.architecture=['STANDARD SAILS','LONG-RANGE SAILS','BROAD CARRIER SHELL','HIGH SENSOR SAILS','COMPACT ARMORED SAILS','SUPPORT SHELL'][role];
+    ship.meta.refit={role:ship.meta.architecture,index:role,seed:seed>>>0,scale,addedParts:0,provenance:'Procedural Minbari sister hull'};return ship;
+  }
   const originalCount=ship.parts.length,organic=[1,7,8,13,15,17].includes(race),geometric=[2,4,12].includes(race);
   const size=L*(small?.014:.022)*( .8+R()*.4);
   const put=p=>{p.refitPart=true;ship.parts.push(p);};
@@ -10853,7 +10886,7 @@ buildFedMega=function(seed,nH){if(nH>=50)return fedMegaOriginal(seed,nH);const R
    pyramid, not a lottery. Every hull a yard can lay falls in one of
    three bands — small craft, escorts, capitals — and the fleet's mix
    table, not the class dice, decides how many of each band sail. ---- */
-var fleetBandOf=function(L){return L<=42?0:L<=95?1:2;};
+var fleetBandOf=function(L,race){return L<=42?0:L<=(race===7?650:95)?1:2;};
 function loftPolyAtX(p,x){
   const secs=p.sec;if(!secs||secs.length<2)return null;
   const xs=secs.map(sc=>{
@@ -12128,7 +12161,7 @@ onmessage=e=>{
       let best=null,bestSeed=seed,bd=1e9;
       for(let t2=0;t2<tries;t2++){
         const cand=raceBuild(j.f,seed,0);
-        const b2=fleetBandOf(cand.meta.length);
+        const b2=fleetBandOf(cand.meta.length,j.f);
         if(b2===j.band){ship=cand;break;}
         const miss=Math.abs(b2-j.band);
         if(miss<bd){bd=miss;best=cand;bestSeed=seed;}
@@ -12745,7 +12778,7 @@ const RACE_DEFS=[
    wpn:[[18,1],[28,2],[40,3],[50,4],[58,5],[68,6]],
    fire:"laser",boom:"cookoff",msl:true,
    doct:{CHARGE:1,FLANK:5,ENVELOP:2,SWARM:2,HUNT:3,SCREEN:1,FEIGN:4,MINE:1}},
-  {name:"THE MINBARI FEDERATION",fr:"babylon 5",mix:[0.62,0.24,0.14],form:"crescent",fleetK:0.85,hold:700,beam:[0.55,0.75,1.00],ion:[0.70,0.85,1.00],anim:0,tone:1.10,
+  {name:"THE MINBARI FEDERATION",fr:"babylon 5",mix:[0.46,0.36,0.18],form:"crescent",fleetK:0.85,hold:700,beam:[0.55,0.75,1.00],ion:[0.70,0.85,1.00],anim:0,tone:1.10,
    hpdiv:20,spdK:1550,spdCap:78,turnK:42,
    wpn:[[10,1],[18,6],[28,2],[40,3],[55,4],[70,5]],
    fire:"neutron",boom:"crystal",msl:false,
