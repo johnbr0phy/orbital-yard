@@ -10579,8 +10579,8 @@ function buildExtraClass(race,seed,type,hero=false){
 }
 function buildExtra(race,seed,hulls=0,hero=false){
  const R=mulberry32((seed^0xADC73)>>>0),row=race-18;
- const pools=[[0,1,2,3,4],[0,1,2,3,4],[0,1,2,3,4,5,6,7,8,9],[0,1,2,3,4,5,6,7,8,9],[0,0,0,1,2,3,4,5]];
- let type=hero?[4,4,10,5,6][row]:hulls?(hulls>=50?[4,4,5,5,5][row]:[3,3,4,4,4][row]):pools[row][Math.floor(R()*pools[row].length)];
+ const pools=[[0,1,2,3,4],[1,1,1,2,3],[0,1,2,3,4,5,6,7,8,9],[0,1,2,3,4,5,6,7,8,9],[0,0,0,1,2,3,4,5]];
+ let type=hero?[4,1,10,5,6][row]:hulls?(hulls>=50?[4,4,5,5,5][row]:[3,3,4,4,4][row]):pools[row][Math.floor(R()*pools[row].length)];
  if(race===21&&hulls&&hulls<50&&!hero)type=[4,6,7][Math.floor(R()*3)];
  return buildExtraClass(race,seed,type,hero);
 }
@@ -10803,7 +10803,7 @@ buildFedMega=function(seed,nH){if(nH>=50)return fedMegaOriginal(seed,nH);const R
    pyramid, not a lottery. Every hull a yard can lay falls in one of
    three bands — small craft, escorts, capitals — and the fleet's mix
    table, not the class dice, decides how many of each band sail. ---- */
-var fleetBandOf=function(L,race){return L<=42?0:L<=(race===7?650:race>=18&&race<=21?300:95)?1:2;};
+var fleetBandOf=function(L,race){return L<=(race===19?150:42)?0:L<=(race===7?650:race>=18&&race<=21?300:95)?1:2;};
 function loftPolyAtX(p,x){
   const secs=p.sec;if(!secs||secs.length<2)return null;
   const xs=secs.map(sc=>{
@@ -12835,7 +12835,7 @@ const RACE_DEFS=[
    doct:{CHARGE:1,FLANK:2,ENVELOP:4,SWARM:0,HUNT:5,SCREEN:1,FEIGN:2,MINE:0}}];
 RACE_DEFS.push(
 {name:"ROMULAN STAR EMPIRE",fr:"star trek",mix:[0.18, 0.44, 0.38],form:"packs",fleetK:0.48,hold:580,beam:[0.35, 0.95, 0.48],ion:[0.35, 0.95, 0.48],anim:0,tone:1,hpdiv:18,spdK:1450,spdCap:74,turnK:36,cloak:true,msl:true,fire:"disruptor",boom:"warp",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
-{name:"THE DOMINION",fr:"star trek",mix:[0.22, 0.5, 0.28],form:"groups",fleetK:0.65,hold:420,beam:[0.62, 0.51, 1],ion:[0.62, 0.51, 1],anim:0,tone:1,hpdiv:20,spdK:1550,spdCap:82,turnK:40,cloak:false,msl:true,fire:"phaser",boom:"warp",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
+{name:"THE DOMINION",fr:"star trek",mix:[0.64, 0.30, 0.06],form:"groups",fleetK:0.32,fleetMin:16,hold:420,beam:[0.62, 0.51, 1],ion:[0.62, 0.51, 1],anim:0,tone:1,hpdiv:20,spdK:1550,spdCap:82,turnK:40,cloak:false,msl:true,fire:"phaser",boom:"warp",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
 {name:"SPACE MARINES",fr:"warhammer 40,000",mix:[0.38, 0.37, 0.25],form:"wall",fleetK:0.55,hold:460,beam:[1, 0.7, 0.38],ion:[1, 0.7, 0.38],anim:0,tone:1,hpdiv:13,spdK:1150,spdCap:58,turnK:25,cloak:false,msl:true,fire:"smart",boom:"cookoff",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
 {name:"TYRANIDS",fr:"warhammer 40,000",mix:[0.62, 0.26, 0.12],form:"swarm",fleetK:0.8,hold:260,beam:[0.68, 0.92, 0.27],ion:[0.68, 0.92, 0.27],anim:5,tone:1,hpdiv:19,spdK:1500,spdCap:78,turnK:38,cloak:false,msl:false,fire:"bio",boom:"burst",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
 {name:"TESLA",fr:"the electric armada",mix:[0.76, 0.16, 0.08],form:"swarm",fleetK:0.9,hold:480,beam:[0.35, 0.8, 1],ion:[0.35, 0.8, 1],anim:0,tone:1,hpdiv:26,spdK:1700,spdCap:90,turnK:44,cloak:false,msl:true,fire:"pulse",boom:"cookoff",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}}
@@ -13352,6 +13352,26 @@ function spreadMuster(){
         if(a.stn){a.stn[0]=a.x;a.stn[1]=a.y;a.stn[2]=a.z;}
         if(b.stn){b.stn[0]=b.x;b.stn[1]=b.y;b.stn[2]=b.z;}
       }
+    }
+  }
+}
+// Reserve transverse jump corridors after real hull dimensions are known.
+// Different depths must not share a lane: arrival slides run along the X axis.
+function spaceDominionArrivals(){
+  for(const side of [0,1]){
+    const fleet=ships.filter(s=>s.race===19&&s.side===side&&!s.dead&&s.vao);
+    const radius=s=>Math.hypot(s.exY||5,s.exZ||5)+(s.exL||10)*0.15+24;
+    fleet.sort((a,b)=>radius(b)-radius(a)||a.id-b.id);
+    const parked=[];
+    for(const s of fleet){
+      const r=radius(s),y=s.y,z=s.z,step=Math.max(45,r*.55);
+      let n=0,py=y,pz=z;
+      while(parked.some(o=>Math.hypot(py-o.y,pz-o.z)<r+o.r)){
+        n++;const angle=n*2.399963229728653,reach=step*Math.sqrt(n);
+        py=y+Math.sin(angle)*reach;pz=z+Math.cos(angle)*reach;
+      }
+      s.y=py;s.z=pz;if(s.stn){s.stn[1]=py;s.stn[2]=pz;}
+      parked.push({y:py,z:pz,r});
     }
   }
 }
@@ -14495,6 +14515,7 @@ function onWorkerMsg(e){
     parkTheCrowns();
     openTheMuster();
     spreadMuster();
+    spaceDominionArrivals();
     scatterShadows();
     scatterBorg();
     spaceTheFleets();
