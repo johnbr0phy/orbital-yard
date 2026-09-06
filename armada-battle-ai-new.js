@@ -331,7 +331,7 @@
       // The muster parks a 19 km ship well behind its screen. A sustained
       // transit burn gets that ship into the fight before the screen is gone.
       // It sheds speed on contact and retains the same gradual turn response.
-      const transit=p.mode==='SEARCH'&&length(dx,dy,dz)>2000;
+      const transit=!s.steadyCapital&&p.mode==='SEARCH'&&length(dx,dy,dz)>2000;
       if(transit){velocity=s.spd*(2.4+a.budget[2]/40);a.reason='Transit burn. Closing to sensor contact';}
       if(s.debrisGoal&&now<s.debrisUntil){velocity*=s.debrisBrake;a.reason="Avoiding debris corridor";}
       if(s.trafficGoal&&now<s.trafficUntil)velocity*=s.trafficBrake;
@@ -340,8 +340,16 @@
       s.v=(s.v||0)+(velocity-(s.v||0))*Math.min(1,dt*.65);
       s.vy=(s.vy||0)+(clamp(dy*.15,-s.spd*.42,s.spd*.42)-(s.vy||0))*Math.min(1,dt*.8);
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
-      s.roll=(s.roll||0)+(-s.yawV/turn*.18-(s.roll||0))*Math.min(1,dt);
-      s.pitch=Math.atan2(s.vy,Math.max(1,s.v))*.5;
+      if(s.steadyCapital){
+        // A capital hull translates vertically without pitching like a fighter.
+        // Never turn a collision-induced low forward speed into a steep attitude.
+        s.roll=(s.roll||0)*Math.exp(-dt*2);
+        const pitch=clamp(Math.atan2(s.vy,Math.max(20,s.spd,s.v))*.12,-.025,.025);
+        s.pitch=(s.pitch||0)+(pitch-(s.pitch||0))*Math.min(1,dt*.35);
+      }else{
+        s.roll=(s.roll||0)+(-s.yawV/turn*.18-(s.roll||0))*Math.min(1,dt);
+        s.pitch=Math.atan2(s.vy,Math.max(1,s.v))*.5;
+      }
       s.mark=p.target;s.mood={RETREAT:'FLEE',EVADE:'EVADE',ESCORT:'DEFEND',FLANK:'FLANK',REGROUP:'REGROUP',SEARCH:'SEARCH'}[p.mode]||'ATTACK';
     }
     command(squads,now) {
