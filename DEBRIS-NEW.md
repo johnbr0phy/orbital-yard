@@ -54,3 +54,10 @@ Thermal ruptures cool from a brief bright core to uneven orange ejecta; reactor 
 Exhaust comes from authored Rebel bells and Earthforce/CR90 drive assemblies, follows the ship pose, and grows with speed. Unsupported outlets receive no guessed plume. Organic ships get no rocket exhaust. Outlet discovery happens in the forge worker.
 
 Hard limits: 224 queued flashes, 192 engine sprites, 15 outlets per hull, subpixel exhaust culled. Both effects share one existing sprite draw and reusable buffer. Standard explosion sprites are capped at 240 pixels; engine glow at 72 pixels. No new debris physics, texture loads or simulation particles. Budget and combat regressions pass; the shader was inspected with an 18-sprite isolated preview. Large-fleet GPU frame rate has not been benchmarked.
+
+
+## Surviving damaged hulls
+
+Below 70% integrity, cruise and maximum speed fall to 85%; below 40%, to 65%. Repeated hits do not compound these reductions. Where suitable small fittings exist, at most two detach: the worker packs their exact geometry and index ranges ahead of combat. A hit clears only that fitting's indices and queues it through the existing debris limits. Named heroes retain their authored geometry. Nearby weapon mounts and drive assemblies are excluded.
+
+Damaged ships emit one drifting dust mote every 1.2 seconds (0.6 when heavily damaged), expiring after seven seconds. Leaks stop adding particles at 480 shared motes. No live mesh fracture or new draw pass is introduced. Tests cover real forge triangle correspondence, one-time detachment, speed thresholds, particle limits and a bounded combat exchange.

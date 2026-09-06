@@ -12081,15 +12081,29 @@ onmessage=e=>{
     const c=centre(ship);
     const exhaust=enginePorts(ship,j.f).map(q=>[q[0]-c[0],q[1]-c[1],q[2]-c[2],q[3]]);
     const guns=(ship.muzzles||[]).map(q=>[q[0]-c[0],q[1]-c[1],q[2]-c[2]]);
-    const m=packMesh(ship,c,0.32);
+    // Two small authored fittings can detach. Pack them last so removal is a
+    // tiny index-buffer update; no mesh cutting or triangle search during combat.
+    const candidates=ship.meta.hero?[]:ship.parts.filter(p=>p.k==='box'&&!p.driveGroup&&!p.enginePort&&Math.hypot(...partCentroid(p).map((v,i)=>v-c[i]))>ship.meta.length*.12&&Math.max(V.len(p.u),V.len(p.v),V.len(p.w))<ship.meta.length*.055).filter(p=>!(ship.muzzles||[]).some(q=>Math.hypot(...q.map((v,i)=>v-partCentroid(p)[i]))<Math.max(V.len(p.u),V.len(p.v),V.len(p.w))*3)).slice(-2);
+    const coreParts=ship.parts.filter(p=>!candidates.includes(p));
+    let m=packMesh({parts:coreParts,bb:ship.bb},c,0.32);
+    const damagePods=[];
+    for(const part of candidates){
+      const center=partCentroid(part),fm=packMesh({parts:[part],bb:ship.bb},center,.32),start=m.i.length,base=m.v.length/3;
+      const vertices=new Float32Array(m.v.length+fm.v.length);vertices.set(m.v);
+      for(let i=0;i<fm.v.length;i++)vertices[m.v.length+i]=fm.v[i]+center[i%3]-c[i%3];
+      const indices=new Uint32Array(start+fm.i.length);indices.set(m.i);for(let i=0;i<fm.i.length;i++)indices[start+i]=fm.i[i]+base;
+      const ext=[V.len(part.u),V.len(part.v),V.len(part.w)];
+      damagePods.push({v:fm.v,i:fm.i,ox:center[0]-c[0],oy:center[1]-c[1],oz:center[2]-c[2],r:Math.hypot(...ext),extents:ext,start,count:fm.i.length});
+      m={v:vertices,i:indices,tris:indices.length/3};tr.push(fm.v.buffer,fm.i.buffer);
+    }
     /* carve her pieces NOW, at the forge — so the moment she dies, her
        breakup already exists and costs nothing but an upload */
-    const n=ship.parts.length;
+    const n=coreParts.length;
     const K=Math.max(2,Math.min(j.hulls?12:6,2+Math.round(n/30)));
     const frags=[];
     for(let k=0;k<K;k++){
       const a=Math.floor(k*n/K),b=Math.floor((k+1)*n/K);
-      const sub=ship.parts.slice(a,b);
+      const sub=coreParts.slice(a,b);
       if(!sub.length)continue;
       const fm=packMesh({parts:sub,bb:ship.bb},c,0.30);
       if(!fm.i.length)continue;
@@ -12108,7 +12122,7 @@ onmessage=e=>{
     // before combat. Do not sort/split thousands of triangles on a kill frame.
     const readyFrags=fractureMesh(frags,ship.meta.length>=180?32:6);
     for(const f of readyFrags)tr.push(f.v.buffer,f.i.buffer);
-    out.push({id:j.id,seed:seed,mesh:m,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,exhaust,
+    out.push({id:j.id,seed:seed,mesh:m,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,exhaust,damagePods,
       ringX:ship.meta.ringX!==undefined?ship.meta.ringX-c[0]:0,
       ringW:ship.meta.ringW||0,hero:!!(j.hero||(ship.meta&&ship.meta.hero)),
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length,
@@ -12939,6 +12953,36 @@ function wound(t,raw,from,now){
   t.hp-=amount;t.hurtT=now;
   if(src)t.lastHit=src.id;
   if(t.hp<=0)kill(t,now);
+  else updateHullDamage(t,now);
+}
+// Damage thresholds are one-way: speed never compounds on repeated hits.
+function updateHullDamage(s,now){
+  const ratio=s.hp/Math.max(1,s.hpMax),stage=ratio<.4?2:ratio<.7?1:0,old=s.damageStage||0;
+  if(stage<=old)return;
+  s.damageStage=stage;
+  const factors=[1,.85,.65],factor=factors[stage]/factors[old];
+  s.spd*=factor;s.spdMax*=factor;
+  if(s.v!=null)s.v=Math.min(s.v,s.spdMax);
+  for(let j=old;j<stage;j++){
+    const f=s.damagePods?.[j];if(!f)continue;
+    s.leakPort=[f.ox,f.oy,f.oz];
+    if(s.ibo&&s.damageIndices){
+      s.damageIndices.fill(0,f.start,f.start+f.count);
+      gl.bindVertexArray(s.vao);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,s.ibo);
+      gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,f.start*4,s.damageIndices.subarray(f.start,f.start+f.count));gl.bindVertexArray(null);
+    }
+    if(wrecks.length+debrisQueue.length<DEBRIS_LIMIT&&debrisQueue.length<64){
+      const pose=xPose(s,now),speed=s.v||0;
+      debrisQueue.push(wreckRecord({...s,dax:pose.ax,dang:pose.ang,dvx:Math.cos(s.yaw)*speed,dvy:s.vy||0,dvz:Math.sin(s.yaw)*speed},f,now,false));
+    }
+    s.damagePods[j]=null;
+  }
+}
+function leakHullDust(s,now){
+  if(!s.damageStage||s.dead||now<(s.nextLeak||0)||dusts.length>=480)return;
+  s.nextLeak=now+(s.damageStage===2?.6:1.2);
+  const port=s.leakPort||[-s.slen*.2,0,(s.exZ||s.slen*.12)*.7],p=gunWorld(s,port,now),speed=(s.v||0)*.65;
+  dusts.push({x:p[0],y:p[1],z:p[2],vx:Math.cos(s.yaw)*speed,vy:(s.vy||0)+1,vz:Math.sin(s.yaw)*speed,t0:now,leak:true});
 }
 function craftMood(s,now){
   const a=battleAI.think(s,now);
@@ -14318,6 +14362,7 @@ function onWorkerMsg(e){
     if(rec.seed!=null)s.seed=rec.seed>>>0;   /* the forge may have re-cut it */
     s.ringX=rec.ringX||0;s.ringW=rec.ringW||0;   /* earthforce turns a ring here */
     s.guns=rec.guns||[];s.exhaust=rec.exhaust||[];s.gunI=0;
+    s.damagePods=rec.damagePods||[];s.damageIndices=m.i;
     s.fragData=rec.frags||null;s.fragReady=!!rec.fragReady;
     s.hullMesh=s.slen>=180?{v:m.v,i:m.i}:null;
     s.rad=Math.max(s.slen*0.32,(rec.meta.beam||0)*0.38,(rec.meta.height||0)*0.38);
@@ -16480,6 +16525,7 @@ function simStep(now,dt){
       s.v+=(want-s.v)*Math.min(1,dt*(0.95+0.55*(s.hot||1)+28/s.slen)*(s.hero?1.6:1));
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
     }
+    leakHullDust(s,now);
     s.mark=prefer>=0?prefer:-1;
     if(s.mines){
       const tac=sq&&sq.tac;
@@ -16573,7 +16619,7 @@ function simStep(now,dt){
     }
   }
   tracers=tracers.filter(tr=>!tr.dead);
-  dusts=dusts.filter(du=>now-du.t0<22);
+  dusts=dusts.filter(du=>now-du.t0<(du.leak?7:22));
   for(const du of dusts){du.x+=du.vx*dt;du.y+=du.vy*dt;du.z+=du.vz*dt;}
   /* seekers: they lead their own lives — chase, retarget, or fizzle */
   for(const ms of missiles){
@@ -17573,7 +17619,7 @@ function frame(nowMs){
       for(let i=0;i<nd2;i++){
         const du=dusts[i];
         duPool[i*4]=du.x;duPool[i*4+1]=du.y;duPool[i*4+2]=du.z;
-        duPool[i*4+3]=Math.max(0.4,2.4*(1-(now-du.t0)/22));
+        duPool[i*4+3]=Math.max(0.4,2.4*(1-(now-du.t0)/(du.leak?7:22)));
       }
       gl.bindVertexArray(mmVao);
       gl.bindBuffer(gl.ARRAY_BUFFER,mmVbo);
