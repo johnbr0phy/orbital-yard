@@ -3970,7 +3970,7 @@ var fleetKit=function(parts,seed,o){
     return null;
   };
   const g0=Math.max(0.28,L*(fighter?0.011:0.018));
-  const put=p=>parts.push(p);
+  const put=p=>{p.legacyKit=true;parts.push(p);};
   const frame=(sk,g)=>{
     const n=sk.n,[u,w]=basis(n);
     return {n,u,w,q:sk.q,c:off=>V.add(sk.q,V.mul(n,off))};
@@ -10710,6 +10710,105 @@ var buildHero=function(f,seed){
 };
 /*__HEROES_END__*/
 
+/* Fleet refits: seeded, load-time construction. The class is established;
+   the mission configuration is an original procedural interpretation. */
+var REFIT_NAMES=['LINE SERVICE','LONG-RANGE PATROL','CARRIER CONVERSION','COMMAND / SURVEY','ARMORED REFIT','EXPEDITION SUPPORT'];
+function scaleRefit(parts,k){
+  const sc=q=>q.map(v=>v*k);
+  for(const p of parts){
+    for(const key of ['a','b','c','u','v','w'])if(p[key])p[key]=sc(p[key]);
+    for(const key of ['r','r1','r2','ri','th'])if(p[key]!=null)p[key]*=k;
+    if(p.prof)p.prof=p.prof.map(q=>[q[0]*k,q[1]*k]);
+    for(const key of ['pts','pts2'])if(p[key])p[key]=p[key].map(sc);
+    if(p.sec)for(const section of p.sec)section.pts=section.pts.map(sc);
+  }
+}
+function applyFleetRefit(ship,race,seed,forced){
+  if(!ship||ship.meta?.hero||ship.meta?.klass==='BABYLON 5'||ship.meta?.refit)return ship;
+  const R=mulberry32((seed^0x629ea735)>>>0),role=forced==null?Math.floor(R()*6):forced%6;
+  const small=ship.meta.length<42,scale=small?.96+R()*.08:.82+R()*.36;
+  ship.parts=ship.parts.filter(p=>!p.legacyKit);scaleRefit(ship.parts,scale);
+  if(ship.muzzles)ship.muzzles=ship.muzzles.map(p=>p.map(v=>v*scale));
+  if(ship.meta.ringX!=null)ship.meta.ringX*=scale;if(ship.meta.ringW!=null)ship.meta.ringW*=scale;
+  let bb=efBB(ship.parts),L=bb[1][0]-bb[0][0],B=bb[1][2]-bb[0][2],H=bb[1][1]-bb[0][1];
+  const cx=(bb[1][0]+bb[0][0])*.5,cz=(bb[1][2]+bb[0][2])*.5;
+  const originalCount=ship.parts.length,organic=[1,7,8,13,15,17].includes(race),geometric=[2,4,12].includes(race);
+  const size=L*(small?.014:.022)*( .8+R()*.4);
+  const put=p=>{p.refitPart=true;ship.parts.push(p);};
+  // Sample the original skin once in the forge, never in the animation loop.
+  // Ray hits attach to the skin; stations over a gap snap to a real face.
+  let skin;
+  const root=(x,z)=>{
+    if(!skin)skin=shipMeshQ({parts:ship.parts.slice(0,originalCount),bb},.3).t;
+    let hit=null,nearest=null,distance=Infinity;
+    for(let i=0;i<skin.length;i+=9){
+      const ax=skin[i],ay=skin[i+1],az=skin[i+2],bx=skin[i+3],by=skin[i+4],bz=skin[i+5],dx=skin[i+6],dy=skin[i+7],dz=skin[i+8];
+      const det=(bz-dz)*(ax-dx)+(dx-bx)*(az-dz);
+      if(Math.abs(det)>1e-8){const u=((bz-dz)*(x-dx)+(dx-bx)*(z-dz))/det,v=((dz-az)*(x-dx)+(ax-dx)*(z-dz))/det;
+        if(u>=0&&v>=0&&u+v<=1){const y=u*ay+v*by+(1-u-v)*dy;if(hit==null||y>hit)hit=y;}}
+      const px=(ax+bx+dx)/3,py=(ay+by+dy)/3,pz=(az+bz+dz)/3;
+      const d=(px-x)**2+(pz-z)**2+Math.max(0,-py)*L*.02;
+      if(d<distance){distance=d;nearest=[px,py,pz];}
+    }
+    return hit==null?nearest:[x,hit,z];
+  };
+  const pod=(c,len,w,h)=>{put({k:'loft',sec:[{pts:[[c[0]-len*.5,c[1],c[2]-w*.55],[c[0]-len*.5,c[1]+h*.55,c[2]],[c[0]-len*.5,c[1],c[2]+w*.55],[c[0]-len*.5,c[1]-h*.25,c[2]]]},{pts:[[c[0],c[1],c[2]-w],[c[0],c[1]+h,c[2]],[c[0],c[1],c[2]+w],[c[0],c[1]-h*.25,c[2]]]},{pts:[[c[0]+len*.5,c[1],c[2]-w*.3],[c[0]+len*.5,c[1]+h*.3,c[2]],[c[0]+len*.5,c[1],c[2]+w*.3],[c[0]+len*.5,c[1]-h*.15,c[2]]]}]});};
+  const station=(u,z=0)=>{let x=cx+L*u;if(ship.meta.ringW&&Math.abs(x-ship.meta.ringX)<ship.meta.ringW+L*.10)x=cx-L*.32;return root(x,cz+z);};
+  if(!small&&role){
+    if(organic){
+      // Sympathetic growth: broad carapace lobes / petal fins, never metal boxes.
+      const count=role===4||role===5?3:role===3?1:2;
+      for(let j=0;j<count;j++)for(const sign of [-1,1]){
+        const c=station(-.24+j*.18,sign*B*.20);if(!c)continue;
+        const length=L*(role===1?.22:.12),wide=size*(role===4?2.1:1.2),high=size*(role===3?3.4:1.8);
+        pod(c,length,wide,high);
+      }
+    }else if(geometric){
+      const count=role===5?3:role===4?2:1;
+      for(let j=0;j<count;j++)for(const sign of [-1,1]){const c=station((role===1?-.24:-.10)+j*.18,sign*B*.18);if(!c)continue;
+        if(race===12){put({k:'box',c:[c[0],c[1]+size*.5,c[2]],u:[L*(role===1?.12:.05),0,0],v:[0,size*(role===3?3:role===4?.7:1.2),0],w:[0,0,size*(role===2?3:1.5)]});}
+        else{const tip=[c[0]-L*.12,c[1]+size*(role===3?5:role===2?2:3),c[2]+sign*size*(role===2?5:3)];put({k:'loft',sec:[{pts:[[c[0]-L*.08,c[1],c[2]],[c[0]+L*.08,c[1],c[2]],[c[0],c[1]+size*.2,c[2]+sign*size]]},{pts:[[tip[0]-L*.035,tip[1],tip[2]],[tip[0]+L*.035,tip[1],tip[2]],[tip[0],tip[1]+size*.1,tip[2]+sign*size*.4]]}]});}
+      }
+    }else if(role===3){
+      const c=station(-.12);if(c){
+        if(race===10){for(const sign of [-1,1])put({k:'box',c:[c[0],c[1]+size*1.2,c[2]+sign*size*2],u:[size,0,0],v:[0,size*1.5,0],w:[0,0,size*.3]});pod([c[0],c[1]+size*2.6,c[2]],L*.15,size*3,size*.7);}
+        else{pod(c,L*.14,size*1.5,size);put({k:'disc',c:[c[0],c[1]+size*1.7,c[2]],n:[0,1,0],r:size*2.2,ri:size*.6});put({k:'box',c:[c[0],c[1]+size*.9,c[2]],u:[size*.35,0,0],v:[0,size,0],w:[0,0,size*.35]});}
+      }
+    }else{
+      // Paired, supported mission sponsons: tankage, hangars or layered armor.
+      const count=role===5?3:role===4?2:1;
+      for(let j=0;j<count;j++)for(const sign of [-1,1]){
+        const c=station((role===1?-.28:role===4?.18:-.12)+j*.12,sign*B*.18);if(!c)continue;
+        const length=L*(role===1?.27:role===2?.24:.10),wide=size*(role===2?2.1:1.3),high=size*(role===4?.7:1.3);
+        pod(c,length,wide,high);
+        if(role===2)put({k:'box',c:[c[0]+length*.20,c[1]+high*.55,c[2]],u:[length*.20,0,0],v:[0,high*.18,0],w:[0,0,wide*.72]});
+      }
+    }
+  }else if(small&&role===1){const c=station(-.16);if(c)pod(c,L*.22,size*.8,size*.65);}
+  bb=efBB(ship.parts);ship.bb=bb;ship.meta.length=bb[1][0]-bb[0][0];ship.meta.beam=bb[1][2]-bb[0][2];ship.meta.height=bb[1][1]-bb[0][1];
+  ship.meta.mass=(ship.meta.mass||1)*scale**3;
+  ship.meta.refit={role:organic?['BASE MORPH','LONG-RANGE MORPH','BROOD / TRANSPORT MORPH','SENSORY CREST','ARMORED CARAPACE','SEEDER / SUPPORT MORPH'][role]:REFIT_NAMES[role],index:role,seed:seed>>>0,scale,addedParts:ship.parts.length-originalCount,provenance:'Procedural refit'};
+  return ship;
+}
+// Explicit class library makes cruiser silhouettes available to both muster and study.
+function buildEarthforceClass(seed,type){
+  const rows=[['OLYMPUS-CLASS CORVETTE',efOlympus,43,0],['SAGITTARIUS-CLASS MISSILE CRUISER',efSagittarius,60.5,0],['HYPERION-CLASS HEAVY CRUISER',efHyperion,108.7,1025],['OMEGA-CLASS DESTROYER',efOmega,121.5,1100],['NOVA-CLASS DREADNOUGHT',efNova,420,1502],['AVENGER-CLASS HEAVY CARRIER',efAvenger,108,0],['WARLOCK-CLASS ADVANCED DESTROYER',efWarlock,180,0],['POSEIDON-CLASS SUPERCARRIER',efPoseidon,269,0]];
+  const row=rows[type%rows.length],parts=[];row[1](parts,row[2]);let scale=1;if(row[3])scale=efFit(parts,row[3]);
+  const ring=type===3?[row[2]*.055*scale,row[2]*.075*scale]:null;
+  return efDone(parts,seed,row[0],.09,Math.round(row[2]*8),ring);
+}
+var earthforceMegaOriginal=buildEarthforceMega;
+buildEarthforceMega=function(seed,nH){if(nH>=50)return earthforceMegaOriginal(seed,nH);const pool=nH<20?[2,3,5,6]:[3,4,6,7];return buildEarthforceClass(seed,pool[(Math.imul(seed,2654435761)>>>0)%pool.length]);};
+var rebelMegaOriginal=buildRebelMega;
+function buildRebelClass(seed,type){
+  if(type<3)return rebelMegaOriginal(seed,[10,25,50][type]);
+  const parts=[],rows=[[rebNebulon,300,'EF76','NEBULON-B ESCORT FRIGATE',REBN_NEB],[rebPelta,116,'PLT','PELTA-CLASS FRIGATE',REBN_PELTA],[rebCorvette,150,'CR90','CR90-CLASS CORVETTE',REBN_CR90],[rebHammer,78,'SPH','SPHYRNA-CLASS HAMMERHEAD CORVETTE',REBN_HAM]];
+  const row=rows[(type-3)%rows.length];row[0](parts,row[1]);return rebDone(parts,seed,row[2],row[3],.08,700,false,row[4]);
+}
+buildRebelMega=function(seed,nH){return buildRebelClass(seed,(Math.imul(seed,2246822519)>>>0)%(nH<20?5:3));};
+var fedMegaOriginal=buildFedMega;
+buildFedMega=function(seed,nH){if(nH>=50)return fedMegaOriginal(seed,nH);const R=mulberry32(seed),parts=[],pool=nH<25?[[fedAmbassador,193],[fedNebula,220],[fedExcelsior,230],[fedAkira,190]]:[[fedGalaxy,615],[fedNebula,440],[fedExcelsior,460]];const row=pool[(Math.imul(seed,3266489917)>>>0)%pool.length],cls=row[0](parts,R,row[1]);return fedDone(parts,seed,cls[0],cls[1],cls[2],cls[3]);};
+
 /* ---- the muster law, shared by page and forge alike: a navy is a
    pyramid, not a lottery. Every hull a yard can lay falls in one of
    three bands — small craft, escorts, capitals — and the fleet's mix
@@ -10764,7 +10863,7 @@ function hullDeckAt(parts,x,z,dorsal,skip){
      occupy this x,z — so a turret sits on the deck, not in the AABB */
   let yHit=null,zMax=0;
   for(const p of parts){
-    if(skip&&skip.has(p))continue;
+    if(p.refitPart||(skip&&skip.has(p)))continue;
     if(p.k==="tube"||p.k==="capsule"||p.k==="disc")continue;
     if(p.k==="loft"){
       const poly=loftPolyAtX(p,x);
@@ -10800,7 +10899,7 @@ function seatTurrets(ship){
   const L=Math.max(8,bb[1][0]-bb[0][0]);
   const discs=[];
   for(const p of parts){
-    if(p.k!=="disc")continue;
+    if(p.refitPart||p.k!=="disc")continue;
     const n=p.n||[0,1,0];
     if(Math.abs(n[1])<0.78)continue;
     if(p.r<L*0.0012||p.r>L*0.04)continue;
@@ -10855,6 +10954,7 @@ function armShip(ship,race,hulls){
     found.push([x,y,z]);
   };
   for(const p of parts){
+    if(p.refitPart)continue;
     if(p.k==="tube"||p.k==="capsule"){
       const r1=p.k==="capsule"?p.r:p.r1,r2=p.k==="capsule"?p.r:p.r2;
       const lo=Math.min(r1,r2),hi=Math.max(r1,r2);
@@ -11732,7 +11832,7 @@ const P={fuse:0.5,detail:0.35,line:1};
 const bandHopeless={};
 let bandGeneration=-1;
 /* one door for five forges: f names the race, the race names the builder */
-const raceBuild=(f,seed,hulls,hero)=>{
+const baseRaceBuild=(f,seed,hulls,hero)=>{
   if(hero&&typeof buildHero==="function"){
     const h=buildHero(f,seed);
     if(h)return h;
@@ -11758,6 +11858,7 @@ const raceBuild=(f,seed,hulls,hero)=>{
     default:return hulls?buildMegaShip(seed,hulls):buildShip(seed,P,NL);
   }
 };
+const raceBuild=(f,seed,hulls,hero)=>applyFleetRefit(baseRaceBuild(f,seed,hulls,hero),f,seed);
 const MEGA_ROLE={50:["LV","LEVIATHAN"],25:["DN","DREADNOUGHT"],10:["AK","ARK CARRIER"]};
 function buildMegaShip(seed,nH){
   const R=mulberry32(seed|0),rr=(a,b)=>a+(b-a)*R();
@@ -11970,7 +12071,7 @@ onmessage=e=>{
       ringW:ship.meta.ringW||0,hero:!!(j.hero||(ship.meta&&ship.meta.hero)),
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length,
         beam:ship.meta.beam||0,height:ship.meta.height||0,hero:!!(ship.meta&&ship.meta.hero),
-        fo:ship.meta.fo,unique:!!ship.meta.unique,crew:ship.meta.crew}});
+        refit:ship.meta.refit,fo:ship.meta.fo,unique:!!ship.meta.unique,crew:ship.meta.crew}});
     tr.push(m.v.buffer,m.i.buffer);
   }
   postMessage({kind:"batch",genId:d.genId,out},tr);
@@ -16592,7 +16693,7 @@ function card(id){
   const s=ships[id];
   el.style.display="block";
   s.thAt=0;s.thLine=null;
-  el.innerHTML="<span id=\"cardX\" title=\"close\">×</span><h2>"+(s.hero?"★ ":"")+s.meta.desig+"</h2><div class=\"k\">"+s.meta.klass+
+  el.innerHTML="<span id=\"cardX\" title=\"close\">×</span><h2>"+(s.hero?"★ ":"")+s.meta.desig+"</h2><div class=\"k\">"+s.meta.klass+(s.meta.refit?" · "+s.meta.refit.role:"")+
     (s.hero?" · HERO":"")+
     " · <span id=\"cmd\">"+(s.mood||"")+"</span>"+
     " · "+RACE_DEFS[s.race].name+(s.race!==sideRace[s.side]?" · ANSWERING "+SIDE_NAME[s.side]+"'S CALL":"")+
@@ -16943,7 +17044,8 @@ function hullFinish(s){
     else if(/FIRST BORN|LORIEN/.test(klass)){color=[.59,.46,.29];trim=[.30,.38,.22];accent=[.74,.88,.39];}
   }
   let hash=0;for(let i=0;i<klass.length;i++)hash=(Math.imul(hash,31)+klass.charCodeAt(i))>>>0;
-  return {color,trim,accent,pattern,surface,gloss,seed:(hash%997)/997};
+  if(s.meta?.refit){const tint=.94+((s.meta.refit.seed>>>4)%13)/100;color=color.map(c=>Math.min(1,c*tint));}
+  return {color,trim,accent,pattern,surface,gloss,seed:((hash+(s.meta?.refit?.seed||0))%997)/997};
 }
 
 function frame(nowMs){
