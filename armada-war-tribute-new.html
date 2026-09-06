@@ -12510,7 +12510,8 @@ onmessage=e=>{
     // before combat. Do not sort/split thousands of triangles on a kill frame.
     const readyFrags=fractureMesh(frags,ship.meta.length>=180?32:6);
     for(const f of readyFrags)tr.push(f.v.buffer,f.i.buffer);
-    out.push({id:j.id,seed:seed,mesh:m,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,exhaust,damagePods,mountSites,
+    const low=packMesh({parts:coreParts,bb:ship.bb},c,.12);tr.push(low.v.buffer,low.i.buffer);
+    out.push({id:j.id,seed:seed,mesh:m,low,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,exhaust,damagePods,mountSites,
       ringX:ship.meta.ringX!==undefined?ship.meta.ringX-c[0]:0,
       ringW:ship.meta.ringW||0,hero:!!(j.hero||(ship.meta&&ship.meta.hero)),
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length,
@@ -14451,6 +14452,7 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
   return out;
 }
 function disposeShips(){
+  disposeDistantHulls();
   for(const s of ships)if(s.vao){gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);}
   for(const w of wrecks){gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);}
   wrecks=[];debrisQueue=[];
@@ -14660,7 +14662,8 @@ function onWorkerMsg(e){
     gl.bindVertexArray(null);
     s.vao=vao;s.vbo=vbo;s.ibo=ibo;s.icount=m.i.length;
     s.meta=rec.meta;s.slen=rec.meta.length;s.nose=rec.nose;
-    if(rec.seed!=null)s.seed=rec.seed>>>0;   /* the forge may have re-cut it */
+    if(rec.seed!=null)s.seed=rec.seed>>>0;
+    if(rec.low)registerDistantHull(s,rec.low);   /* the forge may have re-cut it */
     s.ringX=rec.ringX||0;s.ringW=rec.ringW||0;   /* earthforce turns a ring here */
     s.guns=rec.guns||[];s.exhaust=rec.exhaust||[];s.gunI=0;
     s.mountSites=rec.mountSites||[];
@@ -17630,24 +17633,47 @@ gl.bindVertexArray(null);
 let lastT=0,fpsA=60,statT=0;
 // Natural hull finishes in the default slate view. Other palettes remain
 // deliberate ink studies. Mixed fleets choose by class, not just allegiance.
+// Ported from tribute-2: shared coarse hull geometry and one instance upload.
+// Every distant object remains a triangle mesh with its own pose and hull colour.
 let distantShipRenderer=null;
 function distantShips(){
   if(distantShipRenderer)return distantShipRenderer;
   const program=compile(`#version 300 es
-layout(location=0) in vec3 position;layout(location=1) in vec4 colorSize;
-uniform mat4 vp;out vec3 color;
-void main(){gl_Position=vp*vec4(position,1);gl_PointSize=colorSize.w;color=colorSize.xyz;}`,
+layout(location=0) in vec3 position;
+layout(location=1) in vec4 pose;layout(location=2) in vec4 orient;
+layout(location=3) in vec4 detail;layout(location=4) in vec4 finish;
+uniform mat4 vp;out vec3 color;out vec3 world;
+void main(){vec3 axis=normalize(vec3(orient.zw,detail.x));float angle=detail.y;
+vec3 p=position*pose.w;p=p*cos(angle)+cross(axis,p)*sin(angle)+axis*dot(axis,p)*(1.-cos(angle));
+p=vec3(p.x*orient.x-p.z*orient.y,p.y,p.x*orient.y+p.z*orient.x);
+world=p+pose.xyz;color=vec3(detail.zw,finish.x);gl_Position=vp*vec4(world,1.);}`,
 `#version 300 es
-precision highp float;in vec3 color;out vec4 result;
-void main(){vec2 p=abs(gl_PointCoord*2.-1.);if(p.x+p.y>1.)discard;result=vec4(color,1);}`);
-  const vao=gl.createVertexArray(),vbo=gl.createBuffer();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
-  gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,28,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,4,gl.FLOAT,false,28,12);gl.bindVertexArray(null);
-  return distantShipRenderer={program,vao,vbo,vp:gl.getUniformLocation(program,'vp'),data:new Float32Array(7168),count:0};
+precision highp float;in vec3 color;in vec3 world;out vec4 result;
+void main(){vec3 n=normalize(cross(dFdx(world),dFdy(world)));float shade=.38+.52*abs(dot(n,normalize(vec3(.45,.8,.35))));result=vec4(color*shade,1.);}`);
+  return distantShipRenderer={program,vbo:gl.createBuffer(),vp:gl.getUniformLocation(program,'vp'),groups:new Map(),data:new Float32Array(16384),count:0};
+}
+function registerDistantHull(s,mesh){
+  const r=distantShips(),key=s.race+'|'+s.meta.klass+'|'+(s.seed%3);
+  let g=r.groups.get(key);
+  if(!g){
+    const vao=gl.createVertexArray(),vbo=gl.createBuffer(),ibo=gl.createBuffer();gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER,vbo);gl.bufferData(gl.ARRAY_BUFFER,mesh.v,gl.STATIC_DRAW);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,mesh.i,gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);for(let k=1;k<=4;k++){gl.enableVertexAttribArray(k);gl.vertexAttribPointer(k,4,gl.FLOAT,false,64,(k-1)*16);gl.vertexAttribDivisor(k,1);}gl.bindVertexArray(null);
+    g={vao,vbo,ibo,length:s.slen,indices:mesh.i.length,members:[]};r.groups.set(key,g);
+  }s.farHull=g;
+}
+function disposeDistantHulls(){
+  if(!distantShipRenderer)return;for(const g of distantShipRenderer.groups.values()){gl.deleteVertexArray(g.vao);gl.deleteBuffer(g.vbo);gl.deleteBuffer(g.ibo);}distantShipRenderer.groups.clear();
 }
 function drawDistantShips(m){
   const r=distantShipRenderer;if(!r||!r.count)return;
-  gl.useProgram(r.program);gl.uniformMatrix4fv(r.vp,false,m);gl.bindVertexArray(r.vao);gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);
-  gl.bufferData(gl.ARRAY_BUFFER,r.data.subarray(0,r.count*7),gl.STREAM_DRAW);gl.drawArrays(gl.POINTS,0,r.count);gl.bindVertexArray(null);gl.useProgram(shipProg);
+  while(r.data.length<r.count*16)r.data=new Float32Array(r.data.length*2);
+  let offset=0;for(const g of r.groups.values()){g.offset=offset;for(const s of g.members){const p=xPose(s,battleTime),c=(s.finish||(s.finish=hullFinish(s))).color,k=[1,.72,1,.72,.68][palI],i=offset++*16;
+    r.data.set([s.x,s.y,s.z,s.slen/g.length,Math.cos(s.yaw),Math.sin(s.yaw),p.ax[0],p.ax[1],p.ax[2],p.ang,c[0]*k,c[1]*k,c[2]*k,0,0,0],i);}}
+  gl.useProgram(r.program);gl.uniformMatrix4fv(r.vp,false,m);gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);gl.bufferData(gl.ARRAY_BUFFER,r.data.subarray(0,offset*16),gl.STREAM_DRAW);
+  for(const g of r.groups.values()){if(!g.members.length)continue;gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);for(let k=1;k<=4;k++)gl.vertexAttribPointer(k,4,gl.FLOAT,false,64,g.offset*64+(k-1)*16);gl.drawElementsInstanced(gl.TRIANGLES,g.indices,gl.UNSIGNED_INT,0,g.members.length);}
+  gl.bindVertexArray(null);gl.useProgram(shipProg);
 }
 function hullFinish(s){
   const klass=((s.meta&&s.meta.klass)||'').toUpperCase();
@@ -17816,7 +17842,7 @@ function frame(nowMs){
   gl.uniform1f(SU.t,now);
   gl.uniform1f(SU.cloak,0);
   const T=now-warT0;
-  let alive=0;const far=distantShips();far.count=0;
+  let alive=0;const far=distantShips();far.count=0;for(const g of far.groups.values())g.members.length=0;
   for(const s of ships){
     if(!s.vao)continue;
     if(!s.dead&&warT0!==Infinity&&T-s.delay>=0){
@@ -17824,12 +17850,10 @@ function frame(nowMs){
       if(s.id===pilotId)continue;
       if(!sphereVis(FRP,s.x,s.y,s.z,s.slen*.8))continue;
       const distance=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez),pixels=hullBerth(s)*cvs.height/Math.max(1,distance*.942);
-      // At under five pixels a full mesh adds draw calls without readable detail.
-      if(pixels<5&&s.id!==sel&&!s.hero&&T-s.delay>2){
-        const color=(s.finish||(s.finish=hullFinish(s))).color,gain=[1,.72,1,.72,.68][palI]*(1-(s.cloakAmt||0));
-        if(gain>.03){if((far.count+1)*7>far.data.length){const next=new Float32Array(far.data.length*2);next.set(far.data);far.data=next;}
-          const i=far.count++*7;far.data[i]=s.x;far.data[i+1]=s.y;far.data[i+2]=s.z;far.data[i+3]=color[0]*gain;far.data[i+4]=color[1]*gain;far.data[i+5]=color[2]*gain;far.data[i+6]=Math.max(1.5,pixels);}
-        continue;
+      // Low-detail geometry, never point substitutes. Selected/hero/damaged or
+      // cloaked hulls keep their individual mesh and its visual state.
+      if(pixels<18&&s.farHull&&s.id!==sel&&!s.hero&&!s.damageStage&&(s.cloakAmt||0)<.04&&T-s.delay>2){
+        s.farHull.members.push(s);far.count++;continue;
       }
     }
     const finish=s.finish||(s.finish=hullFinish(s));
