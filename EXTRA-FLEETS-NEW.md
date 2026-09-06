@@ -6,7 +6,7 @@ Adds race IDs 18–22 without changing the existing IDs. All five appear in Cura
 | --- | --- | --- |
 | Romulan Star Empire | Shuttle, scout, Bird-of-Prey, Valdore, D'deridex | Green disruptors, ambush AI, cloaking including capital hulls. The D'deridex has separated upper/lower wings and an empty central volume. |
 | Dominion | Shuttle, attack ship, heavy escort, battlecruiser, battleship | Violet beam weapons and aggressive, disciplined pack attacks. Curved shoulders and swept outboard drives distinguish it from Starfleet saucers. |
-| Space Marines | Thunderhawk, Hunter, Gladius, Nova, strike cruiser, battle barge | Heavy armour, broadside AI, kinetic bursts and missiles. Hunter torpedo shoulders, Gladius wings and Nova lance/drive outriggers distinguish escorts. |
+| Space Marines | Thunderhawk, Hunter, Gladius, Nova, Vanguard, strike cruiser, battle barge, Xiphon, Caestus, Storm Eagle, Gloriana hero | Heavy armour, broadside AI, kinetic bursts and missiles. Hunter torpedo shoulders, Gladius wings and Nova lance/drive outriggers distinguish escorts. |
 | Tyranids | Spore drone, attack organism, Kraken, Vanguard drone, cruiser, hive ship | Swarm AI, biological plasma and organic destruction. Overlapping carapaces, ribs, jaws, hooked limbs and aft tendrils. |
 | Tesla | Optimus Blaster, Optimus Heavy, Falcon 9, Falcon Heavy, Starship, Starship/Super Heavy, Roadster/Starman | Robot-heavy muster, rapid blue pulses, fast skirmishing and rocket exhaust. Roadster hero has an open cockpit, driver, windscreen frame and four wheels. |
 
@@ -30,3 +30,7 @@ Dominion heavy escort and the two small Tyranid organism labels are game adaptat
 `extra-fleets.test.cjs` checks all 29 classes for finite, bounded geometry and deterministic generation; real worker output in all three muster bands; native guns; fleet composition, heroes, AI/weapon coverage and cloaking; and new crew anatomy. Each class stays below 4,000 triangles at gallery quality. The battle retains its lower mesh quality, one forge worker, existing culling/distant-ship batching, engine/effect buffers and debris limits. No per-frame ship mesh generation or new render passes.
 
 Also checked existing traffic, weapons, paint, crew, pilot firing, rendering and debris tests. Reviewed the actual WebGL ship previews and 3D crew contact sheet, plus a bounded small Tesla/Tyranid battle. This is not a full-fleet FPS benchmark.
+
+## Marine model revision
+
+Based on the [Space Marine Fleet](https://wh40k.lexicanum.com/wiki/Space_Marine_Fleet), [Battle Barge](https://wh40k.lexicanum.com/wiki/Battle_Barge) and [Strike Cruiser](https://wh40k.lexicanum.com/wiki/Strike_Cruiser) references: reinforced prows, recessed launch galleries, connected broadside batteries, tiered citadels and broad aft barge shoulders. Assault craft have separate authored silhouettes; the hero is Macragge’s Honour, a Gloriana interpretation. Seeded variants alter beam and engine banks. Four muted chapter-inspired finishes replace generic stripes; graphite machinery, restrained ivory markings and matte armour use the existing shader pass. Captain armour follows the ship’s livery seed. These are game-scale procedural interpretations rather than exact canon models.

@@ -3,7 +3,7 @@ const {loadBattle}=require('./headless-battle.cjs');
 const html=fs.readFileSync(path.join(__dirname,'../../armada-war-tribute-new.html'),'utf8');
 const prefix=html.slice(html.indexOf('\n<script>\n')+10,html.indexOf('//__ARMADA_WORKER_CUT__'));
 const ctx=vm.createContext({console});vm.runInContext(prefix,ctx,{timeout:2000});const run=s=>vm.runInContext(s,ctx,{timeout:2000});
-test('all 29 classes have finite bounded meshes, native guns and repeatable structural variants',()=>{
+test('all tribute expansion classes have finite bounded meshes, native guns and repeatable structural variants',()=>{
  for(let race=18;race<23;race++)for(let type=0;type<run(`EXTRA_CLASSES[${race-18}].length`);type++){
   const r=run(`(()=>{const s=buildExtraClass(${race},42,${type}),before=s.parts.length;armShip(s,${race},0);const m=shipMeshQ(s,.65);return {meta:s.meta,finite:Array.from(m.t).every(Number.isFinite),tri:m.tris,guns:s.muzzles.length,parts:s.parts.length-before,repeat:JSON.stringify(s)===JSON.stringify(buildExtraClass(${race},42,${type}))};})()`);
   assert.ok(r.finite&&r.tri>20&&r.tri<4000,JSON.stringify(r));assert.ok(r.guns>0);assert.equal(r.parts,0);assert.ok(r.repeat);

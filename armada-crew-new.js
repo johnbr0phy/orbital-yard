@@ -19,6 +19,7 @@
   if(race===17&&!klass)p.species=choose(['Vorlon encounter suit','Ancient presence']);
   if(race===22&&/ROADSTER|STARMAN/i.test(klass)){p.species='Starman';p.name='Starman';}
   if(race===21)p.role='Synapse';if(race===22)p.role='Autopilot';
+  p.chapter=/GLORIANA/.test(klass)?0:(seed>>>0)%4;
   p.substrate=race===12?choose(['Human','Vulcan','Klingon']):p.species;
   p.crest=.75+S()*.5;p.tendril=.75+S()*.5;p.plate=.8+S()*.4;
   p.role=race===8?'Shadow presence':race===17?'Presence':race===12?'Command node':p.role;
@@ -55,7 +56,7 @@
    }return m;
   }
   if(sp==='Adeptus Astartes'||sp==='Optimus'||sp==='Starman'){
-   const marine=sp==='Adeptus Astartes',robot=sp==='Optimus',armor=marine?['#315987','#813b38','#435b45'][p.seed%3]:'#c7cdd0';
+   const marine=sp==='Adeptus Astartes',robot=sp==='Optimus',armor=marine?['#315987','#813b38','#435b45','#55585c'][p.chapter]:'#c7cdd0';
    ell(0,-73,-4,marine?68:49,45,32,armor,10,6);
    for(const sign of [-1,1])ell(sign*(marine?61:44),-61,1,marine?30:20,31,31,armor,10,6);
    ell(0,0,0,36*p.jaw,49*p.forehead,32,armor,12,8);

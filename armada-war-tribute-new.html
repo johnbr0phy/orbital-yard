@@ -300,8 +300,8 @@ body.piloting #brand,body.piloting #score,body.piloting #bar,body.piloting #watc
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
 <script src="armada-systems-new.js?v=muted-worlds-1"></script>
-<script src="armada-crew-new.js?v=fleets-23"></script>
-<script src="armada-battle-ai-new.js?v=steady-destroyers-1"></script>
+<script src="armada-crew-new.js?v=marine-liveries-2"></script>
+<script src="armada-battle-ai-new.js?v=traffic-flow-3"></script>
 <script>
 "use strict";
 /* ===================== vector ===================== */
@@ -10676,7 +10676,7 @@ var buildHero=function(f,seed){
 var EXTRA_CLASSES=[
  ['ROMULAN SHUTTLE','ROMULAN SCOUT','ROMULAN BIRD-OF-PREY','VALDORE WARBIRD',"D’DERIDEX WARBIRD"],
  ["JEM'HADAR SHUTTLE","JEM'HADAR ATTACK SHIP","JEM'HADAR HEAVY ESCORT","JEM'HADAR BATTLECRUISER","JEM'HADAR BATTLESHIP"],
- ['THUNDERHAWK GUNSHIP','HUNTER DESTROYER','GLADIUS FRIGATE','NOVA FRIGATE','STRIKE CRUISER','BATTLE BARGE'],
+ ['THUNDERHAWK GUNSHIP','HUNTER DESTROYER','GLADIUS FRIGATE','NOVA FRIGATE','STRIKE CRUISER','BATTLE BARGE','VANGUARD LIGHT CRUISER','XIPHON INTERCEPTOR','CAESTUS ASSAULT RAM','STORM EAGLE','GLORIANA BATTLESHIP'],
  ['SPORE DRONE','ATTACK ORGANISM','KRAKEN BIO-SHIP','VANGUARD DRONE SHIP','TYRANID CRUISER','HIVE SHIP'],
  ['OPTIMUS BLASTER','OPTIMUS HEAVY','FALCON 9','FALCON HEAVY','STARSHIP','STARSHIP / SUPER HEAVY','ROADSTER / STARMAN']
 ];
@@ -10725,32 +10725,64 @@ function buildExtraClass(race,seed,type,hero=false){
   if(type===4){pod(-4,12,0,26,6,13);pod(-8,-10,0,30,5,18);}
   for(let i=0;i<4;i++)body([[8+i*7,7,0,3,17-i*2],[12+i*7,8,0,2,16-i*2]],8);
  }else if(race===20){
-  L=[29,130,190,240,780,1500][type];
-  if(type===0){
-   box(0,0,0,37,7,8);box(24,8,0,10,4,7);box(39,-4,0,8,3,7);
-   for(const sign of [-1,1]){plate([[8,0,sign*5],[-18,0,sign*39],[-35,0,sign*39],[-25,0,sign*5]],3);drive(-32,0,sign*17,5);box(-26,8,sign*9,5,10,1);gun([17,-3,sign*9],[45,-3,sign*9],1.8);}
-   gun([3,9,0],[22,9,0],2.5);
-  }else{
-   const capital=type>=4,width=capital?14:8;
-   box(-8,0,0,34,8,width);box(21,-1,0,12,10,width+2);
-   body([[29,-1,0,10,width+2],[45,-2,0,14,width+4],[52,-3,0,9,4]],4);
-   const banks=capital?5+variant:3;
-   for(const sign of [-1,1]){
-    box(-9,0,sign*(width+2),24,6,3);
-    for(let i=0;i<banks;i++){const x=-29+i*9;box(x,2,sign*(width+4),3,5,3);gun([x,2,sign*(width+5)],[x+5,2,sign*(width+7)],1.5);}
-    // Flying buttresses join the cathedral deck to the armoured shoulders.
-    for(let i=0;i<3;i++)tube([-23+i*12,8,sign*width],[-23+i*12,18,sign*4],1.3);
-    if(capital)box(-4,-5,sign*(width+8),17,3,4);
+  L=[29,130,190,240,780,1500,430,21,25,34,2300][type];
+  // Chamfered armour sections, not piled rectangular rooms. +X is the prow.
+  const armour=(stations)=>parts.push({k:'loft',sec:stations.map(([x,y,h,w])=>({pts:[[x,y+h,w*.72],[x,y+h*.72,w],[x,y-h*.72,w],[x,y-h,w*.72],[x,y-h,-w*.72],[x,y-h*.72,-w],[x,y+h*.72,-w],[x,y+h,-w*.72]]}))});
+  const roof=(x,y,z,l,w,h)=>{box(x,y+h*.35,z,l,h*.35,w);parts.push({k:'loft',sec:[x-l,x+l].map(xx=>({pts:[[xx,y+h*.7,z-w],[xx,y+h,z],[xx,y+h*.7,z+w]]}))});};
+  const battery=(x,y,z,n)=>{for(let i=0;i<n;i++){const gx=x+i*5.8;box(gx,y,z,2,2.5,2.8);gun([gx,y,z],[gx+1,y,z+Math.sign(z)*5],.85);}};
+  const driveBank=(n,width)=>{for(let i=0;i<n;i++)drive(-51,-1,(i-(n-1)*.5)*width,2.6);};
+  if([0,7,8,9].includes(type)){
+   const xiphon=type===7,ram=type===8,eagle=type===9;
+   if(ram){
+    for(const sign of [-1,1]){armour([[-38,0,7,7],[-5,0,7,7],[35,-1,10,9],[48,-1,9,9]]);const p=parts[parts.length-1];for(const sec of p.sec)for(const v of sec.pts)v[2]+=sign*13;box(43,0,sign*13,3,7,7);drive(-43,0,sign*13,5);gun([36,6,sign*13],[46,6,sign*13],1.2);}
+    box(-5,0,0,21,4,8);box(-17,8,0,7,3,8);
+   }else{
+    armour([[-40,0,5,xiphon?5:8],[-20,1,7,xiphon?7:10],[23,0,xiphon?5:8,xiphon?5:9],[45,-1,3,xiphon?1.2:7]]);
+    box(17,8,0,8,2.5,xiphon?4:7);
+    for(const sign of [-1,1]){
+     const span=xiphon?35:eagle?27:39;
+     plate([[13,0,sign*6],[-20,-1,sign*span],[-36,-1,sign*span],[-27,0,sign*6]],2);
+     pod(-26,1,sign*(xiphon?10:17),15,4,4);drive(-44,1,sign*(xiphon?10:17),3.2);
+     parts.push({k:'panel',pts:[[-35,2,sign*8],[-38,22,sign*8],[-17,11,sign*8],[-14,2,sign*8]],n:[0,0,1],th:1.2});
+     gun([19,-4,sign*(xiphon?5:10)],[48,-4,sign*(xiphon?5:10)],1.1);
+     if(!xiphon){box(-5,-4,sign*23,8,3,4);gun([2,-4,sign*23],[15,-4,sign*23],1.3);}
+    }
+    if(type===0){box(-2,10,0,6,3,5);gun([2,12,0],[26,12,0],2.1);}
    }
-   box(-16,13,0,17,6,7);box(-23,24,0,6,9,6);box(-23,31,0,10,2,9);
-   for(let i=0;i<(capital?4:2);i++){const x=-31+i*11;box(x,22,0,2,8,2);tube([x,30,0],[x,37+(i%2)*5,0],2,0);}
-   if(type===5){box(-1,17,0,8,9,9);box(-1,27,0,12,2,11);}
-   for(const y of [-4,4])for(const z of (capital?[-9,0,9]:[-4,4]))drive(-46,y,z,3.4);
-   gun([39,8,0],[53,8,0],type===3?3:2);
-   if(type===1)for(const sign of [-1,1]){box(36,-5,sign*9,15,3,3);gun([40,-5,sign*9],[54,-5,sign*9],2.2);}
-   if(type===2)for(const sign of [-1,1]){plate([[-28,0,sign*8],[-38,-2,sign*24],[0,-2,sign*21],[11,0,sign*8]],3);drive(-39,-2,sign*20,3);}
-   if(type===3){gun([-3,14,0],[42,14,0],3.3);for(const sign of [-1,1]){box(-22,-5,sign*17,14,4,5);tube([-16,0,sign*7],[-22,-5,sign*17],3);drive(-39,-5,sign*17,4);}}
-
+  }else{
+   const barge=type===5||type===10,gloriana=type===10,escort=type<=3,vanguard=type===6;
+   const width=(gloriana?17:barge?15:escort?6.5:vanguard?8:10.5)*(.94+variant*.06);
+   const stern=barge?-39:-32,prow=escort?30:24;
+   armour([[-47,0,6,width*.85],[stern,0,8,width],[-18,0,6,width*.58],[17,0,6,width*.58],[prow,0,8,width],[43,-1,10,width*1.20],[51,-2,7,width*.65]]);
+   // Lower prow ram and shoulder armour give the bow a solid blunt profile.
+   armour([[prow,-7,2,width*.65],[48,-8,3,width*.75],[54,-7,1,width*.35]]);
+   const bays=barge?4:escort?1:vanguard?2:3;
+   if(barge)for(const sign of [-1,1]){plate([[-44,1,sign*6],[-49,-2,sign*(gloriana?39:33)],[-28,-2,sign*(gloriana?39:33)],[-19,1,sign*6]],4);box(-37,1,sign*20,10,3,7);roof(-34,4,sign*19,6,3,5);pod(33,0,sign*(width+3),13,5,4);gun([36,3,sign*(width+4)],[58,3,sign*(width+4)],1.6);}
+   for(const sign of [-1,1]){
+    // The open space between roof and lip is an actual recessed launch bay.
+    box(-3,5,sign*(width*.6+3),18,1.4,4);box(-3,-5,sign*(width*.6+3),18,1.3,4);
+    for(let i=0;i<=bays;i++){const x=-21+i*36/bays;box(x,0,sign*(width*.6+4),.8,5,2);}
+    battery(-19,1,sign*(width*.6+4),escort?3:barge?6:5);
+    if(barge){battery(-43,3,sign*28,3);}
+    // Connected sloped buttresses support the bridge, not freestanding poles.
+    for(let i=0;i<(barge?4:2);i++){const x=-33+i*8;tube([x,7,sign*width],[x,14,sign*4],1.2);}
+   }
+   const bridgeX=barge?-31:-25;
+   armour([[bridgeX-10,11,3,6],[bridgeX+9,11,3,6]]);
+   roof(bridgeX,14,0,7,4,7);box(bridgeX,23,0,8,1.4,6);if(barge){box(bridgeX-1,13,0,12,2,10);roof(bridgeX+9,14,0,3,3,5);}
+   // A restrained cathedral silhouette: spires belong to the aft citadel.
+   for(const sign of [-1,1]){box(bridgeX-4,20,sign*5,1.5,5,1.5);tube([bridgeX-4,25,sign*5],[bridgeX-4,33,sign*5],1.8,.05);}
+   tube([bridgeX+3,22,0],[bridgeX+3,32,0],.7,.3);
+   // Dorsal bombardment turrets sit on the central deck ahead of the bridge.
+   const turrets=barge?3:1;
+   for(let i=0;i<turrets;i++){const x=-7+i*11;box(x,9,0,3.7,2,4);for(const sign of [-1,1])gun([x+2,11,sign*1.5],[x+11,11,sign*1.5],1.0);}
+   if(gloriana){roof(-13,11,0,7,5,7);for(const sign of [-1,1]){armour([[-40,-3,4,4],[-19,-3,4,4]]);for(const sec of parts[parts.length-1].sec)for(const v of sec.pts)v[2]+=sign*25;tube([-26,-3,sign*17],[-26,-3,sign*25],2);drive(-43,-3,sign*25,3);}}
+   if(type===1){for(const sign of [-1,1])gun([35,-2,sign*3],[52,-2,sign*3],1.6);}
+   if(type===2){for(const sign of [-1,1])battery(10,4,sign*(width+3),3);}
+   if(type===3){gun([-4,11,0],[43,11,0],2.3);box(-13,-9,0,18,3,5);}
+   if(vanguard){for(const sign of [-1,1])pod(-32,-2,sign*15,15,3,3);}
+   driveBank(gloriana?7:barge?(variant===2?7:5):3,barge?6:4.5);
+   if(gloriana){for(const p of parts){for(const key of ["a","b","c","u","v","w"])if(p[key])p[key][0]*=1.35;if(p.sec)for(const sec of p.sec)for(const v of sec.pts)v[0]*=1.35;if(p.pts)for(const v of p.pts)v[0]*=1.35;}for(const p of [...muzzles,...engines])p[0]*=1.35; }
   }
  }else if(race===21){
   L=[19,33,150,240,650,1300][type];const big=type>=4,belly=big?16:10,plates=4+variant+(big?3:0);
@@ -10812,15 +10844,15 @@ function buildExtraClass(race,seed,type,hero=false){
   }
  }
  const scale=heroFit(parts,L*(.94+R()*.12)),bb=heroBB(parts);
- const names=['IRW KHOPESH','VICTORY IS LIFE','SWORD OF MACRAGGE','THE GREAT DEVOURER',"ELON'S ROADSTER"];
- const meta={klass,desig:hero?names[row]:klass+' '+String(seed>>>0).slice(-5),hero,length:bb[1][0]-bb[0][0],beam:bb[1][2]-bb[0][2],height:bb[1][1]-bb[0][1],crew:race===21||race===22?1:Math.max(4,Math.round(L*1.5)),nativeMuzzles:true,extraClass:type,architecture:['PATROL CONFIGURATION','WIDE ASSEMBLY','HEAVY CONFIGURATION'][variant]};
+ const names=['IRW KHOPESH','VICTORY IS LIFE',"MACRAGGE’S HONOUR",'THE GREAT DEVOURER',"ELON'S ROADSTER"];
+ const meta={klass,desig:hero?names[row]:klass+' '+String(seed>>>0).slice(-5),hero,length:bb[1][0]-bb[0][0],beam:bb[1][2]-bb[0][2],height:bb[1][1]-bb[0][1],crew:race===21||race===22?1:Math.max(4,Math.round(L*1.5)),nativeMuzzles:true,liverySeed:seed>>>0,extraClass:type,architecture:['PATROL CONFIGURATION','WIDE ASSEMBLY','HEAVY CONFIGURATION'][variant]};
  meta.mass=Math.max(1,meta.length*meta.beam*meta.height*.035);
  return {parts,bb,meta,muzzles:muzzles.map(q=>q.map(v=>v*scale)),exhaust:engines.map(q=>q.map(v=>v*scale))};
 }
 function buildExtra(race,seed,hulls=0,hero=false){
  const R=mulberry32((seed^0xADC73)>>>0),row=race-18;
- const pools=[[0,1,2,3,4],[0,1,2,3,4],[0,1,2,3,4,5],[0,1,2,3,4,5],[0,0,0,1,2,3,4,5]];
- let type=hero?[4,4,5,5,6][row]:hulls?(hulls>=50?[4,4,5,5,5][row]:[3,3,4,4,4][row]):pools[row][Math.floor(R()*pools[row].length)];
+ const pools=[[0,1,2,3,4],[0,1,2,3,4],[0,1,2,3,4,5,6,7,8,9],[0,1,2,3,4,5],[0,0,0,1,2,3,4,5]];
+ let type=hero?[4,4,10,5,6][row]:hulls?(hulls>=50?[4,4,5,5,5][row]:[3,3,4,4,4][row]):pools[row][Math.floor(R()*pools[row].length)];
  return buildExtraClass(race,seed,type,hero);
 }
 
@@ -11772,15 +11804,24 @@ void main(){
     if(style>11.5&&style<12.5)mask=max((1.0-smoothstep(.015,.023,abs(p.x-.18)))*.95,step(.47,-p.x));
     if(style>12.5&&style<13.5)mask=step(.01,p.y)*.94;
     if(style>13.5&&style<14.5)mask=smoothstep(.0,.055,p.y)*.85;
+    if(style>14.5&&style<15.5){
+      // Chapter enamel on armour; graphite machinery and recessed launch decks.
+      mask=max((1.0-smoothstep(-.20,-.13,p.y))*.65,(1.0-smoothstep(.02,.045,abs(p.y+.105)))*step(abs(p.x),.22)*step(.04,abs(p.z))*.6);
+    }
     vec3 pigment=mix(uInk,uTrim,clamp(mask,0.0,.98));
+    if(style>14.5&&style<15.5){
+      float badge=step(.25,p.x)*step(p.x,.38)*step(-.025,p.y)*max(step(abs(p.z),.009),step(abs(p.x-.31),.012)*step(abs(p.z),.037));
+      pigment=mix(pigment,vec3(.73,.71,.63),badge*.9);
+    }
     if(style>10.5&&style<11.5&&p.y>.075&&abs(p.z)<.135&&p.x<.04) pigment=vec3(.82,.85,.86);
     col=mix(uBg,pigment,clamp(shade,0.0,1.0));
-    float wear=step(.86,hash)*.10;col*=1.0-wear;
+    float wear=step(.86,hash)*(style>14.5&&style<15.5?.035:.10);col*=1.0-wear;
     float spec=pow(max(dot(reflect(-normalize(vec3(.45,.8,.35)),N),Vd),0.0),mix(12.0,52.0,uPaint.x));
     col+=mix(vec3(.10),uInk*.32,.4)*spec*uPaint.x;
     // Small illuminated seams/windows; no full-hull neon or extra lights.
     float lights=step(.966,hash)*(1.0-smoothstep(.025,.075,abs(fract(q.x)-.5)));
     if(uMaterial.x==1.0||uMaterial.x==2.0)lights*=.08;
+    if(style>14.5&&style<15.5)lights*=.22;
     col+=uAccent*lights*.22*(1.0-uMaterial.w);
     if(style>7.5&&style<8.5){float hazard=step(.5,fract((p.x+p.z)*42.0))*stripe*step(.15,p.x);col=mix(col,vec3(.67,.48,.12)*shade,hazard*.7);}
     // Keep faction pigment on wrecks, with desaturation and scorch instead of a reset to gray.
@@ -12523,7 +12564,7 @@ function xPose(s,now){
   }
   const roll=(s.roll||0)+br;
   const pitch=s.pitch||0;
-  if(!s.steadyCapital&&Math.abs(roll)<0.02&&Math.abs(pitch)<0.02)return {ax:[0,1,0],ang:0};
+  if(Math.abs(roll)<0.00001&&Math.abs(pitch)<0.00001)return {ax:[0,1,0],ang:0};
   return xQAA([1,0,0],roll,[0,0,1],pitch);
 }
 // Destruction budget includes queued meshes. Small fragments expire; hulks last longer.
@@ -12673,6 +12714,8 @@ function destroyerDebrisPilot(s,now){
 function debrisPilot(s,now){
   if(now<(s.debrisScan||0))return;s.debrisScan=now+.2;
   if(isStarDestroyer(s)){destroyerDebrisPilot(s,now);return;}
+  // The swept traffic pilot owns steering. Do not run a competing sidestep controller.
+  if(trafficIndex){s.debrisGoal=null;s.debrisBrake=1;s.debrisAvoid=null;return;}
   const previous=s.debrisAvoid;
   s.debrisGoal=null;s.debrisBrake=1;s.debrisTarget=null;s.debrisAction=null;
   const forward=[Math.cos(s.yaw),0,Math.sin(s.yaw)],side=[-forward[2],0,forward[0]],width=Math.max(6,Math.min(s.exY||8,s.exZ||8)),lead=(s.exL||10)+Math.max(100,(s.v||s.spd||20)*(s.hulls?12:4));
@@ -12757,7 +12800,7 @@ function resolveTraffic(a,b,now){
     for(const [o,v,m,sign]of[[x,vx,mx,1],[y,vy,my,-1]]){
       const next=V.add(v,V.mul(n,sign*impulse/m));
       if(o.uid!=null){[o.vx,o.vy,o.vz]=next;}
-      else{o.v=next[0]*Math.cos(o.yaw)+next[2]*Math.sin(o.yaw);if(isStarDestroyer(o))o.v=Math.max(0,o.v);o.vy=next[1];o.trafficBrakeUntil=now+.8;
+      else{o.v=next[0]*Math.cos(o.yaw)+next[2]*Math.sin(o.yaw);o.v=Math.max(0,o.v);o.vy=Math.max(-(o.spd||20)*.42,Math.min((o.spd||20)*.42,next[1]));o.trafficBrakeUntil=now+.8;
         // Overlap correction is not an explosion. Damage requires a real swept impact.
         if(hit.enter>0&&closing>45&&now-(o.bumpT??-10)>1){o.bumpT=now;wound(o,o.hpMax*Math.min(.18,((closing-45)/220)**2),null,now);}}
     }
@@ -12775,7 +12818,7 @@ function prepareTraffic(now){
 }
 function trafficPilot(s,now){
   if(!trafficIndex||now<(s.trafficScan||0))return;s.trafficScan=now+.2;
-  const vel=trafficVelocity(s),horizon=s.hulls?16:5,start=[s.x,s.y,s.z],end=V.add(start,V.mul(vel,horizon));
+  const vel=trafficVelocity(s),horizon=fightsAsCrown(s)?16:5,start=[s.x,s.y,s.z],end=V.add(start,V.mul(vel,horizon));
   const own=trafficBodies.get(s.id)||trafficBox(s,now),pad=Math.hypot(...own.e)+trafficSpeed*horizon+40;let threat=null,soon=Infinity;
   for(const t of trafficIndex.query(start,end,pad)){
     if(t===s||t.id===s.id||t.dead||t.grace||t.debris?.shatter)continue;
@@ -12790,11 +12833,15 @@ function trafficPilot(s,now){
   if(!threat){if(now>(s.trafficUntil||0))s.trafficGoal=null;return;}
   const other=threat.o,clear=threat.e.reduce((v,e,i)=>v+e*Math.abs(threat.axes[i][1]),0)+Math.hypot(own.e[1],own.e[2])+55;
   const key=other.uid!=null?'w'+other.uid:'s'+other.id;
-  const direction=isStarDestroyer(s)?(s.trafficHand||((s.id&1)?1:-1)):s.trafficKey===key?s.trafficHand:s.y>other.y+5?1:s.y<other.y-5?-1:s.id<(other.id??other.uid)?1:-1;
+  const direction=now<(s.trafficUntil||0)&&s.trafficHand?s.trafficHand:s.y>other.y+5?1:s.y<other.y-5?-1:s.id<(other.id??other.uid)?1:-1;
+  const holdingLane=now<(s.trafficUntil||0);
   s.trafficHand=direction;s.trafficKey=key;s.trafficUntil=now+1.2;
-  const ahead=isStarDestroyer(s)?Math.max(s.slen*1.5,600):Math.max(40,Math.abs(s.v||0));
-  s.trafficGoal=[s.x+Math.cos(s.yaw)*ahead,other.y+direction*clear,s.z+Math.sin(s.yaw)*ahead];
-  s.trafficBrake=soon<.25?.08:soon<.6?.3:.65;
+  const ahead=Math.max((s.slen||20)*1.5,Math.abs(s.v||0)*4,200);
+  const altitude=other.y+direction*clear;
+  // Hold the passing lane through a manoeuvre, even when the nearest threat changes.
+  const lane=holdingLane&&s.trafficGoal?(direction>0?Math.max(s.trafficGoal[1],altitude):Math.min(s.trafficGoal[1],altitude)):altitude;
+  s.trafficGoal=[s.x+Math.cos(s.yaw)*ahead,lane,s.z+Math.sin(s.yaw)*ahead];
+  s.trafficBrake=soon<.15?.4:soon<.4?.65:.9;
   if(other.uid!=null){s.debrisTarget=other.uid;s.debrisAction='Clearing collision course';}
   if(s.ai)s.ai.reason=other.uid!=null?'Evading incoming wreckage':'Yielding to crossing traffic';
 }
@@ -13290,7 +13337,7 @@ function craftMood(s,now){
 }
 const PACE=1.10;
 function setShipPace(s){
-  s.steadyCapital=isStarDestroyer(s);
+  s.steadyCapital=isStarDestroyer(s)||(s.race===20&&s.slen>=300);
   if(s.steadyCapital){s.turn=Math.min(s.turn||.025,.025);s.yawV=0;s.roll=0;s.pitch=0;s.vy=0;}
   /* cruise is the class; dash is the same keel with the tap open.
      Length sets the band — a TIE and a frigate must never share a
@@ -13337,7 +13384,7 @@ function setShipPace(s){
     else if(L<=240)dash=cruise*(1.18+0.16*hot);
     else dash=cruise*(1.12+0.12*hot);
   }
-  if(s.hero&&!s.hulls){
+  if(s.hero&&!s.hulls&&!s.steadyCapital){
     /* a named keel flies like the fighters she leads, not like her
        metre-count. A 258 m White Star that crawls at 25 m/s never kills. */
     const aceL=Math.min(L,42);
@@ -14865,7 +14912,7 @@ function fightsAsCrown(s){
   /* a Shadow battlecrab is 1,500 m of night even when the muster
      filed her as a fighter — she still fights as a crab */
   const RD=RACE_DEFS[s.race]||{};
-  return !!(s.hulls||(!s.hero&&((s.slen||0)>=300||(RD.fire==="slicer"&&(s.slen||0)>180))));
+  return !!(s.steadyCapital||s.hulls||(!s.hero&&((s.slen||0)>=300||(RD.fire==="slicer"&&(s.slen||0)>180))));
 }
 function isLeviathan(s){
   /* the super-keel: an Executor, a 19 km blade. She does not spin. */
@@ -16758,7 +16805,7 @@ function simStep(now,dt){
 
       if(s.debrisGoal&&now<s.debrisUntil)want*=s.debrisBrake;
       if(s.trafficGoal&&now<s.trafficUntil)want*=s.trafficBrake;
-      if(now<(s.trafficBrakeUntil||0))want*=.1;
+      if(now<(s.trafficBrakeUntil||0))want*=.65;
       if(s.stunT&&now<s.stunT){
         want*=0.36;
         s.yawV*=Math.max(0,1-dt*2.4);
@@ -17581,7 +17628,7 @@ function hullFinish(s){
     [[.60,.43,.57],[.30,.19,.35],[.83,.57,.32],2,4,.80],
     [[.32,.52,.35],[.12,.25,.19],[.35,.95,.48],7,0,.65],
     [[.49,.46,.61],[.25,.22,.36],[.67,.53,1],1,0,.65],
-    [[.20,.34,.62],[.68,.51,.22],[1,.54,.22],1,0,.35],
+    [[.27,.36,.49],[.16,.18,.20],[.84,.65,.38],15,0,.18],
     [[.65,.57,.43],[.32,.15,.35],[.74,.88,.26],14,0,.5],
     [[.81,.83,.85],[.12,.14,.17],[.32,.75,1],0,0,.85]
   ];
@@ -17611,6 +17658,7 @@ function hullFinish(s){
     else if(/TRIUMVIRON/.test(klass)){color=[.67,.30,.22];trim=[.29,.11,.13];accent=[.98,.53,.26];}
     else if(/FIRST BORN|LORIEN/.test(klass)){color=[.59,.46,.29];trim=[.30,.38,.22];accent=[.74,.88,.39];}
   }
+  if(r===20){const chapter=/GLORIANA/.test(klass)?0:(s.meta?.liverySeed??s.seed??0)%4;color=[[.39,.49,.62],[.57,.34,.31],[.37,.49,.40],[.42,.43,.45]][chapter];trim=[.26,.28,.30];pattern=15;gloss=.18;}
   if(r===22&&/ROADSTER/.test(klass)){color=[.78,.075,.065];trim=[.08,.10,.12];pattern=11;gloss=.95;}
   if(r===22&&/OPTIMUS/.test(klass)){pattern=10;}
   if(r===22&&/FALCON/.test(klass)){pattern=12;}

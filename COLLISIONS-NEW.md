@@ -19,3 +19,11 @@ Imperator, Victory, Tector and Executor hulls now use steady capital handling: s
 Their 5 Hz clearance scan covers the full hull width and 500 m or more ahead. Slow fragments are targeted with real, aligned weapons, including pieces excluded by the fighter size limit. Living ships still block clearance fire. Incoming fragments closing faster than 65 m/s are left to the shields. Swept contact with the shield envelope disintegrates fragments without position/velocity impulses, hull damage or additional solid fragments. A capped local blue flash and dust use the existing effect buffers. Whole disabled ships larger than the shield allowance still require gradual avoidance. Ship-to-ship collision detection remains active.
 
 Eight `destroyer-coast.test.cjs` checks cover corridor width, fast incoming debris, swept shield impact without recoil, false contacts / oversized hulks, attitude stability while braking, cruise/hero handling, real clearance projectiles and continuous render poses. Traffic, debris, weapon, player-fire and new-fleet regressions also pass.
+
+## Battle-flow correction
+
+The first traffic pass competed with the older debris sidestep controller, replaced combat destinations, and reduced speed to 8% (then another 10% after contact). Its instantaneous pitch calculation magnified braking into nodding. Capital AI equipment also overwrote the intended destroyer cruise limits.
+
+The swept traffic pilot now owns avoidance during normal simulation. Capitals retain their combat heading and request only a temporary passing altitude. The passing direction and clearance are held through each manoeuvre. Braking is graduated to 40–90%, contact recovery retains 65%, and collision impulses cannot reverse a ship or inject unbounded climb speed. All capital pitch changes are damped and capped; Marine heavy ships stay level. AI equipment preserves steady-capital cruise and turn limits. Solid swept contacts, destroyer shields and debris fragmentation remain active.
+
+Regression checks include real spawned destroyer limits (after AI equipment), near-zero-speed attitude stability, preservation of combat heading, head-on clearance and embedded fighter escape.

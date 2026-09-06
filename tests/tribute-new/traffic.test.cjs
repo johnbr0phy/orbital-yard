@@ -24,3 +24,10 @@ test('capital AI brakes and changes altitude before contact on an otherwise head
  const b=loadBattle();b.start(5,6,42,12);const r=b.run(`(()=>{const pair=[ships.find(s=>s.side===0&&s.hulls&&!s.hero),ships.find(s=>s.side===1&&s.hulls&&!s.hero)];for(const s of ships)s.dead=!pair.includes(s);pair.forEach((s,i)=>{s.x=i?600:-600;s.y=s.z=0;s.yaw=i?Math.PI:0;s.v=s.spd=60;s.exL=200;s.exY=20;s.exZ=70;s.slen=400;s.rad=215;s.arr=true;s.grace=false;});battleAI.destination=s=>({goal:[-s.x,0,0],boost:1,mode:'ATTACK',target:pair[1-s.side].id});let contact=false,slow=60,climb=0;for(let i=0;i<600;i++){const now=i/30;prepareTraffic(now);for(const s of pair){trafficPilot(s,now);battleAI.moveCapital(s,now,1/30);slow=Math.min(slow,s.v);climb=Math.max(climb,Math.abs(s.y));}if(trafficContact(trafficBox(pair[0],now),trafficBox(pair[1],now)))contact=true;}return {contact,slow,climb};})()`);
  assert.equal(r.contact,false);assert.ok(r.slow<40);assert.ok(r.climb>40);
 });
+test('capital avoidance preserves battle heading and cannot turn low speed into nodding',()=>{
+ const b=loadBattle();b.start(1,6,42,12);
+ assert.ok(b.run(`(()=>{const s=ships.find(s=>fightsAsCrown(s));s.yaw=0;s.yawV=0;s.v=.01;s.vy=40;s.pitch=0;s.trafficScan=1;s.trafficGoal=[s.x-1000,s.y+800,s.z];s.trafficUntil=100;s.trafficBrake=.65;s.debrisGoal=[s.x-2000,s.y-800,s.z];s.debrisUntil=100;s.debrisBrake=1;battleAI.destination=()=>({goal:[s.x+2000,s.y,s.z],boost:1,mode:'ATTACK',target:-1});for(let i=0;i<120;i++)battleAI.moveCapital(s,i/30,1/30);return Math.abs(s.yaw)<.001&&Math.abs(s.pitch)<=.055&&s.v>s.spd*.4;})()`));
+});
+test('real destroyer spawn retains slow cruise after AI equipment allocation',()=>{
+ const b=loadBattle();b.start(5,6,42,12);assert.ok(b.run(`ships.filter(isStarDestroyer).length>0&&ships.filter(isStarDestroyer).every(s=>s.steadyCapital&&s.turn<=.025&&s.spdMax<16)`));
+});

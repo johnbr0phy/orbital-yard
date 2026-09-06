@@ -50,7 +50,7 @@
   ].map((p, race) => ({ race, name:p[0], traits:p[1], range:p[2], fov:p[3], style:p[4], budget:p[5] }));
   const alive = s => !s.dead && s.arr !== false && !s.grace;
   const radius = s => Math.max(8, s.rad || 0, s.exL || (s.slen || 30) * .5);
-  const capital = s => !!(s.hulls || (!s.hero && ((s.slen || 0) >= 300 || (s.race === 8 && s.slen > 180))));
+  const capital = s => !!(s.steadyCapital || s.hulls || (!s.hero && ((s.slen || 0) >= 300 || (s.race === 8 && s.slen > 180))));
   const surface = (s, t) => Math.max(0, distance(s, t) - radius(t));
   const strength = s => Math.sqrt(Math.max(1, s.hpMax || 3)) * (s.hulls ? 1.4 : 1) * (.6 + .4 * clamp(s.hp / Math.max(1, s.hpMax)));
   function allocation(base, r) {
@@ -86,7 +86,7 @@
       s.hpMax=Math.max(2,Math.round(s.hpMax*(.72+.84*arm)));s.hp=s.hpMax;
       s.damageK=.70+.90*w;s.armourK=.86+.42*arm;s.cycleK=1.12-.35*w;
       s.spd*=.67+e;s.spdMax*=.67+e;s.turn*=.80+.60*e;
-      if(capital(s)){
+      if(capital(s)&&!s.steadyCapital){
         const scale=clamp(Math.pow(900/Math.max(150,s.slen),.15),.66,1.4);
         const mobility=['pounce','flank','ambush'].includes(a.profile.style)?1.15:1;
         const base=s.hulls>=50?28:38;
@@ -94,6 +94,7 @@
         s.spdMax=s.spd*(1.30+.35*e);
         s.turn=clamp(75/Math.max(300,s.slen),.035,.22)*(.8+.6*e);
       }
+      if(s.steadyCapital)s.turn=Math.min(s.turn,.025);
       a.lastHp=s.hp;a.equipped=true;
     }
     senses(s) {
@@ -316,9 +317,11 @@
     }
     moveCapital(s,now,dt) {
       const p=this.destination(s,now,true),a=s.ai;
-      const goal=s.trafficGoal&&now<s.trafficUntil?s.trafficGoal:s.debrisGoal&&now<s.debrisUntil?s.debrisGoal:p.goal;
+      const avoiding=s.trafficGoal&&now<s.trafficUntil;
+      // Keep pursuing the battle course; traffic only requests a passing altitude.
+      const goal=avoiding?[p.goal[0],s.trafficGoal[1],p.goal[2]]:s.debrisGoal&&now<s.debrisUntil?s.debrisGoal:p.goal;
       let dx=goal[0]-s.x,dy=goal[1]-s.y,dz=goal[2]-s.z;
-      for(const other of a.friends.slice(0,10)){
+      for(const other of (s.trafficScan!=null?[]:a.friends.slice(0,10))){
         const d=distance(s,other),safe=radius(s)+radius(other)+90;
         if(d>1&&d<safe){const k=(safe-d)/d;dx+=(s.x-other.x)*k*1.8;dy+=(s.y-other.y)*k;dz+=(s.z-other.z)*k*1.8;}
       }
@@ -335,7 +338,7 @@
       if(transit){velocity=s.spd*(2.4+a.budget[2]/40);a.reason='Transit burn. Closing to sensor contact';}
       if(s.debrisGoal&&now<s.debrisUntil){velocity*=s.debrisBrake;a.reason="Avoiding debris corridor";}
       if(s.trafficGoal&&now<s.trafficUntil)velocity*=s.trafficBrake;
-      if(now<(s.trafficBrakeUntil||0))velocity*=.1;
+      if(now<(s.trafficBrakeUntil||0))velocity*=.65;
       if(s.stunT&&now<s.stunT)velocity*=.62;
       s.v=(s.v||0)+(velocity-(s.v||0))*Math.min(1,dt*.65);
       s.vy=(s.vy||0)+(clamp(dy*.15,-s.spd*.42,s.spd*.42)-(s.vy||0))*Math.min(1,dt*.8);
@@ -344,11 +347,12 @@
         // A capital hull translates vertically without pitching like a fighter.
         // Never turn a collision-induced low forward speed into a steep attitude.
         s.roll=(s.roll||0)*Math.exp(-dt*2);
-        const pitch=clamp(Math.atan2(s.vy,Math.max(20,s.spd,s.v))*.12,-.025,.025);
+        const pitch=s.race===20?0:clamp(Math.atan2(s.vy,Math.max(20,s.spd,s.v))*.12,-.025,.025);
         s.pitch=(s.pitch||0)+(pitch-(s.pitch||0))*Math.min(1,dt*.35);
       }else{
         s.roll=(s.roll||0)+(-s.yawV/turn*.18-(s.roll||0))*Math.min(1,dt);
-        s.pitch=Math.atan2(s.vy,Math.max(1,s.v))*.5;
+        const pitch=clamp(Math.atan2(s.vy,Math.max(20,s.spd,s.v))*.18,-.055,.055);
+        s.pitch=(s.pitch||0)+(pitch-(s.pitch||0))*Math.min(1,dt*.6);
       }
       s.mark=p.target;s.mood={RETREAT:'FLEE',EVADE:'EVADE',ESCORT:'DEFEND',FLANK:'FLANK',REGROUP:'REGROUP',SEARCH:'SEARCH'}[p.mode]||'ATTACK';
     }
