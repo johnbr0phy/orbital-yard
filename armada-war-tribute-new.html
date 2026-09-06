@@ -12022,6 +12022,25 @@ function packMesh(ship,c,q){
   return {v:new Float32Array(verts),i:inds,tris:m.tris};
 }
 
+// A small set of exact hull vertices provides real mounting surfaces. The
+// expensive geometry work stays in the forge; live ships only use these points.
+function forgeMountSites(parts,bb,c,guns){
+  const L=bb[1][0]-bb[0][0];
+  const skin=parts.filter(p=>{
+    if(!['box','loft','lathe','sphere'].includes(p.k)||p.refitPart||p.enginePort)return false;
+    const b=efBB([p]),dims=b[0].map((v,i)=>b[1][i]-v).sort((a,b)=>b-a);
+    return dims[1]>L*.025;
+  });
+  if(!skin.length)return [];
+  const mesh=packMesh({parts:skin,bb},c,.32),v=mesh.v,targets=guns.slice(),sites=[];
+  for(let axis=0;axis<3;axis++)for(const sign of [-1,1])for(let j=0;j<5;j++){
+    const p=[0,0,0];p[axis]=sign*(bb[1][axis]-bb[0][axis]);p[(axis+1)%3]=(j-2)*(bb[1][(axis+1)%3]-bb[0][(axis+1)%3])*.18;targets.push(p);
+  }
+  for(const target of targets){let best=0,dist=Infinity;for(let i=0;i<v.length;i+=3){const d=(v[i]-target[0])**2+(v[i+1]-target[1])**2+(v[i+2]-target[2])**2;if(d<dist){dist=d;best=i;}}
+    const p=[v[best],v[best+1],v[best+2]];if(!sites.some(q=>q.every((x,i)=>x===p[i])))sites.push(p);
+  }
+  return sites.slice(0,64);
+}
 onmessage=e=>{
   const d=e.data;
   if(d.kind==="wreck"){
@@ -12096,6 +12115,7 @@ onmessage=e=>{
       damagePods.push({v:fm.v,i:fm.i,ox:center[0]-c[0],oy:center[1]-c[1],oz:center[2]-c[2],r:Math.hypot(...ext),extents:ext,start,count:fm.i.length});
       m={v:vertices,i:indices,tris:indices.length/3};tr.push(fm.v.buffer,fm.i.buffer);
     }
+    const mountSites=j.f===8?[]:forgeMountSites(coreParts,ship.bb,c,guns);
     /* carve her pieces NOW, at the forge — so the moment she dies, her
        breakup already exists and costs nothing but an upload */
     const n=coreParts.length;
@@ -12122,7 +12142,7 @@ onmessage=e=>{
     // before combat. Do not sort/split thousands of triangles on a kill frame.
     const readyFrags=fractureMesh(frags,ship.meta.length>=180?32:6);
     for(const f of readyFrags)tr.push(f.v.buffer,f.i.buffer);
-    out.push({id:j.id,seed:seed,mesh:m,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,exhaust,damagePods,
+    out.push({id:j.id,seed:seed,mesh:m,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,exhaust,damagePods,mountSites,
       ringX:ship.meta.ringX!==undefined?ship.meta.ringX-c[0]:0,
       ringW:ship.meta.ringW||0,hero:!!(j.hero||(ship.meta&&ship.meta.hero)),
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length,
@@ -14362,6 +14382,7 @@ function onWorkerMsg(e){
     if(rec.seed!=null)s.seed=rec.seed>>>0;   /* the forge may have re-cut it */
     s.ringX=rec.ringX||0;s.ringW=rec.ringW||0;   /* earthforce turns a ring here */
     s.guns=rec.guns||[];s.exhaust=rec.exhaust||[];s.gunI=0;
+    s.mountSites=rec.mountSites||[];
     s.damagePods=rec.damagePods||[];s.damageIndices=m.i;
     s.fragData=rec.frags||null;s.fragReady=!!rec.fragReady;
     s.hullMesh=s.slen>=180?{v:m.v,i:m.i}:null;
@@ -14469,6 +14490,7 @@ function onWorkerMsg(e){
       s.turn=Math.min(2.8,Math.max(s.turn*1.15,1.7));
     }
     if((RACE_DEFS[s.race]||{}).fire==="cutter"&&s.hulls)borgArm(s);
+    seatBattleMounts(s);
     setShipPace(s);
     battleAI.equip(s);
     forged++;
@@ -15082,10 +15104,20 @@ function shadowFlex(g,L,phase,now){
   const t=now*.85+phase,a=Math.atan2(g[2],g[0])*2+r*8;
   return [g[0],g[1]+Math.sin(t+a)*w*w*S*.025,g[2]+Math.cos(t*.83+a)*w*w*S*.018];
 }
-function gunWorld(s,g,now){
+function animatedMount(s,g,now){
+  const am=(RACE_DEFS[s.race]||{}).anim;if(s.dead||!am)return g;
+  if(am===4)return shadowFlex(g,s.slen||4,s.wf||0,now);
+  let [x,y,z]=g;
+  if(am===3){if(Math.abs(x-(s.ringX||0))<(s.ringW||0)){const a=now*.55,c=Math.cos(a),sn=Math.sin(a);return [x,y*c-z*sn,y*sn+z*c];}return g;}
+  const S=Math.max(4,s.slen*.35),speed=Math.min(6,1.3+30/s.slen),t=now*speed*(am===2?2:1)+(s.wf||0);
+  if(am===2){const ex=Math.min(1.6,Math.max(Math.abs(z),Math.abs(y))/S);y+=Math.sin(t+x/S*2.4)*ex*ex*S*.08;z+=Math.cos(t*1.3+y/S*2)*ex*ex*S*.04;}
+  else{const zn=Math.min(1.6,Math.abs(z)/S);y+=Math.sin(t)*zn*zn*S*.20*am;y+=Math.sin(x/S*3.2-t*1.7)*S*.05*am;const rn=Math.hypot(x,y,z)/S,wag=Math.max(0,rn-.45);z+=Math.sin(t*1.9+rn*7+x/S*2)*wag*wag*S*.15*am;y+=Math.cos(t*1.6+rn*6)*wag*wag*S*.09*am;const br=1+.045*am*Math.sin(t*.9+x/S*2.2);y*=br;z*=br;}
+  return [x,y,z];
+}
+function gunWorld(s,g,now,rigid=false){
   /* local mount through the same roll/pitch the hull is drawn with,
      then the yaw that walks her around the sky */
-  const posed=s.race===8&&!s.dead?shadowFlex(g,s.slen||4,s.wf||0,now||0):g;
+  const posed=rigid?g:animatedMount(s,g,now||0);
   let x=posed[0],y=posed[1],z=posed[2];
   const pose=xPose(s,now||0);
   if(pose.ang){
@@ -15153,12 +15185,19 @@ function barrelFrame(s,muz,now){
   const track=s.weaponTracks&&s.weaponTracks.get(muz.join(','));
   const e=weaponExtents(s),normal=V.norm(muz.map((v,i)=>v/(e[i]*e[i])));
   const local=fixed?[1,0,0]:track?track.dir:V.len(normal)>0?normal:[1,0,0];
-  const dir=V.norm(V.sub(gunWorld(s,local,now),[s.x,s.y,s.z]));
-  const up=V.norm(V.sub(gunWorld(s,[0,1,0],now),[s.x,s.y,s.z]));
+  const dir=V.norm(V.sub(gunWorld(s,local,now,true),[s.x,s.y,s.z]));
+  const up=V.norm(V.sub(gunWorld(s,[0,1,0],now,true),[s.x,s.y,s.z]));
   const shape=barrelShape(s),length=fixed||s.race===8?0:shape.length;
   return {pivot,dir,up,tip:V.add(pivot,V.mul(dir,length)),length,radius:shape.radius,style:shape.style};
 }
 function weaponMuzzle(s,muz,now){return barrelFrame(s,muz,now).tip;}
+function seatBattleMounts(s){
+  if(s.race===8||weaponProfile(s).fixed||RACE_DEFS[s.race].unique||!s.mountSites?.length)return;
+  const nearest=p=>{let best=s.mountSites[0],d=Infinity;for(const q of s.mountSites){const n=(p[0]-q[0])**2+(p[1]-q[1])**2+(p[2]-q[2])**2;if(n<d){d=n;best=q;}}return best.slice();};
+  s.guns=(s.guns||[]).map(nearest);
+  for(const mount of [...(s.turrets||[]),...(s.lances||[])]){const p=nearest([mount.lx,mount.ly,mount.lz]);[mount.lx,mount.ly,mount.lz]=p;}
+  s.barrelMounts=null;s.fireL=null;
+}
 function shipBarrels(s){
   if(s.race===8||weaponProfile(s).fixed||RACE_DEFS[s.race].unique)return [];
   if(s.barrelMounts)return s.barrelMounts;

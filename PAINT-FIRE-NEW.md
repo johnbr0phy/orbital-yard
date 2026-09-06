@@ -63,3 +63,10 @@ A reported 795-ship battle at the 600 setting reached 7 FPS. The earlier 50-ship
 - Fixed 30 Hz simulation steps now have a two-step maximum and a 10 ms catch-up check per rendered frame. Excess catch-up debt is discarded. Under overload the battle can run slower than wall time instead of processing five expensive steps in a single frame. A single expensive step can still exceed the budget.
 
 18 weapon, 11 debris, 3 paint, 3 rendering and 3 scaling tests pass. The small deterministic combat check retains its 393 emissions and 22 survivors. No full 795-ship WebGL stress run was made, so the actual improvement on that battle remains unmeasured.
+
+
+## Turret seating correction
+
+Rotating turret and lance pivots now use a bounded set of exact hull vertices prepared in the forge. Estimated bounding-box locations and harvested barrel tips are snapped to those sites before combat. Thin barrels, refit decorations and detachable damage fittings are excluded from the mounting surface. Shared mounts deduplicate in the renderer.
+
+Weapon origins also follow Shoal/Choir deformation and Earthforce ring rotation, alongside the existing Shadow flex. Fixed fighter guns retain their authored positions. Tests verify hull-vertex membership across six fleets, estimated mount replacement, ring attachment and normal weapon/combat behavior.
