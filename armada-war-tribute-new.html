@@ -11959,9 +11959,13 @@ onmessage=e=>{
         const q3=fm.v[i]*fm.v[i]+fm.v[i+1]*fm.v[i+1]+fm.v[i+2]*fm.v[i+2];
         if(q3>rr2)rr2=q3;}
       frags.push({v:fm.v,i:fm.i,ox,oy,oz,r:Math.sqrt(rr2)});
-      tr.push(fm.v.buffer,fm.i.buffer);
+
     }
-    out.push({id:j.id,seed:seed,mesh:m,nose:ship.bb[1][0]-c[0],frags,guns,
+    // Expensive spatial fragmentation belongs to the single forge worker,
+    // before combat. Do not sort/split thousands of triangles on a kill frame.
+    const readyFrags=fractureMesh(frags,ship.meta.length>=180?32:6);
+    for(const f of readyFrags)tr.push(f.v.buffer,f.i.buffer);
+    out.push({id:j.id,seed:seed,mesh:m,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,
       ringX:ship.meta.ringX!==undefined?ship.meta.ringX-c[0]:0,
       ringW:ship.meta.ringW||0,hero:!!(j.hero||(ship.meta&&ship.meta.hero)),
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length,
@@ -11983,7 +11987,7 @@ function ensureWorkers(){
     if(sc.textContent.indexOf(MARK)>=0){SRC=sc.textContent;break;}
   if(SRC==null)SRC=document.querySelector("script").textContent;
   const cut=SRC.indexOf(MARK);
-  const url=URL.createObjectURL(new Blob([SRC.slice(0,cut)+WORKER_MAIN],{type:"text/javascript"}));
+  const url=URL.createObjectURL(new Blob([SRC.slice(0,cut)+fractureMesh.toString()+WORKER_MAIN],{type:"text/javascript"}));
   const n=1; // Forge serially: keep CPU and peak geometry memory bounded.
   for(let i=0;i<n;i++){
     const w=new Worker(url);
@@ -12080,7 +12084,7 @@ function debrisHit(a,b,w,now,pad=0){
   if(w.gone||w.pending||w.dustT)return null;
   // Conservative broad phase, followed by the rotating mesh's box envelope.
   const r=(w.rad||8)+pad;
-  if([w.x,w.y,w.z].some((v,i)=>v<Math.min(a[i],b[i])-r||v>Math.max(a[i],b[i])+r))return null;
+  if(w.x<Math.min(a[0],b[0])-r||w.x>Math.max(a[0],b[0])+r||w.y<Math.min(a[1],b[1])-r||w.y>Math.max(a[1],b[1])+r||w.z<Math.min(a[2],b[2])-r||w.z>Math.max(a[2],b[2])+r)return null;
   const p=weaponLocal(debrisProxy(w),a,now),q=weaponLocal(debrisProxy(w),b,now),e=w.extents||[r,r,r];
   let lo=0,hi=1;
   for(let i=0;i<3;i++){
@@ -12150,7 +12154,7 @@ function disableHull(s,now){
   const e=[s.exL,s.exY,s.exZ],w={paint:hullFinish(s),paintLength:s.slen,paintAspect:[(s.meta?.beam||s.exZ*2||s.slen*.35)/s.slen,(s.meta?.height||s.exY*2||s.slen*.2)/s.slen],paintOffset:[0,0,0],vao:s.vao,vbo:s.vbo,ibo:s.ibo,icount:s.icount,v:mesh.v,i:mesh.i,
     x:s.x,y:s.y,z:s.z,yaw:s.yaw,bax:s.dax,bang:s.dang,ax:[0,1,0],ang:0,rad:Math.hypot(...e),extents:e,
     vx:s.dvx,vy:s.dvy,vz:s.dvz,spin:s.yawV||0,uid:wreckUid++,src:s.id,t0:now,life:180,disabled:true,
-    integ:Math.min(100,15+Math.sqrt(s.slen)),integratedAt:now,sourceFrags:s.fragData};
+    integ:Math.min(100,15+Math.sqrt(s.slen)),integratedAt:now,sourceFrags:s.fragData,fragReady:s.fragReady};
   w.spin=Math.max(-debrisSpinLimit(w),Math.min(debrisSpinLimit(w),w.spin));wrecks.push(w);
   s.vao=s.vbo=s.ibo=null;s.fragData=null;s.hullMesh=null;s.disabled=true;s.destruction='disabled';
   flash(s.x,s.y,s.z,now,Math.min(120,s.slen*.15),2);return true;
@@ -12161,7 +12165,7 @@ function damageDebris(w,damage,now,point){
   if(w.integ>0)return;
   if(w.disabled&&w.sourceFrags){
     const pose=xQAA(w.bax,w.bang,w.ax,w.ang||0);
-    const source={paint:w.paint,paintLength:w.paintLength,paintAspect:w.paintAspect,id:w.src,x:w.x,y:w.y,z:w.z,yaw:w.yaw,dax:pose.ax,dang:pose.ang,dvx:w.vx,dvy:w.vy,dvz:w.vz,slen:w.extents[0]*2,fragData:w.sourceFrags,destruction:'catastrophic'};
+    const source={paint:w.paint,paintLength:w.paintLength,paintAspect:w.paintAspect,id:w.src,x:w.x,y:w.y,z:w.z,yaw:w.yaw,dax:pose.ax,dang:pose.ang,dvx:w.vx,dvy:w.vy,dvz:w.vz,slen:w.extents[0]*2,fragData:w.sourceFrags,fragReady:w.fragReady,destruction:'catastrophic'};
     spawnBreakup(source,now);w.sourceFrags=null;
   }
   w.shatter=true;
@@ -12248,14 +12252,22 @@ function collide(now){
     let a=g.get(k2);if(!a){a=[];g.set(k2,a);}a.push(o);
   };
   const crowns=[];
+  for(const c of ships){
+    c.contactRadius=Math.max(c.rad||8,hullBerth(c)*((RACE_DEFS[c.race]||{}).fire==="cutter"?.50:.38));
+    if(!c.hulls)continue;
+    c.contactCut=(RACE_DEFS[c.race]||{}).fire==="cutter";c.contactUnique=!!(RACE_DEFS[c.race]||{}).unique;
+    c.contactWall=Math.max(c.exL||0,c.exY||0,c.exZ||0,c.rad||80);
+    c.contactSee=c.contactUnique?c.contactWall+220:c.contactWall*(c.contactCut?1.55:4.2);
+    c.contactReach=c.contactCut?Math.hypot(c.exL||0,c.exY||0,c.exZ||0):c.contactWall;
+  }
   for(const s of ships)if(!s.dead&&s.vao&&!s.grace){if(s.hulls)crowns.push(s);else put2(sgrid,s);}
   for(const w of wrecks)if(!w.pending&&!w.gone)put2(wgrid,w);
   for(const s of ships){
     if(s.dead||!s.vao||s.grace)continue;
-    for(const w of wrecks){if(Math.hypot(s.x-w.x,s.y-w.y,s.z-w.z)<(w.rad||8)+(s.rad||8))shipWreckContact(s,w,now);if(s.dead)break;}
+    for(const w of wrecks){const r=(w.rad||8)+(s.rad||8),dx=s.x-w.x,dy=s.y-w.y,dz=s.z-w.z;if(Math.abs(dx)<r&&Math.abs(dy)<r&&Math.abs(dz)<r&&dx*dx+dy*dy+dz*dz<r*r)shipWreckContact(s,w,now);if(s.dead)break;}
     if(s.dead)continue;
     const cutS=(RACE_DEFS[s.race]||{}).fire==="cutter";
-    const sr=Math.max(s.rad||8,hullBerth(s)*(cutS?0.50:0.38));
+    const sr=s.contactRadius;
     /* the caution ledger: every near thing this pass writes an offset the
        pilot will steer around — fresh each pass, spent within a beat */
     const avSee=(dx,dy,dz,d,k)=>{
@@ -12269,17 +12281,15 @@ function collide(now){
     for(const c2 of crowns){
       if(c2===s)continue;
       const dx=s.x-c2.x,dy=s.y-c2.y,dz=s.z-c2.z;
-      const d2=dx*dx+dy*dy+dz*dz,d=Math.sqrt(d2)||0.001;
+      const d2=dx*dx+dy*dy+dz*dz;
       /* every pilot sees the wall — hunting is not a licence to fly
          through the mark. Own-side is home, but still not a tunnel.
          First Ones are a hull you gun, not a 5 km no-fly sphere. */
-      const uniqueC=!!(RACE_DEFS[c2.race]||{}).unique;
-      const cutC=(RACE_DEFS[c2.race]||{}).fire==="cutter";
-      const wall=Math.max(c2.exL||0,c2.exY||0,c2.exZ||0,c2.rad||80);
-      const seeR=uniqueC?wall+220:wall*(cutC?1.55:4.2);
+      const uniqueC=c2.contactUnique,cutC=c2.contactCut,seeR=c2.contactSee,reach=c2.contactReach+sr;
+      if(d2>reach*reach&&(s.hulls||d2>=seeR*seeR))continue;
+      const d=Math.sqrt(d2)||.001;
       if(!s.hulls&&d<seeR)
         avSee(dx,dy,dz,d,(1-d/seeR)*(s.side===c2.side?28:uniqueC?12:55));
-      const reach=cutC?Math.hypot(c2.exL||0,c2.exY||0,c2.exZ||0)+sr:wall+sr;
       if(d2>reach*reach)continue;
       if(cutC){
         /* own-side does not die in the cube: she is shoved out the face.
@@ -14165,7 +14175,7 @@ function onWorkerMsg(e){
     if(rec.seed!=null)s.seed=rec.seed>>>0;   /* the forge may have re-cut it */
     s.ringX=rec.ringX||0;s.ringW=rec.ringW||0;   /* earthforce turns a ring here */
     s.guns=rec.guns||[];s.gunI=0;
-    s.fragData=rec.frags||null;
+    s.fragData=rec.frags||null;s.fragReady=!!rec.fragReady;
     s.hullMesh=s.slen>=180?{v:m.v,i:m.i}:null;
     s.rad=Math.max(s.slen*0.32,(rec.meta.beam||0)*0.38,(rec.meta.height||0)*0.38);
     /* her true half-extents, for the wall test: a cube is wall at the
@@ -15139,6 +15149,34 @@ function pinBeams(now){
     }else if(b.ion||b.arc||b.stun)b.a=weaponMuzzle(s,b.muz,now);
   }
 }
+// Conservative broad phase for dense battles: one index build per tick,
+// then only nearby hulls receive the full rotating-volume projectile test.
+class WeaponSpatialIndex{
+  constructor(){this.cells=new Map();this.large=[];this.items=[];this.stamp=0;}
+  build(items){
+    this.cells.clear();this.large.length=0;this.items.length=0;
+    for(const ship of items){
+      if(ship.dead||ship.grace)continue;
+      const r=Math.max(4,ship.exL||ship.slen*.5,2,ship.exY||ship.slen*.14,ship.exZ||ship.slen*.14);
+      const e={ship,r,order:this.items.length,seen:0};this.items.push(e);
+      const ax=Math.floor((ship.x-r)/512),bx=Math.floor((ship.x+r)/512),ay=Math.floor((ship.y-r)/512),by=Math.floor((ship.y+r)/512),az=Math.floor((ship.z-r)/512),bz=Math.floor((ship.z+r)/512);
+      if((bx-ax+1)*(by-ay+1)*(bz-az+1)>64){this.large.push(e);continue;}
+      for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){
+        const key=x+','+y+','+z;let cell=this.cells.get(key);if(!cell)this.cells.set(key,cell=[]);cell.push(e);
+      }
+    }
+  }
+  query(a,b,pad=0){
+    const out=[],stamp=++this.stamp;
+    const minX=Math.min(a[0],b[0])-pad,maxX=Math.max(a[0],b[0])+pad,minY=Math.min(a[1],b[1])-pad,maxY=Math.max(a[1],b[1])+pad,minZ=Math.min(a[2],b[2])-pad,maxZ=Math.max(a[2],b[2])+pad;
+    const add=e=>{if(e.seen===stamp)return;e.seen=stamp;const t=e.ship,r=e.r;if(t.x+r>=minX&&t.x-r<=maxX&&t.y+r>=minY&&t.y-r<=maxY&&t.z+r>=minZ&&t.z-r<=maxZ)out.push(e);};
+    const ax=Math.floor(minX/512),bx=Math.floor(maxX/512),ay=Math.floor(minY/512),by=Math.floor(maxY/512),az=Math.floor(minZ/512),bz=Math.floor(maxZ/512);
+    if((bx-ax+1)*(by-ay+1)*(bz-az+1)>128){for(const e of this.items)add(e);}
+    else{for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const cell=this.cells.get(x+','+y+','+z);if(cell)for(const e of cell)add(e);}for(const e of this.large)add(e);}
+    out.sort((a,b)=>a.order-b.order);return out.map(e=>e.ship);
+  }
+}
+const projectileIndex=[new WeaponSpatialIndex(),new WeaponSpatialIndex()];
 function weaponSegmentHit(a,b,t,now,pad=0){
   const reach=Math.max(4,t.exL||t.slen*.5,2,t.exY||t.slen*.14,t.exZ||t.slen*.14)+pad;
   if(t.x<Math.min(a[0],b[0])-reach||t.x>Math.max(a[0],b[0])+reach||t.y<Math.min(a[1],b[1])-reach||t.y>Math.max(a[1],b[1])+reach||t.z<Math.min(a[2],b[2])-reach||t.z>Math.max(a[2],b[2])+reach)return null;
@@ -15659,7 +15697,7 @@ function spawnBreakup(s,now){
   const room=Math.max(0,Math.min(64-debrisQueue.length,DEBRIS_LIMIT-wrecks.length-debrisQueue.length));
   const cat=s.destruction==='catastrophic',target=Math.min(room,cat&&s.slen>=180?DEBRIS_BREAKUP:6);
   if(target<1){dustBurst(s.x,s.y,s.z,s.dvx||0,s.dvy||0,s.dvz||0,12,now);return;}
-  for(const f of fractureMesh(fr,target))debrisQueue.push(wreckRecord(s,f,now,cat));
+  for(const f of (s.fragReady?fr.slice(0,target):fractureMesh(fr,target)))debrisQueue.push(wreckRecord(s,f,now,cat));
 }
 function kill(t,now){
   if(t.dead)return;      /* a tracer already in flight cannot kill her twice */
@@ -16324,13 +16362,14 @@ function simStep(now,dt){
       }
     }
   }
+  for(let side=0;side<2;side++)projectileIndex[side].build(foeCache[side]);
   // Plasma retains splash damage, with a swept direct hit on the actual
   // hull envelope rather than a sphere as wide as a capital is long.
   for(const pl of plasmas){
     if(pl.dead)continue;if(now-pl.t0>(pl.life||6)){pl.dead=true;continue;}
     const a=[pl.x,pl.y,pl.z],b=[pl.x+pl.vx*dt,pl.y+pl.vy*dt,pl.z+pl.vz*dt];
     let hit=null,u=Infinity;
-    for(const t of foeCache[1-pl.side]){if(t.dead||t.grace)continue;const h=weaponSegmentHit(a,b,t,now,3);if(h!==null&&h<u){hit=t;u=h;}}
+    for(const t of projectileIndex[1-pl.side].query(a,b,3)){if(t.dead||t.grace)continue;const h=weaponSegmentHit(a,b,t,now,3);if(h!==null&&h<u){hit=t;u=h;}}
     const obstacle=firstDebrisHit(a,b,now,3,pl.from);
     if(obstacle&&obstacle.u<u){const p=lerp3(a,b,obstacle.u);[pl.x,pl.y,pl.z]=p;damageDebris(obstacle.w,2,now,p);pl.dead=true;continue;}
     const point=hit?lerp3(a,b,u):b;[pl.x,pl.y,pl.z]=point;
@@ -16347,7 +16386,7 @@ function simStep(now,dt){
     if(now-tr.t0>(tr.life||1.4)){tr.dead=true;continue;}
     const a=[tr.x,tr.y,tr.z],step=Math.min(dt,now-tr.t0),b=[tr.x+tr.vx*step,tr.y+tr.vy*step,tr.z+tr.vz*step];
     let hit=null,u=Infinity;
-    for(const t of foeCache[1-tr.side]){
+    for(const t of projectileIndex[1-tr.side].query(a,b,tr.energy?tr.width:1)){
       if(t.dead||t.grace)continue;
       const h=weaponSegmentHit(a,b,t,now,tr.energy?tr.width:1);
       if(h!==null&&h<u){u=h;hit=t;}
@@ -16836,6 +16875,25 @@ gl.bindVertexArray(null);
 let lastT=0,fpsA=60,statT=0;
 // Natural hull finishes in the default slate view. Other palettes remain
 // deliberate ink studies. Mixed fleets choose by class, not just allegiance.
+let distantShipRenderer=null;
+function distantShips(){
+  if(distantShipRenderer)return distantShipRenderer;
+  const program=compile(`#version 300 es
+layout(location=0) in vec3 position;layout(location=1) in vec4 colorSize;
+uniform mat4 vp;out vec3 color;
+void main(){gl_Position=vp*vec4(position,1);gl_PointSize=colorSize.w;color=colorSize.xyz;}`,
+`#version 300 es
+precision highp float;in vec3 color;out vec4 result;
+void main(){vec2 p=abs(gl_PointCoord*2.-1.);if(p.x+p.y>1.)discard;result=vec4(color,1);}`);
+  const vao=gl.createVertexArray(),vbo=gl.createBuffer();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+  gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,28,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,4,gl.FLOAT,false,28,12);gl.bindVertexArray(null);
+  return distantShipRenderer={program,vao,vbo,vp:gl.getUniformLocation(program,'vp'),data:new Float32Array(7168),count:0};
+}
+function drawDistantShips(m){
+  const r=distantShipRenderer;if(!r||!r.count)return;
+  gl.useProgram(r.program);gl.uniformMatrix4fv(r.vp,false,m);gl.bindVertexArray(r.vao);gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);
+  gl.bufferData(gl.ARRAY_BUFFER,r.data.subarray(0,r.count*7),gl.STREAM_DRAW);gl.drawArrays(gl.POINTS,0,r.count);gl.bindVertexArray(null);gl.useProgram(shipProg);
+}
 function hullFinish(s){
   const klass=((s.meta&&s.meta.klass)||'').toUpperCase();
   // Hull / trim / emission. Every generated class inherits a deliberate family.
@@ -16895,11 +16953,13 @@ function frame(nowMs){
   fpsA+=((elapsed>0?1/elapsed:60)-fpsA)*.05;
   // Geometry loading must not choose the starting phase of a seeded battle.
   if(warT0===Infinity)battleAccumulator=0;else battleAccumulator+=elapsed;
-  let stepped=0;
-  while(battleAccumulator>=1/30&&stepped<5){
+  let stepped=0;const simulationStarted=performance.now();
+  while(battleAccumulator>=1/30&&stepped<2){
     battleTime+=1/30;simStep(battleTime,1/30);introStep(battleTime,1/30);
     battleAccumulator-=1/30;stepped++;
+    if(performance.now()-simulationStarted>=10)break;
   }
+  battleAccumulator=Math.min(battleAccumulator,1/30);
   const now=battleTime,dt=stepped/30;
   /* camera: chase is the default hold — behind her, looking down her
      nose. Drag breaks into an orbit. Empty sky is free flight. */
@@ -16993,9 +17053,21 @@ function frame(nowMs){
   gl.uniform1f(SU.t,now);
   gl.uniform1f(SU.cloak,0);
   const T=now-warT0;
-  let alive=0;
+  let alive=0;const far=distantShips();far.count=0;
   for(const s of ships){
     if(!s.vao)continue;
+    if(!s.dead&&warT0!==Infinity&&T-s.delay>=0){
+      alive++;
+      if(!sphereVis(FRP,s.x,s.y,s.z,s.slen*.8))continue;
+      const distance=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez),pixels=hullBerth(s)*cvs.height/Math.max(1,distance*.942);
+      // At under five pixels a full mesh adds draw calls without readable detail.
+      if(pixels<5&&s.id!==sel&&!s.hero&&T-s.delay>2){
+        const color=(s.finish||(s.finish=hullFinish(s))).color,gain=[1,.72,1,.72,.68][palI]*(1-(s.cloakAmt||0));
+        if(gain>.03){if((far.count+1)*7>far.data.length){const next=new Float32Array(far.data.length*2);next.set(far.data);far.data=next;}
+          const i=far.count++*7;far.data[i]=s.x;far.data[i+1]=s.y;far.data[i+2]=s.z;far.data[i+3]=color[0]*gain;far.data[i+4]=color[1]*gain;far.data[i+5]=color[2]*gain;far.data[i+6]=Math.max(1.5,pixels);}
+        continue;
+      }
+    }
     const finish=s.finish||(s.finish=hullFinish(s));
     const paintGain=[1,.72,1,.72,.68][palI];
     gl.uniform3fv(SU.ink,finish.color.map(c=>c*paintGain));
@@ -17035,7 +17107,6 @@ function frame(nowMs){
     }
     const age=warT0===Infinity?-1:T-s.delay;
     if(age<0)continue;
-    alive++;
     if(!sphereVis(FRP,s.x,s.y,s.z,s.slen*0.8))continue;
     const slide=SLIDE*Math.exp(-Math.max(0,age)*3.4);
     const cy=Math.cos(s.yaw),sy=Math.sin(s.yaw);
@@ -17062,6 +17133,7 @@ function frame(nowMs){
     if(ck>0.04){gl.depthMask(true);gl.disable(gl.BLEND);}
   }
   gl.uniform3fv(SU.ink,inkc);gl.uniform4f(SU.material,0,1,-1,0);gl.uniform4f(SU.paint,0,0,0,0);
+  drawDistantShips(m);
   drawBarrels(now,m,FRP);
   /* the litter of the war: charred pieces adrift, tumbling where they
      died — and beneath them the boneyard, every earlier piece kept */

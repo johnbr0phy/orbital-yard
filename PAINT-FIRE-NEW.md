@@ -51,3 +51,15 @@ A deterministic **normal 26-ship Imperial/Rebel muster**, seed 915, was run for 
 The drawing surface now starts within a 2.4-million-pixel budget and at most 1.5 device-pixel ratio. Slow frames can lower resolution at four-second intervals; it no longer repeatedly raises/lowers resolution every quarter-second. Window resizes avoid resetting unchanged canvas dimensions. This trades some high-DPI sharpness for lower fragment-shader cost and steadier frame delivery.
 
 Laser ribbons reuse growing typed buffers instead of allocating vertex arrays for every shot each frame. The broad-phase projectile rejection also avoids temporary extent arrays. Cadence, paint and hit behavior are unchanged: the seeded small muster still produces 393 emissions and 22 survivors. Three rendering regression tests and all 18 weapon tests pass. One brief 24-setting preview (50 ships including heroes) showed 60 FPS without logged warnings/errors; large-fleet performance is not established by this small check.
+
+## Large-battle scaling follow-up
+
+A reported 795-ship battle at the 600 setting reached 7 FPS. The earlier 50-ship preview did not validate that load. This pass addresses work that grows with fleet and projectile counts:
+
+- Projectile sweeps use a conservative spatial index before the unchanged rotating-hull hit test. An isolated 800-small-hull plus one giant-hull fixture reduced candidates from 32,040 exhaustive checks to 61, with no missed hits. This fixture measures candidate rejection, not real-battle FPS.
+- Spatial debris subdivision/sorting is prepared in the single forge worker during loading. Loaded-ship deaths reuse those pieces; they do not split triangles on the animation thread. If the debris budget is full, only the available number of prepared pieces is emitted.
+- Collision passes reuse hull dimensions and reject distant pairs before square roots. A short, compressed 141-ship CPU fixture identified destruction as a major part of collision time; it is a diagnostic fixture rather than a representative battle.
+- Nonhero, unselected ships below five projected pixels use batched colored silhouettes. Nearby, selected and hero ships retain their complete painted meshes. Offscreen live ships skip material uploads.
+- Fixed 30 Hz simulation steps now have a two-step maximum and a 10 ms catch-up check per rendered frame. Excess catch-up debt is discarded. Under overload the battle can run slower than wall time instead of processing five expensive steps in a single frame. A single expensive step can still exceed the budget.
+
+18 weapon, 11 debris, 3 paint, 3 rendering and 3 scaling tests pass. The small deterministic combat check retains its 393 emissions and 22 survivors. No full 795-ship WebGL stress run was made, so the actual improvement on that battle remains unmeasured.

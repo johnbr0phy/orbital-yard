@@ -37,9 +37,9 @@ test('disabled capital reuses whole hull, stops combat, drifts and can break up 
  assert.ok(b.run('cap.dead&&cap.disabled&&!cap.vao&&hulk.disabled&&hulk.vao===old'));assert.equal(b.run('hulk.vx'),0);assert.ok(b.run('Math.abs(hulk.spin)<=debrisSpinLimit(hulk)'));
  b.run('damageDebris(hulk,200,5,[hulk.x,hulk.y,hulk.z])');assert.ok(b.run('hulk.shatter&&debrisQueue.length>0&&debrisQueue.length<=32'));
 });
-test('catastrophic breakup exceeds original component groups with hard count/upload/lifetime bounds',()=>{
+test('prefractured catastrophic breakup retains count/upload/lifetime bounds',()=>{
  const b=scene();b.start(5,6,915,12,[-1,-1]);b.run(`endIntro();var cap=ships.find(s=>s.hulls);var groups=cap.fragData.length;cap.destroyMode='catastrophic';kill(cap,4);var generated=debrisQueue.length;var before= wrecks.length;uploadDebris(4);`);
- assert.ok(b.run('generated>groups&&generated<=32'));assert.ok(b.run('wrecks.length-before<=4'));assert.ok(b.run('debrisQueue.every(w=>w.v.every(Number.isFinite)&&Math.abs(w.spin)<=debrisSpinLimit(w))'));
+ assert.ok(b.run('cap.fragReady&&generated===Math.min(groups,32)&&generated>12'));assert.ok(b.run('wrecks.length-before<=4'));assert.ok(b.run('debrisQueue.every(w=>w.v.every(Number.isFinite)&&Math.abs(w.spin)<=debrisSpinLimit(w))'));
  b.run('for(let i=0;i<30;i++){cap.fragData=[{v:new Float32Array([0,0,0,20,0,0,0,20,0]),i:new Uint32Array([0,1,2]),ox:0,oy:0,oz:0}];spawnBreakup(cap,4)}');assert.ok(b.run('debrisQueue.length<=64&&wrecks.length+debrisQueue.length<=192'));
  b.run('var w=wrecks[0];w.life=1;stepBattleWrecks(10,1/30)');assert.ok(b.run('!!w.dustT'));
 });
