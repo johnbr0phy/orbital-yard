@@ -3,12 +3,12 @@
  function generate(seed){
   const R=random(seed),pick=a=>a[Math.floor(R()*a.length)],style=Math.floor(R()*8),angle=.65+(R()-.5)*.3,el=-.28+(R()-.5)*.18;
   const names=['Giant sun','Five worlds','Ringed kingdom','Binary dawn','Ocean frontier','Ice giant moons','Eclipse','Ember worlds'];
-  const palette=[[[.64,.38,.18],[.92,.75,.49]],[[.2,.38,.52],[.66,.81,.88]],[[.48,.28,.43],[.83,.62,.73]],[[.32,.43,.28],[.71,.75,.51]],[[.42,.35,.26],[.78,.72,.58]]];
+  const palette=[[[.40,.35,.29],[.55,.50,.42]],[[.29,.36,.40],[.43,.49,.52]],[[.37,.33,.35],[.49,.45,.46]],[[.34,.37,.31],[.47,.49,.42]],[[.38,.36,.32],[.52,.49,.43]]];
   const bodies=[],point=(az,e,d)=>[Math.cos(az)*Math.cos(e)*d,Math.sin(e)*d,Math.sin(az)*Math.cos(e)*d];
   function body(kind,az,e,r,d=5,extra={}){const colors=pick(palette),b={kind,p:point(az,e,d),radius:r,base:colors[0],accent:colors[1],phase:R()*6.283,bands:3+Math.floor(R()*8),tilt:(R()-.5)*1.1,...extra};
-   if(kind===2){b.base=[.035,.17+R()*.12,.32+R()*.18];b.accent=[.23+R()*.2,.43+R()*.22,.23];}
-   if(kind===3){b.base=[.24,.40,.52];b.accent=[.77,.88,.93];}
-   if(kind===4){b.base=[.11,.065,.05];b.accent=[1,.18+R()*.2,.025];}
+   if(kind===2){b.base=[.10,.19+R()*.035,.25+R()*.045];b.accent=[.26+R()*.04,.30+R()*.04,.25];}
+   if(kind===3){b.base=[.37,.43,.46];b.accent=[.57,.62,.64];}
+   if(kind===4){b.base=[.11,.065,.05];b.accent=[.65,.24+R()*.10,.09];}
    if(kind===5){b.base=pick([[1,.38,.08],[1,.72,.28],[.55,.72,1],[1,.2,.13]]);b.accent=[1,.94,.76];}
    bodies.push(b);return b;
   }

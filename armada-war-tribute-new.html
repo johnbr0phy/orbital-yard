@@ -299,7 +299,7 @@ body.piloting #brand,body.piloting #score,body.piloting #bar,body.piloting #watc
   </div>
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
-<script src="armada-systems-new.js?v=world-space-2"></script>
+<script src="armada-systems-new.js?v=muted-worlds-1"></script>
 <script src="armada-crew-new.js?v=helm-3d-2"></script>
 <script src="armada-battle-ai-new.js"></script>
 <script>
@@ -11823,16 +11823,16 @@ void main(){
   if(detail>.01){grain=noise3(q*350.+uPhase)*.65+noise3(q*1100.+uPhase)*.35;n+=(grain-.5)*.028*detail;}
   bool ocean=uKind>1.5&&uKind<2.5;float sea=0.,cloud=0.;
   if(uAlpha<.99&&uKind<5.5){N=normalize(cross(dFdx(vW),dFdy(vW)));day=abs(dot(N,L));surface=mix(uInk,uAccent,clamp(vT,0.,1.));alpha=uAlpha*clamp(vT,0.,1.);}
-  else if(uKind<.5){float bands=.5+.5*sin(q.y*(18.+uBands*3.)+(n-.5)*4.);surface=mix(uInk,uAccent,.2+bands*.52);surface*=.86+.14*noise3(q*28.+uPhase);}
-  else if(uKind<1.5){surface=mix(uInk*.65,uAccent,n*.7);surface*=.7+.3*clamp(vT,0.,1.);}
-  else if(ocean){float land=smoothstep(.49,.54,n);sea=1.-land;vec3 ground=mix(vec3(.12,.20,.095),vec3(.42,.35,.22),smoothstep(.56,.72,n));ground=mix(ground,vec3(.75,.75,.7),smoothstep(.76,.88,n));surface=mix(uInk,ground,land);float ice=smoothstep(.76,.94,abs(q.y)+(n-.5)*.15);surface=mix(surface,vec3(.78,.85,.87),ice);cloud=smoothstep(.56,.75,terrain(q*11.+vec3(uPhase,0.,3.)));surface=mix(surface,vec3(.87,.90,.92),cloud*.92);}
-  else if(uKind<3.5){surface=mix(uInk*.7,uAccent,smoothstep(.28,.75,n));}
-  else if(uKind<4.5){surface=mix(vec3(.07,.055,.045),uInk,n);float lava=pow(smoothstep(.65,.82,n),3.);surface+=uAccent*lava;}
+  else if(uKind<.5){float bands=.5+.5*sin(q.y*(12.+uBands*2.)+(n-.5)*4.);surface=mix(uInk,uAccent,.30+bands*.22);surface*=.96+.04*noise3(q*28.+uPhase);}
+  else if(uKind<1.5){surface=mix(uInk,uAccent,.2+n*.4);surface*=.90+.10*clamp(vT,0.,1.);}
+  else if(ocean){float land=smoothstep(.49,.54,n);sea=1.-land;vec3 ground=mix(vec3(.23,.27,.23),vec3(.34,.32,.27),smoothstep(.56,.72,n));ground=mix(ground,vec3(.47,.47,.43),smoothstep(.76,.88,n));surface=mix(uInk,ground,land);float ice=smoothstep(.76,.94,abs(q.y)+(n-.5)*.15);surface=mix(surface,vec3(.53,.58,.59),ice*.75);cloud=smoothstep(.51,.79,terrain(q*11.+vec3(uPhase,0.,3.)));surface=mix(surface,vec3(.65,.68,.69),cloud*.42);}
+  else if(uKind<3.5){surface=mix(uInk,uAccent,.25+.45*smoothstep(.22,.82,n));}
+  else if(uKind<4.5){surface=mix(vec3(.07,.055,.045),uInk,n);float lava=pow(smoothstep(.65,.82,n),3.);surface+=uAccent*lava*.45;}
   else surface=mix(uInk,uAccent,.65+.3*n);
-  surface*=1.+(grain-.5)*detail*(ocean?(.22*(1.-sea)): .32);
+  surface*=1.+(grain-.5)*detail*(ocean?(.10*(1.-sea)): .12);
   vec3 col=surface*(.025+.975*day);
-  if(ocean){float shine=pow(max(dot(reflect(-L,N),E),0.),65.);col+=vec3(.6,.7,.8)*shine*sea*(1.-cloud)*.55;float rim=pow(1.-max(dot(N,E),0.),4.);col+=vec3(.12,.32,.55)*rim*smoothstep(-.15,.35,dot(N,L))*.5;}
-  if(uKind>3.5&&uKind<4.5)col+=uAccent*pow(smoothstep(.65,.82,n),3.);
+  if(ocean){float shine=pow(max(dot(reflect(-L,N),E),0.),65.);col+=vec3(.6,.7,.8)*shine*sea*(1.-cloud)*.28;float rim=pow(1.-max(dot(N,E),0.),4.);col+=vec3(.17,.26,.33)*rim*smoothstep(-.15,.35,dot(N,L))*.5;}
+  if(uKind>3.5&&uKind<4.5)col+=uAccent*pow(smoothstep(.65,.82,n),3.)*.45;
   if(uKind>4.5)col=surface;
   if(uKind>5.5){alpha=uAlpha*pow(1.-abs(dot(N,E)),3.);col=uInk;}
   o=vec4(col,alpha);
