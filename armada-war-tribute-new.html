@@ -120,7 +120,7 @@ body.intro #wasd{
    to the yard, so a touch-worded one keeps it — one line, clipped rather than
    wrapped, so the readout underneath has a fixed place to be instead of being
    overprinted the moment the hint runs to two lines. */
-@media(max-width:820px),(max-height:620px){
+@media(max-width:820px),(max-height:950px){
   #brand .s{display:none}
   #brand .s2{display:block;font-size:10px;opacity:.62;margin-top:3px;
     letter-spacing:.04em;line-height:1.35;max-width:100%;
@@ -205,7 +205,7 @@ body.intro #wasd{
 #pick .sizes button.on{opacity:1;background:var(--ink);color:var(--bg)}
 /* after the base muster so these win the cascade: a phone sheet, not a
    document of 44 px rows stacked twice as tall as the screen */
-@media(max-width:820px),(max-height:620px){
+@media(max-width:820px),(max-height:950px){
   #pick{align-items:stretch;justify-content:stretch;padding:0;overflow:hidden}
   #pick .panel{width:100%;max-width:none;height:100%;margin:0;border:0;
     display:flex;flex-direction:column;min-height:0;overflow:hidden;
@@ -255,9 +255,26 @@ body.piloting #brand,body.piloting #score,body.piloting #bar,body.piloting #watc
 #helmLeave{position:absolute;right:25px;top:22px;pointer-events:auto;background:#203342;color:#d5e2ea;border:1px solid #68828e;border-radius:4px;padding:10px;cursor:pointer}#helmLeave:focus-visible,#flightTouch button:focus-visible{outline:2px solid #ccecf1}
 @media(max-width:820px){#flightTouch{left:12px;right:12px;bottom:65px;max-width:none;justify-content:center}#cockpitHud #flightStatus{bottom:220px;max-width:60%;text-align:center}#helmPortrait{bottom:265px;width:110px}.flightHelp{display:none}}
 
+/* Opening choice: no fleet roster or battle controls until needed. */
+#warMenu{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 40%,#18232baa,#080c10e8)}
+#warMenu[hidden]{display:none}
+.warMenuPanel{width:min(680px,100%);text-align:center;color:#e5e9ec}
+.warMenuPanel .eyebrow{font:11px "IBM Plex Mono",monospace;letter-spacing:.3em;color:#a3afb7}
+.warMenuPanel h1{font:600 clamp(38px,7vw,68px)/1.05 "Saira Condensed",sans-serif;letter-spacing:.09em;margin:18px 0 12px}
+.warMenuPanel p{font:14px/1.6 "IBM Plex Mono",monospace;color:#a3afb7;margin:0 0 36px}
+.warMenuChoices{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.warMenuChoices button{padding:26px 20px;background:#18242de8;border:1px solid #566674;border-radius:4px;color:#e5e9ec;text-align:left;cursor:pointer;transition:background .15s,border-color .15s}
+.warMenuChoices button:first-child{background:#d4dfe5;color:#14202a;border-color:#d4dfe5}
+.warMenuChoices strong{display:block;font:600 24px "Saira Condensed",sans-serif;letter-spacing:.05em}
+.warMenuChoices span{display:block;font:12px/1.6 "IBM Plex Mono",monospace;margin-top:8px;opacity:.75}
+.warMenuChoices button:hover{border-color:#fff;background:#304451}.warMenuChoices button:first-child:hover{background:#eef4f7}
+.warMenuChoices button:focus-visible,#pickBack:focus-visible{outline:2px solid #c5e4ff;outline-offset:5px}
+body.menu-start #brand,body.menu-start #bar,body.menu-start #watchDock,body.menu-start #wasd,body.menu-start #score,body.menu-start #stat{display:none}
+#pickBack{background:none;border:0;color:var(--ink);font:12px "IBM Plex Mono",monospace;cursor:pointer;padding:8px 0;align-self:flex-start}
+@media(max-width:540px){.warMenuChoices{grid-template-columns:1fr}.warMenuPanel p{margin-bottom:24px}.warMenuChoices button{padding:20px}}
 </style>
 </head>
-<body>
+<body class="menu-start">
 <canvas id="gl"></canvas>
 <div class="hud" id="brand">
   <div class="t">ORBITAL YARD — THE TRIBUTE WAR</div>
@@ -284,8 +301,16 @@ body.piloting #brand,body.piloting #score,body.piloting #bar,body.piloting #watc
 <div id="card" aria-label="Ship and crew"></div>
 <div id="win"></div>
 <div id="toast"></div>
+<section id="warMenu" aria-labelledby="warMenuTitle"><div class="warMenuPanel">
+  <div class="eyebrow">ORBITAL YARD</div><h1 id="warMenuTitle">THE TRIBUTE WAR</h1>
+  <p>Choose how the battle begins.</p>
+  <div class="warMenuChoices">
+    <button id="menuRandom" type="button"><strong>Random war</strong><span>Surprise me. Pick the fleets and launch.</span></button>
+    <button id="menuCurate" type="button"><strong>Curate war</strong><span>Choose the fleets, allies and battle size.</span></button>
+  </div>
+</div></section>
 <div id="pick"><div class="panel">
-  <h1>THE TRIBUTE WAR</h1>
+  <button id="pickBack" type="button">← Back</button><h1>CURATE WAR</h1>
   <div class="sub">every fleet we grew up with · pick a side for each admiralty, or leave it to fate · a losing fleet may call an ally out of hyperspace</div>
   <div class="cols">
     <div class="col"><h2>FIRST ADMIRALTY</h2><div id="pickA"></div><div class="ally">ALLY<select id="allyA"></select></div></div>
@@ -14535,6 +14560,7 @@ function yardTrack(path,isEvent){
   yardTrack(location.pathname||"/orbital-yard/armada-war-tribute-new.html");
 })();
 function startWar(fresh){
+  document.getElementById("warMenu").hidden=true;document.body.classList.remove("menu-start");
   if(fresh){
     try{
       if(!sessionStorage.getItem("oyPlayPing")){
@@ -17552,7 +17578,7 @@ addEventListener("keydown",e=>{
   if(k==="]")setCamGear(camGear+1);
   if(e.key==="Escape"){
     const pe=document.getElementById("pick");
-    if(pe.classList.contains("on")&&ships.length)pe.classList.remove("on");
+    if(pe.classList.contains("on"))closePicker();
     else if(pilotId!=null)leaveHelm();
     else if(document.getElementById("card").style.display!=="none")card(null);
     else setWatchView("all");
@@ -17648,7 +17674,12 @@ function buildPicker(){
     sl.onchange=()=>{pickAlly[side]=+sl.value;};
   }
 }
-function openPicker(){document.getElementById("pick").classList.add("on");}
+function showWarMenu(){document.getElementById("pick").classList.remove("on");document.getElementById("warMenu").hidden=false;document.body.classList.add("menu-start");document.getElementById("menuRandom").focus();}
+function closePicker(){document.getElementById("pick").classList.remove("on");if(!ships.length)showWarMenu();else document.getElementById("bCurate").focus();}
+function openPicker(){document.getElementById("warMenu").hidden=true;document.getElementById("pick").classList.add("on");document.getElementById("pickBack").focus();}
+document.getElementById("menuRandom").addEventListener("click",()=>randomWar());
+document.getElementById("menuCurate").addEventListener("click",()=>openPicker());
+document.getElementById("pickBack").addEventListener("click",()=>closePicker());
 document.getElementById("pickGo").addEventListener("click",()=>{
   document.getElementById("pick").classList.remove("on");
   toast("FLEETS INBOUND");startWar(true);
@@ -18345,7 +18376,7 @@ function rosterDraw(){
 }
 applyPal();resize();makeStars();
 buildPicker();
-openPicker();
+showWarMenu();
 requestAnimationFrame(frame);
 
 </script>

@@ -24,7 +24,7 @@ function loadBattle() {
     if (elements.has(id)) return elements.get(id);
     const e = {id, style: {setProperty: noop}, classList: {add:noop,remove:noop,toggle:noop,contains:()=>false},
       value:'',dataset:{},innerHTML:'',textContent:'',width:1280,height:720,addEventListener:noop,
-      appendChild:noop,setAttribute:noop,querySelectorAll:()=>[],querySelector:()=>null,
+      focus:noop,appendChild:noop,setAttribute:noop,querySelectorAll:()=>[],querySelector:()=>null,
       getContext:()=>gl,getBoundingClientRect:()=>({width:1280,height:720,left:0,top:0}),
       closest:()=>null,setPointerCapture:noop,releasePointerCapture:noop};
     elements.set(id,e);return e;
