@@ -325,9 +325,9 @@ body.intro #battleOptions{opacity:0;pointer-events:none}
 <div class="hud" id="score"></div>
 <details id="battleOptions"><summary>Battle settings</summary><div id="bar">
   <button data-n="24">24</button>
-  <button data-n="150" class="on">150</button>
+  <button data-n="150">150</button>
   <button data-n="300">300</button>
-  <button data-n="600">600</button>
+  <button data-n="600" class="on">600</button>
   <label id="camCtl" title="Wheel, pinch and fly speed — lower is more precise">ZOOM
     <input id="camLook" type="range" min="1" max="7" value="2">
   </label>
@@ -357,9 +357,9 @@ body.intro #battleOptions{opacity:0;pointer-events:none}
   </div>
   <div class="sizes">FLEET SIZE
     <button type="button" data-n="24">24</button>
-    <button type="button" data-n="150" class="on">150</button>
+    <button type="button" data-n="150">150</button>
     <button type="button" data-n="300">300</button>
-    <button type="button" data-n="600">600</button>
+    <button type="button" data-n="600" class="on">600</button>
   </div>
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
@@ -13106,7 +13106,7 @@ function bakeBoneyard(){
   }
   wrecks=wrecks.filter(w2=>!w2.gone);
 }
-let perFleet=150,warSeed=(Math.random()*4294967296)|0;
+let perFleet=600,warSeed=(Math.random()*4294967296)|0;
 let genId=0,forged=0,total=0,warT0=Infinity,winner=null;
 let counts=[0,0];
 /* five fleets share this sky; every war deals two of them. Each race is a
@@ -14611,7 +14611,7 @@ function yardTrack(path,isEvent){
   yardTrack(location.pathname||"/orbital-yard/armada-war-tribute-new.html");
 })();
 function startWar(fresh){
-  document.getElementById("battleOptions").open=false;
+  document.getElementById("battleOptions").open=typeof matchMedia==="function"&&matchMedia("(min-width:821px) and (hover:hover)").matches;
   document.getElementById("warMenu").hidden=true;document.body.classList.remove("menu-start");
   if(fresh){
     try{
