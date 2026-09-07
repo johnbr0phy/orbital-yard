@@ -21,7 +21,7 @@ try{
    for(const system of systems)system.update(state);
    renderer.render(scene,camera);frames++;lastGen=state.genId;
  };
- app.engineSource=await (await fetch('./armada-three-engine.js')).text();
+ app.engineSource=await (await fetch('./armada-three-engine.js',{cache:'no-cache'})).text();
  const script=document.createElement('script');script.textContent=app.engineSource;document.body.append(script);
  if(!app.runtime)throw Error('Battle runtime failed to initialize');
  systems=[createWorlds(THREE,scene,app.runtime),createHulls(THREE,scene,app.runtime),createEffects(THREE,scene,app.runtime)];
