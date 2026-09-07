@@ -15722,6 +15722,21 @@ function weaponMount(s,t,now){
   for(const g of gs){if(!mountFaces(s,t,g,now))continue;const o=gunWorld(s,g,now),d=Math.hypot(o[0]-t.x,o[1]-t.y,o[2]-t.z);if(-d>score){score=-d;best=g;}}
   return best;
 }
+// Opportunistic forward fire: a formation target must not blind a pilot
+// to another hostile crossing the sights. Bound expensive lead checks.
+function fighterFireTarget(s,preferred,range,now){
+  if(preferred&&battleAI.fireable(s,preferred,now)&&gapTo(s,preferred)<range&&weaponSolution(s,preferred,now))return preferred;
+  const forward=V.norm(V.sub(gunWorld(s,[1,0,0],now),[s.x,s.y,s.z]));
+  const candidates=[];
+  for(const t of battleAI.targets(s,now)){
+    if(t===preferred||gapTo(s,t)>=range)continue;
+    const toward=V.norm([t.x-s.x,t.y-s.y,t.z-s.z]),alignment=V.dot(forward,toward);
+    if(alignment>.85)candidates.push({t,alignment});
+  }
+  candidates.sort((a,b)=>b.alignment-a.alignment);
+  for(let i=0;i<Math.min(4,candidates.length);i++)if(weaponSolution(s,candidates[i].t,now))return candidates[i].t;
+  return null;
+}
 function weaponSolution(s,t,now,muz){
   const profile=weaponProfile(s);muz=muz||weaponMount(s,t,now);if(!muz)return null;
   if(ionState.some(lock=>lock&&lock.gun===s.id&&lock.muz&&lock.muz.join(',')===muz.join(',')))return null;
@@ -15731,7 +15746,7 @@ function weaponSolution(s,t,now,muz){
   if(profile.fixed){
     const forward=V.norm(V.sub(gunWorld(s,[1,0,0],now),[s.x,s.y,s.z]));
     const d=Math.max(1,V.len(V.sub(aim,o))),e=weaponExtents(t);
-    const cone=Math.min(.30,.035+Math.min(...e)/d);
+    const cone=Math.min(.30,.12+Math.min(...e)/d);
     if(V.dot(forward,desired)<Math.cos(cone))return null;
     // Fixed barrels shoot along the hull axis. They never swivel toward a target.
     return {o,muz,aim:V.add(o,V.mul(forward,d)),direction:forward,profile};
@@ -16971,7 +16986,8 @@ function simStep(now,dt){
       let t=null;
       if(markT&&!markT.dead&&!markT.grace&&battleAI.fireable(s,markT,now)&&
          gapTo(s,markT)<rng)t=markT;
-      if(!t)t=nearestFoeInRange(s,rng);
+      if(weaponProfile(s).fixed)t=fighterFireTarget(s,markT,rng,now);
+      else if(!t)t=nearestFoeInRange(s,rng);
       if(t&&t.hero&&!heroDuelOpen(now))t=pickFoe(s,rng,now);
       if(t){
         if(!(s.mark>=0))s.mark=t.id;

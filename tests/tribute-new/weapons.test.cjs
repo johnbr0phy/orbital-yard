@@ -134,3 +134,15 @@ test('debris separation is harmless and grazing damage is below a hard ram',()=>
  b.run('debrisStrike(fighter,true,10,3);var afterGraze=fighter.hp;debrisStrike(fighter,true,60,4)');
  assert.ok(b.run('afterGraze>98&&fighter.hp<afterGraze-10&&!fighter.dead'));
 });
+
+test('fighters fire at a hostile crossing their sights when their preferred target is off-axis',()=>{
+ const b=scene();b.run(`enemy.z=250;var crossing={...enemy,id:2,seed:31,x:400,z:0};ships.push(crossing);battleAI.equip(crossing);battleAI.index(ships,3);battleAI.scan(fighter,3);`);
+ assert.equal(b.run('fighterFireTarget(fighter,enemy,850,3).id'),2);
+});
+test('fighters take imperfect forward shots without bending bolts toward the target',()=>{
+ const b=scene();b.run('enemy.x=600;enemy.z=55;battleAI.index(ships,3);battleAI.scan(fighter,3);');
+ assert.ok(b.run('!!weaponSolution(fighter,enemy,3)'));
+ b.run('raceFire(fighter,enemy,3,0,0,0)');
+ assert.ok(b.run('tracers.length>0&&tracers.every(t=>t.vx>0&&t.vz===0)'));
+ b.run('enemy.z=300');assert.equal(b.run('weaponSolution(fighter,enemy,3)'),null);
+});
