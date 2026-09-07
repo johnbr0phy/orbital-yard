@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {loadBattle}=require('./headless-battle.cjs');
-function setup(race=6){const b=loadBattle();b.start(race,5,42,12);b.run(`var gunner=ships.find(s=>s.side===0&&!s.hulls&&!s.hero);gunner.arr=true;gunner.grace=false;gunner.yaw=0;gunner.pitch=.3;gunner.x=gunner.y=gunner.z=0;gunner.pilotThrottle=0;gunner.v=0;gunner.guns=[[gunner.nose||10,0,3]];gunner.fireL=null;gunner.weaponTracks=new Map();gunner.meta.klass='X-WING';select(gunner.id,false);setWatchView('fly');foeCache[1]=[];tracers=[];beams=[];`);return b;}
+function setup(race=6){const b=loadBattle();b.start(race,5,42,12);b.run(`var gunner=ships.find(s=>s.side===0&&!s.hulls&&!s.hero);gunner.arr=true;gunner.grace=false;gunner.yaw=0;gunner.pitch=.3;gunner.x=gunner.y=gunner.z=0;gunner.pilotThrottle=0;gunner.v=0;gunner.guns=[[gunner.nose||10,0,3]];gunner.fireL=null;gunner.weaponTracks=new Map();gunner.meta.klass='X-WING';gunner.weaponHardware=null;select(gunner.id,false);setWatchView('fly');foeCache[1]=[];tracers=[];beams=[];`);return b;}
 test('Space fires with no target and follows the cockpit pitch; holding obeys cooldown',()=>{
  const b=setup();const r=b.run(`(()=>{keys.add(' ');pilotStep(gunner,2,1/30);const tr=tracers[0],n=tracers.length;pilotStep(gunner,2.01,1/30);const held=tracers.length===n;pilotStep(gunner,2.2,1/30);return {n,held,again:tracers.length>n,pitch:Math.atan2(tr.vy,Math.hypot(tr.vx,tr.vz)),fire:gunner.lastFire};})()`);
  assert.equal(r.n,1);assert.ok(r.held&&r.again);assert.ok(Math.abs(r.pitch-.3)<.001);

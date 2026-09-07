@@ -17391,7 +17391,7 @@ function select(id,details=true){
 }
 function updateWatchDock(){
   const s=sel!=null?ships[sel]:null;
-  document.getElementById('watchLabel').textContent=pilotId!=null?'At the helm · '+s?.meta?.desig:s?'Following '+s.meta.desig:watchMode==='top'?'Top-down battle view':watchMode==='all'?'All ships':watchMode==='free'?'Free camera':'Battle director';
+  document.getElementById('watchLabel').textContent=pilotId!=null?'At the helm · '+s?.meta?.desig:s?'Following '+s.meta.desig:watchMode==='top'?'Top-down battle view':watchMode==='all'?'All ships':watchMode==='free'?'Free camera':cinemaCaption();
   for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===watchMode));
 }
 function leaveHelm(){
@@ -17413,59 +17413,216 @@ function setWatchView(mode){
   }
   leaveHelm();if(intro&&!intro.done)endIntro();sel=null;orb=null;card(null);watchMode=mode;directorAt=0;actionCamera=null;updateHeroBtn();updateWatchCamera(battleTime,1,true);updateWatchDock();
 }
-// The director holds a subject, rather than chasing a changing fleet bounding box.
-// Critically damped motion preserves velocity across shots and variable render rates.
+// The camera observes combat without consuming combat randomness or changing AI.
+// Cuts change scale; motion within a shot stays on one side of the engagement.
 function cinemaSpring(state,key,target,dt,rate){
   const vk=key+'V',v=state[vk]||0,d=state[key]-target,e=Math.exp(-rate*dt),j=(v+rate*d)*dt;
   state[key]=target+(d+j)*e;state[vk]=(v-rate*j)*e;
 }
+function cinemaHeat(s,now){
+  return Math.max(0,1-(now-(s.lastFire??-100))/3)*6+Math.max(0,1-(now-(s.hurtT??-100))/2)*4;
+}
+function cinemaPosition(s,now){
+  const age=now-warT0-(s.delay||0),slide=!s.dead&&age<2?SLIDE*Math.exp(-Math.max(0,age)*3.4):0;
+  return [s.x-Math.cos(s.yaw||0)*slide,s.y,s.z-Math.sin(s.yaw||0)*slide];
+}
+function cinemaCorners(s,now){
+  const p=cinemaPosition(s,now),c=Math.cos(s.yaw||0),n=Math.sin(s.yaw||0),points=[];
+  const l=s.exL||s.slen*.5,h=s.exY||s.slen*.16,w=s.exZ||s.slen*.25;
+  for(const x of [-l,l])for(const y of [-h,h])for(const z of [-w,w])points.push([p[0]+c*x-n*z,p[1]+y,p[2]+n*x+c*z]);
+  return points;
+}
+function cinemaFit(points,center,out){
+  const right=V.norm([out[2],0,-out[0]]),up=V.cross(out,right);
+  const tanY=Math.tan(.44)*.78,tanX=tanY*cvs.width/Math.max(1,cvs.height);
+  let distance=24;
+  for(const p of points){const d=V.sub(p,center);distance=Math.max(distance,V.dot(d,out)+Math.max(Math.abs(V.dot(d,right))/tanX,Math.abs(V.dot(d,up))/tanY));}
+  return distance;
+}
+// Test the sightline against planets and oriented hull boxes, not giant hull
+// spheres that incorrectly block the empty space beside long capital ships.
+function cinemaBlocked(eye,focus,subject,partner,live){
+  const delta=V.sub(focus,eye),dd=V.dot(delta,delta)||1;
+  for(const b of worldBodies){
+    const offset=V.sub(b.center,eye),t=Math.max(0,Math.min(.97,V.dot(offset,delta)/dd));
+    if(V.len(V.sub(offset,V.mul(delta,t)))<b.radius+6)return true;
+  }
+  for(const s of live){
+    if(s.id===subject||s.id===partner||s.slen<100)continue;
+    const c=Math.cos(s.yaw||0),n=Math.sin(s.yaw||0),dx=eye[0]-s.x,dz=eye[2]-s.z;
+    const origin=[dx*c+dz*n,eye[1]-s.y,-dx*n+dz*c],ray=[delta[0]*c+delta[2]*n,delta[1],-delta[0]*n+delta[2]*c];
+    const ext=[s.exL||s.slen*.5,s.exY||s.slen*.16,s.exZ||s.slen*.25];
+    let lo=0,hi=.96;
+    for(let i=0;i<3&&lo<=hi;i++){
+      if(Math.abs(ray[i])<1e-6){if(Math.abs(origin[i])>ext[i]+4){hi=-1;break;}}
+      else{const t1=(-ext[i]-4-origin[i])/ray[i],t2=(ext[i]+4-origin[i])/ray[i];lo=Math.max(lo,Math.min(t1,t2));hi=Math.min(hi,Math.max(t1,t2));}
+    }
+    if(lo<=hi)return true;
+  }
+  return false;
+}
+function cinemaChoose(a,live,now){
+  const active=live.filter(s=>s.arr&&!s.grace&&!s.cloaked),pool=active.length?active:live;
+  const noise=s=>((Math.imul((s.seed??s.id)^warSeed,1664525)+Math.imul(a.index+1,1013904223))>>>0)/4294967296;
+  const recent=id=>a.history.some(h=>h.id===id&&a.clock-h.at<24)?2.5:0;
+  const ranked=pool.map(s=>({s,heat:cinemaHeat(s,now),rank:cinemaHeat(s,now)+noise(s)*2-recent(s.id)})).sort((x,y)=>y.rank-x.rank);
+  // At most 24 nearest-opponent searches, only at a cut, even in a 1,200-ship war.
+  const short=ranked.slice(0,18);
+  for(const r of ranked.filter(r=>r.s.slen>=180).slice(0,6))if(!short.includes(r))short.push(r);
+  const candidates=[];
+  function offer(kind,s,t,score){
+    score+=Math.min(5,(a.clock-(a.kindAt[kind]??-15))*.16)+(s.side!==a.lastSide?1.2:0)-recent(s.id);
+    if(kind===a.kind)score-=7;
+    if(kind==='duel'&&a.kind==='chase'&&(a.subject===s.id||a.partner===s.id))score+=3;
+    candidates.push({kind,subject:s.id,partner:t?.id??null,score:score+noise(s)*1.5});
+  }
+  for(const {s,heat} of short){
+    let t=ships[s.mark>=0?s.mark:s.ai?.target];
+    const valid=q=>q&&!q.dead&&q.vao&&q.arr&&!q.grace&&!q.cloaked&&q.side!==s.side;
+    if(!valid(t)){
+      t=null;let best=Infinity;
+      for(const q of pool)if(valid(q)){const d=(q.x-s.x)**2+(q.y-s.y)**2+(q.z-s.z)**2;if(d<best){best=d;t=q;}}
+    }
+    const d=t?Math.hypot(t.x-s.x,t.y-s.y,t.z-s.z):Infinity;
+    const engaged=t&&d<Math.max(1800,Math.min(7500,(s.slen+t.slen)*2.5));
+    if(engaged){
+      const exchange=heat+cinemaHeat(t,now)*.55,alignment=((t.x-s.x)*Math.cos(s.yaw)+(t.z-s.z)*Math.sin(s.yaw))/Math.max(1,d);
+      offer('duel',s,t,exchange+2);
+      if(s.slen<180&&(s.v||0)>20&&alignment>-.1&&d<2400)offer('chase',s,t,exchange+4+Math.min(2,(s.v||0)/150));
+      if(s.slen>=180)offer('capital',s,t,exchange+2.5);
+    }else if(s.slen>=180&&heat>0)offer('capital',s,null,heat);
+  }
+  const best=candidates.sort((x,y)=>y.score-x.score)[0];
+  // A short geographical reset between runs of close shots. Stragglers do not
+  // pull this view away from the fighting; the manual All ships view still fits everyone.
+  if(a.clock-a.lastWide>25&&best)return {...best,kind:a.kindAt.top==null||a.kindAt.top<(a.kindAt.all??-1)?'top':'all'};
+  if(best)return best;
+  const s=ranked.find(r=>r.s.slen>=30&&r.s.slen<2400)?.s||ranked[0].s;
+  return {kind:'formation',subject:s.id,partner:null};
+}
+function cinemaMembers(kind,subject,partner,live,now){
+  if(kind==='arrival')return live.map(s=>s.id);
+  if(!['formation','all','top'].includes(kind))return [];
+  const p=cinemaPosition(subject,now),q=partner?cinemaPosition(partner,now):p,c=V.mul(V.add(p,q),.5);
+  if(kind==='formation')return live.filter(s=>s.side===subject.side&&s.slen<Math.max(250,subject.slen*2.5)).sort((a,b)=>V.len(V.sub(cinemaPosition(a,now),p))-V.len(V.sub(cinemaPosition(b,now),p))).slice(0,12).map(s=>s.id);
+  const near=live.filter(s=>s.arr&&!s.grace&&!s.cloaked&&V.len(V.sub(cinemaPosition(s,now),c))<Math.max(2200,Math.min(9000,subject.slen*4)));
+  return near.sort((a,b)=>V.len(V.sub(cinemaPosition(a,now),c))-V.len(V.sub(cinemaPosition(b,now),c))).slice(0,64).map(s=>s.id);
+}
+function cinemaGroup(a,now){
+  const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];let n=0;
+  for(const id of a.members){const s=ships[id];if(!s||s.dead)continue;n++;for(const p of cinemaCorners(s,now))for(let i=0;i<3;i++){lo[i]=Math.min(lo[i],p[i]);hi[i]=Math.max(hi[i],p[i]);}}
+  if(!n)return;
+  a.groupCenter=lo.map((v,i)=>(v+hi[i])*.5);a.groupAnchor=cinemaPosition(ships[a.subject],now);a.groupPoints=[];
+  for(const x of [lo[0],hi[0]])for(const y of [lo[1],hi[1]])for(const z of [lo[2],hi[2]])a.groupPoints.push([x,y,z]);
+}
+function cinemaLayout(a,now,dt,reset=false){
+  const s=ships[a.subject],partner=ships[a.partner],u=Math.min(1,(a.clock-a.started)/Math.max(1,a.duration)),ease=u*u*(3-2*u);
+  const group=['arrival','all','top','formation'].includes(a.kind),p=cinemaPosition(s,now);
+  let center=p,points=cinemaCorners(s,now),angle=a.bearing+a.angleOffset+(ease-.5)*(a.kind==='capital'?.24:.12),height=a.height;
+  if(group){center=a.groupCenter||p;points=a.groupPoints||points;}
+  if(a.kind==='formation'&&a.groupAnchor){const shift=V.sub(p,a.groupAnchor);center=V.add(center,shift);points=points.map(q=>V.add(q,shift));}
+  if(a.kind==='duel'&&partner){const q=cinemaPosition(partner,now);center=V.mul(V.add(p,q),.5);points=points.concat(cinemaCorners(partner,now));}
+  if(a.kind==='chase'){
+    const desired=s.yaw||0,delta=Math.atan2(Math.sin(desired-a.heading),Math.cos(desired-a.heading));
+    // Follow the course, not the roll, recoil or every steering correction.
+    a.heading+=Math.max(-dt*.5,Math.min(dt*.5,delta*(1-Math.exp(-dt*1.7))));
+    angle=a.heading+Math.PI+.22+a.angleOffset;
+  }
+  const out=V.norm([Math.cos(angle),height,Math.sin(angle)]);
+  let distance=cinemaFit(points,center,out);
+  if(a.kind==='chase')distance=Math.max(distance,32,s.slen*2.9);
+  distance*=a.kind==='arrival'?1.1-ease*.07:a.kind==='capital'?1.03-ease*.06:1;
+  // Move with a close subject. Filtering world-space eye and aim independently
+  // creates huge tracking lag on a fast fighter; filter the camera rig instead.
+  const lead=a.kind==='chase'?Math.min(distance*.65,120):0;
+  const aim=[Math.cos(a.heading||0)*lead,0,Math.sin(a.heading||0)*lead];
+  const offset=V.mul(out,distance);
+  for(let i=0;i<3;i++){
+    const ck=['cx','cy','cz'][i],ok=['ox','oy','oz'][i],lk=['lx','ly','lz'][i];
+    if(a.kind==='formation'&&!reset&&a.anchorLast)a[ck]+=p[i]-a.anchorLast[i];
+    if(reset){a[ck]=center[i];a[ok]=offset[i];a[lk]=aim[i];a[ck+'V']=a[ok+'V']=a[lk+'V']=0;}
+    else{if(group)cinemaSpring(a,ck,center[i],dt,3);else a[ck]=center[i];cinemaSpring(a,ok,offset[i],dt,a.kind==='chase'?5:2.8);cinemaSpring(a,lk,aim[i],dt,5);}
+  }
+  a.anchorLast=p;
+  const focus=[a.cx+a.lx,a.cy+a.ly,a.cz+a.lz],eye=[a.cx+a.ox,a.cy+a.oy,a.cz+a.oz];
+  return {focus,eye,far:distance+Math.max(s.slen,partner?.slen||0)*3};
+}
+function cinemaStart(a,shot,live,now){
+  const old=a.subject;a.history.push({id:old,at:a.clock});a.history=a.history.filter(h=>a.clock-h.at<32);
+  Object.assign(a,shot);a.index++;a.started=a.clock;a.payoff=null;a.blocked=0;
+  const s=ships[a.subject];a.lastSide=s.side;a.heading=s.yaw||0;
+  a.duration={arrival:2.8,formation:6.5,chase:5.6,duel:6.8,capital:8.5,all:5.5,top:4.8}[a.kind];
+  a.until=a.clock+a.duration;a.kindAt[a.kind]=a.clock;
+  if(['arrival','all','top'].includes(a.kind))a.lastWide=a.clock;
+  a.members=cinemaMembers(a.kind,s,ships[a.partner],live,now);cinemaGroup(a,now);
+  // Keep the battlefield's screen direction consistent. Chase reversals get a
+  // wider two-ship shot instead of whipping the camera around a turning nose.
+  const side=(warSeed&1)?1:-1;
+  a.bearing=a.kind==='chase'?a.heading+Math.PI+.22:a.kind==='capital'?a.heading+side*1.12:Math.PI/2*side+.12;
+  a.height=a.kind==='top'?3.8:a.kind==='capital'?.24:a.kind==='chase'?.26:a.kind==='formation'?.32:.55;
+  if(a.kind==='duel'&&ships[a.partner]){
+    const t=ships[a.partner],dx=s.x-t.x,dz=s.z-t.z,d=Math.hypot(dx,dz);
+    // Long-range exchanges need depth, not two unreadable specks on opposite
+    // edges. Put one combatant in the foreground with its opponent beyond it.
+    if(d>Math.max(180,(s.slen+t.slen)*5)){a.bearing=Math.atan2(dz,dx)+side*.16;a.height=Math.max(-.5,Math.min(.5,(s.y-t.y)/Math.max(1,d)))+.16;}
+  }
+  a.angleOffset=0;
+  let layout;const baseHeight=a.height;
+  for(const [offset,lift] of [[0,0],[.55,.2],[-.55,.2],[1.1,.6],[-1.1,1.4]]){
+    a.angleOffset=offset;a.height=baseHeight+lift;layout=cinemaLayout(a,now,0,true);
+    if(!cinemaBlocked(layout.eye,layout.focus,a.subject,a.partner,live))break;
+  }
+  a.scanAt=a.clock+.65;
+  if(watchMode==='action')document.getElementById('watchLabel').textContent=cinemaCaption();
+  return layout;
+}
+function cinemaCaption(){
+  const a=actionCamera,s=ships[a?.subject];if(!a?.kind||!s)return 'Battle director';
+  const title={arrival:'Fleet arrivals',formation:'Fleet approach',chase:'Pursuit',duel:'Crossfire',capital:'Capital ship',all:'Battlefield',top:'Battle from above'}[a.kind];
+  return ['arrival','all','top'].includes(a.kind)?title:title+' · '+raceShort(s.race);
+}
 function updateActionCamera(now,dt){
-  dt=Math.max(0,Math.min(.1,dt));
-  const live=ships.filter(s=>s&&!s.dead&&s.vao);if(!live.length)return;
-  const age=now-warT0,opening=Number.isFinite(age)&&age<10;
-  if(!actionCamera)actionCamera={clock:0,until:0,index:0,subject:null,kind:null};
+  if(!Number.isFinite(warT0))return;
+  dt=Math.max(0,Math.min(.15,dt));
+  if(!actionCamera)actionCamera={clock:0,until:0,index:0,subject:null,partner:null,kind:null,history:[],kindAt:{},lastWide:0,scanAt:0};
   const a=actionCamera;a.clock+=dt;
-  const active=live.filter(s=>s.arr&&!s.grace),pool=active.length?active:live;
-  let subject=ships[a.subject];
-  const cut=a.kind==null||a.clock>=a.until||(!opening&&a.kind==='arrival')||(!subject&&!['all','top','arrival'].includes(a.kind))||subject?.dead;
+  const age=now-warT0,opening=age<9,stage=age<2.8?0:age<5.9?1:2;
+  let live=null,cut=!a.kind||a.clock>=a.until;
+  const s=ships[a.subject],partner=ships[a.partner];
+  // Let the shot pay off: stay with either combatant's destruction for 2.4 s.
+  const death=[s,partner].find(q=>q?.dead&&now-(q.deadT??-100)<3);
+  if(death&&!a.payoff){a.payoff={id:death.id,until:a.clock+2.4};a.until=a.payoff.until;}
+  if(a.payoff)cut=a.clock>=a.payoff.until;
+  else if(s?.dead||s?.cloaked||(!s&&a.kind))cut=true;
+  if(opening)cut=!a.kind||a.openStage!==stage;
+  if(!opening&&a.openStage!=null){cut=true;a.openStage=null;}
+  if(a.clock>=a.scanAt||cut){
+    live=ships.filter(q=>q&&!q.dead&&q.vao&&!q.cloaked);if(!live.length&&!a.payoff)return;
+    if(a.kind&&!cut){
+      cinemaGroup(a,now);
+      const occluded=cinemaBlocked([cam.ex,cam.ey,cam.ez],[a.cx,a.cy,a.cz],a.subject,a.partner,live);
+      a.blocked=occluded?a.blocked+.65:0;
+      const held=a.clock-a.started,quiet=cinemaHeat(s,now)+(partner?cinemaHeat(partner,now):0)<.1;
+      const separated=partner&&Math.hypot(s.x-partner.x,s.y-partner.y,s.z-partner.z)>Math.max(2800,(s.slen+partner.slen)*5);
+      if(!opening&&!a.payoff&&held>3.8&&(a.blocked>1.2||(['chase','duel'].includes(a.kind)&&quiet&&separated)))cut=true;
+    }
+    a.scanAt=a.clock+.65;
+  }
+  let layout;
   if(cut){
-    // Editorial cuts change scale; smooth motion happens inside each shot.
-    const deck=['chase','wide','all','chase','capital','top'];
-    a.kind=opening?'arrival':deck[a.index++%deck.length];
-    a.started=a.clock;a.until=a.clock+({arrival:10,chase:6,wide:7,all:6,capital:9,top:5}[a.kind]);
-    let best=pool[0],score=-Infinity;
-    for(const ship of pool){const small=ship.slen<180,hot=(now-(ship.lastFire??-100)<3?5:0)+(now-(ship.hurtT??-100)<2?2:0);
-      const value=hot+(a.kind==='capital'?!small*6:small*5)+(ship.id!==a.subject?2:0)+(ship.hero?1:0);
-      if(value>score){score=value;best=ship;}}
-    subject=best;a.subject=best.id;a.heading=best.yaw||0;a.partner=null;
-    let nearest=Math.max(500,Math.min(1800,best.slen*8));
-    for(const t of pool)if(t.side!==best.side){const d=Math.hypot(t.x-best.x,t.y-best.y,t.z-best.z);if(d<nearest){nearest=d;a.partner=t.id;}}
-    const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
-    for(const ship of live)for(let i=0;i<3;i++){const v=[ship.x,ship.y,ship.z][i],r=ship.slen*.6;lo[i]=Math.min(lo[i],v-r);hi[i]=Math.max(hi[i],v+r);}
-    a.center=lo.map((v,i)=>(v+hi[i])/2);a.radius=Math.max(200,Math.hypot(...hi.map((v,i)=>(v-lo[i])/2)));
-  }
-  const u=Math.max(0,a.clock-a.started),aspect=cvs.width/Math.max(1,cvs.height);
-  let center=[subject.x,subject.y,subject.z],radius=Math.max(28,subject.slen*.65),want;
-  if(['arrival','all','top'].includes(a.kind)){
-    center=a.center.slice();radius=a.radius;
-    const d=radius/(Math.sin(.44)*Math.min(1,aspect))*1.12,angle=.92+u*.009;
-    want=a.kind==='top'?[center[0]+d*.04,center[1]+d,center[2]+d*.05]:[center[0]+Math.cos(angle)*d*.25,center[1]+d*.38,center[2]+Math.sin(angle)*d*1.2];
-  }else{
-    const partner=ships[a.partner];
-    if(a.kind==='wide'&&partner&&!partner.dead){const d=Math.hypot(partner.x-subject.x,partner.y-subject.y,partner.z-subject.z);radius=Math.max(radius,d*.5+partner.slen*.6);center=center.map((v,i)=>(v+[partner.x,partner.y,partner.z][i])*.5);}
-    let d=Math.max(85,radius/(Math.sin(.44)*Math.min(1,aspect))*(a.kind==='wide'?1.65:1.3));
-    // A close offset chase shows the hull sweeping past its surroundings.
-    // The camera follows the course gently, never copying roll or fighter jinks.
-    let delta=Math.atan2(Math.sin(subject.yaw-a.heading),Math.cos(subject.yaw-a.heading));a.heading+=delta*(1-Math.exp(-dt*.8));
-    const angle=a.kind==='chase'?a.heading+Math.PI+.38:a.heading+1.05+u*.025;
-    want=[center[0]+Math.cos(angle)*d,center[1]+d*(a.kind==='chase'?.24:.38),center[2]+Math.sin(angle)*d];
-  }
-  const rate=a.kind==='chase'?5:2;
-  for(let i=0;i<3;i++){const pk=['ex','ey','ez'][i],tk=['tx','ty','tz'][i];if(cut){a[pk]=want[i];a[tk]=center[i];a[pk+'V']=a[tk+'V']=0;}else{cinemaSpring(a,pk,want[i],dt,rate);cinemaSpring(a,tk,center[i],dt,rate);}}
-  const dx=a.tx-a.ex,dy=a.ty-a.ey,dz=a.tz-a.ez;
-  a.yaw=Math.atan2(dz,dx);a.pitch=Math.atan2(dy,Math.hypot(dx,dz));
-  for(const k of ['ex','ey','ez','yaw','pitch'])cam[k]=a[k];
-  watchGoal={far:Math.hypot(dx,dy,dz)+radius*3};
+    live??=ships.filter(q=>q&&!q.dead&&q.vao&&!q.cloaked);if(!live.length)return;
+    let shot;
+    if(opening){
+      a.openStage=stage;
+      const pool=live.filter(q=>stage===0||q.side===stage-1);
+      const subject=(pool.filter(q=>q.slen>=40&&q.slen<1800).sort((x,y)=>y.slen-x.slen)[0]||pool[0]||live[0]);
+      shot={kind:stage===0?'arrival':'formation',subject:subject.id,partner:null};
+    }else shot=cinemaChoose(a,live,now);
+    layout=cinemaStart(a,shot,live,now);
+  }else layout=cinemaLayout(a,now,dt);
+  const [dx,dy,dz]=V.sub(layout.focus,layout.eye);
+  [cam.ex,cam.ey,cam.ez]=layout.eye;cam.yaw=Math.atan2(dz,dx);cam.pitch=Math.atan2(dy,Math.hypot(dx,dz));
+  watchGoal={far:layout.far};
 }
 
 function updateWatchCamera(now,dt,force=false){
