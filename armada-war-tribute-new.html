@@ -15958,7 +15958,7 @@ function raceFire(s,t,now,nx,ny,nz){
   if(w===0&&solution.profile.fixed&&(s.race===5||s.race===6)){
     // More individual bolts, comparable sustained damage, every shot aligned.
     fireBeam(s,t,now,nx,ny,nz,.14,false);
-    s.cool=.10+combatRandom()*.04;return;
+    s.cool=.28+combatRandom()*.08;return;
   }
   if(w===1){
     tracerBurst(s,t,now,solution,(s.hulls||s.slen>=90)?9:s.hero?4:3,650);
