@@ -12840,6 +12840,18 @@ RACE_DEFS.push(
 {name:"TYRANIDS",fr:"warhammer 40,000",mix:[0.62, 0.26, 0.12],form:"swarm",fleetK:0.8,hold:260,beam:[0.68, 0.92, 0.27],ion:[0.68, 0.92, 0.27],anim:5,tone:1,hpdiv:19,spdK:1500,spdCap:78,turnK:38,cloak:false,msl:false,fire:"bio",boom:"burst",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
 {name:"TESLA",fr:"the electric armada",mix:[0.76, 0.16, 0.08],form:"swarm",fleetK:0.9,hold:480,beam:[0.35, 0.8, 1],ion:[0.35, 0.8, 1],anim:0,tone:1,hpdiv:26,spdK:1700,spdCap:90,turnK:44,cloak:false,msl:true,fire:"pulse",boom:"cookoff",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}}
 );
+// Weapon signatures stay tied to the fleet, including allied reinforcements.
+const FLEET_BEAM_HEX=[
+  0x67bca6,0xff739d,0x6974ff,0xcc782a,0xfff0ac,
+  0xff3829,0x66ff73,0x638cff,0xdc36ff,0xff944a,
+  0xffca32,0x28ad55,0xb7ff19,0xffd5a8,0xc4d2b4,
+  0x57b8df,0xff5075,0xd6c8ff,0x16e2b0,0x9861ff,
+  0xffece0,0xc6ad29,0x36dcff
+];
+for(let race=0;race<RACE_DEFS.length;race++){
+  const hex=FLEET_BEAM_HEX[race],rgb=[(hex>>16&255)/255,(hex>>8&255)/255,(hex&255)/255];
+  RACE_DEFS[race].beam=rgb;RACE_DEFS[race].ion=rgb.map(v=>v*.82+.18);
+}
 const battleAI=new ArmadaBattleAI.FleetMinds(RACE_DEFS);
 let battleTime=0,battleAccumulator=0;
 let combatRandom=ArmadaBattleAI.random(1),debrisRandom=ArmadaBattleAI.random(2);
@@ -15183,7 +15195,7 @@ function weaponProfile(s){
     width:Math.max(.65,Math.min(12,(s.slen||20)*(beam?.004:.008))),
     speed:fixed&&(s.race===5||s.race===6)?800:fx==='pulse'?850:fx==='disruptor'?1000:fx==='smart'||fx==='junk'?650:1400,
     duration:fx==='neutron'?.75:fx==='song'?.65:fx==='phaser'?.48:.32,
-    color:s.race===5?[1,.22,.16]:s.race===6?[.40,1,.45]:fx==='laser'?[1,.22,.16]:(RACE_DEFS[s.race]||RACE_DEFS[0]).beam};
+    color:(RACE_DEFS[s.race]||RACE_DEFS[0]).beam};
   if(isOptimus(s)){profile.width=1.15;profile.speed=1050;}
   s.weaponHardware={meta:s.meta,race:s.race,hulls:s.hulls,length:s.slen,profile};return profile;
 }

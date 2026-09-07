@@ -146,3 +146,8 @@ test('fighters take imperfect forward shots without bending bolts toward the tar
  assert.ok(b.run('tracers.length>0&&tracers.every(t=>t.vx>0&&t.vz===0)'));
  b.run('enemy.z=300');assert.equal(b.run('weaponSolution(fighter,enemy,3)'),null);
 });
+
+test('each fleet retains its own laser colour rather than inheriting generic red hardware',()=>{
+ const b=scene();
+ assert.ok(b.run(`(()=>{const colors=new Set();for(let race=0;race<RACE_DEFS.length;race++){const s={...fighter,race,weaponHardware:null};const c=weaponProfile(s).color;if(c.join()!==RACE_DEFS[race].beam.join())return false;colors.add(c.join());}return colors.size===23;})()`));
+});
