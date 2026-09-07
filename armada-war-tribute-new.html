@@ -13139,12 +13139,12 @@ const RACE_DEFS=[
    fire:"song",boom:"flash",msl:false,
    doct:{CHARGE:1,FLANK:4,ENVELOP:1,SWARM:1,HUNT:2,SCREEN:4,FEIGN:3,MINE:1}},
   /* ---- the tribute fleets: every sky we grew up under, one at a time ---- */
-  {name:"THE IMPERIAL STARFLEET",fr:"star wars",mix:[0.86,0.10,0.04],form:"wall",fleetK:1,hold:480,beam:[0.40,1.00,0.45],ion:[0.35,1.00,0.55],anim:0,tone:1.05,
+  {name:"THE IMPERIAL STARFLEET",fr:"star wars",mix:[0.86,0.10,0.04],form:"wall",fleetK:1,hold:480,beam:[1.00,0.22,0.16],ion:[1.00,0.45,0.60],anim:0,tone:1.05,
    hpdiv:20,spdK:1300,spdCap:62,turnK:26,
    wpn:[[16,1],[30,2],[40,3],[50,4],[58,5],[66,6]],
    fire:"turbo",boom:"tie",msl:true,
    doct:{CHARGE:5,FLANK:1,ENVELOP:1,SWARM:2,HUNT:2,SCREEN:4,FEIGN:0,MINE:1}},
-  {name:"THE REBEL ALLIANCE",fr:"star wars",mix:[0.78,0.14,0.08],form:"groups",fleetK:0.9,hold:560,beam:[1.00,0.35,0.30],ion:[1.00,0.45,0.60],anim:0,tone:0.95,
+  {name:"THE REBEL ALLIANCE",fr:"star wars",mix:[0.78,0.14,0.08],form:"groups",fleetK:0.9,hold:560,beam:[0.40,1.00,0.45],ion:[0.35,1.00,0.55],anim:0,tone:0.95,
    hpdiv:24,spdK:1480,spdCap:74,turnK:40,
    wpn:[[18,1],[28,2],[40,3],[50,4],[58,5],[68,6]],
    fire:"laser",boom:"cookoff",msl:true,
@@ -15556,7 +15556,7 @@ function weaponProfile(s){
     width:Math.max(.65,Math.min(12,(s.slen||20)*(beam?.004:.008))),
     speed:fixed&&(s.race===5||s.race===6)?800:fx==='pulse'?850:fx==='disruptor'?1000:fx==='smart'||fx==='junk'?650:1400,
     duration:fx==='neutron'?.75:fx==='song'?.65:fx==='phaser'?.48:.32,
-    color:s.race===5?[.40,1,.45]:s.race===6?[1,.22,.16]:fx==='laser'?[1,.22,.16]:(RACE_DEFS[s.race]||RACE_DEFS[0]).beam};
+    color:s.race===5?[1,.22,.16]:s.race===6?[.40,1,.45]:fx==='laser'?[1,.22,.16]:(RACE_DEFS[s.race]||RACE_DEFS[0]).beam};
   if(isOptimus(s)){profile.width=1.15;profile.speed=1050;}
   s.weaponHardware={meta:s.meta,race:s.race,hulls:s.hulls,length:s.slen,profile};return profile;
 }
