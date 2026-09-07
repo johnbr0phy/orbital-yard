@@ -12864,7 +12864,7 @@ let IONCOL=[RACE_DEFS[0].ion,RACE_DEFS[1].ion];     /* the ion lance keeps the f
 let pickMain=[-1,-1],pickAlly=[-2,-2];
 /* the races actually in this sky — grows when an ally answers a call */
 let warRaces=[0,1];
-let allyCalled=[false,false],allyRace=[-1,-1];
+let allyCalled=[false,false],allyRace=[-1,-1],reliefBatches=[];
 let spawned=[0,0];   /* everything a side has fielded, reinforcements included */
 const SQN=8,ESCN=4;
 /* a ship's true berth is the longest thing on her — length, beam, or
@@ -14262,7 +14262,7 @@ function startWar(fresh){
   else if(rb<0){rb=(R()*(RACE_DEFS.length-1))|0;if(rb>=ra)rb++;}
   sideRace=[ra,rb];
   warRaces=[ra];if(rb!==ra)warRaces.push(rb);
-  allyCalled=[false,false];allyRace=[-1,-1];
+  allyCalled=[false,false];allyRace=[-1,-1];reliefBatches=[];
   SIDE_NAME=[RACE_DEFS[ra].name,RACE_DEFS[rb].name];
   BEAMCOL=[RACE_DEFS[ra].beam,RACE_DEFS[rb].beam];
   IONCOL=[RACE_DEFS[ra].ion,RACE_DEFS[rb].ion];
@@ -14523,7 +14523,8 @@ function onWorkerMsg(e){
     setShipPace(s);
     battleAI.equip(s);
     forged++;
-    if(warT0!==Infinity&&(RACE_DEFS[s.race]||{}).fire==="cutter")scatterBorg();
+    if(s.reliefBatch!=null)reliefBatches[s.reliefBatch].remaining--;
+    if(s.reliefBatch==null&&warT0!==Infinity&&(RACE_DEFS[s.race]||{}).fire==="cutter")scatterBorg();
   }
   if(forged>=total&&warT0===Infinity){
     parkTheCrowns();
@@ -16173,295 +16174,233 @@ function megaStep(s,now,dt){
   }
   cutHold(s,now,dt);
 }
-/* ===================== the call for help =====================
-   A fleet bled past half her strength swallows her pride and opens the
-   old channel. The answer is not a pile-on: the relief reads the sky
-   and drops where it is needed — a hammer on the enemy's thin flank,
-   a screen on the caller's collapsing wing, a cut against anything
-   that has already broken through. Never on top of the friends they
-   came to save. Once per side, per war. */
+/* ===================== tactical reinforcements =====================
+   A call reserves ships, not positions. Geometry must finish before berths
+   can be measured. Placement and jump clearance never move the existing fleet. */
+function reliefPower(s,full=false){
+  const hp=Math.max(1,s.hpMax||1),condition=full?1:Math.max(0,Math.min(1,(s.hp||0)/hp));
+  return Math.sqrt(hp)*(s.hulls?1.4:1)*(.3+.7*condition);
+}
+function reliefPicture(side,now){
+  const friends=ships.filter(s=>s.side===side&&!s.dead&&s.vao&&!s.reliefPending&&now-warT0-s.delay>=0),intel=new Map();
+  for(const s of friends)if(s.ai)for(const c of s.ai.contacts.values()){
+    if(now-c.seen>8||ships[c.id]?.dead)continue;
+    const old=intel.get(c.id);if(!old||c.seen>old.seen)intel.set(c.id,c);
+  }
+  const foes=[...intel.values()],center=list=>list.reduce((p,s)=>V.add(p,V.mul([s.x,s.y,s.z],1/Math.max(1,list.length))),[0,0,0]);
+  const fc=center(friends),ec=foes.length?center(foes):V.add(fc,[side?-1000:1000,0,0]);
+  // Local lines of contact define forward. An overloaded wing must not drag
+  // the whole enemy centroid sideways and make the other wing look like a breach.
+  let aim=[0,0,0];
+  for(let i=0;i<friends.length;i+=Math.max(1,Math.ceil(friends.length/24))){
+    const s=friends[i];let nearest=null,distance=Infinity;
+    for(const t of foes){const d=(t.x-s.x)**2+(t.z-s.z)**2;if(d<distance){distance=d;nearest=t;}}
+    if(nearest)aim=V.add(aim,V.norm([nearest.x-s.x,0,nearest.z-s.z]));
+  }
+  let f=V.len(aim)>.3?V.norm(aim):[side?-1:1,0,0];
+  const r=[-f[2],0,f[0]],cells=new Map();
+  for(const s of friends){const key=[Math.floor(s.x/1200),Math.floor(s.y/1200),Math.floor(s.z/1200)].join(',');let c=cells.get(key);if(!c)cells.set(key,c={ships:[],power:0});c.ships.push(s);c.power+=reliefPower(s);}
+  let weak=fc,weakScore=-1,weakTarget=foes[0]||null;
+  // Find a locally outmatched group, not the centroid of the entire navy.
+  for(const cell of cells.values()){
+    const p=center(cell.ships);let pressure=0,closest=null,dist=Infinity;
+    for(const t of foes){const d=Math.max(0,V.len(V.sub([t.x,t.y,t.z],p))-(t.slen||20)*.5);if(d<2200)pressure+=reliefPower(t)*(1-d/3000);if(d<dist){dist=d;closest=t;}}
+    const damage=cell.ships.reduce((sum,s)=>sum+1-s.hp/Math.max(1,s.hpMax),0)/cell.ships.length;
+    const score=pressure/Math.max(1,cell.power)*(1+damage)+damage*.5;
+    if(score>weakScore){weakScore=score;weak=p;weakTarget=closest;}
+  }
+  const lateral=p=>V.dot(V.sub(p,fc),r),power=[0,0];
+  for(const t of foes)power[lateral([t.x,t.y,t.z])<0?0:1]+=reliefPower(t);
+  const thin=power[0]<=power[1]?-1:1,wing=lateral(weak)<0?-1:1;
+  const breakers=foes.filter(t=>V.dot(V.sub([t.x,t.y,t.z],fc),f)<-220&&V.len(V.sub([t.x,t.y,t.z],weak))<3200);
+  const bp=breakers.length?center(breakers):weak,breakTarget=breakers.sort((a,b)=>reliefPower(b)-reliefPower(a))[0];
+  const flankTarget=foes.filter(t=>(lateral([t.x,t.y,t.z])<0?-1:1)===thin).sort((a,b)=>reliefPower(b)-reliefPower(a))[0]||weakTarget;
+  const fp=flankTarget?[flankTarget.x,flankTarget.y,flankTarget.z]:ec;
+  const order=(p,target,fallback)=>{const goal=target?[target.x,target.y,target.z]:fallback;return {p,goal,target:target?.id??-1,yaw:Math.atan2(goal[2]-p[2],goal[0]-p[0])};};
+  return {friends,foes,priority:breakers.length?'intercept':'relief',orders:{
+    relief:order(V.add(V.add(weak,V.mul(r,wing*700)),V.mul(f,-250)),weakTarget,ec),
+    intercept:order(V.add(V.add(bp,V.mul(f,-750)),V.mul(r,-wing*500)),breakTarget||weakTarget,ec),
+    flank:order(V.add(fp,V.mul(r,thin*(750+(flankTarget?.slen||0)*.55))),flankTarget,ec)
+  }};
+}
+function reliefEnvelope(s,now,position=null,jump=false){
+  const box=trafficBox(s,now),p=position||[s.x,s.y,s.z],e=box.e.slice(),margin=jump?24:35;
+  let center=p.slice();
+  if(jump){
+    const ahead=s.hulls||s.steadyCapital?40:Math.max(100,(s.spdMax||s.spd||20)*2.3);
+    e[0]+=(SLIDE+ahead)*.5;center=V.add(center,V.mul(box.axes[0],(ahead-SLIDE)*.5));
+  }else{
+    // Reserve a short sweep for moving ships and debris while the relief forms.
+    const v=box.velocity;center=V.add(center,V.mul(v,1.5));
+    for(let i=0;i<3;i++)e[i]+=Math.abs(V.dot(v,box.axes[i]))*1.5;
+  }
+  for(let i=0;i<3;i++)e[i]+=margin;
+  const out={...box,e,o:{id:s.id,x:center[0],y:center[1],z:center[2]},radius:Math.hypot(...e)};
+  out.bounds=trafficBounds(out);return out;
+}
+function reliefWorldClear(box){
+  for(const b of worldBodies){
+    const d=[b.center[0]-box.o.x,b.center[1]-box.o.y,b.center[2]-box.o.z];let distance=0;
+    for(let i=0;i<3;i++){const gap=Math.max(0,Math.abs(V.dot(d,box.axes[i]))-box.e[i]);distance+=gap*gap;}
+    if(distance<(b.radius+40)**2)return false;
+  }
+  return true;
+}
+function reliefOverlap(a,b){
+  if(Math.abs(a.o.x-b.o.x)>a.bounds[0]+b.bounds[0]||Math.abs(a.o.y-b.o.y)>a.bounds[1]+b.bounds[1]||Math.abs(a.o.z-b.o.z)>a.bounds[2]+b.bounds[2])return false;
+  return !!trafficContact(a,b);
+}
+function reliefObstacles(batch,now){
+  const boxes=[];
+  for(const s of ships){
+    if(s.dead||!s.vao||s.reliefPending)continue;
+    if(s.reliefBatch===batch.id&&!s.arr)continue;
+    boxes.push(reliefEnvelope(s,now,null,s.reliefBatch!=null&&!s.arr));
+  }
+  for(const w of wrecks)if(!w.gone&&!w.shatter&&!w.dustT)boxes.push(reliefEnvelope(debrisProxy(w),now));
+  return boxes;
+}
+function reliefFindBerth(s,batch,now,obstacles){
+  const order=batch.picture.orders[s.reliefRole],f=[Math.cos(order.yaw),0,Math.sin(order.yaw)],r=[-f[2],0,f[0]];
+  s.yaw=order.yaw;s.pitch=s.roll=0;
+  let base=V.add(order.p,V.mul(f,-(s.exL||s.slen*.5)-180));
+  // Move the entry plane just outside a large obstruction first. Tiny fighters
+  // should not exhaust a small search radius inside a planet or a battleship.
+  for(let pass=0;pass<3;pass++){
+    let box=reliefEnvelope(s,now,base,true),changed=false;
+    for(const body of worldBodies){
+      const d=V.sub([box.o.x,box.o.y,box.o.z],body.center),distance=V.len(d),n=distance?V.mul(d,1/distance):[0,1,0];
+      const support=box.e.reduce((sum,e,i)=>sum+e*Math.abs(V.dot(n,box.axes[i])),0),need=body.radius+support+80;
+      if(distance<need){base=V.add(base,V.mul(n,need-distance));box=reliefEnvelope(s,now,base,true);changed=true;}
+    }
+    for(const obstacle of obstacles){
+      if(Math.max(...obstacle.e)<Math.max(180,box.radius*2)||!reliefOverlap(box,obstacle))continue;
+      const hit=trafficContact(box,obstacle);
+      if(hit){base=V.add(base,V.mul(hit.normal,hit.depth+60));box=reliefEnvelope(s,now,base,true);changed=true;}
+    }
+    if(!changed)break;
+  }
+  const step=Math.max(70,Math.hypot(s.exY||5,s.exZ||5)*2.35+30),rank=s.reliefSlot||0;
+  const blocked=box=>!reliefWorldClear(box)||obstacles.some(o=>o.o.id!==s.id&&reliefOverlap(box,o))||batch.reserved.some(o=>o.o.id!==s.id&&reliefOverlap(box,o));
+  for(let attempt=0;attempt<96;attempt++){
+    const slot=rank+attempt,angle=slot*2.399963229728653,reach=step*Math.sqrt(slot);
+    const p=V.add(base,V.mul(r,Math.cos(angle)*reach));p[1]+=Math.sin(angle)*reach*.8;
+    const box=reliefEnvelope(s,now,p,true);
+    if(!blocked(box))return {p,box};
+  }
+  // A heavily obstructed system still has a guaranteed empty berth above all
+  // reserved volumes; never accept an overlap after exhausting a retry count.
+  let ceiling=base[1];
+  for(const o of [...obstacles,...batch.reserved])ceiling=Math.max(ceiling,o.o.y+o.bounds[1]);
+  for(const b of worldBodies)ceiling=Math.max(ceiling,b.center[1]+b.radius+60);
+  const p=base.slice();p[1]=ceiling+(s.exY||5)+100;
+  return {p,box:reliefEnvelope(s,now,p,true)};
+}
+function beginReliefPlan(batch,now){
+  const current=reliefPicture(batch.side,now);
+  batch.picture=current.friends.length?current:batch.callPicture;
+  batch.picture={...batch.picture,foes:batch.picture.foes.filter(c=>now-c.seen<=8)};
+  batch.reserved=[];batch.obstacles=reliefObstacles(batch,now);
+  const roles=[batch.picture.priority,'flank',batch.picture.priority==='relief'?'intercept':'relief'],slots={relief:0,flank:0,intercept:0};
+  const members=batch.ids.map(id=>ships[id]);
+  // Deal whole flights together. The majority answers the most urgent call.
+  for(let i=0;i<members.length;i++){
+    const s=members[i],u=Math.floor(i/SQN)/Math.max(1,Math.ceil(members.length/SQN));
+    s.reliefRole=roles[s.hulls?(i+1)%3:u<.6?0:u<.85?1:2];
+  }
+  batch.queue=members.sort((a,b)=>hullBerth(b)-hullBerth(a)||a.id-b.id);batch.cursor=0;
+  for(const s of batch.queue)s.reliefSlot=slots[s.reliefRole]++;
+  batch.phase='placing';
+}
+function launchRelief(batch,now){
+  const groups=new Map(),offsets={relief:0,intercept:.35,flank:1.1};
+  for(const id of batch.ids){
+    const s=ships[id],order=batch.picture.orders[s.reliefRole];s.reliefPending=false;
+    s.delay=now-warT0+1.2+offsets[s.reliefRole]+Math.min(4,Math.floor(s.reliefSlot/8)*.18)+(s.reliefSlot%8)*.10;
+    s.reliefPlanned=[s.x,s.y,s.z];s.reliefYaw=s.yaw;s.stn=[s.x,s.y,s.z];
+    s.mark=order.target;s.ai.target=order.target;s.ai.nextThink=0;
+    // Carry the caller's actual reports, not invented sightings at jump-out.
+    for(const c of batch.picture.foes.slice().sort((a,b)=>b.seen-a.seen).slice(0,24))s.ai.contacts.set(c.id,{...c,direct:false,reported:now});
+    const key=s.reliefRole+':'+(s.slen<180?'screen':'line');let ids=groups.get(key);if(!ids)groups.set(key,ids=[]);ids.push(id);
+  }
+  for(const ids of groups.values())for(let i=0;i<ids.length;i+=SQN){
+    const mem=ids.slice(i,i+SQN),s=ships[mem[0]],order=batch.picture.orders[s.reliefRole],until=now+13;
+    const sq={id:squads.length,side:batch.side,race:batch.race,mem,tac:s.reliefRole==='flank'?'FLANK':'CHARGE',phase:1,adv:false,wp:order.goal.slice(),tgt:order.target,tgtSq:-1,until,aiUntil:until,guard:-1,reliefRole:s.reliefRole};
+    for(const id of mem)ships[id].squad=sq.id;squads.push(sq);
+  }
+  batch.phase='launched';batch.obstacles=null;batch.queue=null;
+  toast(RACE_DEFS[batch.race].name+' · '+(batch.picture.priority==='intercept'?'INTERCEPTING THE BREAKTHROUGH':'REINFORCING THE PRESSED WING'));
+}
+function advanceReliefPlans(now){
+  const start=performance.now();let placed=0;
+  for(const batch of reliefBatches){
+    if(batch.phase==='forging'&&batch.remaining===0)beginReliefPlan(batch,now);
+    if(batch.phase!=='placing')continue;
+    while(batch.cursor<batch.queue.length&&placed<12&&performance.now()-start<3){
+      const s=batch.queue[batch.cursor++],spot=reliefFindBerth(s,batch,now,batch.obstacles);
+      [s.x,s.y,s.z]=spot.p;s.reliefEnvelope=spot.box;batch.reserved.push(spot.box);placed++;
+    }
+    if(batch.cursor===batch.queue.length)launchRelief(batch,now);
+  }
+}
+function clearReliefEntry(s,now){
+  if(s.reliefBatch==null)return true;
+  const batch=reliefBatches[s.reliefBatch],box=s.reliefEnvelope||reliefEnvelope(s,now,null,true),p=[box.o.x,box.o.y,box.o.z];
+  const near=trafficIndex?trafficIndex.query(p,p,box.bounds):[];
+  const blocked=!reliefWorldClear(box)||near.some(t=>t.id!==s.id&&!t.dead&&reliefOverlap(box,reliefEnvelope(t,now)));
+  if(!blocked)return true;
+  // Traffic changed after the call. Hold this jump, then find a fresh berth;
+  // ships already fighting are never shoved aside to make space.
+  s.delay=now-warT0+.5;s.grace=true;s.reliefWait=(s.reliefWait||0)+1;
+  if(s.reliefWait%3===0){
+    const obstacles=reliefObstacles(batch,now),spot=reliefFindBerth(s,batch,now,obstacles),index=batch.reserved.indexOf(s.reliefEnvelope);
+    if(index>=0)batch.reserved[index]=spot.box;else batch.reserved.push(spot.box);
+    [s.x,s.y,s.z]=spot.p;s.stn=spot.p.slice();s.reliefPlanned=spot.p.slice();s.reliefEnvelope=spot.box;
+  }
+  return false;
+}
 function maybeCallAlly(now){
-  if(winner!=null||warT0===Infinity)return;
+  if(winner!=null||!Number.isFinite(warT0)||now-warT0<20)return;
+  const strength=[0,0],initial=[0,0],remaining=[0,0];
+  for(const s of ships){
+    if(!s.vao&&s.hpMax<=1)continue;
+    if(s.reliefBatch==null){initial[s.side]+=reliefPower(s,true);if(!s.dead)remaining[s.side]+=reliefPower(s);}
+    if(!s.dead&&!s.reliefPending)strength[s.side]+=reliefPower(s);
+  }
   for(const side of [0,1]){
-    if(allyCalled[side])continue;
-    if(pickAlly[side]===-1)continue;            /* chose loneliness at the muster */
-    if(now-warT0<20)continue;                   /* no panic before the lines even meet */
-    if(counts[side]>spawned[side]*0.45||counts[side]>=counts[1-side])continue;
+    if(allyCalled[side]||pickAlly[side]===-1||remaining[side]>initial[side]*.72||strength[side]>=strength[1-side]*.85)continue;
     let ally=pickAlly[side];
-    if(ally<0){ /* fate answers: any fleet not already in this sky */
-      const pool=[];
-      for(let i2=0;i2<RACE_DEFS.length;i2++)if(!warRaces.includes(i2))pool.push(i2);
-      if(!pool.length)continue;
-      ally=pool[(combatRandom()*pool.length)|0];
-    }
-    allyCalled[side]=true;allyRace[side]=ally;
-    if(!warRaces.includes(ally))warRaces.push(ally);
-    toast(SIDE_NAME[side]+" CALLS ACROSS THE VOID · "+RACE_DEFS[ally].name+" ANSWERS");
-
-    const friends=[],foes=[],broke=[],reports=new Map();
-    for(const t of ships){
-      if(t.dead)continue;
-      if(t.side===side){
-        friends.push(t);
-        if(t.ai)for(const c of t.ai.contacts.values()){
-          if(now-c.seen>8)continue;
-          const old=reports.get(c.id);if(!old||old.seen<c.seen)reports.set(c.id,c);
-        }
-      }
-    }
-    foes.push(...reports.values());
-    const fc=fleetCentroid(side),ec=foes.length
-      ?foes.reduce((c,t)=>[c[0]+t.x/foes.length,c[1]+t.y/foes.length,c[2]+t.z/foes.length],[0,0,0])
-      :[fc[0]+(side?-1:1)*1000,fc[1],fc[2]];
-    let fx=ec[0]-fc[0],fy=ec[1]-fc[1],fz=ec[2]-fc[2];
-    const fl=Math.hypot(fx,fy,fz)||1;fx/=fl;fy/=fl;fz/=fl;
-    let rx=-fz,rz=fx;const rl=Math.hypot(rx,rz)||1;rx/=rl;rz/=rl;
-    const sideOf=p=>(p[0]-fc[0])*rx+(p[2]-fc[2])*rz;
-    let fL=0,fR=0,eL=0,eR=0;
-    for(const s of friends){if(sideOf([s.x,s.y,s.z])>=0)fR++;else fL++;}
-    for(const s of foes){
-      if(sideOf([s.x,s.y,s.z])>=0)eR++;else eL++;
-      if((s.x-fc[0])*fx+(s.y-fc[1])*fy+(s.z-fc[2])*fz<-80)broke.push(s);
-    }
-    const weak=(((eL+1)/(fL+1))>=((eR+1)/(fR+1)))?-1:1;
-    const thin=eL<=eR?-1:1;
-    const clampY=y=>Math.max(-1600,Math.min(1600,y));
-    const clearGate=(x,y,z,minD)=>{
-      y=clampY(y);
-      for(let t=0;t<10;t++){
-        let ox=0,oy=0,oz=0,n=0;
-        for(const s of ships){
-          if(s.dead)continue;
-          const dx=x-s.x,dy=y-s.y,dz=z-s.z;
-          const d=Math.hypot(dx,dy,dz)||0.001;
-          const need=minD+(s.hulls?Math.max(90,s.slen*0.5):48);
-          if(d<need){const k=(need-d)/d;ox+=dx*k;oy+=dy*k;oz+=dz*k;n++;}
-        }
-        if(!n)break;
-        x+=ox;y=clampY(y+oy);z+=oz;
-      }
-      return [x,y,z];
+    if(ally<0){const pool=RACE_DEFS.map((_,i)=>i).filter(i=>!warRaces.includes(i));if(!pool.length)continue;ally=pool[(combatRandom()*pool.length)|0];}
+    allyCalled[side]=true;allyRace[side]=ally;if(!warRaces.includes(ally))warRaces.push(ally);
+    const batch={id:reliefBatches.length,side,race:ally,ids:[],phase:'forging',remaining:0,calledAt:now,callPicture:reliefPicture(side,now)};reliefBatches.push(batch);
+    const jobs=[],fc=fleetCentroid(side);
+    const add=(hulls,band,hero=false)=>{
+      const id=ships.length,seed=(combatRandom()*4294967296)|0;
+      const s={id,side,race:ally,seed,x:fc[0],y:fc[1],z:fc[2],yaw:side?Math.PI:0,vy:0,v:0,yawV:0,roll:0,pitch:0,brUntil:0,
+        hp:1,hpMax:1,cool:combatRandom()*2,squad:-1,grace:true,band:hulls?null:band,kills:0,delay:Infinity,arr:false,hurtT:-9,dead:false,
+        vao:null,vbo:null,ibo:null,icount:0,meta:null,stn:null,hero,heroTag:hero?' II':null,hulls:hulls||0,slen:20,nose:9,spd:25,turn:1,wf:combatRandom()*6.283,
+        reliefBatch:batch.id,reliefPending:true};
+      pilotSeed(s,combatRandom);ships.push(s);batch.ids.push(id);batch.remaining++;
+      jobs.push({id,seed,f:ally,hulls:hulls||0,band:hulls?null:band,hero});total++;counts[side]++;spawned[side]++;return s;
     };
-    const separate=(a,b,minD)=>{
-      const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2];
-      const d=Math.hypot(dx,dy,dz);
-      if(d>=minD||d<1e-4)return b;
-      const k=(minD-d)/d;
-      return [b[0]+dx*k,clampY(b[1]+dy*k),b[2]+dz*k];
-    };
-    /* hammer: the enemy's thin flank, slightly astern of their heart —
-       they arrive already crossing the T, not flying through friends */
-    let hammer=clearGate(ec[0]+thin*rx*520-fx*60,ec[1]+(combatRandom()-0.5)*520,ec[2]+thin*rz*520-fz*60,340);
-    /* relief: outside the caller's collapsing wing, a berth off the
-       bodies they came to save, facing the pressure */
-    let relief=clearGate(fc[0]+weak*rx*460+fx*80,fc[1]+(combatRandom()-0.5)*480,fc[2]+weak*rz*460+fz*80,320);
-    relief=separate(hammer,relief,520);
-    /* cut: anything that has punched through gets a door in its rear;
-       otherwise the far enemy flank, an envelop */
-    let cut;
-    if(broke.length>=3){
-      let bx=0,by=0,bz=0;
-      for(const s of broke){bx+=s.x;by+=s.y;bz+=s.z;}
-      bx/=broke.length;by/=broke.length;bz/=broke.length;
-      cut=clearGate(bx-fx*380,by,bz-fz*380,300);
-    }else{
-      cut=clearGate(ec[0]-thin*rx*500-fx*40,ec[1],ec[2]-thin*rz*500-fz*40,340);
+    const rd=RACE_DEFS[ally];
+    if(rd.unique){for(let i=0;i<8;i++)add(FO_HULLS[i],null).fo=i;}
+    else{
+      const n=Math.max(Math.min(perFleet,rd.fleetMin||48),Math.round(perFleet*(rd.fleetK||1))),sm=Math.max(SQN,n-3),mix=rd.mix||[.72,.18,.10];
+      const fighters=Math.max(SQN,Math.floor(sm*mix[0]/SQN)*SQN);let capitals=Math.max(1,Math.round(sm*mix[2])),escorts=sm-fighters-capitals;
+      if(escorts<0){capitals=Math.max(1,capitals+escorts);escorts=Math.max(0,sm-fighters-capitals);}
+      add(50,null);add(10,null);add(10,null);
+      for(let i=0;i<fighters;i++)add(0,0);for(let i=0;i<escorts;i++)add(0,1);for(let i=0;i<capitals;i++)add(0,2);add(0,0,true);
     }
-    cut=separate(hammer,cut,480);cut=separate(relief,cut,480);
-    const yawAt=(g,to)=>Math.atan2(to[2]-g[2],to[0]-g[0]);
-    let bx=ec[0],by=ec[1],bz=ec[2];
-    if(broke.length>=3){
-      bx=0;by=0;bz=0;
-      for(const s of broke){bx+=s.x;by+=s.y;bz+=s.z;}
-      bx/=broke.length;by/=broke.length;bz/=broke.length;
-    }
-    const gates={
-      hammer:{p:hammer,yaw:yawAt(hammer,ec),dly:0.4},
-      relief:{p:relief,yaw:yawAt(relief,ec),dly:1.1},
-      cut:{p:cut,yaw:yawAt(cut,[bx,by,bz]),dly:broke.length>=3?0.2:1.8}
-    };
-    let cutTgt=-1,reliefTgt=-1,rd=1e18;
-    if(broke.length){
-      let b=-1,bs=-1;
-      for(const t of broke)if(t.slen>bs){bs=t.slen;b=t.id;}
-      cutTgt=b;
-    }
-    for(const t of foes){
-      const d=(t.x-relief[0])*(t.x-relief[0])+(t.y-relief[1])*(t.y-relief[1])+(t.z-relief[2])*(t.z-relief[2]);
-      if(d<rd){rd=d;reliefTgt=t.id;}
-    }
-
-    const jobs=[];
-    const mkA=(hulls,x,y,z,dly,band,yaw,opt)=>{
-      const id=ships.length;
-      const seed=(combatRandom()*4294967296)|0;
-      const hero=!!(opt&&opt.hero);
-      ships.push({id,side,race:ally,seed,
-        x,y,z,yaw,vy:0,v:0,yawV:0,roll:0,pitch:0,brUntil:0,
-        hp:1,hpMax:1,cool:combatRandom()*2,squad:-1,grace:true,band:hulls?null:band,kills:0,
-        delay:(now-warT0)+dly+combatRandom()*1.6,arr:false,hurtT:-9,dead:false,
-        vao:null,vbo:null,ibo:null,icount:0,meta:null,stn:null,hero,
-        heroTag:opt&&opt.heroTag||null,
-        hulls:hulls||0,slen:20,nose:9,spd:25,turn:1,wf:combatRandom()*6.283});
-      pilotSeed(ships[id],combatRandom);
-      ships[id].delay+=ships[id].lag;
-      if(!hulls)ships[id].yaw+=(ships[id].crab||0)*0.45;
-      jobs.push({id,seed,f:ally,hulls:hulls||0,band:hulls?null:band,hero});
-      total++;counts[side]++;spawned[side]++;
-      return id;
-    };
-    const slotAt=(g,i,n,wide,deep,yStep)=>{
-      const c=Math.cos(g.yaw),s=Math.sin(g.yaw),px=-s,pz=c;
-      const cols=Math.max(1,Math.min(n,8));
-      const col=i%cols,row=(i/cols)|0;
-      const lat=(col-(cols-1)/2)*wide;
-      return [g.p[0]-c*row*deep+px*lat,
-              clampY(g.p[1]+((i%5)-2)*(yStep||170)),
-              g.p[2]-s*row*deep+pz*lat];
-    };
-    const gH=gates.hammer;
-    const sliceAlly=(RACE_DEFS[ally]||{}).fire==="slicer";
-    const cutAlly=(RACE_DEFS[ally]||{}).fire==="cutter";
-    if(RACE_DEFS[ally].unique){
-      /* they do not dump into the merge. Each ancient her own jump,
-         off the caller's far flank, spaced by her true keel — not a
-         20 m placeholder stacked on her sisters. */
-      const sx=side?1:-1,yaw=side?Math.PI:0;
-      const ids=[];
-      for(let i=0;i<8;i++){
-        const L=(FO_KLASS[i]&&FO_KLASS[i].L)||2000;
-        const col=i%4,layer=(i/4)|0;
-        const x=fc[0]+sx*(5200+L*0.72+layer*4000);
-        const y=clampY(fc[1]+((i%2)?1:-1)*820+((col&2)?360:-180));
-        const z=fc[2]+(col-1.5)*5600;
-        const p=clearGate(x,y,z,Math.max(3000,L*0.95));
-        const id=mkA(FO_HULLS[i],p[0],p[1],p[2],4.2+i*8.0,null,yaw);
-        ships[id].fo=i;
-        ships[id].slen=L;
-        ids.push(id);
-      }
-      for(let t=0;t<12;t++){
-        for(let i=0;i<ids.length;i++){
-          const a=ships[ids[i]],La=(FO_KLASS[i]&&FO_KLASS[i].L)||2000;
-          for(let j=i+1;j<ids.length;j++){
-            const b=ships[ids[j]],Lb=(FO_KLASS[j]&&FO_KLASS[j].L)||2000;
-            const dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z;
-            const d=Math.hypot(dx,dy,dz)||0.001;
-            const need=(La+Lb)*0.72+1000;
-            if(d>=need)continue;
-            const k=(need-d)*0.5/d;
-            a.x+=dx*k;a.y=clampY(a.y+dy*k);a.z+=dz*k;
-            b.x-=dx*k;b.y=clampY(b.y-dy*k);b.z-=dz*k;
-          }
-        }
-      }
-    }else{
-    /* a full battalion at this war's size — the same muster she would
-       have brought had she started on the line. 600 on the bar is 600
-       in the jump, not a 28% relief column. */
-    const rdA=RACE_DEFS[ally];
-    const nBat=Math.max(Math.min(perFleet,rdA.fleetMin||48),Math.round(perFleet*(rdA.fleetK||1)));
-    const sm=Math.max(SQN,nBat-3);
-    const amix=rdA.mix||[0.72,0.18,0.10];
-    let nFtr=Math.max(SQN,Math.floor(sm*amix[0]/SQN)*SQN);
-    let nCap=Math.max(1,Math.round(sm*amix[2]));
-    let nEsc=sm-nFtr-nCap;
-    if(nEsc<0){nCap=Math.max(1,nCap+nEsc);nEsc=Math.max(0,sm-nFtr-nCap);}
-    const astern=(g,d,y)=>{
-      const c=Math.cos(g.yaw),s=Math.sin(g.yaw);
-      return [g.p[0]-c*d,clampY(g.p[1]+y),g.p[2]-s*d];
-    };
-    const back=sliceAlly?2800:980;
-    const p50=astern(gH,back+420,40);
-    mkA(50,p50[0],p50[1],p50[2],3.8+gH.dly,null,gH.yaw);
-    const p10a=astern(gates.relief,back,24);
-    mkA(10,p10a[0],p10a[1],p10a[2],3.2+gates.relief.dly,null,gates.relief.yaw);
-    const p10b=astern(gates.cut,back,24);
-    mkA(10,p10b[0],p10b[1],p10b[2],3.2+gates.cut.dly,null,gates.cut.yaw);
-
-    const ftrByGate={hammer:[],relief:[],cut:[]};
-    const escByGate={hammer:[],relief:[],cut:[]};
-    const slotN={hammer:[0,0,0],relief:[0,0,0],cut:[0,0,0]};
-    const wideOf=b=>sliceAlly?2400:cutAlly&&b>=1?900:b===2?280:b===1?180:120;
-    const deepOf=b=>sliceAlly?1900:cutAlly&&b>=1?900:b===2?240:b===1?160:120;
-    const yOf=b=>sliceAlly?820:cutAlly&&b>=1?720:b===2?220:170;
-    const placeBand=(count,band)=>{
-      for(let i2=0;i2<count;i2++){
-        const u=i2/Math.max(1,count);
-        const gn=broke.length>=3
-          ?(u<0.34?"cut":u<0.62?"relief":"hammer")
-          :(u<0.50?"hammer":u<0.78?"relief":"cut");
-        const g=gates[gn];
-        const k=slotN[gn][band]++;
-        const p=slotAt(g,k,8,wideOf(band),deepOf(band),yOf(band));
-        const extra=band===2?420:band===1?180:0;
-        const c=Math.cos(g.yaw),s=Math.sin(g.yaw);
-        const id=mkA(0,p[0]-c*extra,p[1],p[2]-s*extra,2.4+g.dly+k*0.04,band,g.yaw);
-        if(band===0)ftrByGate[gn].push(id);
-        else if(band===1)escByGate[gn].push(id);
-      }
-    };
-    placeBand(nFtr,0);
-    placeBand(nEsc,1);
-    placeBand(nCap,2);
-    const dealGate=(ids,n,tacCut,tacRel,tacHam)=>{
-      for(let i2=0;i2<ids.length;i2+=n){
-        const mem=ids.slice(i2,i2+n);
-        for(const id of mem)ships[id].squad=squads.length;
-        if(tacCut)
-          squads.push({id:squads.length,side,race:ally,mem,tac:tacCut,phase:1,adv:false,
-            wp:null,tgt:cutTgt,tgtSq:-1,until:now+14,guard:-1});
-        else if(tacRel)
-          squads.push({id:squads.length,side,race:ally,mem,tac:tacRel,phase:1,adv:false,
-            wp:null,tgt:reliefTgt,tgtSq:-1,until:now+14,guard:-1});
-        else
-          squads.push({id:squads.length,side,race:ally,mem,tac:tacHam,phase:0,adv:false,
-            wp:[ec[0],ec[1],ec[2]],tgt:-1,tgtSq:-1,until:now+14,guard:-1});
-      }
-    };
-    for(const gn of ["hammer","relief","cut"]){
-      dealGate(ftrByGate[gn],SQN,
-        gn==="cut"?"CHARGE":null,gn==="relief"?"CHARGE":null,"FLANK");
-      dealGate(escByGate[gn],ESCN,
-        gn==="cut"?"CHARGE":null,gn==="relief"?"CHARGE":null,"FLANK");
-    }
-    /* one named keel jumps with the battalion, leading a hammer flight */
-    {
-      const gn="hammer";
-      const g=gates[gn];
-      const cy=Math.cos(g.yaw),sy=Math.sin(g.yaw);
-      const px=-sy,pz=cy;
-      const p=[g.p[0]-px*280,clampY(g.p[1]-120),g.p[2]-pz*280];
-      const hid=mkA(0,p[0],p[1],p[2],1.5+g.dly,0,g.yaw,{hero:true,heroTag:" II"});
-      const pool=ftrByGate[gn]||[];
-      let wing=null;
-      for(let qi=squads.length-1;qi>=0;qi--){
-        const q=squads[qi];
-        if(q.side!==side||q.hero||q.mem.length!==SQN)continue;
-        if(pool.length&&pool.indexOf(q.mem[0])<0&&pool.indexOf(q.mem[q.mem.length-1])<0)continue;
-        wing=q;break;
-      }
-      if(wing){
-        wing.mem.unshift(hid);
-        ships[hid].squad=wing.id;
-        wing.lead=hid;wing.hero=true;
-      }else{
-        ships[hid].squad=squads.length;
-        squads.push({id:squads.length,side,race:ally,mem:[hid],tac:"CHARGE",
-          phase:1,adv:false,wp:null,tgt:reliefTgt,tgtSq:-1,
-          until:now+14,guard:-1,lead:hid,hero:true});
-      }
-    }
-    }
-    const nw=workers.length;
-    for(let w=0;w<nw;w++)
-      workers[w].postMessage({kind:"batch",genId,jobs:jobs.filter((_,i2)=>i2%nw===w)});
+    toast(SIDE_NAME[side]+' REQUESTS TACTICAL RELIEF · '+rd.name+' ANSWERS');
+    for(let w=0;w<workers.length;w++)workers[w].postMessage({kind:'batch',genId,jobs:jobs.filter((_,i)=>i%workers.length===w)});
     roster();
   }
 }
 function simStep(now,dt){
   if(warT0===Infinity)return;
   const T=now-warT0;
+  advanceReliefPlans(now);
   for(const s of ships)if(!s.dead&&s.vao)s.grace=(T-s.delay)<1.0;
   foeCache[0].length=0;foeCache[1].length=0;
   for(const s of ships){
@@ -16484,7 +16423,7 @@ function simStep(now,dt){
     if(winner!=null||counts[side]<=0){ionState[side]=null;continue;}
     const lock=ionState[side];
     if(!lock&&now>=ionNext[side]){
-      const candidates=ships.filter(g=>g.side===side&&g.id!==pilotId&&!g.dead&&g.vao&&(g.hulls||0)>=10&&!RACE_DEFS[g.race].unique);
+      const candidates=ships.filter(g=>g.side===side&&g.id!==pilotId&&!g.dead&&g.vao&&g.arr&&!g.grace&&(g.hulls||0)>=10&&!RACE_DEFS[g.race].unique);
       candidates.sort((a,b)=>(b.ai?b.ai.budget[0]:0)-(a.ai?a.ai.budget[0]:0));
       for(const g of candidates){const next=battleAI.ionLock(g,side,now);if(next){ionState[side]=next;g.lastFire=now;break;}}
       if(!ionState[side])ionNext[side]=now+3;
@@ -16514,6 +16453,7 @@ function simStep(now,dt){
       continue;
     }
     if(!s.arr){
+      if(!clearReliefEntry(s,now))continue;
       s.arr=true;flash(s.x,s.y,s.z,now,Math.max(26,s.slen*1.3),s.side);
       if((RACE_DEFS[s.race]||{}).unique&&s.meta&&s.meta.desig&&!(intro&&!intro.done))
         toast(s.meta.desig);
@@ -16920,7 +16860,7 @@ function pickShip(px,py){
   const slop=matchMedia("(pointer:coarse)").matches?48:28;
   let best=null,bd=slop*slop;
   for(const s of ships){
-    if(s.dead||!s.vao)continue;
+    if(s.dead||!s.vao||s.reliefPending)continue;
     const x=s.x,y=s.y,z=s.z;
     const cx=m[0]*x+m[4]*y+m[8]*z+m[12];
     const cy2=m[1]*x+m[5]*y+m[9]*z+m[13];
@@ -16969,7 +16909,7 @@ function chaseCamInit(s){
 }
 function livingHeroes(){
   const out=[];
-  for(const s of ships)if(s.hero&&!s.dead&&s.vao)out.push(s);
+  for(const s of ships)if(s.hero&&!s.dead&&s.vao&&!s.reliefPending)out.push(s);
   out.sort((a,b)=>a.side-b.side||(b.kills||0)-(a.kills||0));
   return out;
 }
@@ -17224,7 +17164,7 @@ function updateActionCamera(now,dt){
   if(opening)cut=!a.kind||a.openStage!==stage;
   if(!opening&&a.openStage!=null){cut=true;a.openStage=null;}
   if(a.clock>=a.scanAt||cut){
-    live=ships.filter(q=>q&&!q.dead&&q.vao&&!q.cloaked);if(!live.length&&!a.payoff)return;
+    live=ships.filter(q=>q&&!q.dead&&q.vao&&!q.reliefPending&&!q.cloaked);if(!live.length&&!a.payoff)return;
     if(a.kind&&!cut){
       cinemaGroup(a,now);
       const occluded=cinemaBlocked([cam.ex,cam.ey,cam.ez],[a.cx,a.cy,a.cz],a.subject,a.partner,live);
@@ -17237,7 +17177,7 @@ function updateActionCamera(now,dt){
   }
   let layout;
   if(cut){
-    live??=ships.filter(q=>q&&!q.dead&&q.vao&&!q.cloaked);if(!live.length)return;
+    live??=ships.filter(q=>q&&!q.dead&&q.vao&&!q.reliefPending&&!q.cloaked);if(!live.length)return;
     let shot;
     if(opening){
       a.openStage=stage;
@@ -17258,7 +17198,7 @@ function updateWatchCamera(now,dt,force=false){
   if(watchMode==='action'){updateActionCamera(now,force?0:dt);return;}
   const move=()=>{if(!watchGoal)return;const k=force?1:1-Math.exp(-Math.max(0,dt)*2);for(const key of ['ex','ey','ez','pitch'])cam[key]+=(watchGoal[key]-cam[key])*k;let d=watchGoal.yaw-cam.yaw;while(d>Math.PI)d-=Math.PI*2;while(d< -Math.PI)d+=Math.PI*2;cam.yaw+=d*k;};
   if(!force&&now<directorAt){move();return;}directorAt=now+.8;
-  const live=ships.filter(s=>!s.dead&&s.vao);if(!live.length)return;
+  const live=ships.filter(s=>!s.dead&&s.vao&&!s.reliefPending);if(!live.length)return;
   let focus=live;
 
   const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];for(const s of focus)for(let a=0;a<3;a++){const v=[s.x,s.y,s.z][a],r=s.slen*.5;lo[a]=Math.min(lo[a],v-r);hi[a]=Math.max(hi[a],v+r);}
@@ -17659,7 +17599,12 @@ function hullFinish(s){
     else if(/FIRST BORN|LORIEN/.test(klass)){color=[.59,.46,.29];trim=[.30,.38,.22];accent=[.74,.88,.39];}
   }
   if(r===21){const brood=(s.meta?.liverySeed??s.seed??0)%3;[color,trim]=[[[.65,.61,.51],[.27,.22,.32]],[[.61,.55,.43],[.37,.19,.17]],[[.48,.51,.42],[.19,.27,.24]]][brood];accent=[.48,.58,.25];gloss=.22;surface=0;}
-  if(r===20){const chapter=/GLORIANA/.test(klass)?0:(s.meta?.liverySeed??s.seed??0)%4;color=[[.39,.49,.62],[.57,.34,.31],[.37,.49,.40],[.42,.43,.45]][chapter];trim=[.26,.28,.30];pattern=15;gloss=.18;}
+  if(r===20){
+    // Worn slate, oxide, olive and iron. Chapter colour is a tint in the armour.
+    const chapter=/GLORIANA/.test(klass)?0:(s.meta?.liverySeed??s.seed??0)%4;
+    color=[[.33,.36,.40],[.39,.34,.33],[.34,.38,.35],[.36,.37,.38]][chapter];
+    trim=[.25,.26,.275];accent=[.52,.48,.39];pattern=15;gloss=.10;
+  }
   if(r===22&&/ROADSTER/.test(klass)){color=[.78,.075,.065];trim=[.08,.10,.12];pattern=11;gloss=.95;}
   if(r===22&&/OPTIMUS/.test(klass)){pattern=10;}
   if(r===22&&/FALCON/.test(klass)){pattern=12;}

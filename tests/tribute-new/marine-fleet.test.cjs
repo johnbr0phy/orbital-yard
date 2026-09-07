@@ -7,3 +7,9 @@ test('Marine warships including the hero use steady capital handling; attack cra
 test('Marine class silhouettes and matte chapter liveries vary without generic paint stripes',()=>{
  const b=loadBattle();assert.ok(b.run(`(()=>{const ratios=new Set();for(let t=0;t<11;t++){const s=buildExtraClass(20,42,t),m=shipMeshQ(s,.65);if(!Array.from(m.t).every(Number.isFinite)||m.tris>4000)return false;ratios.add((s.meta.beam/s.meta.length).toFixed(2)+':'+(s.meta.height/s.meta.length).toFixed(2));}const colors=new Set();for(let seed=40;seed<44;seed++){const s=buildExtraClass(20,seed,5),p=hullFinish({race:20,meta:s.meta});if(p.pattern!==15||p.gloss>.2)return false;colors.add(p.color.join());}return ratios.size>=8&&colors.size===4;})()`));
 });
+test('Marine chapter paints stay matte and low in saturation while keeping sister variation',()=>{
+ const b=loadBattle();const p=b.run(`Array.from({length:40},(_,seed)=>hullFinish({race:20,seed,meta:{klass:'STRIKE CRUISER',liverySeed:seed}}))`);
+ assert.ok(p.every(p=>Math.max(...p.color)-Math.min(...p.color)<.08&&p.gloss<.09));
+ assert.ok(p.every(p=>p.color.every(c=>c>.25&&c<.45)));
+ assert.ok(new Set(p.map(p=>p.color.join())).size>30);
+});
