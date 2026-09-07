@@ -1,7 +1,7 @@
 import * as THREE from './assets/three/three.module.js';
 import {createGeometryStore} from './armada-three-geometry.js';
-import {createHulls} from './armada-three-hulls.js';
-import {createWorlds} from './armada-three-worlds.js';
+import {createHulls} from './armada-three-hulls.js?v=frustum-1';
+import {createWorlds} from './armada-three-worlds.js?v=cached-terrain-1';
 import {createEffects} from './armada-three-effects.js';
 const canvas=document.getElementById('gl'),status=document.getElementById('stat');
 let renderer,systems=[],lastGen=-1,frames=0;

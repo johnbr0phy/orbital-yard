@@ -3,6 +3,7 @@ export function createHulls(THREE,scene,runtime){
   const root=new THREE.Group();root.name='fleets';scene.add(root);
   const geometryCache=new Map(),near=new Map(),batches=new Map(),debris=new Map();
   const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),scale=new THREE.Vector3(),axis=new THREE.Vector3(),quat=new THREE.Quaternion(),yawQ=new THREE.Quaternion(),direction=new THREE.Vector3(),color=new THREE.Color();
+  const frustum=new THREE.Frustum(),viewProjection=new THREE.Matrix4(),bounds=new THREE.Sphere();
   let generation=null,counts={ships:0,individual:0,instanced:0,turrets:0,wrecks:0};
   const vertex=`uniform vec4 uAnim;uniform float uT;varying vec3 vLocal;varying vec3 vWorld;
 void main(){vec3 p=position;vLocal=position;
@@ -157,13 +158,20 @@ vec3 lit=pigment*shade*(1.-uDead*.36);lit+=vec3(.9,.25,.07)*uHurt*.35;gl_FragCol
   }
   function update(state){
     if(generation!==state.genId){reset();generation=state.genId;}
-    counts={ships:0,individual:0,instanced:0,turrets:0,wrecks:0};turretRecords.length=0;
+    counts={ships:0,individual:0,instanced:0,turrets:0,wrecks:0,culled:0};turretRecords.length=0;
+    if(state.camera)frustum.setFromProjectionMatrix(viewProjection.multiplyMatrices(state.camera.projectionMatrix,state.camera.matrixWorldInverse));
     for(const map of [near,debris])for(const mesh of map.values()){mesh.visible=false;mesh.userData.seen=false;}
     for(const b of batches.values())b.members.length=0;
     const now=state.now,height=state.height||900,cam=state.cam;
     for(const s of state.ships){
       if(!s.vao||s.id===state.pilotId)continue;const age=now-state.warT0-(s.delay||0);
       if(!s.dead&&age<0)continue;if(s.dustT&&now-s.dustT>=(s.dustDur||4))continue;
+      // Cull individual instances before filling shared batches. Three cannot
+      // cull members of an InstancedMesh independently.
+      const slide=s.dead?0:(runtime.slide??320)*Math.exp(-Math.max(0,age)*3.4);
+      bounds.center.set(s.x-Math.cos(s.yaw||0)*slide,s.y,s.z-Math.sin(s.yaw||0)*slide);
+      bounds.radius=Math.max(s.slen||20,Math.hypot(s.exL||0,s.exY||0,s.exZ||0)*1.3);
+      if(state.camera&&!frustum.intersectsSphere(bounds)){counts.culled++;continue;}
       const distance=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez),pixels=(s.slen||20)*.55*height/Math.max(1,distance*.942);
       const threshold=state.ships.length>500?48:28;s.coarseHull=pixels<threshold*(s.coarseHull?1.15:.85);
       const coarse=!s.dead&&s.coarseHull&&s.farHull&&s.id!==state.selected&&!s.hero&&!s.damageStage&&(s.cloakAmt||0)<.04&&age>2;

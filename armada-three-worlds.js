@@ -23,19 +23,22 @@ const worldFragment = `
   varying vec3 vLocal; varying vec3 vWorld; varying vec3 vNormal;
   uniform vec3 uBase,uAccent,uLight;
   uniform float uKind,uPhase,uBands,uTime;
+  uniform sampler2D uTerrain;
   ${noiseShader}
   void main(){
     vec3 p=normalize(vLocal), n=normalize(vNormal);
     vec3 q=p*4.0+vec3(uPhase,0.0,uPhase*.7);
-    float terrain=fbm(q), fine=noise(q*12.0);
+    vec2 terrainUV=vec2(atan(p.z,p.x)/6.28318530718+.5,acos(clamp(p.y,-1.0,1.0))/3.14159265359);
+    vec4 detail=texture2D(uTerrain,terrainUV);
+    float terrain=detail.r, fine=detail.g;
     vec3 color=mix(uBase,uAccent,smoothstep(.22,.72,terrain));
     if(uKind<.5){
-      float band=sin(p.y*uBands*8.0+fbm(q*1.7)*4.0);
+      float band=sin(p.y*uBands*8.0+detail.b*4.0);
       color=mix(uBase,uAccent,.38+.17*band+.15*terrain);
     }else if(uKind>1.5 && uKind<2.5){
       float land=smoothstep(.46,.52,terrain);
       color=mix(uBase*(.82+.3*fine),uAccent*(.83+.22*fine),land);
-      float clouds=smoothstep(.60,.76,fbm(q*1.65+vec3(uTime*.001,3.0,0.0)));
+      float clouds=smoothstep(.60,.76,detail.b);
       color=mix(color,vec3(.62,.66,.67),clouds*.62);
       float ice=smoothstep(.86,.99,abs(p.y)+terrain*.06);
       color=mix(color,vec3(.64,.68,.69),ice*.7);
@@ -45,7 +48,7 @@ const worldFragment = `
       float seams=1.0-smoothstep(.014,.04,abs(terrain-.49));
       color=mix(uBase*(.76+terrain*.4),uAccent,seams*.5);
     }else if(uKind>4.5){
-      float cell=fbm(q*3.0+vec3(0.0,uTime*.006,0.0));
+      float cell=detail.a;
       color=mix(uBase,uAccent,.45+cell*.5);
       float limb=pow(max(0.0,dot(n,normalize(cameraPosition-vWorld))),.25);
       gl_FragColor=vec4(color*(.7+.35*limb),1.0);
@@ -104,6 +107,24 @@ export function createWorlds(THREE,scene,runtime){
   }
   function own(asset){assets.push(asset);return asset;}
   function material(fragment,uniforms,extra={}){return own(new THREE.ShaderMaterial({vertexShader:worldVertex,fragmentShader:fragment,uniforms,...extra}));}
+  // Bake procedural detail once. Lighting and spherical world geometry remain live.
+  function terrainMap(renderer,phase,kind){
+    const target=own(new THREE.WebGLRenderTarget(512,256,{minFilter:THREE.LinearMipmapLinearFilter,magFilter:THREE.LinearFilter,generateMipmaps:true,depthBuffer:false,stencilBuffer:false}));
+    target.texture.wrapS=THREE.RepeatWrapping;
+    const geometry=new THREE.PlaneGeometry(2,2),mat=new THREE.ShaderMaterial({toneMapped:false,
+      uniforms:{uPhase:{value:phase},uKind:{value:kind}},
+      vertexShader:'varying vec2 vUV;void main(){vUV=uv;gl_Position=vec4(position.xy,0.,1.);}',
+      fragmentShader:`varying vec2 vUV;uniform float uPhase,uKind;${noiseShader}
+      void main(){float lon=(vUV.x-.5)*6.28318530718,lat=vUV.y*3.14159265359;
+        vec3 p=vec3(cos(lon)*sin(lat),cos(lat),sin(lon)*sin(lat));
+        if(uKind<0.){gl_FragColor=vec4(fbm(p*8.+uPhase));return;}
+        vec3 q=p*4.+vec3(uPhase,0.,uPhase*.7);
+        gl_FragColor=vec4(fbm(q),noise(q*12.),uKind<.5?fbm(q*1.7):fbm(q*1.65+vec3(0.,3.,0.)),fbm(q*3.));}`});
+    const bake=new THREE.Scene();bake.add(new THREE.Mesh(geometry,mat));
+    const previous=renderer.getRenderTarget();
+    try{renderer.setRenderTarget(target);renderer.render(bake,new THREE.Camera());}finally{renderer.setRenderTarget(previous);geometry.dispose();mat.dispose();}
+    return target.texture;
+  }
   function rebuild(state){
     clean();generation=state.genId;bodiesRef=state.worldBodies;scale=Math.max(1,state.sceneR||1000);
     const system=state.starSystem||{}, bodies=state.worldBodies||[];
@@ -115,7 +136,7 @@ export function createWorlds(THREE,scene,runtime){
       const lightVector=new THREE.Vector3(...light).multiplyScalar(scale).sub(new THREE.Vector3(...center));
       if(lightVector.lengthSq()<1)lightVector.set(0,1,0);
       const common={uLight:{value:lightVector}};
-      const m=material(worldFragment,{...common,uBase:{value:new THREE.Color(...(body.base||[.3,.34,.38]))},uAccent:{value:new THREE.Color(...(body.accent||[.45,.48,.5]))},uKind:{value:body.kind||0},uPhase:{value:body.phase||0},uBands:{value:body.bands||5},uTime:{value:0}});
+      const m=material(worldFragment,{...common,uTerrain:{value:terrainMap(state.renderer,body.phase||0,body.kind||0)},uBase:{value:new THREE.Color(...(body.base||[.3,.34,.38]))},uAccent:{value:new THREE.Color(...(body.accent||[.45,.48,.5]))},uKind:{value:body.kind||0},uPhase:{value:body.phase||0},uBands:{value:body.bands||5},uTime:{value:0}});
       const mesh=new THREE.Mesh(sphere,m);mesh.position.fromArray(center);mesh.scale.setScalar(radius);mesh.rotation.z=body.tilt||0;mesh.name=body.name||'World';group.add(mesh);
       const atmosphere=material(atmosphereFragment,{...common,uColor:{value:new THREE.Color(...(body.kind===5?body.base:[.35,.49,.62]))},uStar:{value:body.kind===5?1:0}},{transparent:true,depthWrite:false,side:THREE.BackSide,blending:THREE.AdditiveBlending});
       const halo=new THREE.Mesh(sphere,atmosphere);halo.position.copy(mesh.position);halo.scale.setScalar(radius*(body.kind===5?1.085:1.017));group.add(halo);
@@ -145,10 +166,10 @@ export function createWorlds(THREE,scene,runtime){
     // One inexpensive sky dome replaces hundreds of overdraw-heavy dust sprites.
     if(random()<.42){
       const dust=own(new THREE.ShaderMaterial({side:THREE.BackSide,transparent:true,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending,
-        uniforms:{uPhase:{value:random()*6.28}},vertexShader:worldVertex,
-        fragmentShader:`varying vec3 vLocal;uniform float uPhase;${noiseShader}
+        uniforms:{uTerrain:{value:terrainMap(state.renderer,random()*6.28,-1)}},vertexShader:worldVertex,
+        fragmentShader:`varying vec3 vLocal;uniform sampler2D uTerrain;
           void main(){vec3 p=normalize(vLocal);float latitude=p.y*.75+p.z*.43+p.x*.2;
-          float lane=exp(-pow((abs(latitude)-.055)*17.0,2.0));float clouds=fbm(p*8.0+uPhase);
+          float lane=exp(-pow((abs(latitude)-.055)*17.0,2.0));float clouds=texture2D(uTerrain,vec2(atan(p.z,p.x)/6.28318530718+.5,acos(clamp(p.y,-1.,1.))/3.14159265359)).r;
           gl_FragColor=vec4(.31,.36,.44,lane*clouds*.065);}` }));
       const dome=new THREE.Mesh(sphere,dust);dome.scale.setScalar(scale*17);dome.renderOrder=-3;dome.frustumCulled=false;sky.add(dome);counts.dust=1;
     }
