@@ -1712,7 +1712,8 @@ function shipMeshQ(ship,q){
     for(let i=0;i<n;i++)quad(A[i],B[i],B[(i+1)%n],A[(i+1)%n]);};
   const bb=ship.bb;
   const diag=Math.hypot(bb[1][0]-bb[0][0],bb[1][1]-bb[0][1],bb[1][2]-bb[0][2])||1;
-  const SG=r=>Math.max(3,Math.round(Math.max(8,Math.min(40,Math.round(8+r/diag*280)))*q));
+  let partQ=q;
+  const SG=r=>Math.max(3,Math.round(Math.max(8,Math.min(40,Math.round(8+r/diag*280)))*partQ));
   /* at the far level, fittings smaller than a distant pixel are not cut at
      all — but a grown ship IS her small parts (a limb is a chain of little
      capsules), so the shoal culls at half the yard's threshold */
@@ -1725,14 +1726,11 @@ function shipMeshQ(ship,q){
     if(p.k==="box")return Math.max(V.len(p.u),V.len(p.v),V.len(p.w));
     return 1e9; /* lathes and panels always draw */
   };
-  const profAt=prof=>{
-    if(q>=0.45||prof.length<5)return prof;
-    const step=Math.max(2,Math.round(1/(q*2.2))),o=[prof[0]];
-    for(let i=step;i<prof.length-1;i+=step)o.push(prof[i]);
-    o.push(prof[prof.length-1]);return o;
-  };
+  const profAt=prof=>prof;
+
   for(const p of ship.parts){
-    if(tiny&&psize(p)<tiny)continue;
+    if(tiny&&!p.structural&&psize(p)<tiny)continue;
+    partQ=p.structural?Math.max(.32,q):q;
     if(p.k==="sphere"){
       const n=SG(p.r),m=Math.max(2,n>>1),rg=[];
       for(let i=0;i<=m;i++){const th=i/m*Math.PI;
@@ -10922,6 +10920,64 @@ function seatTurrets(ship){
     for(const p of group)partNudge(p,dy,dz);
   }
 }
+// Forge-time attachment audit. Hulls keep their silhouettes; disconnected
+// assemblies receive short load-bearing roots between actual mesh surfaces.
+function attachmentGroups(parts){
+  const boxes=parts.map(p=>{
+    if(p.k!=='disc')return efBB([p]);
+    const n=V.norm(p.n),e=n.map(v=>p.r*(Math.sqrt(Math.max(0,1-v*v))+.1*Math.abs(v)));
+    return [p.c.map((v,i)=>v-e[i]),p.c.map((v,i)=>v+e[i])];
+  }),parents=parts.map((_,i)=>i),links=parts.map(()=>[]);
+  const root=i=>parents[i]===i?i:(parents[i]=root(parents[i]));
+  const order=parts.map((_,i)=>i).sort((a,b)=>boxes[a][0][0]-boxes[b][0][0]);
+  for(let ii=0;ii<order.length;ii++){const i=order[ii],a=boxes[i];for(let jj=ii+1;jj<order.length;jj++){
+    const j=order[jj],b=boxes[j];if(b[0][0]>a[1][0]+1e-5)break;
+    if(a[0].every((v,k)=>v<=b[1][k]+1e-5&&a[1][k]>=b[0][k]-1e-5)){parents[root(i)]=root(j);links[i].push(j);links[j].push(i);}
+  }}
+  const map=new Map();for(let i=0;i<parts.length;i++){const r=root(i);if(!map.has(r))map.set(r,[]);map.get(r).push(i);}
+  return {boxes,links,groups:[...map.values()].sort((a,b)=>b.length-a.length)};
+}
+function attachmentSurface(mesh,p){
+  let best=null,dist=Infinity;
+  // Closest point on a triangle, including its edges, rather than a bounding box.
+  for(let i=0;i<mesh.length;i+=9){
+    const a=Array.from(mesh.slice(i,i+3)),b=Array.from(mesh.slice(i+3,i+6)),c=Array.from(mesh.slice(i+6,i+9));
+    const ab=V.sub(b,a),ac=V.sub(c,a),ap=V.sub(p,a),aa=V.dot(ab,ab),bb=V.dot(ac,ac),cc=V.dot(ab,ac),den=aa*bb-cc*cc;
+    const offer=q=>{const d=V.dot(V.sub(p,q),V.sub(p,q));if(d<dist){dist=d;best=q;}};
+    if(den>1e-12){const u=(V.dot(ap,ab)*bb-V.dot(ap,ac)*cc)/den,v=(V.dot(ap,ac)*aa-V.dot(ap,ab)*cc)/den;if(u>=0&&v>=0&&u+v<=1)offer(V.add(a,V.add(V.mul(ab,u),V.mul(ac,v))));}
+    for(const [x,y] of [[a,b],[b,c],[c,a]]){const d=V.sub(y,x),t=Math.max(0,Math.min(1,V.dot(V.sub(p,x),d)/Math.max(1e-12,V.dot(d,d))));offer(V.add(x,V.mul(d,t)));}
+  }
+  return best;
+}
+function seatShipAssemblies(ship,race){
+  if(ship.attachmentAudit)return ship;
+  const parts=ship.parts,{boxes,links,groups}=attachmentGroups(parts),L=Math.max(...ship.bb[1].map((v,i)=>v-ship.bb[0][i])),meshes=new Map();
+  // Small necks and bearings must not disappear while the assemblies they carry remain.
+  const seen=new Int32Array(parts.length),low=new Int32Array(parts.length);let tick=0;
+  const visit=(i,parent)=>{seen[i]=low[i]=++tick;let children=0;
+    for(const j of links[i])if(!seen[j]){children++;visit(j,i);low[i]=Math.min(low[i],low[j]);if(parent!==-1&&low[j]>=seen[i])parts[i].structural=true;}else if(j!==parent)low[i]=Math.min(low[i],seen[j]);
+    if(parent===-1&&children>1)parts[i].structural=true;
+  };
+  for(let i=0;i<parts.length;i++)if(!seen[i])visit(i,-1);
+  const mesh=i=>{if(!meshes.has(i))meshes.set(i,shipMeshQ({parts:[{...parts[i],structural:true}],bb:ship.bb},.32).t);return meshes.get(i);};
+  const joined=groups[0]?.slice()||[],repairs=[];
+  for(const group of groups.slice(1)){
+    let pair=null,best=Infinity;
+    for(const i of group)for(const j of joined){const a=boxes[i],b=boxes[j],d=a[0].reduce((s,v,k)=>s+Math.max(0,v-b[1][k],b[0][k]-a[1][k])**2,0);if(d<best){best=d;pair=[i,j];}}
+    const [i,j]=pair;let a=attachmentSurface(mesh(i),partCentroid(parts[j])),b;
+    if(!a)continue;
+    for(let n=0;n<3;n++){b=attachmentSurface(mesh(j),a);a=attachmentSurface(mesh(i),b);}
+    if(!b)continue;
+    const gap=V.len(V.sub(a,b)),feature=Math.min(...boxes[i][1].map((v,k)=>v-boxes[i][0][k]).filter(v=>v>L*.00001));
+    const r=Math.max(L*.0003,Math.min(L*.009,feature*.22,gap*.18));
+    const direction=V.norm(V.sub(b,a)),start=V.sub(a,V.mul(direction,r*.5)),end=V.add(b,V.mul(direction,r*.5));
+    const organic=[1,4,8,15,17,21].includes(race);
+    parts.push(organic?{k:'capsule',a:start,b:end,r,structural:true,refitPart:true,attachmentRoot:true}:{k:'tube',a:start,b:end,r1:r,r2:r,structural:true,refitPart:true,attachmentRoot:true});
+    parts[i].structural=parts[j].structural=true;repairs.push({from:i,to:j,gap});joined.push(...group);
+  }
+  ship.attachmentAudit={assemblies:groups.length,repairs};return ship;
+}
+
 // Exhaust outlets are found once at forge time, never by scanning live triangles.
 function enginePorts(ship,race){
   if(ship.exhaust)return ship.exhaust;
@@ -12096,6 +12152,7 @@ function forgeMountSites(parts,bb,c,guns){
     return dims[1]>L*.025;
   });
   if(!skin.length)return [];
+  for(const part of skin)part.structural=true; // mount-carrying faces retain their silhouette at distance
   const mesh=packMesh({parts:skin,bb},c,.32),v=mesh.v,targets=guns.slice(),sites=[];
   for(let axis=0;axis<3;axis++)for(const sign of [-1,1])for(let j=0;j<5;j++){
     const p=[0,0,0];p[axis]=sign*(bb[1][axis]-bb[0][axis]);p[(axis+1)%3]=(j-2)*(bb[1][(axis+1)%3]-bb[0][(axis+1)%3])*.18;targets.push(p);
@@ -12161,13 +12218,15 @@ onmessage=e=>{
       if(!ship){ship=best;seed=bestSeed;bandHopeless[fk]=true;}
     }else ship=raceBuild(j.f,seed,j.hulls);
     armShip(ship,j.f,j.hulls||0);
+    seatShipAssemblies(ship,j.f);
     const c=centre(ship);
     const exhaust=enginePorts(ship,j.f).map(q=>[q[0]-c[0],q[1]-c[1],q[2]-c[2],q[3]]);
     const guns=(ship.muzzles||[]).map(q=>[q[0]-c[0],q[1]-c[1],q[2]-c[2]]);
     // Two small authored fittings can detach. Pack them last so removal is a
     // tiny index-buffer update; no mesh cutting or triangle search during combat.
-    const candidates=ship.meta.hero?[]:ship.parts.filter(p=>p.k==='box'&&!p.driveGroup&&!p.enginePort&&Math.hypot(...partCentroid(p).map((v,i)=>v-c[i]))>ship.meta.length*.12&&Math.max(V.len(p.u),V.len(p.v),V.len(p.w))<ship.meta.length*.055).filter(p=>!(ship.muzzles||[]).some(q=>Math.hypot(...q.map((v,i)=>v-partCentroid(p)[i]))<Math.max(V.len(p.u),V.len(p.v),V.len(p.w))*3)).slice(-2);
+    const candidates=ship.meta.hero?[]:ship.parts.filter(p=>p.k==='box'&&!p.structural&&!p.driveGroup&&!p.enginePort&&Math.hypot(...partCentroid(p).map((v,i)=>v-c[i]))>ship.meta.length*.12&&Math.max(V.len(p.u),V.len(p.v),V.len(p.w))<ship.meta.length*.055).filter(p=>!(ship.muzzles||[]).some(q=>Math.hypot(...q.map((v,i)=>v-partCentroid(p)[i]))<Math.max(V.len(p.u),V.len(p.v),V.len(p.w))*3)).slice(-2);
     const coreParts=ship.parts.filter(p=>!candidates.includes(p));
+    const mountSites=j.f===8?[]:forgeMountSites(coreParts,ship.bb,c,guns);
     let m=packMesh({parts:coreParts,bb:ship.bb},c,0.32);
     const damagePods=[];
     for(const part of candidates){
@@ -12179,7 +12238,6 @@ onmessage=e=>{
       damagePods.push({v:fm.v,i:fm.i,ox:center[0]-c[0],oy:center[1]-c[1],oz:center[2]-c[2],r:Math.hypot(...ext),extents:ext,start,count:fm.i.length});
       m={v:vertices,i:indices,tris:indices.length/3};tr.push(fm.v.buffer,fm.i.buffer);
     }
-    const mountSites=j.f===8?[]:forgeMountSites(coreParts,ship.bb,c,guns);
     /* carve her pieces NOW, at the forge — so the moment she dies, her
        breakup already exists and costs nothing but an upload */
     const n=coreParts.length;
@@ -16968,6 +17026,9 @@ function leaveHelm(){
   updateWatchDock();
 }
 function setWatchView(mode){
+  if(['follow','fly'].includes(mode)&&sel==null&&watchMode==='action'&&cinemaInteriorKind(actionCamera?.kind)){
+    const current=ships[actionCamera.subject];if(current&&!current.dead){sel=current.id;orb=chaseCamInit(current);}
+  }
   if(mode==='bridge'){if(sel!=null)card(sel);else toast('Select a ship to meet its crew');return;}
   if(mode==='hero'){followHero();watchMode='hero';updateWatchDock();return;}
   if(mode==='follow'||mode==='fly'){
@@ -17028,7 +17089,47 @@ function cinemaBlocked(eye,focus,subject,partner,live){
   }
   return false;
 }
+function cinemaInteriorKind(kind){return kind==='captain'||kind==='cockpit';}
+function cinemaInteriorLayout(a,now,dt,reset){
+  const s=ships[a.subject],p=cinemaPosition(s,now),yaw=s.yaw||0,pitch=s.pitch||0;
+  if(reset){a.heading=yaw;a.interiorPitch=pitch;}
+  else{const delta=Math.atan2(Math.sin(yaw-a.heading),Math.cos(yaw-a.heading));a.heading+=delta*(1-Math.exp(-dt*5));a.interiorPitch+=(pitch-a.interiorPitch)*(1-Math.exp(-dt*5));}
+  const forward=[Math.cos(yaw)*Math.cos(pitch),Math.sin(pitch),Math.sin(yaw)*Math.cos(pitch)];
+  // Put the lens beyond the foremost actual hull surface, not inside a solid
+  // mesh. The visible cabin is drawn only for this shot over the live viewport.
+  const nose=Math.max(...cinemaCorners(s,now).map(q=>V.dot(V.sub(q,p),forward)))+Math.max(3,s.slen*.02);
+  const eye=V.add(p,V.mul(forward,nose)),look=[Math.cos(a.heading)*Math.cos(a.interiorPitch),Math.sin(a.interiorPitch),Math.sin(a.heading)*Math.cos(a.interiorPitch)];
+  return {eye,focus:V.add(eye,V.mul(look,1000)),far:Math.max(6000,s.slen*8)};
+}
+let cinemaInteriorCanvas=null,cinemaInteriorLabel=null,cinemaInteriorAt=0,cinemaInteriorId=null;
+function updateCinemaInterior(now){
+  const a=actionCamera,s=ships[a?.subject],active=watchMode==='action'&&sel==null&&pilotId==null&&cinemaInteriorKind(a?.kind)&&s&&!s.dead&&window.ArmadaCrew?.drawInterior;
+  if(!active){if(cinemaInteriorCanvas)cinemaInteriorCanvas.hidden=true;if(cinemaInteriorLabel)cinemaInteriorLabel.hidden=true;cinemaInteriorId=null;return;}
+  if(!cinemaInteriorCanvas){
+    cinemaInteriorCanvas=document.createElement('canvas');cinemaInteriorCanvas.id='cinemaInterior';cinemaInteriorCanvas.setAttribute('aria-label','Live ship interior and animated captain');
+    cinemaInteriorCanvas.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2';document.body.appendChild(cinemaInteriorCanvas);
+    cinemaInteriorLabel=document.createElement('div');cinemaInteriorLabel.id='cinemaCrewLabel';
+    cinemaInteriorLabel.style.cssText='position:fixed;left:14%;top:27%;max-width:65%;pointer-events:none;z-index:3;color:#d1dde0;text-shadow:0 2px 5px #000;font:clamp(11px,1.1vw,15px)/1.65 system-ui;white-space:pre-line';document.body.appendChild(cinemaInteriorLabel);
+  }
+  cinemaInteriorCanvas.hidden=cinemaInteriorLabel.hidden=false;
+  const key=s.id+':'+a.kind;if(key===cinemaInteriorId&&now<cinemaInteriorAt)return;cinemaInteriorId=key;cinemaInteriorAt=now+1/15;
+  const p=s.crewProfile??=window.ArmadaCrew.profile(s.seed??s.id,s.race,s.meta?.klass||''),d=battleAI.describe(s);
+  const state={fear:d.fear,hull:s.hp/s.hpMax,hit:Math.max(0,1-(now-(s.hurtT??-100))/1.5),firing:now-(s.lastFire??-100)<1,speed:s.v||0,turn:s.yawV||0};
+  const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.ArmadaCrew.drawInterior(cinemaInteriorCanvas,p,state,reduced?0:now,a.kind);
+  cinemaInteriorLabel.textContent=p.role+' '+p.name+'\n'+(s.meta?.desig||s.meta?.klass||raceShort(s.race))+' · '+p.species+'\n'+(a.kind==='cockpit'?'At the controls':'On the bridge');
+}
+
 function cinemaChoose(a,live,now){
+  const previous=ships[a.subject],partner=ships[a.partner];
+  if(a.kind==='cockpit')a.lastInterior=a.clock;
+  const aboard=previous&&!previous.dead&&previous.arr&&!previous.grace&&!previous.cloaked&&!previous.reliefPending;
+  // Establish the vessel outside first. Visit its captain, then look over the
+  // helm, then return to the fighting; interiors never seize manual control.
+  if(window.ArmadaCrew?.drawInterior&&aboard){
+    if(a.kind==='captain'&&!partner?.dead)return {kind:'cockpit',subject:previous.id,partner:partner&&!partner.dead?partner.id:null};
+    if(['chase','duel','capital'].includes(a.kind)&&a.clock-(a.lastInterior??0)>28&&cinemaHeat(previous,now)>0){a.lastInterior=a.clock;return {kind:'captain',subject:previous.id,partner:partner&&!partner.dead?partner.id:null};}
+  }
   const active=live.filter(s=>s.arr&&!s.grace&&!s.cloaked),pool=active.length?active:live;
   const noise=s=>((Math.imul((s.seed??s.id)^warSeed,1664525)+Math.imul(a.index+1,1013904223))>>>0)/4294967296;
   const recent=id=>a.history.some(h=>h.id===id&&a.clock-h.at<24)?2.5:0;
@@ -17083,6 +17184,7 @@ function cinemaGroup(a,now){
   for(const x of [lo[0],hi[0]])for(const y of [lo[1],hi[1]])for(const z of [lo[2],hi[2]])a.groupPoints.push([x,y,z]);
 }
 function cinemaLayout(a,now,dt,reset=false){
+  if(cinemaInteriorKind(a.kind))return cinemaInteriorLayout(a,now,dt,reset);
   const s=ships[a.subject],partner=ships[a.partner],u=Math.min(1,(a.clock-a.started)/Math.max(1,a.duration)),ease=u*u*(3-2*u);
   const group=['arrival','all','top','formation'].includes(a.kind),p=cinemaPosition(s,now);
   let center=p,points=cinemaCorners(s,now),angle=a.bearing+a.angleOffset+(ease-.5)*(a.kind==='capital'?.24:.12),height=a.height;
@@ -17118,7 +17220,7 @@ function cinemaStart(a,shot,live,now){
   const old=a.subject;a.history.push({id:old,at:a.clock});a.history=a.history.filter(h=>a.clock-h.at<32);
   Object.assign(a,shot);a.index++;a.started=a.clock;a.payoff=null;a.blocked=0;
   const s=ships[a.subject];a.lastSide=s.side;a.heading=s.yaw||0;
-  a.duration={arrival:2.8,formation:6.5,chase:5.6,duel:6.8,capital:8.5,all:5.5,top:4.8}[a.kind];
+  a.duration={captain:4,cockpit:5,arrival:2.8,formation:6.5,chase:5.6,duel:6.8,capital:8.5,all:5.5,top:4.8}[a.kind];
   a.until=a.clock+a.duration;a.kindAt[a.kind]=a.clock;
   if(['arrival','all','top'].includes(a.kind))a.lastWide=a.clock;
   a.members=cinemaMembers(a.kind,s,ships[a.partner],live,now);cinemaGroup(a,now);
@@ -17137,7 +17239,7 @@ function cinemaStart(a,shot,live,now){
   let layout;const baseHeight=a.height;
   for(const [offset,lift] of [[0,0],[.55,.2],[-.55,.2],[1.1,.6],[-1.1,1.4]]){
     a.angleOffset=offset;a.height=baseHeight+lift;layout=cinemaLayout(a,now,0,true);
-    if(!cinemaBlocked(layout.eye,layout.focus,a.subject,a.partner,live))break;
+    if(cinemaInteriorKind(a.kind)||!cinemaBlocked(layout.eye,layout.focus,a.subject,a.partner,live))break;
   }
   a.scanAt=a.clock+.65;
   if(watchMode==='action')document.getElementById('watchLabel').textContent=cinemaCaption();
@@ -17145,7 +17247,7 @@ function cinemaStart(a,shot,live,now){
 }
 function cinemaCaption(){
   const a=actionCamera,s=ships[a?.subject];if(!a?.kind||!s)return 'Battle director';
-  const title={arrival:'Fleet arrivals',formation:'Fleet approach',chase:'Pursuit',duel:'Crossfire',capital:'Capital ship',all:'Battlefield',top:'Battle from above'}[a.kind];
+  const title={captain:'Captain',cockpit:'Cockpit',arrival:'Fleet arrivals',formation:'Fleet approach',chase:'Pursuit',duel:'Crossfire',capital:'Capital ship',all:'Battlefield',top:'Battle from above'}[a.kind];
   return ['arrival','all','top'].includes(a.kind)?title:title+' · '+raceShort(s.race);
 }
 function updateActionCamera(now,dt){
@@ -17158,7 +17260,8 @@ function updateActionCamera(now,dt){
   const s=ships[a.subject],partner=ships[a.partner];
   // Let the shot pay off: stay with either combatant's destruction for 2.4 s.
   const death=[s,partner].find(q=>q?.dead&&now-(q.deadT??-100)<3);
-  if(death&&!a.payoff){a.payoff={id:death.id,until:a.clock+2.4};a.until=a.payoff.until;}
+  if(cinemaInteriorKind(a.kind)&&death){a.until=a.clock;a.payoff=null;cut=true;}
+  if(death&&!a.payoff&&!cinemaInteriorKind(a.kind)){a.payoff={id:death.id,until:a.clock+2.4};a.until=a.payoff.until;}
   if(a.payoff)cut=a.clock>=a.payoff.until;
   else if(s?.dead||s?.cloaked||(!s&&a.kind))cut=true;
   if(opening)cut=!a.kind||a.openStage!==stage;
@@ -17167,7 +17270,7 @@ function updateActionCamera(now,dt){
     live=ships.filter(q=>q&&!q.dead&&q.vao&&!q.reliefPending&&!q.cloaked);if(!live.length&&!a.payoff)return;
     if(a.kind&&!cut){
       cinemaGroup(a,now);
-      const occluded=cinemaBlocked([cam.ex,cam.ey,cam.ez],[a.cx,a.cy,a.cz],a.subject,a.partner,live);
+      const occluded=!cinemaInteriorKind(a.kind)&&cinemaBlocked([cam.ex,cam.ey,cam.ez],[a.cx,a.cy,a.cz],a.subject,a.partner,live);
       a.blocked=occluded?a.blocked+.65:0;
       const held=a.clock-a.started,quiet=cinemaHeat(s,now)+(partner?cinemaHeat(partner,now):0)<.1;
       const separated=partner&&Math.hypot(s.x-partner.x,s.y-partner.y,s.z-partner.z)>Math.max(2800,(s.slen+partner.slen)*5);
@@ -17261,6 +17364,7 @@ function pilotStep(s,now,dt){
   leakHullDust(s,now);
 }
 function updateCrewPortrait(now,force=false){
+  updateCinemaInterior(now);
   if(!window.ArmadaCrew||(!crewShown&&pilotId==null)||(!force&&now<crewFrameAt))return;crewFrameAt=now+.1;
   const s=ships[crewShown?.id??pilotId],canvas=document.getElementById(crewShown?'crewPortrait':'helmPortrait');if(!s||!canvas)return;
   const profile=crewShown?.profile||(s.crewProfile??=window.ArmadaCrew.profile(s.seed??s.id,s.race,s.meta?.klass||""));

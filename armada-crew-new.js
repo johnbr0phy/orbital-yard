@@ -115,7 +115,7 @@
     for(const upper of [true,false]){const spread=7+e.fear*11+e.hurt*7+pulse*1.4,yy=upper?-6:-36;const tip=[sign*(10+spread),upper?-16:-33,58];tube([[sign*25,yy,29],[sign*(31+spread),yy-8,43],tip],[10*p.plate,7,3],hide);tube([tip,[sign*(5+spread*.5),upper?-22:-25,61]],[3.5,0],'#d7cbaa');}
    }
    ell(0,-24,37,13,17+e.fear*2,8,'#342727',10,6);
-   for(let i=0;i<11;i++)ell((p.marks[i]-.5)*67,30+p.marks[(i+1)%12]*18,29,2,3,2,'#514c35',6,4);
+   for(let i=0;i<11;i++){const x=(p.marks[i]-.5)*67,y=30+p.marks[(i+1)%12]*18,z=-3+36*Math.sqrt(Math.max(0,1-(x/(48*p.jaw))**2-((y-17)/45)**2))*.92;ell(x,y,z,2,3,3,'#514c35',6,4);}
    return m;
   }
   if(sp==='Mon Calamari'||sp==='Sullustan'){
@@ -130,7 +130,7 @@
    }
    ell(0,-24,27,mon?30:19,mon?19:11,mon?21:22,col,10,6);
    tube([[-22,-31,43],[0,-34-e.fear*3,49],[22,-31,43]],[2,2+e.hurt*2,2],'#594138');
-   if(mon){for(let i=0;i<12;i++)ell((p.marks[i]-.5)*53,24+p.marks[(i+1)%12]*32,30,3,2,2,'#81644f',6,4);}
+   if(mon){for(let i=0;i<12;i++){const x=(p.marks[i]-.5)*53,y=24+p.marks[(i+1)%12]*32,z=36*Math.sqrt(Math.max(0,1-(x/(43*p.jaw))**2-((y-13)/58)**2))*.92;ell(x,y,z,3,2,3,'#81644f',6,4);}}
    else for(let i=0;i<3;i++)tube([[-27,-15-i*8,26],[0,-20-i*8,43],[27,-15-i*8,26]],[3,3,3],col);
    return m;
   }
@@ -205,5 +205,46 @@
   }
   c.fillStyle=e.fear>.7?'#ed9a84':p.color;c.font='13px monospace';c.fillText(['Shadow','Ancient presence','Lattice intelligence','Choir radial','Borg','Vorlon encounter suit'].includes(p.species)?(e.hurt>.5?'Signal disrupted':e.fear>.4?'Elevated activity':'Linked'):e.label,16,205);c.fillStyle='#8397a6';c.font='10px monospace';c.fillText(p.species.toUpperCase(),16,222);
  }
- const api={profile,draw,geometry,emotion};if(typeof module==='object')module.exports=api;else root.ArmadaCrew=api;
+ // A single visible interior over the live battle. No per-ship cockpit meshes,
+ // textures, GL contexts or additional animation loop are allocated.
+ const interiorCache=new WeakMap();
+ function drawInterior(canvas,p,state={},time=0,mode='captain'){
+  const c=canvas.getContext('2d');if(!c)return;
+  const width=Math.min(1100,Math.max(390,canvas.clientWidth||1100)),height=Math.round(width*(canvas.clientHeight||660)/(canvas.clientWidth||1100));
+  if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+  c.clearRect(0,0,width,height);
+  const e=emotion(state),organic=[1,2,4,8,15,17,21].includes(p.race),cockpit=mode==='cockpit',portrait=width<height;
+  // Dark window surrounds leave the actual ships, weapons and planets visible.
+  const frame='#111920',rim='#3b4850',base=height*(portrait?.78:.82);
+  c.fillStyle=frame;c.beginPath();c.moveTo(0,0);c.lineTo(width*.065,height*.06);c.lineTo(width*.12,base);c.lineTo(0,height);c.closePath();c.fill();
+  c.beginPath();c.moveTo(width,0);c.lineTo(width*.94,height*.06);c.lineTo(width*.89,base);c.lineTo(width,height);c.closePath();c.fill();
+  c.strokeStyle=rim;c.lineWidth=3;c.beginPath();c.moveTo(width*.065,0);c.lineTo(width*.12,base);c.lineTo(width*.89,base);c.lineTo(width*.94,0);c.stroke();
+  if(organic){c.strokeStyle='#34413e';c.lineWidth=width*.012;for(const side of [0,1]){c.beginPath();c.moveTo(width*side,height);c.bezierCurveTo(width*(side?.82:.18),height*.68,width*(side?.96:.04),height*.30,width*(side?.83:.17),0);c.stroke();}}
+  let cache=interiorCache.get(canvas);
+  if(!cache||cache.p!==p||time-cache.at>=.20||time<cache.at){cache={p,at:time,faces:geometry(p,state,time)};interiorCache.set(canvas,cache);}
+  const yaw=(cockpit?2.65:-.34)+Math.sin(time*.45+p.marks[1]*6.28)*.065+Math.max(-.15,Math.min(.15,state.turn||0)),pitch=-.025-Math.min(.05,e.hurt*.05),cy=Math.cos(yaw),sy=Math.sin(yaw),cx=Math.cos(pitch),sx=Math.sin(pitch);
+  const scale=Math.min(width*(portrait?.0027:.0018),height*.0036),ox=width*(portrait?.38:.27),oy=height*(portrait?.66:.56);
+  const turn=v=>{const x=v[0]*cy+v[2]*sy,z=v[2]*cy-v[0]*sy;return [x,v[1]*cx-z*sx,v[1]*sx+z*cx];};
+  const faces=cache.faces.map(f=>({col:f.col,v:f.v.map(turn)}));
+  const box=(x,y,z,rx,ry,rz,col)=>{const v=Array.from({length:8},(_,i)=>[x+(i&1?rx:-rx),y+(i&2?ry:-ry),z+(i&4?rz:-rz)]);for(const [a,b,d,e] of [[0,2,6,4],[1,5,7,3],[0,4,5,1],[2,3,7,6],[0,1,3,2],[4,6,7,5]]){faces.push({col,v:[v[a],v[b],v[d]].map(turn)},{col,v:[v[a],v[d],v[e]].map(turn)});}};
+  if(!organic){
+   box(0,-83,-29,51,36,11,'#202a31');box(0,-55,-36,44,30,8,'#283139');
+   // Forearms reach from the shoulders to the helm; subtle steering follows
+   // this ship's real turn rate while its existing AI continues to fly it.
+   const steer=Math.max(-5,Math.min(5,(state.turn||0)*14));
+   for(const side of [-1,1]){box(side*43,-91,21,9,12,31,'#38434a');box(side*43+steer,-97,51,7,6,8,p.species==='Human'?p.skin:'#77858a');}
+   box(0,-118,59,69,13,22,'#17242b');
+   for(const side of [-1,1])box(side*32,-103,64,22,1.5,12,'#50767d');
+  }
+  for(const f of faces)f.z=f.v.reduce((s,v)=>s+v[2],0)/3;faces.sort((a,b)=>a.z-b.z);
+  for(const f of faces){const [a,b,d]=f.v,u=b.map((x,i)=>x-a[i]),v=d.map((x,i)=>x-a[i]),n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],len=Math.hypot(...n)||1,light=.40+.58*Math.abs((n[0]*-.4+n[1]*.5+n[2]*.76)/len);
+   const rgb=f.col.match(/\w\w/g).map(x=>Math.round(parseInt(x,16)*light));c.fillStyle='rgb('+rgb.join(',')+')';c.beginPath();f.v.forEach((v,i)=>{const k=480/(480-v[2]),x=ox+v[0]*k*scale,y=oy-v[1]*k*scale;if(i)c.lineTo(x,y);else c.moveTo(x,y);});c.closePath();c.fill();
+  }
+  // Foreground instrument sill: low and quiet, not the player's targeting HUD.
+  c.fillStyle=frame;c.beginPath();c.moveTo(0,height);c.lineTo(width*.12,height*.94);c.lineTo(width*.88,height*.94);c.lineTo(width,height);c.closePath();c.fill();
+  c.fillStyle='#8ca8ac';c.font=Math.max(10,width*.011)+'px monospace';
+  c.fillText(Math.round(state.speed||0)+' m/s   ·   HULL '+Math.max(0,Math.round((state.hull??1)*100))+'%'+(state.firing?'   ·   FIRING':''),width*.14,height*.975);
+ }
+
+ const api={profile,draw,drawInterior,geometry,emotion};if(typeof module==='object')module.exports=api;else root.ArmadaCrew=api;
 })(typeof window==='object'?window:globalThis);

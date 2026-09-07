@@ -1,11 +1,12 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const {loadBattle}=require('./headless-battle.cjs');
-test('forge mounting sites lie on exact surviving hull vertices across six fleets',()=>{
+test('forge mounting sites lie on exact surviving hull vertices across all 23 fleets',()=>{
  const html=fs.readFileSync(path.join(__dirname,'../../armada-war-tribute-new.html'),'utf8'),b=loadBattle();let result;const ctx=vm.createContext({console,postMessage:r=>result=r});vm.runInContext(html.slice(html.indexOf('\n<script>\n')+10,html.indexOf('//__ARMADA_WORKER_CUT__'))+b.run('fractureMesh.toString()+WORKER_MAIN'),ctx,{timeout:2000});
- for(const f of [0,5,6,9,10,12]){
-  vm.runInContext(`onmessage({data:{kind:'batch',genId:1,jobs:[{id:0,f:${f},seed:42,hulls:25}]}})`,ctx,{timeout:2000});const s=result.out[0];assert.ok(s.mountSites.length>0&&s.mountSites.length<=64);
+ for(const f of Array.from({length:23},(_,i)=>i)){
+  vm.runInContext(`onmessage({data:{kind:'batch',genId:1,jobs:[{id:0,f:${f},seed:42,hulls:25}]}})`,ctx,{timeout:2000});const s=result.out[0];if(f===8){assert.equal(s.mountSites.length,0);continue;}assert.ok(s.mountSites.length>0&&s.mountSites.length<=64);
   const vertices=new Set();for(let i=0;i<s.mesh.v.length;i+=3)vertices.add(Array.from(s.mesh.v.subarray(i,i+3)).join(','));
-  for(const p of s.mountSites)assert.ok(vertices.has(p.join(',')),`fleet ${f}: detached mounting site`);
+  const distant=new Set();for(let i=0;i<s.low.v.length;i+=3)distant.add(Array.from(s.low.v.subarray(i,i+3)).join(','));
+  for(const p of s.mountSites){assert.ok(vertices.has(p.join(',')),`fleet ${f}: detached mounting site`);assert.ok(distant.has(p.join(',')),`fleet ${f}: mount floats at distance`);}
  }
 });
 test('estimated turret and lance positions are replaced with hull anchors',()=>{
