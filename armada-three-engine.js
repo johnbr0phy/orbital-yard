@@ -11970,6 +11970,21 @@ function packMesh(ship,c,q){
 
 // A small set of exact hull vertices provides real mounting surfaces. The
 // expensive geometry work stays in the forge; live ships only use these points.
+// Built once in the forge. Bounds prune nearly all triangles before a gun fires.
+function forgeFireHull(mesh){
+ const v=mesh.v,i=mesh.i;
+ function build(ids){
+  const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
+  for(const t of ids)for(let k=0;k<3;k++)for(let a=0;a<3;a++){const x=v[i[t*3+k]*3+a];lo[a]=Math.min(lo[a],x);hi[a]=Math.max(hi[a],x);}
+  if(ids.length<=12)return {lo,hi,ids};
+  const axis=hi.map((x,a)=>x-lo[a]).indexOf(Math.max(...hi.map((x,a)=>x-lo[a])));
+  const mid=t=>(v[i[t*3]*3+axis]+v[i[t*3+1]*3+axis]+v[i[t*3+2]*3+axis])/3;
+  ids.sort((a,b)=>mid(a)-mid(b));const half=ids.length>>1;
+  return {lo,hi,left:build(ids.slice(0,half)),right:build(ids.slice(half))};
+ }
+ return i.length?{v,i,root:build(Array.from({length:i.length/3},(_,n)=>n))}:null;
+}
+
 function forgeMountSites(parts,bb,c,guns){
   const L=bb[1][0]-bb[0][0];
   const skin=parts.filter(p=>{
@@ -12091,7 +12106,8 @@ onmessage=e=>{
     const readyFrags=fractureMesh(frags,ship.meta.length>=180?32:6);
     for(const f of readyFrags)tr.push(f.v.buffer,f.i.buffer);
     const low=packMesh({parts:coreParts,bb:ship.bb},c,.12);tr.push(low.v.buffer,low.i.buffer);
-    out.push({id:j.id,seed:seed,mesh:m,low,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,exhaust,damagePods,mountSites,
+    const fireHull=ship.meta.length>=55?forgeFireHull(m):null;
+    out.push({id:j.id,seed:seed,mesh:m,low,fireHull,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,exhaust,damagePods,mountSites,
       ringX:ship.meta.ringX!==undefined?ship.meta.ringX-c[0]:0,
       ringW:ship.meta.ringW||0,hero:!!(j.hero||(ship.meta&&ship.meta.hero)),
       meta:{desig:ship.meta.desig,klass:ship.meta.klass,length:ship.meta.length,
@@ -14294,7 +14310,7 @@ function onWorkerMsg(e){
     if(rec.low)registerDistantHull(s,rec.low);   /* the forge may have re-cut it */
     s.ringX=rec.ringX||0;s.ringW=rec.ringW||0;   /* earthforce turns a ring here */
     s.guns=rec.guns||[];s.exhaust=rec.exhaust||[];s.gunI=0;
-    s.mountSites=rec.mountSites||[];
+    s.mountSites=rec.mountSites||[];s.fireHull=rec.fireHull||null;
     s.damagePods=rec.damagePods||[];s.damageIndices=m.i;
     s.fragData=rec.frags||null;s.fragReady=!!rec.fragReady;
     s.hullMesh=s.slen>=180?{v:m.v,i:m.i}:null;
@@ -15270,14 +15286,42 @@ function fighterPassGoal(s,t,now){
   }
   return interceptPoint(s,t,weaponProfile(s).speed);
 }
+function ownHullClear(s,origin,end,now){
+ const hull=s.fireHull;if(!hull||[1,2,4,5].includes(RACE_DEFS[s.race]?.anim))return true;
+ const o=weaponLocal(s,origin,now),d=V.sub(weaponLocal(s,end,now),o),length=V.len(d);
+ if(length<1e-6)return true;
+ // Ignore only the contact at the muzzle itself, not nearby superstructure.
+ const epsilon=Math.max(.015,(s.slen||1)*.00002)/length;
+ function visit(node){
+  let enter=epsilon,exit=1;
+  for(let a=0;a<3;a++){
+   if(Math.abs(d[a])<1e-9){if(o[a]<node.lo[a]-1e-5||o[a]>node.hi[a]+1e-5)return false;}
+   else{let x=(node.lo[a]-o[a])/d[a],y=(node.hi[a]-o[a])/d[a];if(x>y)[x,y]=[y,x];enter=Math.max(enter,x);exit=Math.min(exit,y);if(enter>exit)return false;}
+  }
+  if(!node.ids)return visit(node.left)||visit(node.right);
+  for(const index of node.ids){
+   const vertex=k=>{const j=hull.i[index*3+k]*3;return [hull.v[j],hull.v[j+1],hull.v[j+2]];};
+   const a=vertex(0),e1=V.sub(vertex(1),a),e2=V.sub(vertex(2),a),p=V.cross(d,e2),det=V.dot(e1,p);
+   if(Math.abs(det)<1e-9)continue;
+   const t=V.sub(o,a),u=V.dot(t,p)/det;if(u< -1e-6||u>1.000001)continue;
+   const q=V.cross(t,e1),v=V.dot(d,q)/det;if(v< -1e-6||u+v>1.000001)continue;
+   const distance=V.dot(e2,q)/det;if(distance>epsilon&&distance<1)return true;
+  }
+  return false;
+ }
+ return !visit(hull.root);
+}
+
 function mountFaces(s,t,muz,now){
   if(weaponProfile(s).fixed)return true;
   const e=weaponExtents(s),d=V.sub(weaponLocal(s,[t.x,t.y,t.z],now),muz);
   const n=muz.map((v,i)=>v/(e[i]*e[i]));
   if(V.len(n)<1e-6)return true;
-  // A turret can traverse its exposed hemisphere plus 10 degrees,
-  // but cannot shoot backwards through its own hull.
-  return V.dot(V.norm(n),V.norm(d))>=-.17;
+  // Allow the existing shallow grazing arc; actual hull geometry decides
+  // whether superstructure blocks the line of fire.
+  const pivot=gunWorld(s,muz,now),toward=V.norm(V.sub([t.x,t.y,t.z],pivot));
+  const tip=V.add(pivot,V.mul(toward,barrelShape(s).length));
+  return V.dot(V.norm(n),V.norm(d))>=-.17&&ownHullClear(s,tip,[t.x,t.y,t.z],now);
 }
 function weaponMount(s,t,now){
   const gs=s.guns&&s.guns.length?s.guns:[fireLocal(s)];
@@ -15313,11 +15357,13 @@ function weaponSolution(s,t,now,muz){
     const cone=Math.min(.30,.12+Math.min(...e)/d);
     if(V.dot(forward,desired)<Math.cos(cone))return null;
     // Fixed barrels shoot along the hull axis. They never swivel toward a target.
-    return {o,muz,aim:V.add(o,V.mul(forward,d)),direction:forward,profile};
+    const end=V.add(o,V.mul(forward,d));if(!ownHullClear(s,o,end,now))return null;
+    return {o,muz,aim:end,direction:forward,profile};
   }
   if(!mountFaces(s,t,muz,now)||!turretTrack(s,muz,aim,now,t.id))return null;
   const frame=barrelFrame(s,muz,now),distance=V.len(V.sub(aim,frame.tip));
-  return {o:frame.tip,muz,aim:V.add(frame.tip,V.mul(frame.dir,distance)),direction:frame.dir,profile};
+  const end=V.add(frame.tip,V.mul(frame.dir,distance));if(!ownHullClear(s,frame.tip,end,now))return null;
+  return {o:frame.tip,muz,aim:end,direction:frame.dir,profile};
 }
 function pushFork(s,muz,o,aim,flags){
   // Legacy callers now emit one complete beam per physical mount. No fork,
@@ -15335,7 +15381,7 @@ function pinBeams(now){
     const s=ships[b.from];
     if(!s||s.dead||!s.vao){if(b.coherent)b.t0=-Infinity;continue;}
     if(b.coherent){
-      if(b.manual){b.a=weaponMuzzle(s,b.muz,now);continue;}
+      if(b.manual){b.a=weaponMuzzle(s,b.muz,now);if(!ownHullClear(s,b.a,b.b,now))b.t0=-Infinity;continue;}
       const dw=b.debrisUid==null?null:wrecks.find(w=>w.uid===b.debrisUid&&!w.gone&&!w.dustT);
       const t=b.debrisUid==null?ships[b.target]:(dw?debrisProxy(dw):null);
       if(!t||t.dead||t.grace||!mountFaces(s,t,b.muz,now)){b.t0=-Infinity;continue;}
@@ -15343,6 +15389,7 @@ function pinBeams(now){
       if(weaponProfile(s).fixed){
         const solution=weaponSolution(s,t,now,b.muz);if(!solution){b.t0=-Infinity;continue;}b.b=solution.aim;
       }else{const frame=barrelFrame(s,b.muz,now);b.b=V.add(frame.tip,V.mul(frame.dir,V.len(V.sub([t.x,t.y,t.z],frame.tip))));}
+      if(!ownHullClear(s,b.a,b.b,now))b.t0=-Infinity;
     }else if(b.ion||b.arc||b.stun)b.a=weaponMuzzle(s,b.muz,now);
   }
 }
@@ -15454,6 +15501,7 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
   const miss=combatRandom()>battleAI.hitChance(s,t,dist,now);
   let aim=shot.aim;
   if(miss){const side=basis(shot.direction)[0],offset=Math.max(12,Math.min(...weaponExtents(t))*1.3);aim=V.add(aim,V.mul(side,offset));}
+  if(!ownHullClear(s,o,aim,now))return false;
   pushFork(s,shot.muz,o,aim,{t0:now,target:t.id,life:profile.duration,wid:profile.width,
     col:profile.color,miss,heavy:!!heavy});
   const impact=weaponSegmentHit(o,aim,t,now,profile.width);
@@ -15494,6 +15542,7 @@ function launchRound(tr,now){
   // Dispersion is a small angular error around one barrel direction, not
   // independent, target-sized scatter on all three world axes.
   const [u,v]=basis(dir);dir=V.norm(V.add(dir,V.add(V.mul(u,tr.spread[0]),V.mul(v,tr.spread[1]))));
+  if(!ownHullClear(s,o,V.add(o,V.mul(dir,tr.speed)),now)){tr.dead=true;return;}
   [tr.x,tr.y,tr.z]=o;[tr.vx,tr.vy,tr.vz]=V.mul(dir,tr.speed);tr.launch=false;
 }
 function plasmaShot(s,t,now,solution,speed,kind){
@@ -17037,6 +17086,7 @@ function pilotFire(s,now){
   }
   if(now<(s.pilotShot||0)){s.pilotWeapon='RECHARGING';return false;}
   const o=weaponMuzzle(s,muz,now),dir=profile.fixed||RACE_DEFS[s.race].unique?forward:barrelFrame(s,muz,now).dir;
+  if(!ownHullClear(s,o,V.add(o,V.mul(dir,range)),now)){s.pilotWeapon='HULL BLOCKING SHOT';return false;}
   const damage=profile.fixed?.14:.6;
   if(profile.mode==='bolt'){
     tracers.push({x:o[0],y:o[1],z:o[2],vx:dir[0]*profile.speed,vy:dir[1]*profile.speed,vz:dir[2]*profile.speed,

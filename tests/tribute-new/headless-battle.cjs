@@ -55,7 +55,9 @@ function loadBattle() {
       if (!ctx) {
         ctx = vm.createContext({console,postMessage:out=>worker.onmessage({data:out})});
         vm.runInContext(worker.source,ctx);
-        vm.runInContext(`packMesh=function(ship,c){
+        // This harness substitutes solid boxes for concave hulls. Ray obstruction
+        // needs real triangles and is covered by self-obstruction/browser checks.
+        vm.runInContext(`forgeFireHull=()=>null;packMesh=function(ship,c){
           const bb=[[Infinity,Infinity,Infinity],[-Infinity,-Infinity,-Infinity]],v=new Float32Array(24);
           for(const part of ship.parts)for(const [p,r] of partExtents(part))for(let d=0;d<3;d++){
             bb[0][d]=Math.min(bb[0][d],p[d]-r);bb[1][d]=Math.max(bb[1][d],p[d]+r);
