@@ -62,7 +62,7 @@
     constructor(definitions) { this.definitions=definitions;this.reset(1); }
     reset(seed) {
       this.seed=seed;this.rng=random(seed ^ 0x615d37);this.ships=[];this.byId=new Map();
-      this.grid=new Map();this.large=[];this.squads=[];this.locks=[];this.now=0;this.nextIndex=-1;
+      this.grid=new Map();this.large=[];this.sectors=[[],[]];this.squads=[];this.locks=[];this.now=0;this.nextIndex=-1;
       this.stats={scans:0,decisions:0,actions:{},ionDodges:0};
     }
     seedShip(s) {
@@ -108,12 +108,20 @@
       this.ships=ships;this.now=now;this.squads=squads||[];this.locks=(locks||[]).filter(Boolean);
       if(now<this.nextIndex)return;
       this.nextIndex=now+.10;this.grid.clear();this.byId.clear();this.large=[];
+      const sectors=[new Map(),new Map()];
       for(const s of ships){
+        if(alive(s)&&!s.cloaked){const key=[Math.floor(s.x/3000),Math.floor(s.y/3000),Math.floor(s.z/3000)].join(",");let q=sectors[s.side].get(key);if(!q)sectors[s.side].set(key,q={x:0,y:0,z:0,n:0});q.x+=s.x;q.y+=s.y;q.z+=s.z;q.n++;}
         this.byId.set(s.id,s);if(!alive(s))continue;
         if(radius(s)>500)this.large.push(s);
         const key=this.key(s.x,s.y,s.z);let cell=this.grid.get(key);
         if(!cell)this.grid.set(key,cell=[]);cell.push(s);
       }
+      this.sectors=sectors.map(m=>Array.from(m.values(),q=>({x:q.x/q.n,y:q.y/q.n,z:q.z/q.n})));
+    }
+    // Fleet command supplies a coarse search sector, never a firing lock.
+    searchPoint(s){
+      let best=null,near=Infinity;for(const q of this.sectors[1-s.side]||[]){const d=distance(s,q);if(d<near){near=d;best=q;}}
+      return best;
     }
     hash(x,y,z){return Math.imul(x,73856093)^Math.imul(y,19349663)^Math.imul(z,83492791);}
     key(x,y,z){return this.hash(Math.floor(x/640),Math.floor(y/640),Math.floor(z/640));}
@@ -307,7 +315,9 @@
       }else{
         const bearing=s.side?Math.PI:0,phase=now*.045+a.lane*2;
         const front=(s.side?-1:1)*Math.min(1400,250+now*7);
-        goal=sq&&sq.wp?sq.wp.slice():[front,Math.sin(phase)*280,Math.sin(phase*.8+a.orbit)*900];
+        const sector=this.searchPoint(s);
+        goal=sector?[sector.x,sector.y+a.vertical*100,sector.z+a.lane*150]:sq&&sq.wp?sq.wp.slice():[front,Math.sin(phase)*280,Math.sin(phase*.8+a.orbit)*900];
+        if(sector)a.reason='Closing on the enemy fleet sector';
         if(capital){goal[1]+=a.vertical*330;goal[2]+=a.lane*500;}
         if(distance(s,{x:goal[0],y:goal[1],z:goal[2]})<100)goal=[s.x+Math.cos(bearing+phase)*500,s.y+a.vertical*180,s.z+Math.sin(bearing+phase)*500];
         boost=.98;
@@ -334,8 +344,8 @@
       // The muster parks a 19 km ship well behind its screen. A sustained
       // transit burn gets that ship into the fight before the screen is gone.
       // It sheds speed on contact and retains the same gradual turn response.
-      const transit=!s.steadyCapital&&p.mode==='SEARCH'&&length(dx,dy,dz)>2000;
-      if(transit){velocity=s.spd*(2.4+a.budget[2]/40);a.reason='Transit burn. Closing to sensor contact';}
+      const transit=p.mode==='SEARCH'&&length(dx,dy,dz)>1600;
+      if(transit){velocity=Math.min(180,s.spd*(2.4+a.budget[2]/40));a.reason='Transit burn. Closing to sensor contact';}
       if(s.debrisGoal&&now<s.debrisUntil){velocity*=s.debrisBrake;a.reason="Avoiding debris corridor";}
       if(s.trafficGoal&&now<s.trafficUntil)velocity*=s.trafficBrake;
       if(now<(s.trafficBrakeUntil||0))velocity*=.65;
@@ -363,7 +373,7 @@
         const lead=this.byId.get(sq.mem[0]);if(!lead||!alive(lead))continue;
         const a=this.seedShip(lead),intel=new Map();
         for(const id of sq.mem){const member=this.byId.get(id);if(!member)continue;this.scan(member,now);for(const c of member.ai.contacts.values())if(now-c.seen<5)intel.set(c.id,c);}
-        if(!intel.size){sq.tac='ADVANCE';sq.adv=true;sq.wp=[(sq.side?-1:1)*600,a.vertical*280,a.lane*700];sq.aiUntil=now+1;continue;}
+        if(!intel.size){sq.tac='ADVANCE';sq.adv=true;const sector=this.searchPoint(lead);sq.wp=sector?[sector.x,sector.y+a.vertical*100,sector.z+a.lane*150]:[(sq.side?-1:1)*600,a.vertical*280,a.lane*700];sq.aiUntil=now+1;continue;}
         sq.adv=false;
         let tgt=null,score=-Infinity;
         for(const c of intel.values()){const v=1/(1+surface(lead,c)/900)+(1-c.hp/Math.max(1,c.hpMax))*.25+a.rng()*.18;if(v>score){score=v;tgt=c;}}

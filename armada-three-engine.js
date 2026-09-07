@@ -13157,6 +13157,8 @@ function setShipPace(s){
 }
 function craftWant(s,now,sq,mood,dist,boost){
   const cruise=s.spd,dash=s.spdMax||cruise*1.3;
+  // Escorts need a transit burn too; their combat cruise cannot cross a wide muster.
+  if(mood==="SEARCH"&&dist>1400)return Math.max(dash,Math.min(180,cruise*3.2));
   let k=boost||1;
   if(mood==="FLEE"||mood==="EVADE")k=Math.max(k,1.25);
   if(!s.hulls&&!s.steadyCapital&&s.slen<=95&&dist>500&&['ATTACK','FLANK','SEARCH'].includes(mood))k=Math.max(k,dash/cruise*.93);
@@ -16527,7 +16529,7 @@ function simStep(now,dt){
       }
     }
     if(s.debrisGoal&&now<s.debrisUntil){goal=s.debrisGoal;liningUp=false;}
-    if(s.trafficGoal&&now<s.trafficUntil){goal=s.trafficGoal;liningUp=false;}
+    if(s.trafficGoal&&now<s.trafficUntil){goal=[goal[0],s.trafficGoal[1],goal[2]];liningUp=false;}
     const mood=craftMood(s,now);s.mood=mood;
     let prefer=plan.target;
     s.form=plan.mode==="REGROUP"||plan.mode==="ESCORT";

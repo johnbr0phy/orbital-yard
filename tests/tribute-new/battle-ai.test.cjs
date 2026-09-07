@@ -108,3 +108,17 @@ test('30 and 120 render frames per second produce the same combat state',()=>{
   }
   assert.equal(states[0],states[1]);
 });
+
+test('out-of-contact ships pursue the occupied enemy sector without gaining a firing lock',()=>{
+ const b=new AI.FleetMinds(definitions),s=ship(1,0,19,{x:-8000,z:9000}),foe=ship(2,1,6,{x:5000,z:9000});
+ b.index([s,foe],10);const p=b.destination(s,10);
+ assert.equal(p.mode,'SEARCH');assert.ok(p.goal[0]>4500&&p.goal[2]>8500);assert.equal(s.ai.contacts.size,0);assert.equal(b.fireable(s,foe,10),false);
+ foe.x=10000;foe.z=-9000;b.index([s,foe],12);const next=b.destination(s,12);assert.ok(next.goal[0]>9500&&next.goal[2]<-8500);
+ foe.dead=true;b.index([s,foe],14);assert.equal(b.searchPoint(s),null);
+});
+
+test('steady capitals use transit burn while preserving their gentle turn rate',()=>{
+ const b=new AI.FleetMinds(definitions),s=ship(1,0,5,{x:-9000,slen:1600,hulls:50,steadyCapital:true,spd:25,spdMax:35,turn:.025,v:25}),foe=ship(2,1,6,{x:8000});
+ for(let i=0;i<90;i++){const t=10+i/30;b.index([s,foe],t);b.moveCapital(s,t,1/30);}
+ assert.ok(s.v>50);assert.ok(Math.abs(s.yawV)<=.025);assert.ok(Math.abs(s.pitch)<.026);
+});
