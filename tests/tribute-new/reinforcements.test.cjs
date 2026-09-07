@@ -121,5 +121,20 @@ test('placement reads the updated battle after forging, retaining the last order
   const requested=lost.run('JSON.stringify(reliefBatches[0].callPicture.orders)');
   lost.run('for(const s of ships.slice(0,oldCount))if(s.side===0)s.dead=true;');
   place(lost);
-  assert.equal(lost.run('JSON.stringify(reliefBatches[0].picture.orders)'),requested);
+  assert.equal(lost.run('JSON.stringify(Object.fromEntries(Object.entries(reliefBatches[0].picture.orders).map(([key,{entryNormal,entryEdge,...order}])=>[key,order])))'),requested);
+});
+
+test('every jump corridor lies outside the active battle, not merely in a gap between ships',()=>{
+ const b=call(20,600);place(b);
+ const r=b.run(`(()=>{const batch=reliefBatches[0];return {outside:batch.ids.every(id=>{const s=ships[id];return reliefBeyondFrontier(s.reliefEnvelope,batch.picture.orders[s.reliefRole]);}),waves:Math.max(...batch.ids.map(id=>ships[id].delay))-Math.min(...batch.ids.map(id=>ships[id].delay)),goals:batch.ids.every(id=>ships[id].mark===batch.picture.orders[ships[id].reliefRole].target)};})()`);
+ assert.ok(r.outside&&r.goals&&r.waves>8,JSON.stringify(r));
+});
+test('a battle expanding toward the entry plane postpones arrival even without a direct collision',()=>{
+ const b=call(20,48);place(b);
+ const r=b.run(`(()=>{const batch=reliefBatches[0],s=ships[batch.ids[0]],order=batch.picture.orders[s.reliefRole],t=ships.find(t=>t.side===1&&!t.dead);const n=order.entryNormal;[t.x,t.y,t.z]=V.add([s.x,s.y,s.z],V.mul(n,1500));t.y+=8000;t.arr=true;t.grace=false;t.v=0;prepareTraffic(50);const before=[s.x,s.y,s.z];const blocked=!clearReliefEntry(s,50);clearReliefEntry(s,50.5);clearReliefEntry(s,51);return {blocked,moved:V.len(V.sub(before,[s.x,s.y,s.z]))>100,outside:reliefBeyondFrontier(s.reliefEnvelope,order)};})()`);
+ assert.ok(r.blocked&&r.moved&&r.outside,JSON.stringify(r));
+});
+test('earlier ships in the same arriving fleet do not push later waves ever farther out',()=>{
+ const b=call(20,48);place(b);
+ assert.ok(b.run(`(()=>{const batch=reliefBatches[0];reliefFrontiers(batch,50,true);const before=Object.values(batch.picture.orders).map(o=>o.entryEdge);const s=ships[batch.ids[0]];s.arr=true;s.x+=100000;reliefFrontiers(batch,51,true);return Object.values(batch.picture.orders).every((o,i)=>o.entryEdge===before[i]);})()`));
 });

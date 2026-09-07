@@ -16062,7 +16062,32 @@ function reliefObstacles(batch,now){
   for(const w of wrecks)if(!w.gone&&!w.shatter&&!w.dustT)boxes.push(reliefEnvelope(debrisProxy(w),now));
   return boxes;
 }
+// A collision-free hole inside the melee is not a safe hyperspace approach.
+// Every role enters beyond a supporting plane of the entire active battle.
+function reliefFrontiers(batch,now,force=false){
+ if(!force&&batch.frontierAt!=null&&now-batch.frontierAt<.4)return;
+ const boxes=reliefObstacles(batch,now).filter(o=>ships[o.o.id]?.reliefBatch!==batch.id);
+ for(const order of Object.values(batch.picture.orders)){
+  const normal=[-Math.cos(order.yaw),0,-Math.sin(order.yaw)];let edge=-Infinity;
+  for(const box of boxes){const support=box.e.reduce((sum,e,i)=>sum+e*Math.abs(V.dot(normal,box.axes[i])),0);edge=Math.max(edge,V.dot([box.o.x,box.o.y,box.o.z],normal)+support);}
+  order.entryNormal=normal;order.entryEdge=(Number.isFinite(edge)?edge:V.dot(order.p,normal))+900;
+ }
+ batch.frontierAt=now;
+}
+function reliefBeyondFrontier(box,order){
+ const n=order.entryNormal;if(!n)return true;
+ const support=box.e.reduce((sum,e,i)=>sum+e*Math.abs(V.dot(n,box.axes[i])),0);
+ return V.dot([box.o.x,box.o.y,box.o.z],n)-support>=order.entryEdge-.01;
+}
+function reliefPushOutside(s,base,order,now){
+ const box=reliefEnvelope(s,now,base,true),n=order.entryNormal;
+ const support=box.e.reduce((sum,e,i)=>sum+e*Math.abs(V.dot(n,box.axes[i])),0);
+ const shift=order.entryEdge+support-V.dot([box.o.x,box.o.y,box.o.z],n);
+ return shift>0?V.add(base,V.mul(n,shift+1)):base;
+}
+
 function reliefFindBerth(s,batch,now,obstacles){
+  reliefFrontiers(batch,now);
   const order=batch.picture.orders[s.reliefRole],f=[Math.cos(order.yaw),0,Math.sin(order.yaw)],r=[-f[2],0,f[0]];
   s.yaw=order.yaw;s.pitch=s.roll=0;
   let base=V.add(order.p,V.mul(f,-(s.exL||s.slen*.5)-180));
@@ -16082,8 +16107,9 @@ function reliefFindBerth(s,batch,now,obstacles){
     }
     if(!changed)break;
   }
-  const step=Math.max(70,Math.hypot(s.exY||5,s.exZ||5)*2.35+30),rank=s.reliefSlot||0;
-  const blocked=box=>!reliefWorldClear(box)||obstacles.some(o=>o.o.id!==s.id&&reliefOverlap(box,o))||batch.reserved.some(o=>o.o.id!==s.id&&reliefOverlap(box,o));
+  base=reliefPushOutside(s,base,order,now);
+  const step=Math.max(110,Math.hypot(s.exY||5,s.exZ||5)*2.7+60),rank=s.reliefSlot||0;
+  const blocked=box=>!reliefBeyondFrontier(box,order)||!reliefWorldClear(box)||obstacles.some(o=>o.o.id!==s.id&&reliefOverlap(box,o))||batch.reserved.some(o=>o.o.id!==s.id&&reliefOverlap(box,o));
   for(let attempt=0;attempt<96;attempt++){
     const slot=rank+attempt,angle=slot*2.399963229728653,reach=step*Math.sqrt(slot);
     const p=V.add(base,V.mul(r,Math.cos(angle)*reach));p[1]+=Math.sin(angle)*reach*.8;
@@ -16101,8 +16127,8 @@ function reliefFindBerth(s,batch,now,obstacles){
 function beginReliefPlan(batch,now){
   const current=reliefPicture(batch.side,now);
   batch.picture=current.friends.length?current:batch.callPicture;
-  batch.picture={...batch.picture,foes:batch.picture.foes.filter(c=>now-c.seen<=8)};
-  batch.reserved=[];batch.obstacles=reliefObstacles(batch,now);
+  batch.picture={...batch.picture,orders:Object.fromEntries(Object.entries(batch.picture.orders).map(([key,order])=>[key,{...order}])),foes:batch.picture.foes.filter(c=>now-c.seen<=8)};
+  batch.reserved=[];batch.obstacles=reliefObstacles(batch,now);reliefFrontiers(batch,now,true);
   const roles=[batch.picture.priority,'flank',batch.picture.priority==='relief'?'intercept':'relief'],slots={relief:0,flank:0,intercept:0};
   const members=batch.ids.map(id=>ships[id]);
   // Deal whole flights together. The majority answers the most urgent call.
@@ -16118,7 +16144,7 @@ function launchRelief(batch,now){
   const groups=new Map(),offsets={relief:0,intercept:.35,flank:1.1};
   for(const id of batch.ids){
     const s=ships[id],order=batch.picture.orders[s.reliefRole];s.reliefPending=false;
-    s.delay=now-warT0+1.2+offsets[s.reliefRole]+Math.min(4,Math.floor(s.reliefSlot/8)*.18)+(s.reliefSlot%8)*.10+(s.race===17?s.reliefSlot*2.5:0);
+    s.delay=now-warT0+1.2+offsets[s.reliefRole]+Math.floor(s.reliefSlot/12)*.65+(s.reliefSlot%12)*.12+(s.race===17?s.reliefSlot*2.5:0);
     s.reliefPlanned=[s.x,s.y,s.z];s.reliefYaw=s.yaw;s.stn=[s.x,s.y,s.z];
     s.mark=order.target;s.ai.target=order.target;s.ai.nextThink=0;
     // Carry the caller's actual reports, not invented sightings at jump-out.
@@ -16147,9 +16173,10 @@ function advanceReliefPlans(now){
 }
 function clearReliefEntry(s,now){
   if(s.reliefBatch==null)return true;
-  const batch=reliefBatches[s.reliefBatch],box=s.reliefEnvelope||reliefEnvelope(s,now,null,true),p=[box.o.x,box.o.y,box.o.z];
+  const batch=reliefBatches[s.reliefBatch];reliefFrontiers(batch,now);
+  const box=s.reliefEnvelope||reliefEnvelope(s,now,null,true),p=[box.o.x,box.o.y,box.o.z];
   const near=trafficIndex?trafficIndex.query(p,p,box.bounds):[];
-  const blocked=!reliefWorldClear(box)||near.some(t=>t.id!==s.id&&!t.dead&&reliefOverlap(box,reliefEnvelope(t,now)));
+  const blocked=!reliefBeyondFrontier(box,batch.picture.orders[s.reliefRole])||!reliefWorldClear(box)||near.some(t=>t.id!==s.id&&!t.dead&&reliefOverlap(box,reliefEnvelope(t,now)));
   if(!blocked)return true;
   // Traffic changed after the call. Hold this jump, then find a fresh berth;
   // ships already fighting are never shoved aside to make space.
