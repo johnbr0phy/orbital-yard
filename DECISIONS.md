@@ -87,6 +87,7 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 
 - **Everything is synthesized** in `armada-audio-new.js` with oscillators, noise and filters. There are no samples or franchise sounds.
 - **It is silent until the first pointer or key press**, with a hard cap of 24 voices (12 on Low).
+- **Redesigned after the first version sounded bad.** Recorded from the page (`scripts/capture-audio.cjs`) and measured (`scripts/audio-report.py`, `scripts/audio-spectrogram.py`), the first mix was a static organ-like pad, white-noise bursts for every fighter kill, a sawtooth whine for the ion charge, no room, and a level that swung 34 dB between a near and a far camera. Now: a string-like detuned-saw pad with a bass line, brown-noise booms with a sub drop and secondary rolls, a generated hall reverb, a distant-battle rumble bed and thumps that follow the fighting, and distance that mostly darkens a sound rather than silencing it. Only the nearest shot of each step plays, at about seven a second, and small kill pops at most four a second. Measured on the same 30 s of war: level spread (p10 to p90) 34 dB → 18 dB, no clipping. Judged by numbers and spectrograms, not by ear; this environment has no speakers.
 - **Sounds come from observing the simulation.** New beams and rounds each step are sampled (at most 10 per step) and deaths come from the event log, so audio can't affect the war.
 
 ## Targets and assumptions

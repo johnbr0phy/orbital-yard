@@ -18282,16 +18282,27 @@ function audio(){
 function ui(kind){const A=audio();if(A&&A.unlocked)A.ui(kind);}
 function audioForEvent(ev){
   const A=audio();if(!A||!A.unlocked)return;
-  if(/Kill/.test(ev.type)||ev.type==="kill"){const tier=ev.type==="firstOneKill"?3:ev.type==="kill"?(ev.size>60?1:0):2;A.explosion(tier,ev.x,ev.y,ev.z);if(tier>=2)A.stinger();}
+  if(/Kill/.test(ev.type)||ev.type==="kill"){
+    const tier=ev.type==="firstOneKill"?3:ev.type==="kill"?(ev.size>60?1:0):2;
+    // Fighters die by the dozen: at most about four small pops a second.
+    if(tier===0){const w=performance.now();if(w-(bc.popAt||0)<250)return;bc.popAt=w;}
+    A.explosion(tier,ev.x,ev.y,ev.z);if(tier>=2)A.stinger();}
   else if(ev.type==="ionCharge"){if(bc.ionHandle)bc.ionHandle.cancel?.();const h=A.weapon("ion-charge",ev.x,ev.y,ev.z,1);bc.ionHandle=h||null;}
   else if(ev.type==="ionStrike"){if(bc.ionHandle)bc.ionHandle.cancel?.();bc.ionHandle=null;A.weapon("ion-fire",ev.x,ev.y,ev.z,1);}
 }
+// A war fires hundreds of shots a second. Voicing them all is a wall of chirps, so only
+// the nearest shot of each step can speak, within a budget of about seven a second; the
+// rest are heard as the battle bed, whose level follows how much is firing.
+const shotPick={d:0,style:"",x:0,y:0,z:0,g:0};
 function audioShots(now){
   const A=audio();if(!A||!A.unlocked)return;
-  let n=0;
-  for(const b of beams){if(n>=6)break;if(b.t0!==now||b.spark||b.ion||!b.a)continue;A.weapon(b.coherent?AUDIO_STYLE[b.race]==="phaser"?"phaser":"beam":b.arc?"arc":b.rail?"rail":AUDIO_STYLE[b.race]||"laser",b.a[0],b.a[1],b.a[2],.8);n++;}
-  for(const t of tracers){if(n>=10)break;if(t.t0!==now)continue;A.weapon(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7);n++;}
-  bc.combat=bc.combat*.97+n*.03;
+  let n=0;shotPick.d=Infinity;
+  const offer=(style,x,y,z,g)=>{n++;const d=(x-cam.ex)**2+(y-cam.ey)**2+(z-cam.ez)**2;if(d<shotPick.d)Object.assign(shotPick,{d,style,x,y,z,g});};
+  for(const b of beams){if(b.t0!==now||b.spark||b.ion||!b.a)continue;offer(b.coherent?AUDIO_STYLE[b.race]==="phaser"?"phaser":"beam":b.arc?"arc":b.rail?"rail":AUDIO_STYLE[b.race]||"laser",b.a[0],b.a[1],b.a[2],.8);}
+  for(const t of tracers){if(t.t0!==now)continue;offer(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7);}
+  bc.shotBudget=Math.min(1.5,(bc.shotBudget||0)+7/30);
+  if(n&&bc.shotBudget>=1&&A.weapon(shotPick.style,shotPick.x,shotPick.y,shotPick.z,shotPick.g))bc.shotBudget-=1;
+  bc.combat=bc.combat*.97+Math.min(n,10)*.03;
 }
 function updateAudio(wall,dt){
   const A=audio();if(!A||!A.unlocked)return;
