@@ -103,3 +103,17 @@ test('never throws when optional node types are missing',()=>{
  for(const s of a.styles)a.weapon(s,0,0,-200);a.explosion(3,0,0,-100);a.engine('x','turbine',1);a.ui('open');a.stinger();a.update(.5);
  assert.ok(a.stats().played>0);
 });
+
+test('no audible tone sits or slides below 150 Hz (low falling tones read as raspberries)',()=>{
+ const ctx=fakeContext(),oscs=[],make=ctx.createOscillator;ctx.createOscillator=()=>{const o=make();oscs.push(o);return o;};
+ const a=ArmadaAudio.create({context:ctx,maxVoices:64});a.unlock();a.setIntensity(1);a.setListener(0,0,0,0,0,-1);
+ for(const s of a.styles){ctx.currentTime+=.1;a.weapon(s,0,0,-400);}
+ for(const tier of [0,1,2,3]){ctx.currentTime+=.1;a.explosion(tier,0,0,-500);}
+ for(const e of ['turbine','organic','roar','hum']){a.engine(e,e,0);a.engine(e,e,1);}
+ a.stinger();for(const k of ['open','close','confirm','tick','click'])a.ui(k);
+ for(let i=0;i<60*40;i++){ctx.currentTime+=1/60;a.update(1/60);}
+ // Modulators (LFOs) run below 20 Hz and are inaudible as tones; everything else must stay >= 150 Hz.
+ const bad=[];for(const o of oscs){const f=o.frequency,vals=[f.value,...f.events.map(e=>e[1])];if(vals.some(v=>v>=20&&v<150))bad.push(vals.map(v=>+(+v).toFixed(1)));}
+ assert.deepEqual(bad,[],'low tones: '+JSON.stringify(bad.slice(0,5)));
+ assert.ok(oscs.length>40,'exercised '+oscs.length+' oscillators');
+});
