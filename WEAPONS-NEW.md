@@ -67,7 +67,7 @@ rather than being restricted to the old shallow vertical drift. Their forward
 firing cone, finite turn rate, hull/muzzle transforms and swept impacts remain.
 Fixed-gun engagement reach is 420 units.
 
-Imperial fighters fire green and Rebels red, at 800 units/second. Their individual
+Imperial fighters fire red and Rebels green (FLEET_BEAM_HEX: #ff3829 and #66ff73), at 800 units/second. Their individual
 shots cycle faster at 0.28 damage each; no hull-health increase was added. Every
 shot still requires a sensor contact and forward alignment. Debris damage for
 nonhero fixed fighters now scales with inward collision speed; mere overlap or

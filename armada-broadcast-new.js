@@ -168,7 +168,7 @@
           else if ((held >= hold && held >= ceil) || (subjectGone && held >= Math.max(1.2, minHold))) next = nextInGrammar(d, candidates, best);
         }
         if (!next) return null;
-        d.history.push({subject: d.shot?.subject, kind: d.shot?.kind, at: d.clock});
+        d.history.push({subject: d.shot?.subject, kind: d.shot?.kind, phase: d.phase, at: d.clock});
         if (d.history.length > 24) d.history.shift();
         d.phase = next.phase || 'build'; d.shot = next; d.started = d.clock;
         return next;
@@ -176,17 +176,20 @@
     };
     return d;
   }
-  function recentlyShown(d, c) { return d.history.some(h => h.subject === c.subject && h.subject != null && d.clock - h.at < 14); }
+  function recentlyShown(d, c) { return d.history.some(h => h.subject === c.subject && h.subject != null && d.clock - h.at < 30); }
   function pickBest(candidates, d) {
     let best = null;
     for (const c of candidates) {
-      const s = c.score - (recentlyShown(d, c) ? 12 : 0) - (d.shot && c.kind === d.shot.kind && c.subject === d.shot.subject ? 30 : 0);
+      const s = c.score - (recentlyShown(d, c) ? 18 : 0) - (d.shot && c.kind === d.shot.kind && c.subject === d.shot.subject ? 30 : 0);
       if (!best || s > best.adj) best = {...c, adj: s};
     }
     return best;
   }
   function nextInGrammar(d, candidates, best) {
-    const want = PHASE_ORDER[(PHASE_ORDER.indexOf(d.phase) + 1) % PHASE_ORDER.length];
+    let want = PHASE_ORDER[(PHASE_ORDER.indexOf(d.phase) + 1) % PHASE_ORDER.length];
+    // Re-establish the geography at most every 25 s; otherwise keep building.
+    const lastWide = d.history.filter(h => h.phase === 'establish').pop();
+    if (want === 'establish' && lastWide && d.clock - lastWide.at < 25 && candidates.some(c => c.phase === 'build')) want = 'build';
     const pool = candidates.filter(c => c.phase === want);
     if (want === 'reaction') {
       // React to what we just saw: the survivor or the victor's captain.
@@ -195,8 +198,11 @@
     }
     if (want === 'climax') {
       const c = pool.sort((a, b) => b.score - a.score)[0];
-      // Nothing is about to pay off: go wide instead of forcing a climax.
-      return c && c.score >= 30 ? c : (candidates.find(x => x.phase === 'establish') || best);
+      // Nothing is about to pay off: keep building on something new rather
+      // than forcing a climax or going wide again.
+      if (c && c.score >= 30) return c;
+      const b = candidates.filter(x => x.phase === 'build' && x.subject !== d.shot?.subject).map(x => ({...x, adj: x.score - (recentlyShown(d, x) ? 18 : 0)})).sort((x, y) => y.adj - x.adj)[0];
+      return b || candidates.find(x => x.phase === 'establish') || best;
     }
     const p = pool.map(c => ({...c, adj: c.score - (recentlyShown(d, c) ? 12 : 0)})).sort((a, b) => b.adj - a.adj)[0];
     return p || best;

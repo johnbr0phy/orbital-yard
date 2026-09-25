@@ -278,10 +278,10 @@ body.menu-start #brand,body.menu-start #bar,body.menu-start #watchDock,body.menu
 #battleOptions summary::-webkit-details-marker{display:none}
 #battleOptions summary::after{content:'⌃';margin-left:14px}#battleOptions[open] summary::after{content:'⌄'}
 #battleOptions:not([open]) #bar{display:none}
-#battleOptions #bar{box-sizing:border-box;position:absolute;left:auto;right:0;bottom:54px;width:304px;max-width:calc(100vw - 24px);max-height:65dvh;overflow-y:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px;background:#14202cf5;border:1px solid #516371;border-radius:10px}
+#battleOptions #bar{box-sizing:border-box;position:absolute;left:auto;right:0;bottom:54px;width:324px;max-width:calc(100vw - 24px);max-height:65dvh;overflow-y:auto;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:14px;background:#14202cf5;border:1px solid #516371;border-radius:10px}
 #bar button{min-height:44px;padding:8px;font:12px system-ui;letter-spacing:0;opacity:1;border-color:#516371;border-radius:5px;color:#dce5ec}
 #bar button.on{background:#c6d7e2;color:#152330}
-#bar #bRand,#bar #bCurate,#bar #bPal{grid-column:span 2}
+#bar #bRand,#bar #bCurate{grid-column:span 2}#bar #bPal{grid-column:span 1}
 #bar #camCtl{grid-column:1/-1;min-height:44px;justify-content:space-between;color:#dce5ec}#camCtl input{width:190px;min-height:32px}
 #watchDock{left:16px;bottom:16px;box-sizing:border-box;max-width:calc(100vw - 200px);padding:8px;background:#14202cf2;border-color:#516371;border-radius:10px}
 #watchLabel{font-size:11px;margin:0 5px 6px;color:#a9bdcc;max-width:480px}
@@ -383,14 +383,14 @@ body:not(.menu-start) #brand{display:none}
 .warMenuChoices button:first-child strong::before{content:"▶ "}
 @media(max-width:820px){
  #bcTop{top:calc(8px + env(safe-area-inset-top));grid-template-columns:1fr 1fr;gap:4px 8px;width:calc(100vw - 20px)}
- .bcBar{grid-column:1/-1;order:3}.bcSide b{font-size:14px}.bcCount{font-size:18px}.bcIcons{max-width:70px}
+ .bcBar{grid-column:1/-1;order:3}.bcSide b{font-size:14px}.bcCount{font-size:18px}.bcIcons{display:none}
  #brand{display:none}
- #bcFeed{top:calc(64px + env(safe-area-inset-top));right:10px;width:62vw;font-size:11px}#bcFeed .bcFeedLine:nth-child(n+4){display:none}
- #bcTicker{top:calc(64px + env(safe-area-inset-top));left:10px;transform:none;align-items:flex-start;max-width:36vw}.bcTick{font-size:10px;white-space:normal}
+ #bcFeed{top:calc(62px + env(safe-area-inset-top));right:10px;width:50vw;font-size:10.5px}#bcFeed .bcFeedLine{padding:4px 7px}#bcFeed .bcFeedLine:nth-child(n+4){display:none}
+ #bcTicker{top:calc(62px + env(safe-area-inset-top));left:10px;transform:none;align-items:flex-start;max-width:44vw}.bcTick{font-size:10px;white-space:normal;letter-spacing:.06em}
  #bcMomentum,#bcMomentumLabel{display:none}
- #bcSpeed{right:auto;left:50%;transform:translateX(-50%);bottom:calc(128px + env(safe-area-inset-bottom));padding:4px}#bcSpeed button{min-height:40px;min-width:40px;padding:4px 6px}#bcClock{display:none}
- #bcCaption{bottom:calc(186px + env(safe-area-inset-bottom));font-size:13px;max-width:92vw}
- #bcReplayChip{bottom:calc(236px + env(safe-area-inset-bottom))}
+ #bcSpeed{right:auto;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));padding:4px;max-width:calc(100vw - 20px)}#bcSpeed button{min-height:40px;min-width:38px;padding:4px 5px}#bcClock{display:none}
+ #bcCaption{bottom:calc(206px + env(safe-area-inset-bottom));font-size:13px;max-width:92vw}
+ #bcReplayChip{bottom:calc(262px + env(safe-area-inset-bottom))}
  #card{bottom:calc(186px + env(safe-area-inset-bottom))}
  .bcMvp{flex-direction:column;align-items:flex-start}#bcHelp .cols{grid-template-columns:1fr}
 }
@@ -399,6 +399,14 @@ body:not(.menu-start) #brand{display:none}
 #pick .call button{font:600 11px "IBM Plex Mono",monospace;color:var(--ink);background:transparent;border:1px solid var(--ink);border-radius:2px;padding:6px 10px;cursor:pointer;opacity:.6}
 #pick .call button.on{opacity:1;background:var(--ink);color:var(--bg)}
 #pickOdds{flex-basis:100%;text-align:center;opacity:.75;letter-spacing:.06em}
+#pick .race{display:flex;align-items:center;gap:10px;padding:6px 8px}
+#pick .race .emblem{flex:0 0 auto;border-radius:6px}
+#pick .race .emblem.fate{display:grid;place-items:center;width:34px;height:34px;border:1px dashed currentColor;font-size:16px}
+#pick .race .rn{flex:1;min-width:0;display:block}
+#pick .race .fl{display:block;font-size:10px;opacity:.7;letter-spacing:.02em;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pickOdds .oddsBar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:6px auto;max-width:360px}#pickOdds .oddsBar i{display:block;height:100%}
+#pickOdds small{opacity:.6}
+@media(max-width:820px),(max-height:950px){#pick .race{padding:4px 6px;gap:7px}#pick .race .emblem{width:26px;height:26px}#pick .race .fl{display:none}}
 </style>
 </head>
 <body class="menu-start">
@@ -412,10 +420,11 @@ body:not(.menu-start) #brand{display:none}
 <div class="hud" id="wasd"><b>W</b><b>A</b><b>S</b><b>D</b> fly &nbsp;·&nbsp; <b>Q</b><b>E</b> climb &amp; dive</div>
 <div class="hud" id="score"></div>
 <details id="battleOptions"><summary>Battle settings</summary><div id="bar">
-  <button data-n="24">24</button>
-  <button data-n="150">150</button>
-  <button data-n="300">300</button>
-  <button data-n="600" class="on">600</button>
+  <button data-n="50" title="About 100 ships">50</button>
+  <button data-n="100" title="About 190 ships">100</button>
+  <button data-n="150" title="About 290 ships">150</button>
+  <button data-n="300" title="About 570 ships">300</button>
+  <button data-n="600" title="About 1,140 ships: needs a fast CPU">600</button>
   <label id="camCtl" title="Wheel, pinch and fly speed — lower is more precise">ZOOM
     <input id="camLook" type="range" min="1" max="7" value="2">
   </label>
@@ -458,11 +467,12 @@ body:not(.menu-start) #brand{display:none}
     <div class="col"><h2>FIRST ADMIRALTY</h2><div id="pickA"></div><div class="ally">ALLY<select id="allyA"></select></div></div>
     <div class="col"><h2>SECOND ADMIRALTY</h2><div id="pickB"></div><div class="ally">ALLY<select id="allyB"></select></div></div>
   </div>
-  <div class="sizes">FLEET SIZE
-    <button type="button" data-n="24">24</button>
+  <div class="sizes">SHIPS PER SIDE
+    <button type="button" data-n="50">50</button>
+    <button type="button" data-n="100">100</button>
     <button type="button" data-n="150">150</button>
     <button type="button" data-n="300">300</button>
-    <button type="button" data-n="600" class="on">600</button>
+    <button type="button" data-n="600">600</button>
   </div>
   <div class="call" role="group" aria-label="Call the winner">CALL THE WINNER <button type="button" data-call="0">FIRST</button><button type="button" data-call="1">SECOND</button><button type="button" data-call="-1" class="on">NO CALL</button><span id="pickOdds"></span></div>
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>

@@ -21,7 +21,7 @@ test('lookahead detects debris before contact, including distant-center large hu
 });
 test('clearing bolts use actual forward barrels and damage only on swept impact',()=>{
  const b=scene();b.run('debrisPilot(pilot,4)');assert.ok(b.run('fireAtDebris(pilot,4)'));
- assert.equal(b.run('rock.integ'),2);assert.ok(b.run('tracers[0].x===10&&tracers[0].vz===0&&tracers[0].col[1]===1'));
+ assert.equal(b.run('rock.integ'),2);assert.ok(b.run('tracers[0].x===10&&tracers[0].vz===0&&JSON.stringify(tracers[0].col)===JSON.stringify(weaponProfile(pilot).color)')); // the fleet's own bolt colour
  b.run('pilot.dead=true;pilot.vao=null;var hp=rock.integ;simStep(4.25,.25)');assert.ok(b.run('rock.integ<hp'));assert.equal(b.run('tracers.length'),0);
 });
 test('fixed clearing rejects off-axis debris and living blockers',()=>{

@@ -18,10 +18,10 @@
 
   /* --------------------------- quality tiers --------------------------- */
   const TIERS = {
-    low:    {name: 'Low',    msaa: 0, fxaa: true,  bloomLevels: 3, nebula: 0, grain: false, vignette: true,  dprCap: 1,    minScale: .6,  fleet: 100, eclipse: true,  dust: 0},
-    medium: {name: 'Medium', msaa: 2, fxaa: true,  bloomLevels: 4, nebula: 2, grain: true,  vignette: true,  dprCap: 1.25, minScale: .65, fleet: 300, eclipse: true,  dust: 1},
-    high:   {name: 'High',   msaa: 4, fxaa: true,  bloomLevels: 5, nebula: 3, grain: true,  vignette: true,  dprCap: 1.5,  minScale: .7,  fleet: 300, eclipse: true,  dust: 1},
-    ultra:  {name: 'Ultra',  msaa: 4, fxaa: true,  bloomLevels: 5, nebula: 4, grain: true,  vignette: true,  dprCap: 2,    minScale: .75, fleet: 600, eclipse: true,  dust: 1}
+    low:    {name: 'Low',    msaa: 0, fxaa: true,  bloomLevels: 3, nebula: 0, grain: false, vignette: false,  dprCap: 1,    minScale: .6,  fleet: 50,  eclipse: true,  dust: 0},
+    medium: {name: 'Medium', msaa: 2, fxaa: true,  bloomLevels: 4, nebula: 2, grain: true,  vignette: true,  dprCap: 1.25, minScale: .65, fleet: 100, eclipse: true,  dust: 1},
+    high:   {name: 'High',   msaa: 4, fxaa: true,  bloomLevels: 5, nebula: 3, grain: true,  vignette: true,  dprCap: 1.5,  minScale: .7,  fleet: 150, eclipse: true,  dust: 1},
+    ultra:  {name: 'Ultra',  msaa: 4, fxaa: true,  bloomLevels: 5, nebula: 4, grain: true,  vignette: true,  dprCap: 2,    minScale: .75, fleet: 300, eclipse: true,  dust: 1}
   };
   const ORDER = ['low', 'medium', 'high', 'ultra'];
 
@@ -307,7 +307,7 @@ void main(){
         gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, lum[lumI]); gl.uniform1i(c.u.uLum, 2);
         gl.uniform1f(c.u.uExposure, api.settings.curve === 'aces' ? api.settings.exposure * .8 : api.settings.exposure); gl.uniform1f(c.u.uCurve, api.settings.curve === 'aces' ? 1 : 0); gl.uniform1f(c.u.uBloomK, api.settings.bloom);
         gl.uniform1f(c.u.uKey, api.settings.key);
-        gl.uniform1f(c.u.uVignette, T.vignette ? api.settings.vignette : 0);
+        gl.uniform1f(c.u.uVignette, T.vignette && !extra.reduced ? api.settings.vignette : 0);
         gl.uniform1f(c.u.uGrain, T.grain && !extra.reduced ? api.settings.grain : 0);
         gl.uniform1f(c.u.uTime, time); gl.uniform1f(c.u.uSat, G.sat); gl.uniform1f(c.u.uCon, G.con);
         gl.uniform3fv(c.u.uLift, G.lift.map(x => x * .5)); gl.uniform3fv(c.u.uGain, half(G.gain)); gl.uniform2f(c.u.uRes, canvas.width, canvas.height); gl.uniform1f(c.u.uToScreen, T.fxaa ? 0 : 1);

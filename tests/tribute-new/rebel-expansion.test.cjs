@@ -18,7 +18,8 @@ test('MC75 has a deep hanging tower and Liberty has broad wings',()=>{
 });
 test('Rebel frigates use turret profiles irrespective of size',()=>{
  const start=html.indexOf('function weaponProfile('),end=html.indexOf('function weaponExtents(',start);
- vm.runInContext("const RACE_DEFS=Array.from({length:18},()=>({fire:'laser',beam:[1,0,0]}));"+html.slice(start,end),ctx);
+ const optimus=html.slice(html.indexOf('function isOptimus('),html.indexOf('\n',html.indexOf('function isOptimus(')));
+ vm.runInContext("const RACE_DEFS=Array.from({length:23},()=>({fire:'laser',beam:[1,0,0]}));"+optimus+html.slice(start,end),ctx);
  for(const klass of ['PELTA-CLASS FRIGATE','DP20 CORELLIAN GUNSHIP'])for(const slen of [80,140])assert.equal(run(`weaponProfile({race:6,slen:${slen},meta:{klass:'${klass}'}}).fixed`),false);
  assert.equal(run("weaponProfile({race:6,slen:14,meta:{klass:'T-65 X-WING'}}).fixed"),true);
 });

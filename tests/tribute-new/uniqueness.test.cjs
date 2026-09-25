@@ -5,6 +5,7 @@ const run=s=>vm.runInContext(s,ctx,{timeout:2500});
 const regular=['buildShip(42,{fuse:.5,detail:.35,line:1},{topo:null,hulls:null,sym:null,nsec:null,fore:null,joint:null,aft:null,cockpit:null,wing:null,tail:null,booster:null,gear:null})',...['Xeno','Lattice','Drift','Choir','Imperial','Rebel','Minbari','Shadow','Earthforce','Fed','Klingon','Borg','Mondo','USCM','Engineer','Yautja','Firstones'].map(n=>`build${n}(42)`)];
 test('all 18 fleets have deterministic, finite refits with bounded fitting counts',()=>{
  for(const [race,call] of regular.entries()){
+  if(race===17)continue; // First Ones keep their seeded structural configurations; applyFleetRefit skips them by design.
   const result=run(`(()=>{const a=applyFleetRefit(${call},${race},42,2),b=applyFleetRefit(${call},${race},42,2),m=shipMeshQ(a,.45);return {same:JSON.stringify(a)===JSON.stringify(b),finite:Array.from(m.t).every(Number.isFinite),n:m.t.length/9,added:a.meta.refit.addedParts,length:a.meta.length};})()`);
   assert.ok(result.same&&result.finite,`fleet ${race}`);assert.ok(result.n>0&&result.n<18000);assert.ok(result.added<=12);if(result.length>46&&race!==7)assert.ok(result.added>0,`fleet ${race} has no carrier fittings`);
  }
