@@ -11383,15 +11383,22 @@ in vec3 vW;in vec3 vLocal;in float vGrain;
 uniform vec3 uEye,uInk,uBg,uTrim,uAccent,uPaintOffset;
 uniform vec4 uMaterial,uPaint;
 uniform float uFog,uIn,uHurt,uTone,uCloak,uT;
+// One sun for every fleet: key from the system's star, cool fill from the
+// nebula / planet bounce, eclipses by worlds, one explosion light.
+uniform vec3 uSunDir,uSunCol,uFillDir,uFillCol,uFogCol,uPtCol;uniform vec4 uOcc[4],uPt;uniform float uOccN;
 out vec4 o;
 void main(){
   if(vGrain>uIn)discard;
   vec3 N=normalize(cross(dFdx(vW),dFdy(vW)));
   vec3 Vd=normalize(uEye-vW);
   if(dot(N,Vd)<0.0)N=-N;
-  float d=max(dot(N,normalize(vec3(0.45,0.80,0.35))),0.0);
-  float f=max(dot(N,normalize(vec3(-0.55,0.10,-0.65))),0.0);
-  float shade=(0.20+0.66*d+0.16*f+0.12*(N.y*0.5+0.5))*uTone;
+  float sunSeen=1.0;
+  for(int i=0;i<4;i++){if(float(i)>=uOccN)break;vec3 oc=uOcc[i].xyz-vW;float t=dot(oc,uSunDir);
+    if(t>0.0){float r=uOcc[i].w,m=sqrt(max(dot(oc,oc)-t*t,0.0));sunSeen*=smoothstep(r*.985,r*1.02,m);}}
+  float d=max(dot(N,uSunDir),0.0)*sunSeen;
+  float f=max(dot(N,uFillDir),0.0);
+  // Back-lit hulls keep their form: a stronger fill than the old fixed rig.
+  float shade=(0.19+0.62*d+0.26*f+0.10*(N.y*0.5+0.5))*uTone;
   /* a hit rings the whole hull for a breath */
   shade=mix(shade,1.0,uHurt);
   vec3 col=mix(uBg,uInk,clamp(shade,0.0,1.0));
@@ -11435,20 +11442,21 @@ void main(){
     if(style>10.5&&style<11.5&&p.y>.075&&abs(p.z)<.135&&p.x<.04) pigment=vec3(.82,.85,.86);
     col=mix(uBg,pigment,clamp(shade,0.0,1.0));
     float wear=step(.86,hash)*(style>14.5&&style<15.5?.025:.035);col*=1.0-wear;
-    float spec=pow(max(dot(reflect(-normalize(vec3(.45,.8,.35)),N),Vd),0.0),mix(12.0,52.0,uPaint.x));
+    float spec=pow(max(dot(reflect(-uSunDir,N),Vd),0.0),mix(12.0,52.0,uPaint.x))*sunSeen;
     col+=mix(vec3(.10),uInk*.32,.4)*spec*uPaint.x;
     // Small illuminated seams/windows; no full-hull neon or extra lights.
     float lights=step(.966,hash)*(1.0-smoothstep(.025,.075,abs(fract(q.x)-.5)));
     if(uMaterial.x==1.0||uMaterial.x==2.0)lights*=.08;
     if(style>13.5&&style<14.5)lights=0.0;
     if(style>14.5&&style<15.5)lights*=.22;
-    col+=uAccent*lights*.22*(1.0-uMaterial.w);
+    // Windows and running lights carry a little energy above white.
+    col+=uAccent*lights*.55*(1.0-uMaterial.w)*(.75+.25*sin(uT*1.7+hash*40.0));
     if(style>7.5&&style<8.5){float hazard=step(.5,fract((p.x+p.z)*42.0))*stripe*step(.15,p.x);col=mix(col,vec3(.67,.48,.12)*shade,hazard*.7);}
     // Keep faction pigment on wrecks, with desaturation and scorch instead of a reset to gray.
     float gray=dot(col,vec3(.21,.72,.07));col=mix(col,mix(col,vec3(gray),.48)*(.65+.18*hash),uMaterial.w);
   }
   if(uMaterial.x>0.5){
-    float spec=pow(max(dot(reflect(-normalize(vec3(.45,.8,.35)),N),Vd),0.0),18.0);
+    float spec=pow(max(dot(reflect(-uSunDir,N),Vd),0.0),18.0)*sunSeen;
     if(uMaterial.x<1.5){ // Shadow chitin: irregular dark cells with a subtle wet rim.
       float vein=sin(p.x*95.0+sin(p.z*67.0))*sin(p.z*83.0+sin(p.y*75.0));
       float seam=1.0-smoothstep(.045,.045+max(.03,fwidth(vein)*1.5),abs(vein));
@@ -11476,6 +11484,12 @@ void main(){
     float rim=pow(1.0-max(dot(N,Vd),0.0),2.2);
     col+=mix(uInk,vec3(.34,.38,.44),.45)*(.12+rim*.65)*(1.0-uMaterial.w*.7);
   }
+  // Key light tint (warm where the sun lands, the fill's colour elsewhere),
+  // then a cool rim that separates dark hulls from black space.
+  col*=mix(uFillCol,uSunCol,clamp(d*1.6,0.0,1.0));
+  float dark=1.0-smoothstep(.18,.45,dot(uInk,vec3(.2126,.7152,.0722)));
+  col+=uFillCol*vec3(.55,.65,.85)*pow(1.0-max(dot(N,Vd),0.0),2.5)*(.10+.24*dark)*(1.0-uMaterial.w*.6);
+  if(uPt.w>0.0){vec3 L=uPt.xyz-vW;float dl=length(L),fall=max(0.0,1.0-dl/uPt.w);col+=uInk*uPtCol*max(dot(N,L/max(dl,1e-3)),0.0)*fall*fall;}
   float fog=1.0-exp(-length(uEye-vW)*uFog);
   float a=1.0;
   if(uCloak>0.001){
@@ -11491,20 +11505,22 @@ void main(){
     col=mix(uBg,glass,clamp(vis,0.0,1.0));
     a=mix(1.0,clamp(0.10+fres*0.55+glint*0.35+band*0.08,0.08,0.62),uCloak);
   }
-  o=vec4(mix(col,uBg,fog*0.85),a);
+  o=vec4(mix(col,uFogCol,fog*0.85),a);
 }`);
-const SU={trim:0,accent:0,paint:0,paintOffset:0,material:0,vp:0,pos:0,yaw:0,rot:0,anim:0,t:0,eye:0,ink:0,bg:0,fog:0,inz:0,hurt:0,tone:0,cloak:0};
+const SU={trim:0,accent:0,paint:0,paintOffset:0,material:0,vp:0,pos:0,yaw:0,rot:0,anim:0,t:0,eye:0,ink:0,bg:0,fog:0,inz:0,hurt:0,tone:0,cloak:0,
+  sunDir:0,sunCol:0,fillDir:0,fillCol:0,fogCol:0,occ:0,occN:0,pt:0,ptCol:0};
 for(const k of Object.keys(SU))SU[k]=gl.getUniformLocation(shipProg,
   {trim:"uTrim",accent:"uAccent",paint:"uPaint",paintOffset:"uPaintOffset",material:"uMaterial",vp:"uVP",pos:"uPos",yaw:"uYaw",rot:"uRot",anim:"uAnim",t:"uT",eye:"uEye",ink:"uInk",
-   bg:"uBg",fog:"uFog",inz:"uIn",hurt:"uHurt",tone:"uTone",cloak:"uCloak"}[k]);
+   bg:"uBg",fog:"uFog",inz:"uIn",hurt:"uHurt",tone:"uTone",cloak:"uCloak",sunDir:"uSunDir",sunCol:"uSunCol",fillDir:"uFillDir",fillCol:"uFillCol",fogCol:"uFogCol",occ:"uOcc",occN:"uOccN",pt:"uPt",ptCol:"uPtCol"}[k]);
 const beamProg=compile(`#version 300 es
 layout(location=0) in vec3 aP;
 uniform mat4 uVP;
 void main(){gl_Position=uVP*vec4(aP,1.0);}`,`#version 300 es
 precision highp float;
-uniform vec4 uCol;out vec4 o;
-void main(){o=uCol;}`);
-const BU={vp:gl.getUniformLocation(beamProg,"uVP"),col:gl.getUniformLocation(beamProg,"uCol")};
+uniform vec4 uCol;uniform float uGain;out vec4 o;
+// Weapon light is energy: brighter-than-white cores bloom in the HDR target.
+void main(){float w=dot(uCol.rgb,vec3(.2126,.7152,.0722));o=vec4(uCol.rgb*mix(uGain,uGain*1.35,smoothstep(.75,1.0,w)),uCol.a);}`);
+const BU={vp:gl.getUniformLocation(beamProg,"uVP"),col:gl.getUniformLocation(beamProg,"uCol"),gain:gl.getUniformLocation(beamProg,"uGain")};
 const flashProg=compile(`#version 300 es
 layout(location=0) in vec4 aF;
 layout(location=1) in vec3 aS;
@@ -11513,7 +11529,7 @@ out float vA;out float vC;out float vO;out float vSeed;
 void main(){
   float age=uT-aF.w;
   float kind=aS.y;
-  float life=kind>=10.0?1.35:kind>2.5?2.15:0.8;
+  float life=kind>=29.5&&kind<35.5?(kind<30.5?.7:kind<34.5?1.8:.55):kind>=10.0?1.35:kind>2.5?2.15:0.8;
   if(age<0.0||age>life){gl_Position=vec4(2.0,2.0,2.0,1.0);gl_PointSize=0.0;vA=0.0;vC=0.0;vO=0.0;vSeed=0.0;return;}
   gl_Position=uVP*vec4(aF.xyz,1.0);
   float o2=age/life;
@@ -11521,26 +11537,45 @@ void main(){
   vC=kind;vO=o2;vSeed=aS.z;
   gl_PointSize=clamp(aS.x*(0.25+2.6*o2)*uPx/max(gl_Position.w,1.0),1.0,kind>=10.0?240.0:kind>2.5?640.0:320.0);
   if(kind>11.5&&kind<12.5)gl_PointSize=clamp(aS.x*(1.1-.7*o2)*uPx/max(gl_Position.w,1.0),1.0,240.0);
-  if(kind>=20.0){vA=1.0;gl_PointSize=clamp(aS.x*uPx/max(gl_Position.w,1.0),1.0,72.0);}
+  if(kind>29.5&&kind<35.5){vA=1.0;gl_PointSize=clamp(aS.x*(kind<30.5?.35+1.65*o2:kind<34.5?.9+.2*o2:.6+.5*o2)*uPx/max(gl_Position.w,1.0),1.0,720.0);}
+  if(kind>=20.0&&kind<29.5){vA=1.0;gl_PointSize=clamp(aS.x*uPx/max(gl_Position.w,1.0),1.0,72.0);}
 }`,`#version 300 es
 precision highp float;
 in float vA;in float vC;in float vO;in float vSeed;
-uniform vec3 uC0,uC1;out vec4 o;
+uniform vec3 uC0,uC1;uniform float uHdr;out vec4 o;
 void main(){
   vec2 d=gl_PointCoord-0.5;
   float a=atan(d.y,d.x);
   float r=length(d)*2.0;
   vec3 col;
   float rw=0.9;
+  if(vC>29.5&&vC<35.5){
+    if(r>1.0)discard;
+    if(vC<30.5){ // shockwave: a thin ring racing outward, fading as it grows
+      float ring=exp(-pow((r-.86)/.07,2.0));o=vec4(vec3(1.0,.93,.82)*(1.0+uHdr*.8),ring*pow(1.0-vO,1.6)*.85);return;}
+    if(vC>34.5){ // shield bubble: a ripple where the hit lands
+      float rip=.5+.5*sin(r*26.0-vO*22.0),edge=smoothstep(.55,.95,r)*(1.0-smoothstep(.95,1.0,r));
+      o=vec4(vec3(.45,.75,1.0)*(1.0+uHdr*.5),(edge*.7+rip*.18*(1.0-r))*(1.0-vO));return;}
+    // arrival vortex: a turning ring that opens, holds and closes
+    vec3 vc=vC<31.5?vec3(.45,.7,1.0):vC<32.5?vec3(.25,1.0,.4):vC<33.5?vec3(.75,.3,1.0):vec3(1.0,.72,.32);
+    float open=smoothstep(0.0,.18,vO)*(1.0-smoothstep(.55,1.0,vO)),swirl=.55+.45*sin(a*3.0-r*9.0+vO*14.0+vSeed*6.0);
+    float band=exp(-pow((r-.78)/.16,2.0))*swirl,core=exp(-r*r*9.0)*.35;
+    o=vec4(vc*(1.0+uHdr*.6*band),(band+core)*open);return;
+  }
   if(vC>20.5){
     if(r>1.0)discard;
     float core=exp(-r*r*28.0),halo=exp(-r*r*7.0);
     vec3 charge=mix(vec3(.18,.55,.76),vec3(.84,.96,1.0),core*(.35+.65*vSeed));
-    o=vec4(charge,(halo*.32+core*.65)*(.18+.82*vSeed));return;
+    o=vec4(charge*(1.0+uHdr*2.5*vSeed*vSeed*core),(halo*.32+core*.65)*(.18+.82*vSeed));return;
   }else if(vC>=20.0){
     if(r>1.0)discard;
-    vec3 flame=mix(vec3(.25,.48,1.0),vec3(.88,.96,1.0),exp(-r*r*14.0));
-    o=vec4(flame,exp(-r*r*6.0)*(1.0-vSeed*.8));return;
+    // Drive colour per fleet, encoded in the kind's hundredths (20.06 = Rebel).
+    float fleet=floor((vC-20.0)*100.0+.5);
+    vec3 drive=fleet==6.0?vec3(1.0,.42,.30):fleet==9.0?vec3(1.0,.58,.22):fleet==14.0?vec3(.45,.66,1.0):vec3(.25,.48,1.0);
+    vec3 flame=mix(drive,vec3(.88,.96,1.0),exp(-r*r*14.0));
+    // Three nested sprites per outlet stack additively: keep drives at
+    // display energy so a Star Destroyer's stern glows blue, not white.
+    o=vec4(flame,exp(-r*r*6.0)*(1.0-vSeed*.8)*.5);return;
   }else if(vC>=10.0){
     // Uneven expanding ejecta cool rapidly in vacuum; no persistent fireball ring.
     float lobe=.84+.10*sin(a*5.0+vSeed*37.0)+.06*sin(a*9.0-vO*3.0);
@@ -11553,7 +11588,7 @@ void main(){
     float gas=exp(-r*r*4.0)*grain*(1.0-vO);
     col=mix(cool,vec3(1.0,.97,.9),core);
     if(vC>11.5&&vC<12.5){core*=.15;gas*=.65;}
-    o=vec4(col,(core+gas*.65)*vA);return;
+    o=vec4(col*(1.0+uHdr*core),(core+gas*.65)*vA);return;
   }else if(vC>8.5){
     /* ice bloom — Thoughtforce, the Hand */
     float spike=0.78+0.22*sin(a*2.0+vSeed*31.0);
@@ -11596,17 +11631,29 @@ void main(){
     float spike=0.72+0.28*sin(a*(3.0+floor(vSeed*4.0))+vSeed*43.0)
                     +0.14*sin(a*(7.0+floor(vSeed*5.0))-vSeed*17.0);
     r/=max(spike,0.2);
-    col=mix(vec3(1.0,0.97,0.88),vec3(1.0,0.45,0.16),clamp(vO*1.4,0.0,1.0));
-    rw=0.45;
+    // Flame from the first frame (slow motion stretches any white phase),
+    // cooling to ember and broken up by seeded grain, so a big death reads
+    // as fire, not a lamp. Edges feather out below (no flat disc rim).
+    col=mix(vec3(1.0,0.80,0.56),vec3(0.95,0.36,0.10),clamp(vO*4.0,0.0,1.0));
+    float fire=.58+.42*sin(d.x*23.0+vSeed*41.0)*sin(d.y*19.0-vSeed*29.0+vO*4.0);
+    col*=mix(.8,fire,clamp(vO*5.0,0.0,1.0))*mix(1.0,.55,smoothstep(.2,.9,vO));
+    rw=0.3;
   }else col=mix(uC0,uC1,vC);
   if(r>1.0)discard;
   float core=exp(-r*r*7.0);
   float ring=smoothstep(0.42,0.88,r)*(1.0-smoothstep(0.88,1.0,r));
-  o=vec4(col,(core*0.6+ring*rw)*vA);
+  // Weapon hits (0, 1 and heavy 3) stack by the dozen on one hull: keep them
+  // at display energy and lighter, so a busy capital is not a white disc.
+  float hit=vC<1.5?.55:(vC>2.5&&vC<3.5)?.7:1.0,energy=vC<1.5||(vC>2.5&&vC<3.5)?0.0:uHdr;
+  // Explosions: only the hot centre carries energy, and the body fades out
+  // toward its lobed edge.
+  bool fireball=vC>1.5&&vC<2.5;
+  if(fireball){hit=.72*(1.0-smoothstep(.45,1.0,r));core=pow(core,1.6);energy*=.5;}
+  o=vec4(col*(1.0+energy*core*(1.0-vO)),(core*0.6+ring*rw)*vA*hit);
 }`);
 const FU={vp:gl.getUniformLocation(flashProg,"uVP"),t:gl.getUniformLocation(flashProg,"uT"),
   px:gl.getUniformLocation(flashProg,"uPx"),c0:gl.getUniformLocation(flashProg,"uC0"),
-  c1:gl.getUniformLocation(flashProg,"uC1")};
+  c1:gl.getUniformLocation(flashProg,"uC1"),hdr:gl.getUniformLocation(flashProg,"uHdr")};
 const starProg=compile(`#version 300 es
 layout(location=0) in vec4 aS;
 uniform mat4 uVP;uniform vec3 uOrigin;uniform float uPx;
@@ -11804,13 +11851,16 @@ function planetContacts(){
   }
 }
 function hex(h){return [parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255];}
-let inkc=[1,1,1],bgc=[0,0,0],foec=[0,1,0];
+let inkc=[1,1,1],bgc=[0,0,0],foec=[0,1,0],spacec=[0,0,0];
 function applyPal(){
   const P2=PAL[palI];
   inkc=hex(P2.ink);bgc=hex(P2.bg);foec=hex(P2.foe);
   document.documentElement.style.setProperty("--bg",P2.bg);
   document.documentElement.style.setProperty("--ink",P2.ink);
-  gl.clearColor(bgc[0],bgc[1],bgc[2],1);
+  // Space itself is deeper than the slate ink; hull shadow floors keep bgc.
+  spacec=palI===2?[.035,.038,.05]:bgc;
+  gl.clearColor(spacec[0],spacec[1],spacec[2],1);
+  if(typeof warLight!=="undefined")setupWarLight();
 }
 /* ===================== the workers forge both fleets ===================== */
 const WORKER_MAIN=`
@@ -11975,14 +12025,18 @@ function forgeFireHull(mesh){
  const v=mesh.v,i=mesh.i;
  function build(ids){
   const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
-  for(const t of ids)for(let k=0;k<3;k++)for(let a=0;a<3;a++){const x=v[i[t*3+k]*3+a];lo[a]=Math.min(lo[a],x);hi[a]=Math.max(hi[a],x);}
+  let l0=Infinity,l1=Infinity,l2=Infinity,h0=-Infinity,h1=-Infinity,h2=-Infinity;
+  for(let n=0;n<ids.length;n++){const t=ids[n]*3;for(let k=0;k<3;k++){const o=i[t+k]*3,x=v[o],y=v[o+1],z=v[o+2];if(x<l0)l0=x;if(x>h0)h0=x;if(y<l1)l1=y;if(y>h1)h1=y;if(z<l2)l2=z;if(z>h2)h2=z;}}
+  lo[0]=l0;lo[1]=l1;lo[2]=l2;hi[0]=h0;hi[1]=h1;hi[2]=h2;
   if(ids.length<=12)return {lo,hi,ids};
   const axis=hi.map((x,a)=>x-lo[a]).indexOf(Math.max(...hi.map((x,a)=>x-lo[a])));
-  const mid=t=>(v[i[t*3]*3+axis]+v[i[t*3+1]*3+axis]+v[i[t*3+2]*3+axis])/3;
-  ids.sort((a,b)=>mid(a)-mid(b));const half=ids.length>>1;
+  const mid=cent[axis];
+  ids.sort((a,b)=>mid[a]-mid[b]);const half=ids.length>>1;
   return {lo,hi,left:build(ids.slice(0,half)),right:build(ids.slice(half))};
  }
- return i.length?{v,i,root:build(Array.from({length:i.length/3},(_,n)=>n))}:null;
+ // Triangle centroids once per axis, not twice per sort comparison.
+ const nt=i.length/3,cent=[0,1,2].map(axis=>{const c=new Float64Array(nt);for(let t=0;t<nt;t++)c[t]=(v[i[t*3]*3+axis]+v[i[t*3+1]*3+axis]+v[i[t*3+2]*3+axis])/3;return c;});
+ return i.length?{v,i,root:build(Array.from({length:nt},(_,n)=>n))}:null;
 }
 
 function forgeMountSites(parts,bb,c,guns){
@@ -12035,8 +12089,12 @@ onmessage=e=>{
     return;
   }
   if(bandGeneration!==d.genId){for(const key of Object.keys(bandHopeless))delete bandHopeless[key];bandGeneration=d.genId;}
-  const out=[],tr=[];
+  let out=[],tr=[],sent=Date.now();
+  // Stream finished hulls in small batches: the page shows the first ships
+  // while the rest are still forging, and no single upload is a long task.
+  const flushForge=()=>{if(out.length)postMessage({kind:"batch",genId:d.genId,out,more:true},tr);out=[];tr=[];sent=Date.now();};
   for(const j of d.jobs){
+    if(out.length>=(d.chunk||8)||(out.length&&Date.now()-sent>60))flushForge();
     /* the muster law: the job names a band — small craft, escort,
        capital — and the forge re-cuts the seed until the yard deals a
        hull of that class. If a yard simply has no such class, the
@@ -12046,6 +12104,14 @@ onmessage=e=>{
       ship=raceBuild(j.f,seed,0,true);
     }else if(!j.hulls&&j.band!=null&&j.band>=0){
       const fk=j.f+"_"+j.band;
+      // Whether a yard can deal this band is probed once from a fixed seed,
+      // so the answer never depends on which jobs this worker saw first.
+      // Any worker count forges identical hulls for the same war seed.
+      if(bandHopeless[fk]==null){
+        let hit=false,probe=(Math.imul(j.f+1,2654435761)^Math.imul(j.band+7,40503))>>>0;
+        for(let t2=0;t2<28&&!hit;t2++){hit=fleetBandOf(raceBuild(j.f,probe,0).meta.length,j.f)===j.band;probe=(probe+2654435761)>>>0;}
+        bandHopeless[fk]=!hit;
+      }
       const tries=bandHopeless[fk]?5:28;
       let best=null,bestSeed=seed,bd=1e9;
       for(let t2=0;t2<tries;t2++){
@@ -12056,7 +12122,7 @@ onmessage=e=>{
         if(miss<bd){bd=miss;best=cand;bestSeed=seed;}
         seed=(seed+2654435761)>>>0;
       }
-      if(!ship){ship=best;seed=bestSeed;bandHopeless[fk]=true;}
+      if(!ship){ship=best;seed=bestSeed;}
     }else ship=raceBuild(j.f,seed,j.hulls);
     armShip(ship,j.f,j.hulls||0);
     seatShipAssemblies(ship,j.f);
@@ -12115,7 +12181,7 @@ onmessage=e=>{
         refit:ship.meta.refit,structure:ship.meta.structure,architecture:ship.meta.architecture,fo:ship.meta.fo,unique:!!ship.meta.unique,crew:ship.meta.crew}});
     tr.push(m.v.buffer,m.i.buffer);
   }
-  postMessage({kind:"batch",genId:d.genId,out},tr);
+  postMessage({kind:"batch",genId:d.genId,out,more:false},tr);
 };`;
 const workers=[];
 function ensureWorkers(){
@@ -12127,7 +12193,9 @@ function ensureWorkers(){
   const SRC=window.ArmadaThree.engineSource;
   const cut=SRC.indexOf(MARK);
   const url=URL.createObjectURL(new Blob([SRC.slice(0,cut)+fractureMesh.toString()+WORKER_MAIN],{type:"text/javascript"}));
-  const n=1; // Forge serially: keep CPU and peak geometry memory bounded.
+  // A small pool: one core stays with the page. Capped to bound peak
+  // geometry memory. Hull results are identical for any pool size.
+  const n=Math.max(1,Math.min(4,((typeof navigator!=="undefined"&&navigator.hardwareConcurrency)||2)-1));
   for(let i=0;i<n;i++){
     const w=new Worker(url);
     w.onmessage=onWorkerMsg;
@@ -12249,25 +12317,39 @@ function fractureMesh(fr,target=DEBRIS_BREAKUP){
   const bounds=[[Infinity,Infinity,Infinity],[-Infinity,-Infinity,-Infinity]];
   for(const t of tris)for(const p of t)for(let i=0;i<3;i++){bounds[0][i]=Math.min(bounds[0][i],p[i]);bounds[1][i]=Math.max(bounds[1][i],p[i]);}
   const edgeLimit=Math.max(2,Math.max(...bounds[0].map((v,i)=>bounds[1][i]-v))/7),queue=tris;tris=[];
+  const EDGES=[[0,1,2],[1,2,0],[2,0,1]],edgeLen=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]);
   while(queue.length){
-    const t=queue.pop(),edges=[[0,1,2],[1,2,0],[2,0,1]],lengths=edges.map(([a,b])=>V.len(V.sub(t[a],t[b]))),j=lengths.indexOf(Math.max(...lengths));
-    if(lengths[j]>edgeLimit&&tris.length+queue.length<8191){const [a,b,c]=edges[j],m=V.mul(V.add(t[a],t[b]),.5);queue.push([t[a],m,t[c]],[m,t[b],t[c]]);}else tris.push(t);
+    const t=queue.pop(),l0=edgeLen(t[0],t[1]),l1=edgeLen(t[1],t[2]),l2=edgeLen(t[2],t[0]);
+    const j=l0>=l1&&l0>=l2?0:l1>=l2?1:2,lj=j===0?l0:j===1?l1:l2;
+    if(lj>edgeLimit&&tris.length+queue.length<8191){const [a,b,c]=EDGES[j],p=t[a],q=t[b],m=[(p[0]+q[0])*.5,(p[1]+q[1])*.5,(p[2]+q[2])*.5];queue.push([p,m,t[c]],[m,q,t[c]]);}else tris.push(t);
   }
-  while(tris.length<target*3){
-    const t=tris.shift(),a=t[0],b=t[1],c=t[2],m=a.map((v,i)=>(v+b[i])/2);tris.push([a,m,c],[m,b,c]);
+  // Tiny meshes: split the oldest triangle until there is enough to share.
+  let head=0;
+  while(tris.length-head<target*3){
+    const t=tris[head++],a=t[0],b=t[1],c=t[2],m=[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2];tris.push([a,m,c],[m,b,c]);
   }
+  if(head)tris=tris.slice(head);
   const groups=[tris];
   while(groups.length<target){
     let index=-1,score=0;
     for(let i=0;i<groups.length;i++)if(groups[i].length>score&&groups[i].length>=6){index=i;score=groups[i].length;}
     if(index<0)break;
-    const g=groups.splice(index,1)[0],cent=g.map(t=>t[0].map((v,i)=>(v+t[1][i]+t[2][i])/3));
-    const range=[0,1,2].map(i=>Math.max(...cent.map(c=>c[i]))-Math.min(...cent.map(c=>c[i]))),axis=range.indexOf(Math.max(...range));
-    g.sort((a,b)=>a.reduce((v,p)=>v+p[axis],0)-b.reduce((v,p)=>v+p[axis],0));const mid=g.length>>1;groups.push(g.slice(0,mid),g.slice(mid));
+    // Same split as before: longest centroid axis, stable sort by the summed
+    // coordinate. Keys are computed once instead of inside the comparator.
+    const g=groups.splice(index,1)[0],lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
+    for(const t of g)for(let i=0;i<3;i++){const c=(t[0][i]+t[1][i]+t[2][i])/3;if(c<lo[i])lo[i]=c;if(c>hi[i])hi[i]=c;}
+    const range=[hi[0]-lo[0],hi[1]-lo[1],hi[2]-lo[2]],axis=range.indexOf(Math.max(...range));
+    const keyed=g.map((t,i)=>({t,k:0+t[0][axis]+t[1][axis]+t[2][axis],i}));
+    keyed.sort((a,b)=>a.k-b.k||a.i-b.i);
+    const sorted=keyed.map(e=>e.t),mid=sorted.length>>1;groups.push(sorted.slice(0,mid),sorted.slice(mid));
   }
   return groups.map(g=>{
-    const pts=g.flat(),lo=[0,1,2].map(i=>Math.min(...pts.map(p=>p[i]))),hi=[0,1,2].map(i=>Math.max(...pts.map(p=>p[i]))),c=lo.map((v,i)=>(v+hi[i])/2),e=lo.map((v,i)=>Math.max(.5,(hi[i]-v)/2));
-    return {v:new Float32Array(pts.flatMap(p=>p.map((v,i)=>v-c[i]))),i:Uint32Array.from(pts.map((_,i)=>i)),ox:c[0],oy:c[1],oz:c[2],r:Math.hypot(...e),extents:e};
+    const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
+    for(const t of g)for(const p of t)for(let i=0;i<3;i++){if(p[i]<lo[i])lo[i]=p[i];if(p[i]>hi[i])hi[i]=p[i];}
+    const c=lo.map((v,i)=>(v+hi[i])/2),e=lo.map((v,i)=>Math.max(.5,(hi[i]-v)/2));
+    const n=g.length*3,v=new Float32Array(n*3),idx=new Uint32Array(n);
+    let o=0;for(const t of g)for(const p of t){v[o*3]=p[0]-c[0];v[o*3+1]=p[1]-c[1];v[o*3+2]=p[2]-c[2];idx[o]=o;o++;}
+    return {v,i:idx,ox:c[0],oy:c[1],oz:c[2],r:Math.hypot(...e),extents:e};
   });
 }
 function wreckRecord(s,f,now,catastrophic){
@@ -12457,7 +12539,44 @@ function resolveTraffic(a,b,now){
   }
   return true;
 }
-let trafficIndex=null,trafficBodies=new Map(),trafficSpeed=0;
+let trafficIndex=null,trafficBodies=new Map(),trafficSpeed=0,trafficObjects=[];
+// Broad phase for path prediction: every body's box swept along its velocity
+// over the look-ahead horizon, padded by its radius plus half the 20 m
+// prediction margin. Two paths whose swept boxes do not overlap cannot pass
+// the exact closest-approach test, so this returns a superset of the old
+// candidates in the same order and the chosen threat is unchanged. The old
+// query padded by the fastest speed on the field and degenerated to a scan
+// of every hull for every ship.
+class SweptIndex{
+  constructor(){this.cells=new Map();this.items=[];this.large=[];this.stamp=0;this.horizon=-1;}
+  build(objects,boxes,horizon,slack){
+    this.cells.clear();this.items.length=0;this.large.length=0;this.horizon=horizon;
+    for(const o of objects){
+      const b=boxes.get(o.id),v=b.velocity,r=b.radius+10+slack,lo=[0,0,0],hi=[0,0,0],p=[o.x,o.y,o.z];
+      for(let i=0;i<3;i++){const q=p[i]+v[i]*horizon;lo[i]=Math.min(p[i],q)-r;hi[i]=Math.max(p[i],q)+r;}
+      const e={o,lo,hi,order:this.items.length,seen:0};this.items.push(e);
+      const ax=Math.floor(lo[0]/512),bx=Math.floor(hi[0]/512),ay=Math.floor(lo[1]/512),by=Math.floor(hi[1]/512),az=Math.floor(lo[2]/512),bz=Math.floor(hi[2]/512);
+      if((bx-ax+1)*(by-ay+1)*(bz-az+1)>96){this.large.push(e);continue;}
+      for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const key=((x+4096)*8192+(y+4096))*8192+(z+4096);let cell=this.cells.get(key);if(!cell)this.cells.set(key,cell=[]);cell.push(e);}
+    }
+  }
+  query(lo,hi){
+    const out=[],stamp=++this.stamp;
+    const add=e=>{if(e.seen===stamp)return;e.seen=stamp;if(e.hi[0]>=lo[0]&&e.lo[0]<=hi[0]&&e.hi[1]>=lo[1]&&e.lo[1]<=hi[1]&&e.hi[2]>=lo[2]&&e.lo[2]<=hi[2])out.push(e);};
+    const ax=Math.floor(lo[0]/512),bx=Math.floor(hi[0]/512),ay=Math.floor(lo[1]/512),by=Math.floor(hi[1]/512),az=Math.floor(lo[2]/512),bz=Math.floor(hi[2]/512);
+    if((bx-ax+1)*(by-ay+1)*(bz-az+1)>512){for(const e of this.items)add(e);}
+    else{for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const cell=this.cells.get(((x+4096)*8192+(y+4096))*8192+(z+4096));if(cell)for(const e of cell)add(e);}for(const e of this.large)add(e);}
+    out.sort((a,b)=>a.order-b.order);for(let i=0;i<out.length;i++)out[i]=out[i].o;return out;
+  }
+}
+const sweptIndex={5:new SweptIndex(),16:new SweptIndex()},sweptBuilt={5:-1,16:-1};
+function sweptCandidates(horizon,now,lo,hi){
+  const index=sweptIndex[horizon];
+  // Ships already moved this tick are at most one step ahead of the indexed
+  // positions; the slack covers that step for the fastest body on the field.
+  if(sweptBuilt[horizon]!==now){index.build(trafficObjects,trafficBodies,horizon,trafficSpeed/15+5);sweptBuilt[horizon]=now;}
+  return index.query(lo,hi);
+}
 function prepareTraffic(now){
   const objects=[];
   for(const s of ships)if(!s.dead&&s.vao&&!s.grace){s.trafficPrevious=[s.x,s.y,s.z];objects.push(s);}
@@ -12465,12 +12584,14 @@ function prepareTraffic(now){
   trafficBodies=new Map(objects.map(o=>[o.id,trafficBox(o,now)]));trafficSpeed=0;
   for(const o of objects)trafficSpeed=Math.max(trafficSpeed,V.len(trafficVelocity(o.debris||o)));
   if(!trafficIndex)trafficIndex=new WeaponSpatialIndex();trafficIndex.build(objects,o=>Math.hypot(...weaponExtents(o)));
+  trafficObjects=objects;sweptBuilt[5]=sweptBuilt[16]=-1;
 }
 function trafficPilot(s,now){
   if(!trafficIndex||now<(s.trafficScan||0))return;s.trafficScan=now+.2+(s.trafficScan==null?(s.id%6)/30:0);
   const vel=trafficVelocity(s),horizon=fightsAsCrown(s)?16:5,start=[s.x,s.y,s.z],end=V.add(start,V.mul(vel,horizon));
-  const own=trafficBodies.get(s.id)||trafficBox(s,now),pad=Math.hypot(...own.e)+trafficSpeed*horizon+40;let threat=null,soon=Infinity;
-  for(const t of trafficIndex.query(start,end,pad)){
+  const own=trafficBodies.get(s.id)||trafficBox(s,now),reach=own.radius+10;let threat=null,soon=Infinity;
+  const lo=[Math.min(start[0],end[0])-reach,Math.min(start[1],end[1])-reach,Math.min(start[2],end[2])-reach],hi=[Math.max(start[0],end[0])+reach,Math.max(start[1],end[1])+reach,Math.max(start[2],end[2])+reach];
+  for(const t of sweptCandidates(horizon,now,lo,hi)){
     if(t===s||t.id===s.id||t.dead||t.grace||t.debris?.shatter)continue;
     if(isStarDestroyer(s)&&t.debris&&shieldCanClear(s,t.debris))continue;
     const other=trafficBodies.get(t.id)||trafficBox(t,now),ov=other.velocity||trafficVelocity(other.o);
@@ -12635,7 +12756,7 @@ function bakeBoneyard(){
   }
   wrecks=wrecks.filter(w2=>!w2.gone);
 }
-let perFleet=150,warSeed=(Math.random()*4294967296)|0;
+let perFleet=600,warSeed=(Math.random()*4294967296)|0;
 let genId=0,forged=0,total=0,warT0=Infinity,winner=null;
 let counts=[0,0];
 /* five fleets share this sky; every war deals two of them. Each race is a
@@ -14139,7 +14260,10 @@ function yardTrack(path,isEvent){
   document.head.appendChild(s);
   yardTrack(location.pathname||"/orbital-yard/armada-war-tribute-new.html");
 })();
+let keepTitle=false;
 function startWar(fresh){
+  document.getElementById("battleOptions").open=false;
+  if(!keepTitle){document.getElementById("warMenu").hidden=true;document.body.classList.remove("menu-start");}
   if(fresh){
     try{
       if(!sessionStorage.getItem("oyPlayPing")){
@@ -14150,7 +14274,8 @@ function startWar(fresh){
   }
   genId++;disposeShips();
   battleTime=0;battleAccumulator=0;simFrame=0;statT=0;sensorDrawAt=0;wreckUid=0;wreckRR=0;
-  ships=[];beams=[];flashes=[];squads=[];
+  ships=[];beams=[];flashes=[];squads=[];streaks=[];
+  bcReset();bc.prediction=bc.pendingCall!=null&&bc.pendingCall>=0?bc.pendingCall:null;bc.pendingCall=null;
   if(fresh)warSeed=(Math.random()*4294967296)|0;
   const R=mulberry32(warSeed|0);
   battleAI.reset(warSeed);combatRandom=ArmadaBattleAI.random(warSeed^0xC0BA7);debrisRandom=ArmadaBattleAI.random(warSeed^0xDEB215);
@@ -14167,8 +14292,9 @@ function startWar(fresh){
   BEAMCOL=[RACE_DEFS[ra].beam,RACE_DEFS[rb].beam];
   IONCOL=[RACE_DEFS[ra].ion,RACE_DEFS[rb].ion];
   makeCelestial(mulberry32((warSeed^0xC0FFEE)>>>0));
+  setupWarLight();
   cam.ex=0;cam.ey=420;cam.ez=1100;cam.yaw=-Math.PI/2;cam.pitch=-0.22;
-  leaveHelm();watchMode="action";actionCamera=null;forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
+  leaveHelm();watchMode="broadcast";actionCamera=null;if(bc.director)bc.director.reset();forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
   intro=null;updateWatchDock();document.body.classList.remove("intro");
   const bH=document.getElementById("bHero");if(bH){bH.classList.remove("on");bH.textContent="HEROES";}
   document.getElementById("win").style.display="none";
@@ -14281,10 +14407,18 @@ function startWar(fresh){
   counts=[built[0],built[1]];
   spawned=[built[0],built[1]];
   ensureWorkers();
-  const nw=workers.length;
-  for(let w=0;w<nw;w++)
-    workers[w].postMessage({kind:"batch",genId,jobs:jobs.filter((_,i)=>i%nw===w)});
+  postForgeJobs(jobs);
   roster();
+}
+// Capitals, crowns and heroes forge first so the big silhouettes exist
+// early; each worker takes every n-th job of that ordered list.
+function forgeRank(j){return j.hulls?0:j.hero?1:j.band===2?2:j.band===1?3:4;}
+function postForgeJobs(jobs){
+  const nw=workers.length,ordered=jobs.slice().sort((a,b)=>forgeRank(a)-forgeRank(b)||a.id-b.id);
+  for(let w=0;w<nw;w++){
+    const mine=ordered.filter((_,i)=>i%nw===w);
+    if(mine.length)workers[w].postMessage({kind:"batch",genId,jobs:mine,chunk:ships.length>400?12:6});
+  }
 }
 function onWorkerMsg(e){
   const d=e.data;
@@ -14841,10 +14975,19 @@ function craftThought(s,now){
   s.thLine=line;s.thKey=key;s.thHard=hard;s.thAt=now;
   return line;
 }
-const MAX_FLASHES=224,MAX_ENGINE_SPRITES=192;
-function flash(x,y,z,t0,size,c){if(flashes.length<MAX_FLASHES)flashes.push({x,y,z,t0,size,c,seed:Math.random()});}
+const MAX_FLASHES=320,MAX_ENGINE_SPRITES=192;
+function flash(x,y,z,t0,size,c){
+  const f={x,y,z,t0,size,c,seed:Math.random()};
+  if(flashes.length<MAX_FLASHES)flashes.push(f);
+  else if(size>=60||(c>=10&&c<20)||c>=30){
+    // A full budget must not swallow a death: evict the smallest queued flash.
+    let k=-1,min=size;for(let i=0;i<flashes.length;i++)if(flashes[i].size<min){min=flashes[i].size;k=i;}
+    if(k>=0)flashes[k]=f;
+  }
+  if(bc.ring&&bc.flashLog.length<6000)bc.flashLog.push(f);
+}
 function deathEffectKind(race){return race===8||race===1||race===21?12:race===12?13:race===10?11:race===7||race===15?14:10;}
-function effectLife(kind){return kind>=10?1.35:kind>2.5?2.15:.8;}
+function effectLife(kind){return kind>=30&&kind<36?(kind<31?.7:kind<35?1.8:.55):kind>=10?1.35:kind>2.5?2.15:.8;}
 // Three nested glow samples per outlet; shared flash buffer and draw call, no particles.
 function appendEngineBurns(now,planes,offset){
   let count=0;
@@ -14860,17 +15003,36 @@ function appendEngineBurns(now,planes,offset){
         const local=[port[0]-port[3]*j*(1+throttle)*.8,port[1],port[2]],pos=gunWorld(s,local,now),i=(offset+count++)*7;
         flPool[i]=pos[0];flPool[i+1]=pos[1];flPool[i+2]=pos[2];flPool[i+3]=now;
         flPool[i+4]=port[3]*(j===0?3.8:j===1?2.8:1.6)*(1+.04*Math.sin(now*13+(s.wf||0)));
-        flPool[i+5]=20;flPool[i+6]=j/3;
+        flPool[i+5]=20+s.race*.01;flPool[i+6]=j/3;
       }
     }
   }
   return offset+count;
 }
-function boltSkin(a,b,r,n){
+// One growable upload buffer and cleared scratch arrays for everything the
+// weapons pass streams each frame: no per-draw Float32Array allocation.
+let streamF32=new Float32Array(1<<16);
+const scratchArrays=new Map();
+function scratchArray(key){let a=scratchArrays.get(key);if(!a){a=[];scratchArrays.set(key,a);}a.length=0;return a;}
+function streamUpload(values){
+  const n=values.length;if(n>streamF32.length){let m=streamF32.length;while(m<n)m*=2;streamF32=new Float32Array(m);}
+  for(let i=0;i<n;i++)streamF32[i]=values[i];
+  gl.bufferData(gl.ARRAY_BUFFER,streamF32.subarray(0,n),gl.STREAM_DRAW);
+}
+// Alpha scale for a skin of n lines of radius r (world m) on beam b: at most
+// about one line's worth of light per pixel once the skin is only a few
+// pixels wide. Only under the HDR pipeline; LDR clamps at white anyway.
+function ionDensity(b,post){
+  const ab0=b.b[0]-b.a[0],ab1=b.b[1]-b.a[1],ab2=b.b[2]-b.a[2],len2=Math.max(1e-6,ab0*ab0+ab1*ab1+ab2*ab2);
+  const u=Math.max(0,Math.min(1,((cam.ex-b.a[0])*ab0+(cam.ey-b.a[1])*ab1+(cam.ez-b.a[2])*ab2)/len2));
+  const near=Math.max(1,Math.hypot(b.a[0]+ab0*u-cam.ex,b.a[1]+ab1*u-cam.ey,b.a[2]+ab2*u-cam.ez));
+  return (r,n)=>post?Math.min(1,2*r*cvs.height/near/n):1;
+}
+function boltSkin(a,b,r,n,into){
   /* a cylinder of lines: world-metre radius so a crown bolt reads at 40 km */
   const dir=V.norm(V.sub(b,a));
   const [u,v]=basis(dir);
-  const o=[];n=Math.max(4,n||6);
+  const o=into||[];n=Math.max(4,n||6);
   for(let j=0;j<n;j++){
     const an=j/n*6.283,c=Math.cos(an)*r,s=Math.sin(an)*r;
     const ox=u[0]*c+v[0]*s,oy=u[1]*c+v[1]*s,oz=u[2]*c+v[2]*s;
@@ -14882,6 +15044,55 @@ function beamWid(s,heavy){
   const L=s.slen||20;
   if(heavy||s.hulls)return Math.max(12,Math.min(78,L*0.014));
   return Math.max(2.4,Math.min(9,L*0.09));
+}
+/* ---- look-only effects: they draw from Math.random, never combat dice ---- */
+// Arrivals by franchise: hyperspace streaks, jump-point and transwarp
+// vortices, warp flashes, a hive rift, a rocket burn. Original shapes only.
+let streaks=[];
+const ARRIVAL_STYLE={5:"hyper",6:"hyper",7:"jump",8:"rift",9:"jump",10:"warp",11:"warp",12:"conduit",18:"warp",19:"warp",21:"rift",22:"rocket"};
+function arrivalEffect(s,now){
+  const style=ARRIVAL_STYLE[s.race];if(!style)return;
+  if(s.slen<40&&!s.hero&&Math.random()>.3)return; // fighters arrive in swarms: sample them
+  const c=Math.cos(s.yaw||0),n=Math.sin(s.yaw||0),L=Math.max(260,s.slen*(style==="hyper"?7:3.5)),size=Math.max(60,s.slen*2.4);
+  const streak=col=>{if(streaks.length<256)streaks.push({a:[s.x-c*L,s.y,s.z-n*L],b:[s.x,s.y,s.z],t0:now,life:style==="hyper"?.45:.3,col,id:s.id});};
+  if(style==="hyper")streak([.75,.88,1]);
+  else if(style==="warp"){streak([.8,.9,1]);flash(s.x,s.y,s.z,now,Math.max(30,s.slen*.8),4);}
+  else if(style==="jump")flash(s.x+c*s.slen*.4,s.y,s.z+n*s.slen*.4,now-.25,size,34);
+  else if(style==="conduit")flash(s.x,s.y,s.z,now-.25,size,32);
+  else if(style==="rift")flash(s.x,s.y,s.z,now-.25,size,33);
+  else if(style==="rocket"){streak([1,.62,.28]);flash(s.x-c*s.slen*.5,s.y,s.z-n*s.slen*.5,now,Math.max(24,s.slen*.9),2);}
+}
+// Shields where the lore has them: Trek bubbles ripple at the hit, the Borg
+// shimmer green as they adapt. Rate-limited per hull.
+function shieldEffect(t,hit,now){
+  if(!t||t.dead||now-(t.shieldT??-9)<.22)return;
+  if([10,11,18,19].includes(t.race)){t.shieldT=now;flash(hit[0],hit[1],hit[2],now,Math.max(18,Math.min(260,(t.slen||20)*.55)),35);}
+  else if(t.race===12){t.shieldT=now;flash(hit[0],hit[1],hit[2],now,Math.max(14,Math.min(120,(t.slen||20)*.12)),13);}
+}
+// Destruction tiers: fighters pop with a shockwave, frigates add secondary
+// blasts, capitals a second ring and a core flash that lights nearby hulls,
+// First Ones the end of an age.
+function deathFlourish(t,now){
+  const tier=(RACE_DEFS[t.race]||{}).unique?3:(t.hulls||0)>=10||t.slen>=180?2:t.slen>=60?1:0;
+  const L=t.slen||20,c=Math.cos(t.yaw||0),n=Math.sin(t.yaw||0);
+  flash(t.x,t.y,t.z,now,Math.max(34,L*(tier>=2?1.1:2.2)),30);
+  if(tier>=1)for(let i=0;i<(tier===1?3:6);i++){const u=(Math.random()-.5)*L*.8;flash(t.x+c*u,t.y+(Math.random()-.5)*L*.1,t.z+n*u,now+.2+Math.random()*(tier===1?.9:1.8),Math.max(20,L*.18),2);}
+  if(tier>=2){flash(t.x,t.y,t.z,now+.35,Math.max(120,L*.9),30);flash(t.x,t.y,t.z,now+.12,Math.min(600,Math.max(90,L*.3)),2);}
+  if(tier===3){flash(t.x,t.y,t.z,now+.6,Math.max(400,L*1.6),30);flash(t.x,t.y,t.z,now+.1,Math.min(1200,L*.7),4);}
+}
+// A capital below 35% hull starts to die before it dies: internal blasts
+// march along the keel and it vents; the rate rises as the hull fails.
+function dyingCapitals(now){
+  for(const s of ships){
+    if(s.dead||!s.vao||!s.arr||!((s.hulls||0)>=10||s.slen>=180))continue;
+    const frac=s.hp/Math.max(1,s.hpMax);if(frac>=.35)continue;
+    if(now<(s.blastAt??0))continue;
+    s.blastAt=now+(.35+frac*3)*(.6+Math.random()*.8);
+    s.blastU=((s.blastU??(Math.random()-.5))+.17+Math.random()*.1)%1; // marches toward the bow
+    const local=[(s.blastU-.5)*s.slen*.8,(Math.random()-.4)*s.slen*.08,(Math.random()-.5)*s.slen*.12],p=gunWorld(s,local,now);
+    flash(p[0],p[1],p[2],now,Math.max(16,s.slen*(.04+Math.random()*.05)),2);
+    const v=s.v||0;dustBurst(p[0],p[1],p[2],Math.cos(s.yaw)*v,s.vy||0,Math.sin(s.yaw)*v,3,now);
+  }
 }
 let camKick=0;
 function kickCam(n){camKick=Math.max(camKick,n);}
@@ -15406,7 +15617,7 @@ class WeaponSpatialIndex{
       const ax=Math.floor((ship.x-ext[0])/512),bx=Math.floor((ship.x+ext[0])/512),ay=Math.floor((ship.y-ext[1])/512),by=Math.floor((ship.y+ext[1])/512),az=Math.floor((ship.z-ext[2])/512),bz=Math.floor((ship.z+ext[2])/512);
       if((bx-ax+1)*(by-ay+1)*(bz-az+1)>64){this.large.push(e);continue;}
       for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){
-        const key=x+','+y+','+z;let cell=this.cells.get(key);if(!cell)this.cells.set(key,cell=[]);cell.push(e);
+        const key=((x+4096)*8192+(y+4096))*8192+(z+4096);let cell=this.cells.get(key);if(!cell)this.cells.set(key,cell=[]);cell.push(e);
       }
     }
   }
@@ -15417,7 +15628,7 @@ class WeaponSpatialIndex{
     const add=e=>{if(e.seen===stamp)return;e.seen=stamp;const t=e.ship,r=e.ext;if(t.x+r[0]>=minX&&t.x-r[0]<=maxX&&t.y+r[1]>=minY&&t.y-r[1]<=maxY&&t.z+r[2]>=minZ&&t.z-r[2]<=maxZ)out.push(e);};
     const ax=Math.floor(minX/512),bx=Math.floor(maxX/512),ay=Math.floor(minY/512),by=Math.floor(maxY/512),az=Math.floor(minZ/512),bz=Math.floor(maxZ/512);
     if((bx-ax+1)*(by-ay+1)*(bz-az+1)>128){for(const e of this.items)add(e);}
-    else{for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const cell=this.cells.get(x+','+y+','+z);if(cell)for(const e of cell)add(e);}for(const e of this.large)add(e);}
+    else{for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const cell=this.cells.get(((x+4096)*8192+(y+4096))*8192+(z+4096));if(cell)for(const e of cell)add(e);}for(const e of this.large)add(e);}
     out.sort((a,b)=>a.order-b.order);for(let i=0;i<out.length;i++)out[i]=out[i].ship;return out;
   }
 }
@@ -15456,7 +15667,7 @@ function writeWeaponRibbon(out,at,a,b,width){
 function drawCoherentWeapons(now){
   const cull=gl.isEnabled(gl.CULL_FACE);gl.disable(gl.CULL_FACE);
   for(const g of coherentGroups.values())g.count=0;
-  const pixelScale=2*Math.tan(.44)/Math.max(1,cvs.height);
+  const pixelScale=2*Math.tan(.44)/Math.max(1,rtH);
   function add(a,b,width,col){
     const distance=Math.hypot(cam.ex-(a[0]+b[0])*.5,cam.ey-(a[1]+b[1])*.5,cam.ez-(a[2]+b[2])*.5);
     width=Math.max(width,Math.min(24,distance*pixelScale*.85));
@@ -15510,6 +15721,7 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
 }
 function weaponImpact(s,t,now,hit,dmg,heavy){
   flash(hit[0],hit[1],hit[2],now,Math.max(heavy?48:12,Math.min(90,t.slen*(heavy?0.08:0.04))),heavy?3:s.side);
+  shieldEffect(t,hit,now);
   wound(t,dmg||1,s,now);
   if(heavy){
     const splash=Math.max(70,Math.min(160,s.slen*0.045));
@@ -15831,10 +16043,12 @@ function kill(t,now){
   t.deadT=now;
   const catastrophic=t.destroyMode==='catastrophic'||(t.destroyMode!=='disabled'&&(t.slen<180||-t.hp/Math.max(1,t.hpMax)>.18||debrisRandom()<.6));
   if(catastrophic||!disableHull(t,now)){
-    t.destruction='catastrophic';boom(t,now);spawnBreakup(t,now);
+    t.destruction='catastrophic';boom(t,now);deathFlourish(t,now);spawnBreakup(t,now);
   }
   t.hullMesh=null;
-  if(t.vao){gl.deleteVertexArray(t.vao);gl.deleteBuffer(t.vbo);gl.deleteBuffer(t.ibo);t.vao=null;}
+  bcKill(t,now);
+  // Keep the hull's mesh for the replay window; the buffers are freed later.
+  if(t.vao){if(bc.ring)retireMesh(t,now);else{gl.deleteVertexArray(t.vao);gl.deleteBuffer(t.vbo);gl.deleteBuffer(t.ibo);}t.vao=null;}
   counts[t.side]--;
   if(sel===t.id)select(null);
   if(counts[t.side]<=0&&winner==null){
@@ -15846,7 +16060,7 @@ function kill(t,now){
       " \u00b7 "+SIDE_NAME[1]+an(1)+" LOST "+(spawned[1]-Math.max(0,counts[1]))+
       " \u00b7 "+Math.max(0,(now-warT0)|0)+" SECONDS \u00b7 N FOR THE NEXT WAR</div>";
     w.style.display="block";
-    toast(SIDE_NAME[winner]+" HOLDS THE SKY");
+    toast(SIDE_NAME[winner]+" HOLDS THE SKY");bcVictory(winner);
   }
   roster();
 }
@@ -15863,6 +16077,7 @@ function fireIonFrom(g,side,now,lock){
   const track=g.weaponTracks&&g.weaponTracks.get(muz.join(','));
   if(track){track.holdPoint=p.slice();track.holdUntil=now+1.55;track.target=-1;}
   beams.push({a:m,b:p.slice(),t0:now,side,race:g.race,ion:true,wid:Math.max(18,Math.min(64,g.slen*.009)),from:g.id,muz});
+  bcIonStrike(g,lock);
   flash(m[0],m[1],m[2],now,150,4);flash(p[0],p[1],p[2],now,blast*1.5,4);
   for(const t of ships){
     if(t.side===side||t.dead||!t.vao||t.grace)continue;
@@ -16221,8 +16436,8 @@ function maybeCallAlly(now){
       add(50,null);add(10,null);add(10,null);
       for(let i=0;i<fighters;i++)add(0,0);for(let i=0;i<escorts;i++)add(0,1);for(let i=0;i<capitals;i++)add(0,2);add(0,0,true);
     }
-    toast(SIDE_NAME[side]+' REQUESTS TACTICAL RELIEF · '+rd.name+' ANSWERS');
-    for(let w=0;w<workers.length;w++)workers[w].postMessage({kind:'batch',genId,jobs:jobs.filter((_,i)=>i%workers.length===w)});
+    toast(SIDE_NAME[side]+' REQUESTS TACTICAL RELIEF · '+rd.name+' ANSWERS');bcReinforce(side,ally);
+    postForgeJobs(jobs);
     roster();
   }
 }
@@ -16254,7 +16469,7 @@ function simStep(now,dt){
     if(!lock&&now>=ionNext[side]){
       const candidates=ships.filter(g=>g.side===side&&g.id!==pilotId&&!g.dead&&g.vao&&g.arr&&!g.grace&&(g.hulls||0)>=10&&!RACE_DEFS[g.race].unique);
       candidates.sort((a,b)=>(b.ai?b.ai.budget[0]:0)-(a.ai?a.ai.budget[0]:0));
-      for(const g of candidates){const next=battleAI.ionLock(g,side,now);if(next){ionState[side]=next;g.lastFire=now;break;}}
+      for(const g of candidates){const next=battleAI.ionLock(g,side,now);if(next){ionState[side]=next;g.lastFire=now;bcIonCharge(g,next);break;}}
       if(!ionState[side])ionNext[side]=now+3;
     }else if(lock){
       const g=ships[lock.gun];
@@ -16270,7 +16485,7 @@ function simStep(now,dt){
     if(age<0)continue;
     if(intro&&!intro.done&&s.id===intro.hero){
       if(!s.arr){
-        s.arr=true;flash(s.x,s.y,s.z,now,Math.max(26,s.slen*1.3),s.side);
+        s.arr=true;flash(s.x,s.y,s.z,now,Math.max(26,s.slen*1.3),s.side);arrivalEffect(s,now);arrivalEffect(s,now);
       }
       s.cloaked=false;s.cloakAmt=0;s.grace=true;s.cool=1;
       const streak=!intro.catch||(now-(intro.caughtT||now))<1.05;
@@ -16283,7 +16498,7 @@ function simStep(now,dt){
     }
     if(!s.arr){
       if(!clearReliefEntry(s,now))continue;
-      s.arr=true;flash(s.x,s.y,s.z,now,Math.max(26,s.slen*1.3),s.side);
+      s.arr=true;flash(s.x,s.y,s.z,now,Math.max(26,s.slen*1.3),s.side);arrivalEffect(s,now);
       if((RACE_DEFS[s.race]||{}).unique&&s.meta&&s.meta.desig&&!(intro&&!intro.done))
         s.foArrivalAt=now;
     }
@@ -16635,7 +16850,8 @@ function makeStars(){
 }
 /* ===================== camera ===================== */
 const cam={yaw:-Math.PI/2,pitch:-0.22,ex:0,ey:420,ez:1100};
-function renderPixelRatio(width,height,ratio){return Math.min(ratio||1,1.5,Math.sqrt(2400000/Math.max(1,width*height)));}
+var dprCap=1.5; // set by the quality tier
+function renderPixelRatio(width,height,ratio){return Math.min(ratio||1,dprCap,Math.sqrt((dprCap>1.5?4200000:2400000)/Math.max(1,width*height)));}
 let dpr=renderPixelRatio(innerWidth,innerHeight,devicePixelRatio),resolutionCheck=0;
 let crewShown=null,crewFrameAt=0,flightFrameAt=0;
 const helmPointer={id:null,x:0,y:0,ox:0,oy:0};
@@ -16655,19 +16871,22 @@ function camBasis(){
   const f=[cy*cp,sp,sy*cp],r=[-sy,0,cy];
   return [f,r,V.cross(r,f)];
 }
-function mat(){
+function mat(into){
   const [f,r,u]=camBasis();
   const e=[cam.ex,cam.ey,cam.ez];
   const zn=0.6,zf=Math.max(sceneR*9,watchGoal?.far||0,Math.hypot(...e)+sceneR*10),t=1/Math.tan(0.44),ar=cvs.width/cvs.height;
   const vx=r,vy=u,vz=[-f[0],-f[1],-f[2]];
   const tx=-V.dot(vx,e),ty=-V.dot(vy,e),tz=-V.dot(vz,e);
   const A=t/ar,Bq=t,C=(zf+zn)/(zn-zf),D=2*zf*zn/(zn-zf);
-  return new Float32Array([
+  const out=into||new Float32Array(16);
+  out.set([
     A*vx[0],Bq*vy[0],C*vz[0],-vz[0],
     A*vx[1],Bq*vy[1],C*vz[1],-vz[1],
     A*vx[2],Bq*vy[2],C*vz[2],-vz[2],
     A*tx,Bq*ty,C*tz+D,-tz]);
+  return out;
 }
+const frameVP=new Float32Array(16);
 function frustumPlanes(m){
   const row=i=>[m[i],m[4+i],m[8+i],m[12+i]];
   const r0=row(0),r1=row(1),r2=row(2),r3=row(3),P=[];
@@ -16810,7 +17029,7 @@ function setWatchView(mode){
       document.getElementById('cockpitHud').style.color=window.ArmadaCrew?.profile(s.seed??s.id,s.race,s.meta?.klass||"").color||'#d5e5ed';
     }else{leaveHelm();orb=chaseCamInit(ships[sel]);watchMode='follow';}updateWatchDock();return;
   }
-  leaveHelm();if(intro&&!intro.done)endIntro();sel=null;orb=null;card(null);watchMode=mode;directorAt=0;actionCamera=null;updateHeroBtn();updateWatchCamera(battleTime,1,true);updateWatchDock();
+  leaveHelm();if(intro&&!intro.done)endIntro();sel=null;orb=null;card(null);watchMode=mode;directorAt=0;actionCamera=null;if(bc.director)bc.director.reset();updateHeroBtn();updateWatchCamera(battleTime,1,true);updateWatchDock();
 }
 // The camera observes combat without consuming combat randomness or changing AI.
 // Cuts change scale; motion within a shot stays on one side of the engagement.
@@ -17080,8 +17299,9 @@ function updateActionCamera(now,dt){
 
 function updateWatchCamera(now,dt,force=false){
   if(pilotId!=null){const s=ships[pilotId];if(!s||s.dead){leaveHelm();return;}const cp=Math.cos(s.pitch||0),sp=Math.sin(s.pitch||0),d=(s.nose||s.slen*.5)+Math.max(2,s.slen*.015);cam.ex=s.x+Math.cos(s.yaw)*cp*d;cam.ey=s.y+sp*d;cam.ez=s.z+Math.sin(s.yaw)*cp*d;cam.yaw=s.yaw;cam.pitch=s.pitch||0;return;}
-  if(sel!=null||!['all','top','action'].includes(watchMode)||!ships.length)return;
+  if(sel!=null||!['all','top','action','broadcast'].includes(watchMode)||!ships.length)return;
   if(watchMode==='action'){updateActionCamera(now,force?0:dt);return;}
+  if(watchMode==='broadcast'){updateBroadcastCamera(now,force?0:dt);return;}
   const move=()=>{if(!watchGoal)return;const k=force?1:1-Math.exp(-Math.max(0,dt)*2);for(const key of ['ex','ey','ez','pitch'])cam[key]+=(watchGoal[key]-cam[key])*k;let d=watchGoal.yaw-cam.yaw;while(d>Math.PI)d-=Math.PI*2;while(d< -Math.PI)d+=Math.PI*2;cam.yaw+=d*k;};
   if(!force&&now<directorAt){move();return;}directorAt=now+.8;
   const live=ships.filter(s=>!s.dead&&s.vao&&!s.reliefPending);if(!live.length)return;
@@ -17250,18 +17470,30 @@ addEventListener("keydown",e=>{
   if(pilotId!=null&&k==='t'&&!e.repeat)pilotTarget(ships[pilotId],true);
   if(pilotId==null&&sel==null&&["w","a","s","d","q","e"].includes(k))watchMode="free";
   if(k==="n")openPicker();
-  if(k==="r")randomWar();
+  if(k==="g")randomWar();
+  if(k==="r"&&pilotId==null&&!e.repeat)instantReplay();
+  if(k==="b"&&pilotId==null)setWatchView("broadcast");
+  if(k==="m"&&!e.repeat){const A=audio();if(A){const v=A.volumes().master;A.setVolume("master",v>0?0:.8);syncAudioSliders();toast(v>0?"SOUND OFF":"SOUND ON");}}
+  if((k==="?"||(e.key==="/"&&e.shiftKey))&&!e.repeat){const h=document.getElementById("bcHelp");h.hidden=!h.hidden;}
+  if(pilotId==null&&!e.repeat){
+    if(k===" "||k==="0"){e.preventDefault();setRate(warClock.rate===0?(bc.lastRate||1):0);if(warClock.rate===0)bc.lastRate=1;}
+    const rates={"1":.25,"2":.5,"3":1,"4":2,"5":4};if(rates[k]!=null){bc.lastRate=rates[k];setRate(rates[k]);}
+  }
   if(k==="p"){palI=(palI+1)%PAL.length;applyPal();}
   if(k==="h")followHero();
   if(intro&&!intro.done&&"wasdqe".includes(k))endIntro();
   if(k==="[")setCamGear(camGear-1);
   if(k==="]")setCamGear(camGear+1);
   if(e.key==="Escape"){
+    const options=document.getElementById("battleOptions");if(options.open){options.open=false;return;}
     const pe=document.getElementById("pick");
-    if(pe.classList.contains("on")&&ships.length)pe.classList.remove("on");
+    if(pe.classList.contains("on"))closePicker();
     else if(pilotId!=null)leaveHelm();
+    else if(!document.getElementById("bcHelp").hidden)document.getElementById("bcHelp").hidden=true;
+    else if(replayState)endReplay();
+    else if(!document.getElementById("bcEnd").hidden)hideEndCard();
     else if(document.getElementById("card").style.display!=="none")card(null);
-    else setWatchView("all");
+    else setWatchView("broadcast");
   }
 });
 addEventListener("keyup",e=>keys.delete(e.code==='Space'?' ':e.key.toLowerCase()));
@@ -17326,6 +17558,39 @@ document.getElementById("score").addEventListener("click",e=>{
   if(ships[id]&&!ships[id].dead)select(id);
 });
 /* ===================== the muster ===================== */
+// One original line per fleet: fan shorthand, not canon.
+const FLEET_FLAVOUR=["Ceramic navies from the Orbital Yard's own drawing boards.","Grown, not built. They swarm like a reef in a storm.","Crystal geometry that fights in perfect formation.",
+ "Salvage and nerve, welded together mid-flight.","Sails of pearl and gold that sing as they close.","Wedge-shaped certainty and fighters by the hundred.",
+ "Outnumbered, scrappy, and hard to pin down.","Crystal hulls, hidden guns and a very long memory.","Black chitin that screams as it cuts.",
+ "Spinning gravity and stubborn broadsides.","Saucers, phasers and a preference for talking first.","Birds of prey that shoot first and sing later.",
+ "Geometry that learns while it fights.","Bronze giants built to protect, slow to anger.","Kinetic bursts and very loud marines.",
+ "Horseshoe hulls and plasma older than language.","Hunters who cloak, stalk and take trophies.","Eight ancients, old when the stars were young.",
+ "Cloaks, plasma and a raptor's patience.","Beetle hulls and reinforcements without end.","Gothic battleships, armour thicker than faith.",
+ "A hive that eats the sky.","Rockets, a roadster and a robot at the wheel."];
+// Relative fleet strength (Elo scale) from scripts/fleet-ratings.cjs: every
+// pairing, both sides, 24 ships a side, headless. Diagnostic, not canon.
+const FLEET_RATINGS=[1482,1554,1434,1428,1397,1451,1383,1462,1564,1491,1468,1447,1851,1479,1463,1462,1454,1795,1502,1379,1615,1473,1468]; // bench/ratings/ratings.json: 253 battles, 20 ships a side
+function fleetOdds(a,b){return BC&&a>=0&&b>=0&&a!==b?BC.odds(FLEET_RATINGS[a],FLEET_RATINGS[b]):null;}
+// Original emblems: a seeded frame, motif and palette per fleet. No logos.
+function fleetEmblem(i,size=40){
+  const R=mulberry32((i+1)*2654435761>>>0),rd=RACE_DEFS[i],hex=c=>"#"+c.map(v=>Math.round(Math.max(0,Math.min(1,v))*255).toString(16).padStart(2,"0")).join("");
+  const fin=hullFinish({race:i,seed:1,meta:{klass:""}}),base=hex(fin.color.map(v=>v*.55)),ink=hex(rd.beam),rim=hex(fin.trim.map(v=>Math.min(1,v*1.6+.15)));
+  const frames=["<circle cx='20' cy='20' r='17'/>","<polygon points='20,2 36,11 36,29 20,38 4,29 4,11'/>","<path d='M5 5h30v14c0 9-7 15-15 17C12 34 5 28 5 19z'/>","<polygon points='20,2 38,20 20,38 2,20'/>","<rect x='4' y='4' width='32' height='32' rx='7'/>"];
+  const f=frames[Math.floor(R()*frames.length)];let m="";
+  const kind=Math.floor(R()*5),n=3+Math.floor(R()*4);
+  if(kind===0)for(let k=0;k<n;k++){const y=11+k*(18/n);m+="<path d='M11 "+(y+5).toFixed(1)+"L20 "+y.toFixed(1)+"L29 "+(y+5).toFixed(1)+"' fill='none' stroke='"+ink+"' stroke-width='2.2'/>";}
+  else if(kind===1)for(let k=0;k<n;k++)m+="<circle cx='20' cy='20' r='"+(4+k*3.2).toFixed(1)+"' fill='none' stroke='"+ink+"' stroke-width='"+(k?1.2:2.4)+"' opacity='"+(1-k*.14).toFixed(2)+"'/>";
+  else if(kind===2){for(let k=0;k<n;k++){const a=k/n*Math.PI*2+R();m+="<line x1='20' y1='20' x2='"+(20+Math.cos(a)*12).toFixed(1)+"' y2='"+(20+Math.sin(a)*12).toFixed(1)+"' stroke='"+ink+"' stroke-width='2.4' stroke-linecap='round'/>";}m+="<circle cx='20' cy='20' r='4' fill='"+ink+"'/>";}
+  else if(kind===3){const w=4+R()*4;m+="<rect x='"+(20-w/2).toFixed(1)+"' y='8' width='"+w.toFixed(1)+"' height='24' fill='"+ink+"'/><rect x='10' y='"+(15+R()*6).toFixed(1)+"' width='20' height='3' fill='"+ink+"'/>";}
+  else{const pts=[];for(let k=0;k<n*2;k++){const a=k/(n*2)*Math.PI*2-Math.PI/2,r=k%2?5:12;pts.push((20+Math.cos(a)*r).toFixed(1)+","+(20+Math.sin(a)*r).toFixed(1));}m+="<polygon points='"+pts.join(" ")+"' fill='"+ink+"'/>";}
+  return "<svg class='emblem' viewBox='0 0 40 40' width='"+size+"' height='"+size+"' aria-hidden='true'><g fill='"+base+"' stroke='"+rim+"' stroke-width='1.6'>"+f+"</g>"+m+"</svg>";
+}
+function updatePickOdds(){
+  const el=document.getElementById("pickOdds");if(!el)return;
+  const [a,b]=pickMain,o=fleetOdds(a,b);
+  if(o==null){el.textContent=a<0||b<0?"Fate picks at least one side: no odds yet.":"";return;}
+  el.innerHTML="<span class='oddsBar'><i style='width:"+(o*100).toFixed(0)+"%;background:"+raceColour(a)+"'></i><i style='width:"+(100-o*100).toFixed(0)+"%;background:"+raceColour(b)+"'></i></span>"+escapeHtml(raceShort(a))+" "+Math.round(o*100)+"% · "+escapeHtml(raceShort(b))+" "+Math.round(100-o*100)+"% <small>(simulated odds)</small>";
+}
 function buildPicker(){
   for(const side of [0,1]){
     const col=document.getElementById(side?"pickB":"pickA");
@@ -17333,12 +17598,12 @@ function buildPicker(){
     const mkBtn=(label,fr,val)=>{
       const b=document.createElement("button");
       b.className="race"+(pickMain[side]===val?" on":"");
-      b.dataset.v=val;
-      b.innerHTML=label+(fr?"<span class=\"fr\">"+fr+"</span>":"");
+      b.dataset.v=val;b.setAttribute("aria-pressed",String(pickMain[side]===val));
+      b.innerHTML=(val>=0?fleetEmblem(val,34):"<span class='emblem fate' aria-hidden='true'>?</span>")+"<span class='rn'>"+label+(fr?"<span class=\"fr\">"+fr+"</span>":"")+"<span class='fl'>"+(val>=0?FLEET_FLAVOUR[val]:"Let the stars choose.")+"</span></span>";
       b.addEventListener("click",()=>{
         pickMain[side]=val;
-        col.querySelectorAll(".race").forEach(x=>x.classList.remove("on"));
-        b.classList.add("on");
+        col.querySelectorAll(".race").forEach(x=>{x.classList.remove("on");x.setAttribute("aria-pressed","false");});
+        b.classList.add("on");b.setAttribute("aria-pressed","true");updatePickOdds();
       });
       col.appendChild(b);
     };
@@ -17353,10 +17618,27 @@ function buildPicker(){
     sl.value=String(pickAlly[side]);
     sl.onchange=()=>{pickAlly[side]=+sl.value;};
   }
+  updatePickOdds();
 }
-function openPicker(){document.getElementById("pick").classList.add("on");}
+function showWarMenu(){document.getElementById("pick").classList.remove("on");document.getElementById("warMenu").hidden=false;document.body.classList.add("menu-start");document.getElementById("menuRandom").focus?.();}
+function closePicker(){document.getElementById("pick").classList.remove("on");if(!ships.length)showWarMenu();else document.getElementById("bCurate").focus?.();}
+function openPicker(){document.getElementById("battleOptions").open=false;document.getElementById("warMenu").hidden=true;document.getElementById("pick").classList.add("on");document.getElementById("pickBack").focus?.();}
+// "Watch this war" simply lifts the title: the war has been live behind it.
+document.getElementById("menuRandom").addEventListener("click",()=>{
+  if(!ships.length){spectacleWar(false);}
+  document.getElementById("warMenu").hidden=true;document.body.classList.remove("menu-start");ui("confirm");
+  if(watchMode!=="broadcast"&&sel==null&&pilotId==null)setWatchView("broadcast");
+  // One quiet hint, once: how to drive the broadcast without reading anything else.
+  try{if(!localStorage.getItem("tributeHint")){localStorage.setItem("tributeHint","1");setTimeout(()=>toast(matchMedia("(pointer:coarse)").matches?"TAP A SHIP TO FOLLOW · ↺ REPLAY":"SPACE PAUSE · 1–5 SPEED · R REPLAY · ? KEYS"),1800);}}catch(e){}
+});
+document.getElementById("menuCurate").addEventListener("click",()=>openPicker());
+
+document.getElementById("pickBack").addEventListener("click",()=>closePicker());
+let pickCall=-1;
+for(const b of document.querySelectorAll("#pick [data-call]"))b.addEventListener("click",()=>{pickCall=+b.dataset.call;for(const x of document.querySelectorAll("#pick [data-call]"))x.classList.toggle("on",x===b);});
 document.getElementById("pickGo").addEventListener("click",()=>{
   document.getElementById("pick").classList.remove("on");
+  bc.pendingCall=pickCall;
   toast("FLEETS INBOUND");startWar(true);
 });
 document.getElementById("pickFate").addEventListener("click",()=>randomWar());
@@ -17386,8 +17668,695 @@ gl.vertexAttribPointer(0,4,gl.FLOAT,false,28,0);
 gl.enableVertexAttribArray(1);
 gl.vertexAttribPointer(1,3,gl.FLOAT,false,28,16);
 gl.bindVertexArray(null);
+/* ===================== time, smoothing, light and image =====================
+   The simulation advances in fixed 1/30 s steps. The war clock only decides
+   how many steps a wall second buys (pause, 0.25x-4x, slow motion), so a
+   seed fights the same war at any speed. Rendering interpolates hull,
+   round and debris transforms between the last two steps, so 60 Hz displays
+   and slow motion stay smooth instead of repeating 30 Hz poses. */
+const BC=typeof ArmadaBroadcast!=="undefined"?ArmadaBroadcast:null;
+const RP=typeof ArmadaReplay!=="undefined"?ArmadaReplay:null;
+const PX=typeof ArmadaPost!=="undefined"?ArmadaPost:null;
+const warClock=BC?BC.createClock():{rate:1,slow:1,slowing:false,paused:false,advance:d=>d,slowMo(){return false},setRate(){}};
+const reducedMotion=typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+warClock.reduced=reducedMotion;
+const interp={ships:[],rounds:[],wrecks:[],on:false};
+function capturePrevious(){for(const s of ships){s.px=s.x;s.py=s.y;s.pz=s.z;s.pyaw=s.yaw;}}
+function interpolateIn(alpha){
+  if(interp.on)interpolateOut();
+  interp.on=true;const back=(1-alpha)/30;
+  for(const s of ships){
+    if(s.dead||!s.vao||s.px==null)continue;
+    const dx=s.x-s.px,dy=s.y-s.py,dz=s.z-s.pz;
+    if(dx*dx+dy*dy+dz*dz>250000)continue; // a placement jump, not motion: show it
+    let dyaw=s.yaw-s.pyaw;while(dyaw>Math.PI)dyaw-=2*Math.PI;while(dyaw<-Math.PI)dyaw+=2*Math.PI;
+    s.ix=s.x;s.iy=s.y;s.iz=s.z;s.iyaw=s.yaw;interp.ships.push(s);
+    s.x=s.px+dx*alpha;s.y=s.py+dy*alpha;s.z=s.pz+dz*alpha;s.yaw=s.pyaw+dyaw*alpha;
+  }
+  for(const list of [tracers,missiles,plasmas])for(const t of list){
+    if(!(t.vx||t.vy||t.vz))continue;
+    t.ix=t.x;t.iy=t.y;t.iz=t.z;interp.rounds.push(t);t.x-=t.vx*back;t.y-=t.vy*back;t.z-=t.vz*back;
+  }
+  for(const w of wrecks){
+    if(w.gone||w.pending||!w.vao)continue;
+    w.ix=w.x;w.iy=w.y;w.iz=w.z;w.iang=w.ang;interp.wrecks.push(w);
+    w.x-=(w.vx||0)*back;w.y-=(w.vy||0)*back;w.z-=(w.vz||0)*back;if(w.ang!=null)w.ang-=(w.spin||0)*back;
+  }
+}
+function interpolateOut(){
+  for(const s of interp.ships){s.x=s.ix;s.y=s.iy;s.z=s.iz;s.yaw=s.iyaw;}
+  for(const t of interp.rounds){t.x=t.ix;t.y=t.iy;t.z=t.iz;}
+  for(const w of interp.wrecks){w.x=w.ix;w.y=w.iy;w.z=w.iz;w.ang=w.iang;}
+  interp.ships.length=interp.rounds.length=interp.wrecks.length=0;interp.on=false;
+}
+
+/* one sun for every fleet */
+const warLight={sunDir:[.45,.8,.35],sunCol:[1,1,1],fillDir:[-.55,.1,-.65],fillCol:[.86,.9,1],fogCol:[.1,.1,.11],occ:new Float32Array(16),occN:0,style:1};
+function normalise(v){const l=Math.hypot(v[0],v[1],v[2])||1;return [v[0]/l,v[1]/l,v[2]/l];}
+function luminanceTo(c,target){const l=c[0]*.2126+c[1]*.7152+c[2]*.0722||1;return c.map(v=>v*target/l);}
+function setupWarLight(){
+  const sys=starSystem,style=sys?sys.style:1,G=PX?PX.GRADES[style]||PX.GRADES[1]:null;
+  const sun=sys?.bodies?.find(b=>b.kind===5);
+  warLight.sunDir=normalise(sys?.light||[.45,.8,.35]);
+  // The key light is the star the planets are lit by, softened toward white.
+  const base=sun?.base||[1,.95,.86];
+  // Planets take the star's direction untinted; hulls take a trace of its
+  // colour so a red dwarf warms the fleet without painting it.
+  warLight.sunCol=luminanceTo(base.map(v=>.9+.1*v),1.03);
+  warLight.fillDir=normalise([-warLight.sunDir[0],.25,-warLight.sunDir[2]]);
+  const neb=G?G.nebB.map((v,i)=>v+G.nebA[i]*.5):[.2,.25,.35];
+  warLight.fillCol=luminanceTo(normalise(neb).map((v,i)=>[.9,.94,1][i]*.9+.1*v*1.73),.9);
+  warLight.fogCol=G&&palI===2?spacec.map((v,i)=>v+G.nebA[i]*.12):bgc.slice();
+  // Planets eclipse ships: the four worlds nearest the battle cast shadow.
+  const bodies=(worldBodies||[]).filter(b=>b.kind!==5&&b.kind!==6).sort((a,b)=>Math.hypot(...a.center)-a.radius-(Math.hypot(...b.center)-b.radius)).slice(0,4);
+  warLight.occ.fill(0);bodies.forEach((b,i)=>{warLight.occ.set([b.center[0],b.center[1],b.center[2],b.radius],i*4);});
+  warLight.occN=bodies.length;warLight.style=style;
+  if(image)image.setSystem(style,warLight.sunDir,luminanceTo(base,1.2),(sys?.seed||0)>>>0);
+  if(image&&palI!==2){image.sky.k=0;image.grade=PX.GRADES[1];}
+}
+// The brightest recent death flash lights nearby hulls for a moment.
+function explosionLight(now){
+  let best=null,score=0;
+  for(const f of flashes){const age=now-f.t0;if(age<0||age>.9||(f.c!==2&&f.c<10&&f.c!==4))continue;const k=f.size*(1-age/.9);if(k>score){score=k;best=f;}}
+  if(!best||score<30)return null;
+  const age=now-best.t0,fall=Math.exp(-age*3.2),hot=best.c===4?[.55,.85,1.3]:best.c>=11?[.6,.8,1.2]:[1.5,.85,.42];
+  return {pos:[best.x,best.y,best.z,Math.max(120,best.size*7)],col:hot.map(v=>v*fall*Math.min(1.6,score/80))};
+}
+function applyShipLight(now){
+  gl.uniform3fv(SU.sunDir,warLight.sunDir);gl.uniform3fv(SU.sunCol,warLight.sunCol);
+  gl.uniform3fv(SU.fillDir,warLight.fillDir);gl.uniform3fv(SU.fillCol,warLight.fillCol);
+  gl.uniform3fv(SU.fogCol,palI===2?warLight.fogCol:bgc);
+  gl.uniform4fv(SU.occ,warLight.occ);gl.uniform1f(SU.occN,quality.eclipse?warLight.occN:0);
+  const L=explosionLight(now);
+  if(L){gl.uniform4fv(SU.pt,L.pos);gl.uniform3fv(SU.ptCol,L.col);}else gl.uniform4f(SU.pt,0,0,0,0);
+}
+
+/* quality tiers: auto-detected once from a two-second probe, then remembered */
+const qualityParam=typeof location!=="undefined"?new URLSearchParams(location.search).get("quality"):null;
+let qualityTier=(()=>{
+  if(qualityParam&&PX&&PX.TIERS[qualityParam])return qualityParam;
+  try{const saved=JSON.parse(localStorage.getItem("tributeQuality")||"null");if(saved&&PX&&PX.TIERS[saved.tier])return saved.tier;}catch(e){}
+  if(!PX)return "high";
+  const dbg=gl.getExtension&&gl.getExtension("WEBGL_debug_renderer_info");
+  let renderer="";try{renderer=dbg?gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL):"";}catch(e){}
+  return PX.guessTier({coarse:typeof matchMedia==="function"&&matchMedia("(pointer:coarse)").matches,width:innerWidth,cores:navigator.hardwareConcurrency||4,renderer,memory:navigator.deviceMemory||8});
+})();
+dprCap=PX?PX.TIERS[qualityTier].dprCap:1.5;dpr=renderPixelRatio(innerWidth,innerHeight,devicePixelRatio);
+let qualityProbe=(()=>{try{return !qualityParam&&!localStorage.getItem("tributeQuality");}catch(e){return false;}})()?{frames:[],from:0}:null;
+let quality=PX?PX.TIERS[qualityTier]:{msaa:0,fxaa:false,bloomLevels:0,nebula:0,grain:false,vignette:false,dprCap:1.5,minScale:1,fleet:600,eclipse:true,dust:0};
+function setQuality(tier,remember=true){
+  if(!PX||!PX.TIERS[tier])return;
+  qualityTier=tier;quality=PX.TIERS[tier];renderScale=1;dprCap=quality.dprCap;
+  if(remember)try{localStorage.setItem("tributeQuality",JSON.stringify({tier,auto:false}));}catch(e){}
+  dpr=renderPixelRatio(innerWidth,innerHeight,devicePixelRatio);resize();
+  if(image)image.settings.tier=tier;setFleetSize(quality.fleet,false);
+  const sel2=document.getElementById("qualitySel");if(sel2)sel2.value=tier;
+}
+function finishQualityProbe(wall){
+  if(!qualityProbe||!PX)return;
+  if(!qualityProbe.from){qualityProbe.from=wall;return;}
+  if(wall-qualityProbe.from<2)return;
+  const verdict=PX.probeVerdict(qualityTier,qualityProbe.frames);qualityProbe=null;
+  try{localStorage.setItem("tributeQuality",JSON.stringify({tier:verdict,auto:true}));}catch(e){}
+  if(verdict!==qualityTier)setQuality(verdict,false);
+}
+
+/* the image pipeline is created on first draw; a failure falls back to the
+   old direct-to-canvas path instead of a black page */
+const postParam=typeof location!=="undefined"?new URLSearchParams(location.search):null;
+let image=null,imageFailed=!PX||postParam?.get("post")==="0",renderScale=1,scaleRaiseAt=0,rtH=1;
+function imagePipeline(){
+  if(image||imageFailed)return image;
+  try{image=PX.create(gl,cvs);image.settings.tier=qualityTier;if(postParam?.get("tonemap")==="aces")image.settings.curve="aces";setupWarLight();}
+  catch(e){imageFailed=true;image=null;console.warn("image pipeline disabled:",e.message);}
+  return image;
+}
+function invert4(m){
+  const a=m,o=new Float32Array(16);
+  const b00=a[0]*a[5]-a[1]*a[4],b01=a[0]*a[6]-a[2]*a[4],b02=a[0]*a[7]-a[3]*a[4],b03=a[1]*a[6]-a[2]*a[5],b04=a[1]*a[7]-a[3]*a[5],b05=a[2]*a[7]-a[3]*a[6];
+  const b06=a[8]*a[13]-a[9]*a[12],b07=a[8]*a[14]-a[10]*a[12],b08=a[8]*a[15]-a[11]*a[12],b09=a[9]*a[14]-a[10]*a[13],b10=a[9]*a[15]-a[11]*a[13],b11=a[10]*a[15]-a[11]*a[14];
+  let det=b00*b11-b01*b10+b02*b09+b03*b08-b04*b07+b05*b06;if(!det)return o;det=1/det;
+  o[0]=(a[5]*b11-a[6]*b10+a[7]*b09)*det;o[1]=(a[2]*b10-a[1]*b11-a[3]*b09)*det;o[2]=(a[13]*b05-a[14]*b04+a[15]*b03)*det;o[3]=(a[10]*b04-a[9]*b05-a[11]*b03)*det;
+  o[4]=(a[6]*b08-a[4]*b11-a[7]*b07)*det;o[5]=(a[0]*b11-a[2]*b08+a[3]*b07)*det;o[6]=(a[14]*b02-a[12]*b05-a[15]*b01)*det;o[7]=(a[8]*b05-a[10]*b02+a[11]*b01)*det;
+  o[8]=(a[4]*b10-a[5]*b08+a[7]*b06)*det;o[9]=(a[1]*b08-a[0]*b10-a[3]*b06)*det;o[10]=(a[12]*b04-a[13]*b02+a[15]*b00)*det;o[11]=(a[9]*b02-a[8]*b04-a[11]*b00)*det;
+  o[12]=(a[5]*b07-a[4]*b09-a[6]*b06)*det;o[13]=(a[0]*b09-a[1]*b07+a[2]*b06)*det;o[14]=(a[13]*b01-a[12]*b03-a[14]*b00)*det;o[15]=(a[8]*b03-a[9]*b01+a[10]*b00)*det;
+  return o;
+}
+// Hold the frame budget by moving the 3D render scale; never ping-pong.
+function adjustRenderScale(wall){
+  if(!image||wall-resolutionCheck<1)return;
+  resolutionCheck=wall;
+  const budget=qualityTier==="low"?1000/30:1000/60,ms=1000/Math.max(1,fpsA);
+  const next=PX.nextScale(renderScale,ms,budget,quality.minScale,wall>=scaleRaiseAt);
+  if(next<renderScale)scaleRaiseAt=wall+8;
+  renderScale=next;
+}
+
+/* ?perf=1: where the frame goes */
+const perfOn=typeof location!=="undefined"&&/[?&]perf=1/.test(location.search);
+const perf={on:perfOn,acc:{sim:0,ai:0,collide:0,traffic:0,forge:0,submit:0,gpu:0},show:{},frames:0,calls:0,tris:0,callsShown:0,trisShown:0,timer:null,query:null,queries:[],el:null,at:0};
+function lodSelect(pixels,previous,dense){return PX?PX.lodLevel(pixels,previous,dense):pixels<(dense?48:28)*(previous>=1?1.15:.85)?1:0;}
+function lodCrossfade(changedAt,now){return PX?PX.lodFade(changedAt,now):1;}
+function perfStats(){return {...perf.show,calls:perf.callsShown,tris:perf.trisShown};}
+if(perfOn){
+  const timed=(fn,key)=>function(){const t=performance.now();try{return fn.apply(this,arguments);}finally{perf.acc[key]+=performance.now()-t;}};
+  collide=timed(collide,"collide");trafficPilot=timed(trafficPilot,"traffic");prepareTraffic=timed(prepareTraffic,"traffic");debrisPilot=timed(debrisPilot,"traffic");
+  squadThink=timed(squadThink,"ai");onWorkerMsg=timed(onWorkerMsg,"forge");
+  for(const k of ["index","destination"]){const f=battleAI[k].bind(battleAI);battleAI[k]=timed(f,"ai");}
+  for(const name of ["drawElements","drawArrays","drawElementsInstanced","drawArraysInstanced"]){
+    const f=gl[name].bind(gl);
+    gl[name]=function(mode,a,b,c,d){perf.calls++;const count=name==="drawArrays"||name==="drawArraysInstanced"?b:a,inst=name.endsWith("Instanced")?(name==="drawArraysInstanced"?c:d):1;if(mode===gl.TRIANGLES)perf.tris+=count/3*inst;return f(mode,a,b,c,d);};
+  }
+  perf.timer=gl.getExtension("EXT_disjoint_timer_query_webgl2");
+}
+function perfFrameStart(){if(!perf.on)return;perf.calls=0;perf.tris=0;if(perf.timer&&!perf.query&&perf.queries.length<3){perf.query=gl.createQuery();gl.beginQuery(perf.timer.TIME_ELAPSED_EXT,perf.query);}}
+function perfFrameEnd(wall){
+  if(!perf.on)return;
+  if(perf.query){gl.endQuery(perf.timer.TIME_ELAPSED_EXT);perf.queries.push(perf.query);perf.query=null;}
+  while(perf.queries.length&&gl.getQueryParameter(perf.queries[0],gl.QUERY_RESULT_AVAILABLE)){
+    const q=perf.queries.shift();if(!gl.getParameter(perf.timer.GPU_DISJOINT_EXT))perf.acc.gpu+=gl.getQueryParameter(q,gl.QUERY_RESULT)/1e6;gl.deleteQuery(q);perf.gpuN=(perf.gpuN||0)+1;
+  }
+  perf.frames++;
+  if(wall-perf.at<.5)return;
+  const n=Math.max(1,perf.frames);perf.show={};for(const k in perf.acc){perf.show[k]=perf.acc[k]/(k==="gpu"?Math.max(1,perf.gpuN||0):n);perf.acc[k]=0;}
+  perf.gpuN=0;perf.frames=0;perf.at=wall;perf.callsShown=perf.calls;perf.trisShown=perf.tris;
+  if(!perf.el){perf.el=document.createElement("pre");perf.el.id="perfOverlay";document.body.appendChild(perf.el);}
+  const live=ships.filter(s=>!s.dead&&s.vao).length,mem=performance.memory?(performance.memory.usedJSHeapSize/1048576).toFixed(0)+" MB":"n/a";
+  const f=v=>(v||0).toFixed(2).padStart(6);
+  perf.el.textContent=`frame  ${(1000/Math.max(1,fpsA)).toFixed(1)} ms  ${Math.round(fpsA)} fps  scale ${renderScale.toFixed(2)}  ${quality.name||""}\n`+
+    `sim    ${f(perf.show.sim)} ms\n  ai   ${f(perf.show.ai)}\n  coll ${f(perf.show.collide)}\n  pred ${f(perf.show.traffic)}\nforge  ${f(perf.show.forge)}\nsubmit ${f(perf.show.submit)}\n`+
+    `gpu    ${perf.timer?f(perf.show.gpu):"   n/a"}\ndraws  ${perf.callsShown}  tris ${(perf.trisShown/1000).toFixed(0)}k\n`+
+    `ships  ${live}  rounds ${tracers.length+missiles.length+plasmas.length}\nfx     ${flashes.length} flashes ${dusts.length} motes  debris ${wrecks.length}\nheap   ${mem}`;
+}
+
+/* ===================== the broadcast =====================
+   Everything a viewer needs to follow the war without reading anything:
+   a tug-of-war strength bar, a kill feed, a ticker of big moments, the
+   followed pilot's thoughts as captions, a momentum graph, an event-driven
+   Broadcast director with slow motion on big kills, instant replay from a
+   snapshot ring, highlights, the end-of-battle card, and procedural audio.
+   None of it touches combat randomness or the simulation's state. */
+const SIDE_SHAPE=["▲","◆"];
+const bc={log:BC?BC.createLog():null,feed:BC?BC.createFeed():null,momentum:BC?BC.createMomentum():null,director:BC?BC.createDirector():null,
+  ticker:[],shownFeed:"",hudAt:0,duelSeen:new Map(),cloakSeen:new Map(),lastSlow:-99,slowFor:null,endShownAt:null,endTimer:null,prediction:null,
+  replayChipUntil:0,lastBigEvent:null,pendingClips:[],reel:RP?RP.createReel(5):null,ring:null,flashLog:[],retired:[],idleAt:0,audio:null,
+  lastAudioShots:0,combat:0,warTime:0};
+function raceColour(r){const c=(RACE_DEFS[r]||{}).beam||[.8,.8,.8];return "rgb("+c.map(v=>Math.round(Math.min(1,v)*255)).join(",")+")";}
+function shipName(s){return s?.meta?.desig||(s?.meta?.klass)||raceShort(s?.race);}
+function shipClass(s){return (s?.meta?.klass||"").replace(/\s+/g," ").trim()||raceShort(s?.race);}
+function isCapital(s){return !!s&&((s.hulls||0)>=10||(s.slen||0)>=180);}
+function isFirstOne(s){return !!s&&!!(RACE_DEFS[s.race]||{}).unique;}
+function bcEvent(type,data){
+  if(!bc.log)return null;
+  const ev=bc.log.push({t:battleTime,type,...data});
+  if(bc.feed&&/kill|Kill/.test(type))bc.feed.push(ev);
+  const w=BC.WEIGHTS[type]||0;
+  if(w>=26){bc.ticker.unshift({t:ev.t,text:tickerText(ev),side:ev.side,until:performance.now()/1000+(w>=90?6:4.5)});if(bc.ticker.length>4)bc.ticker.length=4;}
+  if(w>=90&&type!=="victory"){bc.lastBigEvent=ev;bc.replayChipUntil=performance.now()/1000+12;bc.pendingClips.push({ev,at:ev.t+3.4});}
+  else if(w>=56&&type!=="ionCharge"&&type!=="victory")bc.pendingClips.push({ev,at:ev.t+3.4});
+  audioForEvent(ev);
+  return ev;
+}
+function tickerText(ev){
+  switch(ev.type){
+    case "capitalKill":case "heroKill":case "firstOneKill":return SIDE_SHAPE[ev.side]+" "+ev.name+" destroyed"+(ev.byName?" by "+ev.byName:"");
+    case "ionCharge":return SIDE_SHAPE[ev.side]+" Ion cannon charging · "+ev.name;
+    case "ionStrike":return SIDE_SHAPE[ev.side]+" Ion strike · "+ev.name;
+    case "reinforcements":return SIDE_SHAPE[ev.side]+" Reinforcements · "+ev.name;
+    case "cloakReveal":return SIDE_SHAPE[ev.side]+" Cloak broken · "+ev.name;
+    case "heroDuel":return "Hero duel · "+ev.name+" vs "+ev.byName;
+    case "squadronWipe":return SIDE_SHAPE[ev.side]+" Squadron lost · "+ev.name;
+    case "arrival":return SIDE_SHAPE[ev.side]+" Arriving · "+ev.name;
+    case "victory":return ev.name+" holds the sky";
+    default:return ev.name;
+  }
+}
+// Called from kill() before the hull is released.
+function bcKill(t,now){
+  if(!bc.log)return;
+  const by=t.lastHit!=null?ships[t.lastHit]:null;
+  const type=isFirstOne(t)?"firstOneKill":t.hero?"heroKill":isCapital(t)?"capitalKill":"kill";
+  const ev=bcEvent(type,{side:t.side,ship:t.id,name:shipName(t),klass:shipClass(t),size:t.slen,hero:!!t.hero,value:BC.shipValue({hp:t.hpMax,hpMax:t.hpMax}),
+    by:by?by.id:null,byName:by?shipName(by):null,x:t.x,y:t.y,z:t.z});
+  if(t.squad>=0&&squads[t.squad]){const q=squads[t.squad];if(q.mem.length>=3&&q.mem.every(id=>ships[id].dead||id===t.id))bcEvent("squadronWipe",{side:t.side,ship:t.id,name:shipClass(t)+" flight",x:t.x,y:t.y,z:t.z,size:t.slen});}
+  if(type!=="kill"){const seen=onScreen(t);if(seen)maybeSlowMo(t,ev);else if(watchMode==="broadcast"&&ev.type!=="kill")bc.autoReplay={ev,at:now+2.2};}
+}
+function onScreen(t){const m=mat(),cw=m[3]*t.x+m[7]*t.y+m[11]*t.z+m[15];if(cw<1)return false;const cx=(m[0]*t.x+m[4]*t.y+m[8]*t.z+m[12])/cw,cy=(m[1]*t.x+m[5]*t.y+m[9]*t.z+m[13])/cw;return Math.abs(cx)<.9&&Math.abs(cy)<.9;}
+function bcIonCharge(g,lock){if(g)bcEvent("ionCharge",{side:g.side,ship:g.id,name:shipName(g),partner:null,until:lock.fire,x:g.x,y:g.y,z:g.z,size:g.slen,point:lock.point});}
+function bcIonStrike(g,lock){if(g)bcEvent("ionStrike",{side:g.side,ship:g.id,name:shipName(g),by:g.id,byName:shipName(g),x:lock.point[0],y:lock.point[1],z:lock.point[2],size:g.slen});}
+function bcReinforce(side,race){bcEvent("reinforcements",{side,name:RACE_DEFS[race].name,x:0,y:0,z:0});}
+function bcVictory(side){bcEvent("victory",{side,name:SIDE_NAME[side]});}
+// Slow motion for big kills the viewer can actually see.
+function maybeSlowMo(t,ev){
+  if(reducedMotion||replayState||pilotId!=null)return;
+  const wall=performance.now()/1000;if(wall-bc.lastSlow<9)return;
+  if(warClock.slowMo(ev.type==="firstOneKill"?2.4:1.7)){bc.lastSlow=wall;bc.slowFor=ev;}
+}
+
+/* per sim step: momentum, duels, cloaks, replay ring, clips, audio shots */
+function broadcastTick(now,dt){
+  if(!bc.log||warT0===Infinity)return;
+  const T=now-warT0;
+  if(bc.momentum.sample(T,BC.strength(ships,s=>s.vao&&T-s.delay>=0)))drawMomentum();
+  // Heroes meeting head to head.
+  if(((now*30)|0)%15===0){
+    const heroes=ships.filter(s=>s.hero&&!s.dead&&s.vao&&s.arr&&!s.grace);
+    for(const a of heroes)for(const b of heroes){
+      if(a.side!==0||b.side!==1)continue;
+      const key=a.id+":"+b.id,d=Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
+      if(d<1600&&now-(bc.duelSeen.get(key)??-99)>25){bc.duelSeen.set(key,now);bcEvent("heroDuel",{side:a.side,ship:a.id,partner:b.id,name:shipName(a),byName:shipName(b),x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:(a.z+b.z)/2,size:Math.max(a.slen,b.slen),hero:true});}
+    }
+    for(const s of ships){
+      if(s.dead||!s.vao||!s.arr)continue;
+      if(s.wasCloaked&&!s.cloaked&&(s.slen>=60||s.hero)&&now-(bc.cloakSeen.get(s.id)??-99)>20){bc.cloakSeen.set(s.id,now);bcEvent("cloakReveal",{side:s.side,ship:s.id,name:shipName(s),x:s.x,y:s.y,z:s.z,size:s.slen});}
+      s.wasCloaked=s.cloaked;
+      if(s.foArrivalAt===now-dt||(s.foArrivalAt!=null&&Math.abs(s.foArrivalAt-now)<.5&&!s.bcArrived)){s.bcArrived=true;bcEvent("arrival",{side:s.side,ship:s.id,name:shipName(s),x:s.x,y:s.y,z:s.z,size:s.slen});}
+    }
+  }
+  if(bc.ring){
+    bc.ring.record(now,ships,s=>!s.dead&&!!s.vao&&T-s.delay>=0,replaySegments());
+  }
+  // Broadcast: a big kill the camera missed gets "let's see that again".
+  if(bc.autoReplay&&now>=bc.autoReplay.at){
+    const ev=bc.autoReplay.ev;bc.autoReplay=null;
+    if(watchMode==="broadcast"&&!replayState&&winner==null&&now-(bc.lastAuto??-99)>18&&document.getElementById("warMenu").hidden!==false){
+      bc.lastAuto=now;const r=bc.ring&&bc.ring.range();
+      if(r&&ev.t-4>=r[0])startReplay({t0:ev.t-4,t1:Math.min(r[1],ev.t+2),focus:[ev.x,ev.y,ev.z],subject:ev.ship,slowAt:ev.t,label:"Replay · "+ev.name});
+    }
+  }
+  for(let i=bc.pendingClips.length-1;i>=0;i--)if(now>=bc.pendingClips[i].at){captureClip(bc.pendingClips[i].ev);bc.pendingClips.splice(i,1);}
+  audioShots(now);dyingCapitals(now);
+  if(streaks.length){let k=0;for(const q of streaks)if(now-q.t0<q.life)streaks[k++]=q;streaks.length=k;}
+  const cut=now-25;if(bc.flashLog.length&&bc.flashLog[0].t0<cut){let k=0;while(k<bc.flashLog.length&&bc.flashLog[k].t0<cut)k++;bc.flashLog.splice(0,k);}
+  retireMeshes(now,false);
+}
+// Weapon segments for replay: [ax,ay,az,bx,by,bz,race,kind]; kind 0 bolt, 1 beam, 2 round, 3 ion.
+const segScratch=[];
+function replaySegments(){
+  segScratch.length=0;let n=0;
+  for(const b of beams){if(n>=600)break;if(b.spark||!b.a||!b.b)continue;segScratch.push([b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2],b.race??0,b.ion?3:b.coherent?1:0]);n++;}
+  for(const t of tracers){if(n>=700)break;segScratch.push([t.x,t.y,t.z,t.x-t.vx*.035,t.y-t.vy*.035,t.z-t.vz*.035,t.race??0,2]);n++;}
+  return segScratch;
+}
+// A dead hull's mesh lives on for the replay window (and while a highlight holds it).
+function retireMesh(s,now){
+  if(!s.vao)return;
+  // A corpse retires after its clips were captured: count the pins it already has.
+  let pins=0;if(bc.reel)for(const c of bc.reel.clips)if(c.ids.includes(s.id))pins++;
+  s.replayMesh={vao:s.vao,vbo:s.vbo,ibo:s.ibo,icount:s.icount,t:now,pins};bc.retired.push(s);
+}
+function retireMeshes(now,all){
+  let k=0;
+  for(const s of bc.retired){
+    const m=s.replayMesh;if(!m)continue;
+    if(all||(now-m.t>24&&m.pins<=0)){gl.deleteVertexArray(m.vao);gl.deleteBuffer(m.vbo);gl.deleteBuffer(m.ibo);s.replayMesh=null;}
+    else bc.retired[k++]=s;
+  }
+  bc.retired.length=k;
+}
+function captureClip(ev){
+  if(!bc.ring||!bc.reel)return;
+  const range=bc.ring.range();if(!range)return;
+  const t0=Math.max(range[0],ev.t-6),t1=Math.min(range[1],ev.t+3.4);if(t1-t0<2)return;
+  const c=[ev.x,ev.y,ev.z],R=Math.max(2500,(ev.size||100)*6);
+  const near=ships.filter(s=>s&&(s.vao||s.replayMesh)&&Math.hypot(s.x-c[0],s.y-c[1],s.z-c[2])<R*1.6).sort((a,b)=>Math.hypot(a.x-c[0],a.y-c[1],a.z-c[2])-Math.hypot(b.x-c[0],b.y-c[1],b.z-c[2])).slice(0,160).map(s=>s.id);
+  for(const id of [ev.ship,ev.by,ev.partner])if(id!=null&&!near.includes(id))near.push(id);
+  const flashes2=bc.flashLog.filter(f=>f.t0>=t0-1&&f.t0<=t1&&Math.hypot(f.x-c[0],f.y-c[1],f.z-c[2])<R*2).map(f=>({...f}));
+  const clip=bc.ring.clip(t0,t1,near,{score:BC.scoreEvent(ev,ev.t)*(ev.value?1+Math.log10(1+ev.value)*.1:1),ev,flashes:flashes2,focus:c});
+  for(const id of near){const m=ships[id]?.replayMesh;if(m)m.pins++;}
+  const evicted=bc.reel.offer(clip);
+  if(evicted)for(const id of evicted.ids){const m=ships[id]?.replayMesh;if(m)m.pins--;}
+}
+
+/* ---------- replay playback ---------- */
+let replayState=null;
+function startReplay(opts){
+  if(!RP||!bc.ring)return false;
+  const range=bc.ring.range();
+  if(!opts.clip&&(!range||range[1]-range[0]<2))return false;
+  const live={watchMode,sel,orb:orb?{...orb}:null,cam:{...cam}};
+  const t0=opts.clip?opts.clip.start:Math.max(range[0],opts.t0),t1=opts.clip?opts.clip.end:Math.min(range[1],opts.t1);
+  const focus=opts.focus||opts.clip?.meta.focus||null;
+  replayState={t:t0,t0,t1,clip:opts.clip||null,focus,subject:opts.subject??null,slowAt:opts.slowAt??null,live,label:opts.label||"Replay",
+    angle:(cam.yaw||0)+Math.PI*.55,queue:opts.queue||null,onEnd:opts.onEnd||null,recording:opts.recording||false};
+  document.body.classList.add("replaying");ui("open");
+  return true;
+}
+function endReplay(){
+  const r=replayState;if(!r)return;
+  replayState=null;document.body.classList.remove("replaying");
+  if(r.queue&&r.queue.length){const next=r.queue.shift();startReplay({...next,queue:r.queue,onEnd:r.onEnd,recording:r.recording});return;}
+  Object.assign(cam,r.live.cam);watchMode=r.live.watchMode;
+  if(r.onEnd)r.onEnd();
+}
+function replayFrame(elapsed){
+  const r=replayState;if(!r)return false;
+  let speed=1;
+  if(r.slowAt!=null&&!reducedMotion){const d=r.t-r.slowAt;speed=d>-.6&&d<1.8?.3:1;}
+  r.t+=elapsed*speed*(warClock.paused?0:1);
+  if(r.t>=r.t1){endReplay();return !!replayState;}
+  return true;
+}
+const replayOut=new Float32Array(8);
+let replaySaved=null;
+// Swap the recorded world in for one frame; replayRestore puts it back.
+function replayApply(){
+  const r=replayState,src=r.clip||bc.ring;
+  replaySaved={ships:[],wrecks:[],beams,tracers,flashes,missiles,plasmas,mines};
+  const segs=src.segmentsAt(r.t);
+  const fb=[],ft=[];
+  if(segs.data)for(let i=0;i<segs.n;i++){
+    const o=i*8,a=[segs.data[o],segs.data[o+1],segs.data[o+2]],b=[segs.data[o+3],segs.data[o+4],segs.data[o+5]],race=segs.data[o+6],kind=segs.data[o+7];
+    if(kind===2)ft.push({x:a[0],y:a[1],z:a[2],vx:(a[0]-b[0])/.035,vy:(a[1]-b[1])/.035,vz:(a[2]-b[2])/.035,race,t0:r.t-1});
+    else if(kind===1)fb.push({a,b,race,coherent:true,t0:r.t,life:1,wid:3});
+    else if(kind===3)fb.push({a,b,race,ion:true,t0:r.t-.3,wid:30});
+    else fb.push({a,b,race,t0:r.t});
+  }
+  beams=fb;tracers=ft;missiles=[];plasmas=[];mines=[];
+  const fl=r.clip?r.clip.meta.flashes:bc.flashLog;flashes=fl.filter(f=>f.t0<=r.t&&r.t-f.t0<effectLife(f.c));
+  for(const s of ships){
+    if(!s)continue;
+    const rec={s,x:s.x,y:s.y,z:s.z,yaw:s.yaw,roll:s.roll,pitch:s.pitch,dead:s.dead,vao:s.vao,icount:s.icount,hurtT:s.hurtT,brUntil:s.brUntil,cloakAmt:s.cloakAmt,dvx:s.dvx,dvy:s.dvy,dvz:s.dvz};
+    replaySaved.ships.push(rec);
+    const has=src.sample(r.t,s.id,replayOut);
+    if(!has||!replayOut[6]){s.vao=null;continue;}
+    // A disabled capital handed its mesh to its drifting wreck: borrow it back.
+    const mesh=s.vao?null:s.replayMesh||(s.disabled?wrecks.find(w=>w.disabled&&!w.gone&&w.src===s.id&&w.vao):null);
+    if(!s.vao&&!mesh){continue;}
+    if(mesh){s.vao=mesh.vao;s.icount=mesh.icount;}
+    s.x=replayOut[0];s.y=replayOut[1];s.z=replayOut[2];s.yaw=replayOut[3];s.roll=replayOut[4];s.pitch=replayOut[5];
+    s.dead=false;s.hurtT=-9;s.brUntil=0;s.cloakAmt=0;
+  }
+  for(const w of wrecks){
+    replaySaved.wrecks.push({w,x:w.x,y:w.y,z:w.z,ang:w.ang,gone:w.gone});
+    const keep=!w.gone&&w.t0<=r.t&&(!r.clip||r.clip.ids.includes(w.src));
+    if(!keep){w.gone=true;continue;}
+    const back=battleTime-r.t;w.x-=(w.vx||0)*back;w.y-=(w.vy||0)*back;w.z-=(w.vz||0)*back;if(w.ang!=null)w.ang-=(w.spin||0)*back;
+  }
+}
+function replayRestore(){
+  if(!replaySaved)return;
+  for(const r of replaySaved.ships)Object.assign(r.s,{x:r.x,y:r.y,z:r.z,yaw:r.yaw,roll:r.roll,pitch:r.pitch,dead:r.dead,vao:r.vao,icount:r.icount,hurtT:r.hurtT,brUntil:r.brUntil,cloakAmt:r.cloakAmt,dvx:r.dvx,dvy:r.dvy,dvz:r.dvz});
+  for(const r of replaySaved.wrecks)Object.assign(r.w,{x:r.x,y:r.y,z:r.z,ang:r.ang,gone:r.gone});
+  ({beams,tracers,flashes,missiles,plasmas,mines}=replaySaved);replaySaved=null;
+}
+// A new angle on the moment: a slow orbit around the subject or focus.
+function replayCamera(wallDt){
+  const r=replayState,src=r.clip||bc.ring;let c=r.focus,size=300;
+  if(r.subject!=null&&src.sample(Math.min(r.t,r.slowAt!=null?r.slowAt:r.t),r.subject,replayOut)&&replayOut[6]){c=[replayOut[0],replayOut[1],replayOut[2]];size=ships[r.subject]?.slen||300;}
+  if(!c)return;
+  r.angle+=wallDt*.12;
+  // Three lengths frames a frigate or a Star Destroyer; a 19 km dreadnought
+  // at 63 km is lost to distance, so huge hulls come in closer.
+  const d=Math.max(220,Math.min(size*3.2,size*1.25+4000)),e=[c[0]+Math.cos(r.angle)*d,c[1]+d*.32,c[2]+Math.sin(r.angle)*d];
+  if(!r.camPos)r.camPos=e.slice();
+  const k=1-Math.exp(-wallDt*2.2);for(let i=0;i<3;i++)r.camPos[i]+=(e[i]-r.camPos[i])*k;
+  [cam.ex,cam.ey,cam.ez]=r.camPos;
+  const dx=c[0]-cam.ex,dy=c[1]-cam.ey,dz=c[2]-cam.ez;cam.yaw=Math.atan2(dz,dx);cam.pitch=Math.atan2(dy,Math.hypot(dx,dz));
+  watchGoal={far:d*20};
+}
+function instantReplay(){
+  if(replayState){endReplay();return;}
+  const ev=bc.lastBigEvent,range=bc.ring?.range();if(!range){toast("NOTHING TO REPLAY YET");return;}
+  if(ev&&ev.t>=range[0]+1)startReplay({t0:ev.t-5,t1:Math.min(range[1],ev.t+3),focus:[ev.x,ev.y,ev.z],subject:ev.ship,slowAt:ev.t,label:"Replay · "+ev.name});
+  else startReplay({t0:range[1]-8,t1:range[1],focus:null,subject:sel??actionCamera?.subject??null,label:"Replay"});
+}
+function playHighlights(recording=false,onEnd=null){
+  const clips=bc.reel?.chronological()||[];
+  if(!clips.length){toast("NO HIGHLIGHTS YET");return false;}
+  const q=clips.map(c=>({clip:c,subject:c.meta.ev.ship,slowAt:c.meta.ev.t,label:"Highlight · "+tickerText(c.meta.ev).replace(/^[▲◆] /,"")}));
+  const first=q.shift();
+  hideEndCard();
+  return startReplay({...first,queue:q,recording,onEnd:()=>{if(onEnd)onEnd();if(winner!=null)showEndCard();}});
+}
+
+/* ---------- Broadcast director ---------- */
+function broadcastCandidates(now,live){
+  const out=[],a=actionCamera;
+  const big=live.filter(s=>s.arr&&!s.grace).sort((x,y)=>y.slen-x.slen)[0]||live[0];
+  out.push({phase:"establish",kind:((a?.index||0)&1)?"top":"all",subject:big.id,partner:null,score:20});
+  for(const ev of bc.log.since(now-8)){
+    const s=ships[ev.ship],score=BC.scoreEvent(ev,now);if(score<8)continue;
+    if(ev.type==="ionCharge"&&s&&!s.dead)out.push({phase:ev.until>now+1.5?"build":"climax",kind:"capital",subject:s.id,partner:null,score});
+    else if(ev.type==="heroDuel"&&s&&!s.dead)out.push({phase:"build",kind:"duel",subject:s.id,partner:ev.partner,score});
+    else if(/Kill/.test(ev.type)){
+      const k=ships[ev.by];
+      if(now-ev.t<1.5&&k&&!k.dead)out.push({phase:"climax",kind:"capital",subject:k.id,partner:null,score});
+      if(k&&!k.dead)out.push({phase:"reaction",kind:window.ArmadaCrew?.drawInterior&&k.slen>=40?"captain":"chase",subject:k.id,partner:null,score:score*.5});
+    }else if(ev.type==="reinforcements"||ev.type==="arrival"){if(s&&!s.dead)out.push({phase:"build",kind:"capital",subject:s.id,partner:null,score});}
+  }
+  // Capitals near death are about to pay off; capitals closing on each other build tension.
+  // Forecast deaths: capitals and heroes low on hull and still taking fire
+  // are about to pay off, so the director can be there before they go.
+  for(const s of live){
+    if(!(isCapital(s)||s.hero)||!s.arr)continue;
+    const frac=s.hp/Math.max(1,s.hpMax),hot=now-(s.hurtT??-99)<2.5;
+    const killer=s.lastHit!=null&&ships[s.lastHit]&&!ships[s.lastHit].dead?s.lastHit:null;
+    if(frac<.4&&hot)out.push({phase:"climax",kind:s.hero&&!isCapital(s)?"chase":"capital",subject:s.id,partner:killer,score:60+60*(1-frac/.4)+(s.hero?12:0)});
+    if(s.foCharge)out.push({phase:"climax",kind:"capital",subject:s.id,partner:s.foCharge.target,score:95});
+  }
+  const pairs=live.filter(s=>isCapital(s)&&s.arr&&!s.grace).slice(0,24);
+  for(const p of pairs)for(const q of pairs)if(p.side===0&&q.side===1){const d=Math.hypot(p.x-q.x,p.y-q.y,p.z-q.z);if(d<Math.max(2500,(p.slen+q.slen)*2.5))out.push({phase:"build",kind:"duel",subject:p.id,partner:q.id,score:40+Math.min(20,(p.slen+q.slen)/200)});}
+  // Dogfights from the existing action camera's heat ranking.
+  if(a){const shot=cinemaChoose(a,live,now);if(shot)out.push({phase:shot.kind==="captain"||shot.kind==="cockpit"?"reaction":"build",kind:shot.kind,subject:shot.subject,partner:shot.partner,score:BC.WEIGHTS.dogfight+(shot.kind==="chase"?6:0)});}
+  return out;
+}
+function updateBroadcastCamera(now,dt){
+  if(!Number.isFinite(warT0)||!bc.director)return updateActionCamera(now,dt);
+  const age=now-warT0;
+  if(age<9)return updateActionCamera(now,dt); // the arrival sequence is already scripted
+  if(!actionCamera)actionCamera={clock:0,until:0,index:0,subject:null,partner:null,kind:null,history:[],kindAt:{},lastWide:0,scanAt:0};
+  const a=actionCamera;a.clock+=dt;
+  const s=ships[a.subject],died=s&&s.dead&&now-(s.deadT??-99)<2.8;
+  let layout=null;
+  if(!died&&a.clock>=(a.nextThink||0)){
+    a.nextThink=a.clock+.25;
+    const live=ships.filter(q=>q&&!q.dead&&q.vao&&!q.reliefPending&&!q.cloaked);if(!live.length)return;
+    const shot=bc.director.update(.25,broadcastCandidates(now,live),id=>ships[id]&&!ships[id].dead);
+    if(shot&&ships[shot.subject]&&!ships[shot.subject].dead){layout=cinemaStart(a,{kind:shot.kind,subject:shot.subject,partner:ships[shot.partner]&&!ships[shot.partner].dead?shot.partner:null},live,now);a.phase=shot.phase;}
+  }
+  if(!layout){if(!s||(s.dead&&!died))return;layout=cinemaLayout(a,now,dt);}
+  const [dx,dy,dz]=V.sub(layout.focus,layout.eye);
+  [cam.ex,cam.ey,cam.ez]=layout.eye;cam.yaw=Math.atan2(dz,dx);cam.pitch=Math.atan2(dy,Math.hypot(dx,dz));
+  watchGoal={far:layout.far};
+  const label=document.getElementById("watchLabel"),caption="Broadcast · "+({establish:"The field",build:"Building",climax:"Now",reaction:"Aftermath"}[a.phase]||"Live")+" · "+cinemaCaption();
+  if(label.textContent!==caption)label.textContent=caption;
+}
+
+/* ---------- HUD ---------- */
+function drawMomentum(){
+  const c=document.getElementById("bcMomentum");if(!c||!bc.momentum)return;
+  const g=c.getContext&&c.getContext("2d");if(!g||!g.clearRect)return;
+  const S=bc.momentum.samples,w=c.width,h=c.height;g.clearRect(0,0,w,h);if(S.length<2)return;
+  const span=Math.max(60,S[S.length-1].t-S[0].t),t0=S[S.length-1].t-span;
+  g.fillStyle=raceColour(sideRace[1]);g.globalAlpha=.55;g.fillRect(0,0,w,h);
+  g.globalAlpha=.85;g.fillStyle=raceColour(sideRace[0]);g.beginPath();g.moveTo(0,h);
+  for(const p of S){if(p.t<t0)continue;g.lineTo((p.t-t0)/span*w,h-p.share*h);}
+  g.lineTo(w,h);g.closePath();g.fill();
+  g.globalAlpha=.8;g.strokeStyle="#fff";g.lineWidth=1;g.beginPath();g.moveTo(0,h/2);g.lineTo(w,h/2);g.setLineDash([2,3]);g.stroke();g.setLineDash([]);g.globalAlpha=1;
+}
+function updateHud(wall,now){
+  if(!bc.log||wall-bc.hudAt<.12)return;bc.hudAt=wall;
+  const top=document.getElementById("bcTop");if(!top)return;
+  const T=now-warT0,str=BC.strength(ships,s=>s.vao&&T-s.delay>=0),total=str[0]+str[1],share=total?str[0]/total:.5;
+  const alive=[0,0],caps=[[],[]];
+  for(const s of ships){if(s.dead||!s.vao)continue;alive[s.side]++;if((isCapital(s)||s.hero)&&caps[s.side].length<8)caps[s.side].push(s);}
+  const icons=side=>caps[side].map(s=>"<button type=\"button\" class=\"bcIcon"+(s.hero?" hero":"")+(sel===s.id?" on":"")+"\" data-hid=\""+s.id+"\" title=\""+shipName(s)+"\" aria-label=\"Follow "+shipName(s)+"\">"+(s.hero?"★":SIDE_SHAPE[side])+"</button>").join("");
+  // Build the frame once per matchup; update numbers and widths in place so
+  // the ship buttons are not recreated under the pointer.
+  const frameKey=sideRace.join("v");
+  if(top.dataset.frame!==frameKey||!top.querySelector?.(".bcBar")){
+    top.dataset.frame=frameKey;top.dataset.icons="";
+    top.innerHTML="<div class=\"bcSide a\"><span class=\"bcShape\">"+SIDE_SHAPE[0]+"</span><b>"+raceShort(sideRace[0])+"</b><span class=\"bcCount\"></span><span class=\"bcIcons\"></span></div>"+
+      "<div class=\"bcBar\" role=\"img\"><i style=\"background:"+raceColour(sideRace[0])+"\"></i><i style=\"background:"+raceColour(sideRace[1])+"\"></i><em></em></div>"+
+      "<div class=\"bcSide b\"><span class=\"bcIcons\"></span><span class=\"bcCount\"></span><b>"+raceShort(sideRace[1])+"</b><span class=\"bcShape\">"+SIDE_SHAPE[1]+"</span></div>";
+  }
+  const bar=top.querySelector?.(".bcBar");
+  if(bar){
+    const pct=(share*100).toFixed(1),parts=bar.children;parts[0].style.width=pct+"%";parts[1].style.width=(100-share*100).toFixed(1)+"%";parts[2].style.left=pct+"%";
+    bar.setAttribute("aria-label","Strength "+Math.round(share*100)+" to "+Math.round(100-share*100));
+    const counts=top.querySelectorAll(".bcCount");counts[0].textContent=alive[0];counts[1].textContent=alive[1];
+    const iconKey=caps.map(c=>c.map(s=>s.id+(sel===s.id?"*":"")).join()).join("|");
+    if(top.dataset.icons!==iconKey){top.dataset.icons=iconKey;const slots=top.querySelectorAll(".bcIcons");slots[0].innerHTML=icons(0);slots[1].innerHTML=icons(1);}
+  }
+  const feed=bc.feed.visible(now),fh=feed.map(l=>"<div class=\"bcFeedLine"+(l.major?" major":"")+"\" style=\"--c:"+raceColour(sideRace[l.side]??0)+"\"><span class=\"bcShape\">"+SIDE_SHAPE[l.side]+"</span>"+escapeHtml(l.text)+"</div>").join("");
+  if(bc.shownFeed!==fh){bc.shownFeed=fh;document.getElementById("bcFeed").innerHTML=fh;}
+  const tk=bc.ticker.filter(x=>wall<x.until),th=tk.slice(0,2).map(x=>"<div class=\"bcTick\">"+escapeHtml(x.text)+"</div>").join("");
+  const tEl=document.getElementById("bcTicker");if(tEl.dataset.h!==th){tEl.dataset.h=th;tEl.innerHTML=th;}
+  // The followed pilot's thoughts, as broadcast captions.
+  const cap=document.getElementById("bcCaption"),subject=pilotId??sel??(["action","broadcast"].includes(watchMode)?actionCamera?.subject:null),s=ships[subject];
+  let text="";if(s&&!s.dead&&s.meta&&!replayState){const th2=captionThought(s,now);if(th2)text="“"+th2+"” — "+shipName(s);}
+  if(cap.textContent!==text){cap.textContent=text;cap.classList.toggle("on",!!text);}
+  const chip=document.getElementById("bcReplayChip");chip.hidden=!(wall<bc.replayChipUntil&&!replayState&&bc.lastBigEvent);
+  if(!chip.hidden)chip.textContent="↺ Replay · "+bc.lastBigEvent.name;
+  const rp=document.getElementById("bcReplayBar");rp.hidden=!replayState;
+  if(replayState){const r=replayState,lab=rp.querySelector("b"),bar=rp.querySelector("i");if(lab)lab.textContent=r.label;if(bar)bar.style.width=(100*(r.t-r.t0)/Math.max(.01,r.t1-r.t0)).toFixed(1)+"%";}
+  const clock=document.getElementById("bcClock");if(clock)clock.textContent=BC.fmt(Math.max(0,now-warT0))+(warClock.slowing?" · SLOW MOTION":"");
+  for(const b of document.querySelectorAll("#bcSpeed [data-rate]"))b.setAttribute("aria-pressed",String(+b.dataset.rate===warClock.rate));
+}
+function fleetTitle(n){return String(n).split(" ").map(w=>({USCM:"USCM",EARTHFORCE:"EarthForce",OF:"of"}[w]||w.charAt(0)+w.slice(1).toLowerCase())).join(" ");}
+// The pilot's voice, not the sensor log: the older flavour lines, held long
+// enough to read. The AI brain is only hidden from the text builder.
+function captionThought(s,now){
+  if(s.capLine&&s.capId===s.id&&now-s.capAt<4.5)return s.capLine;
+  const ai=s.ai;let line="";
+  try{s.ai=null;line=thoughtLine(s,now);}catch(e){line="";}finally{s.ai=ai;}
+  if(!line||/^in hyperspace|^waiting/.test(line))return "";
+  line=line.charAt(0).toUpperCase()+line.slice(1);
+  s.capLine=line;s.capId=s.id;s.capAt=now;return line;
+}
+function escapeHtml(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));}
+
+/* ---------- end of battle ---------- */
+function battleSummary(){
+  const alive=[0,0];for(const s of ships)if(!s.dead&&s.vao)alive[s.side]++;
+  const m=BC.mvp(ships,bc.log),ms=m?ships[m.id]:null;
+  const place=starSystem?.name||null;
+  return {names:[SIDE_NAME[0],SIDE_NAME[1]].map(fleetTitle),place,duration:Math.max(0,battleTime-warT0),winner,alive,spawned:spawned.slice(),lost:[spawned[0]-alive[0],spawned[1]-alive[1]],mvp:ms,mvpName:ms?shipName(ms):null,mvpKills:m?m.kills:0};
+}
+function hideEndCard(){const el=document.getElementById("bcEnd");if(el)el.hidden=true;document.body.classList.remove("ending");}
+function showEndCard(){
+  const el=document.getElementById("bcEnd");if(!el||winner==null||!bc.log)return;
+  const S=battleSummary();bc.summary=S;
+  const lines=BC.story(bc.log,S,bc.momentum);
+  const called=bc.prediction==null?"":bc.prediction===winner?"<p class=\"bcCall ok\">You called it.</p>":"<p class=\"bcCall\">You called "+escapeHtml(S.names[bc.prediction])+". Not this time.</p>";
+  const mvp=S.mvp,crew=mvp&&window.ArmadaCrew?.profile(mvp.seed??mvp.id,mvp.race,mvp.meta?.klass||"");
+  el.innerHTML="<div class=\"bcEndPanel\"><div class=\"eyebrow\">"+BC.fmt(S.duration)+(S.place?" · "+escapeHtml(S.place):"")+"</div><h2>"+escapeHtml(S.names[winner])+" holds the sky</h2>"+called+
+    "<div class=\"bcLosses\"><span>"+SIDE_SHAPE[0]+" "+escapeHtml(S.names[0])+" lost "+S.lost[0]+" of "+S.spawned[0]+"</span><span>"+SIDE_SHAPE[1]+" "+escapeHtml(S.names[1])+" lost "+S.lost[1]+" of "+S.spawned[1]+"</span></div>"+
+    (mvp?"<div class=\"bcMvp\"><canvas id=\"bcMvpPortrait\" width=\"260\" height=\"150\" aria-label=\"MVP captain\"></canvas><div><div class=\"eyebrow\">MVP</div><b>"+escapeHtml(shipName(mvp))+"</b><div>"+escapeHtml(shipClass(mvp))+" · "+S.mvpKills+" kill"+(S.mvpKills===1?"":"s")+"</div>"+(crew?"<div>"+escapeHtml(crew.role+" "+crew.name)+"</div>":"")+"<div class=\"bcRecord\">"+escapeHtml(BC.serviceRecord(mvp.seed??mvp.id,mvp.meta?.klass))+"</div></div></div>":"")+
+    "<ol class=\"bcStory\">"+lines.map(l=>"<li>"+escapeHtml(l)+"</li>").join("")+"</ol>"+
+    "<div class=\"bcEndButtons\"><button type=\"button\" data-end=\"highlights\">▶ Highlights</button><button type=\"button\" data-end=\"replay\">↺ Last moment</button><button type=\"button\" data-end=\"png\">Save card</button>"+(typeof MediaRecorder!=="undefined"?"<button type=\"button\" data-end=\"webm\">Record clip</button>":"")+
+    "<button type=\"button\" data-end=\"next\" class=\"primary\">Next war</button><button type=\"button\" data-end=\"choose\">Choose fleets</button></div></div>";
+  el.hidden=false;document.body.classList.add("ending");
+  if(crew)try{window.ArmadaCrew.draw(document.getElementById("bcMvpPortrait"),crew,{fear:0,hull:mvp.hp/Math.max(1,mvp.hpMax),hit:0,firing:false},0);}catch(e){}
+}
+document.addEventListener?.("click",e=>{
+  const b=e.target.closest&&e.target.closest("[data-end]");if(!b)return;
+  const k=b.dataset.end;ui("click");
+  if(k==="highlights")playHighlights(false);
+  else if(k==="replay"){hideEndCard();instantReplay();bc.afterReplayCard=true;}
+  else if(k==="png")saveCard();
+  else if(k==="webm")recordHighlights();
+  else if(k==="next"){hideEndCard();spectacleWar(true);}
+  else if(k==="choose"){hideEndCard();openPicker();}
+});
+let captureNext=null;
+function saveCard(){
+  captureNext=gl=>{
+    const S=bc.summary||battleSummary(),c=document.createElement("canvas");c.width=1200;c.height=630;const g=c.getContext("2d");
+    const ar=cvs.width/cvs.height,w=630*ar;g.drawImage(cvs,(1200-w)/2,0,w,630);
+    const grad=g.createLinearGradient(0,0,0,630);grad.addColorStop(0,"rgba(5,7,10,.1)");grad.addColorStop(.55,"rgba(5,7,10,.35)");grad.addColorStop(1,"rgba(5,7,10,.92)");g.fillStyle=grad;g.fillRect(0,0,1200,630);
+    g.fillStyle="#e8eef2";g.font="600 20px 'IBM Plex Mono',monospace";g.fillText("THE TRIBUTE WAR · "+BC.fmt(S.duration),48,60);
+    g.font="700 58px 'Saira Condensed',sans-serif";g.fillText((winner!=null?S.names[winner]+" holds the sky":S.names[0]+" vs "+S.names[1]).toUpperCase(),48,470);
+    g.font="500 22px 'IBM Plex Mono',monospace";g.fillStyle="#c5d0d6";
+    g.fillText(SIDE_SHAPE[0]+" "+S.names[0]+" lost "+S.lost[0]+"   "+SIDE_SHAPE[1]+" "+S.names[1]+" lost "+S.lost[1],48,515);
+    if(S.mvpName)g.fillText("MVP · "+S.mvpName+" · "+S.mvpKills+" kills",48,550);
+    g.fillStyle="#8fa0a8";g.font="500 18px 'IBM Plex Mono',monospace";g.fillText("johnbr0phy.github.io/orbital-yard · fan tribute, procedural ships",48,595);
+    c.toBlob(b=>{if(!b)return;const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="tribute-war.png";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);},"image/png");
+  };
+}
+// Highlights recorded from a 2D canvas that composites the battle and its captions.
+let recorder=null;
+function recordHighlights(){
+  if(typeof MediaRecorder==="undefined"||recorder)return;
+  const out=document.createElement("canvas");out.width=Math.min(1280,cvs.width);out.height=Math.round(out.width*cvs.height/cvs.width);
+  const g=out.getContext("2d"),stream=out.captureStream(30);
+  const type=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"].find(t=>MediaRecorder.isTypeSupported(t));
+  if(!type){toast("THIS BROWSER CANNOT RECORD WEBM");return;}
+  const chunks=[];recorder=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:6e6});
+  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+  recorder.onstop=()=>{const b=new Blob(chunks,{type:"video/webm"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="tribute-war-highlights.webm";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),8000);recorder=null;toast("CLIP SAVED");};
+  recorder.frame=()=>{g.drawImage(cvs,0,0,out.width,out.height);const r=replayState;if(r){g.fillStyle="rgba(0,0,0,.45)";g.fillRect(0,out.height-54,out.width,54);g.fillStyle="#eef3f5";g.font="600 22px 'IBM Plex Mono',monospace";g.fillText(r.label,24,out.height-20);g.font="500 16px 'IBM Plex Mono',monospace";g.fillStyle="#a9b6bc";g.textAlign="right";g.fillText("THE TRIBUTE WAR",out.width-24,out.height-20);g.textAlign="left";}};
+  recorder.start(500);
+  if(!playHighlights(true,()=>{setTimeout(()=>recorder&&recorder.stop(),300);}))recorder.stop();
+}
+
+/* ---------- audio ---------- */
+const AUDIO_STYLE={0:"laser",1:"plasma",2:"beam",3:"kinetic",4:"beam",5:"laser",6:"laser",7:"beam",8:"beam",9:"pulse",10:"phaser",11:"pulse",12:"beam",13:"pulse",14:"kinetic",15:"plasma",16:"plasma",17:"arc",18:"pulse",19:"phaser",20:"kinetic",21:"organic",22:"kinetic"};
+const ENGINE_STYLE={1:"organic",8:"organic",21:"organic",15:"organic",12:"hum",7:"hum",17:"hum",10:"hum",22:"roar",14:"roar",20:"roar"};
+function audio(){
+  if(bc.audio!==null)return bc.audio;
+  bc.audio=typeof ArmadaAudio!=="undefined"?ArmadaAudio.create({maxVoices:quality.name==="Low"?12:24}):false;
+  return bc.audio;
+}
+function ui(kind){const A=audio();if(A&&A.unlocked)A.ui(kind);}
+function audioForEvent(ev){
+  const A=audio();if(!A||!A.unlocked)return;
+  if(/Kill/.test(ev.type)||ev.type==="kill"){const tier=ev.type==="firstOneKill"?3:ev.type==="kill"?(ev.size>60?1:0):2;A.explosion(tier,ev.x,ev.y,ev.z);if(tier>=2)A.stinger();}
+  else if(ev.type==="ionCharge"){if(bc.ionHandle)bc.ionHandle.cancel?.();const h=A.weapon("ion-charge",ev.x,ev.y,ev.z,1);bc.ionHandle=h||null;}
+  else if(ev.type==="ionStrike"){if(bc.ionHandle)bc.ionHandle.cancel?.();bc.ionHandle=null;A.weapon("ion-fire",ev.x,ev.y,ev.z,1);}
+}
+function audioShots(now){
+  const A=audio();if(!A||!A.unlocked)return;
+  let n=0;
+  for(const b of beams){if(n>=6)break;if(b.t0!==now||b.spark||b.ion||!b.a)continue;A.weapon(b.coherent?AUDIO_STYLE[b.race]==="phaser"?"phaser":"beam":b.arc?"arc":b.rail?"rail":AUDIO_STYLE[b.race]||"laser",b.a[0],b.a[1],b.a[2],.8);n++;}
+  for(const t of tracers){if(n>=10)break;if(t.t0!==now)continue;A.weapon(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7);n++;}
+  bc.combat=bc.combat*.97+n*.03;
+}
+function updateAudio(wall,dt){
+  const A=audio();if(!A||!A.unlocked)return;
+  const [f]=camBasis();A.setListener(cam.ex,cam.ey,cam.ez,f[0],f[1],f[2]);
+  A.setSlowMo(warClock.slowing||(!!replayState&&replayState.slowAt!=null&&Math.abs(replayState.t-replayState.slowAt)<1.8));
+  A.setIntensity(winner!=null||warT0===Infinity?.08:Math.min(1,bc.combat/3));
+  const s=ships[pilotId??sel];A.engine(s&&!s.dead?s.id:null,ENGINE_STYLE[s?.race]||"turbine",s?Math.min(1,(s.v||0)/Math.max(1,s.spdMax||s.spd||20)):0);
+  A.update(dt);
+}
+function unlockAudio(){const A=audio();if(A&&!A.unlocked){A.unlock();syncAudioSliders();}}
+addEventListener("pointerdown",unlockAudio,{capture:true});addEventListener("keydown",unlockAudio,{capture:true});
+document.addEventListener?.("visibilitychange",()=>{const A=audio();if(!A||!A.unlocked)return;if(document.hidden)A.suspend();else A.resume();});
+function syncAudioSliders(){const A=audio();if(!A)return;const v=A.volumes();for(const k of ["master","music","sfx"]){const el=document.getElementById("vol_"+k);if(el)el.value=String(Math.round(v[k]*100));}}
+
+/* ---------- per frame, after the image ---------- */
+function afterFrame(wall,dt){
+  if(captureNext){const f=captureNext;captureNext=null;try{f(gl);}catch(e){console.warn(e);}}
+  if(recorder&&recorder.frame)recorder.frame();
+  if(!Number.isFinite(warT0))return;
+  updateHud(wall,replayState?replayState.t:battleTime);
+  updateAudio(wall,dt);
+  if(winner!=null&&bc.endShownAt==null){bc.endShownAt=wall+4.5;}
+  if(bc.endShownAt!=null&&wall>=bc.endShownAt&&!replayState&&document.getElementById("bcEnd").hidden&&!bc.endDone){bc.endDone=true;showEndCard();}
+  if(bc.afterReplayCard&&!replayState&&winner!=null){bc.afterReplayCard=false;showEndCard();}
+  document.body.classList.toggle("idle",wall-bc.idleAt>3.5&&!document.getElementById("pick").classList.contains("on"));
+}
+addEventListener("pointermove",e=>{bc.idleAt=performance.now()/1000;hoverLabel(e);},{passive:true});
+addEventListener("keydown",()=>{bc.idleAt=performance.now()/1000;});
+let hoverAt=0;
+function hoverLabel(e){
+  const el=document.getElementById("bcHover");if(!el)return;
+  const now=performance.now();if(now-hoverAt<80)return;hoverAt=now;
+  if(e.pointerType==="touch"||e.target!==cvs||!Number.isFinite(warT0)){el.hidden=true;return;}
+  const id=pickShip(e.clientX,e.clientY),s=ships[id];
+  if(!s||s.dead){el.hidden=true;cvs.style.cursor="";return;}
+  el.hidden=false;el.style.transform="translate("+(e.clientX+14)+"px,"+(e.clientY+12)+"px)";cvs.style.cursor="pointer";
+  el.innerHTML="<span class=\"bcShape\" style=\"color:"+raceColour(s.race)+"\">"+(s.hero?"★":SIDE_SHAPE[s.side])+"</span> "+escapeHtml(shipName(s))+"<small>"+escapeHtml(shipClass(s))+" · "+Math.max(0,Math.round(s.hp/s.hpMax*100))+"%</small>";
+}
+
+/* ---------- controls ---------- */
+function setRate(r){warClock.setRate(r);ui("tick");updateHud(0,battleTime);}
+function bcReset(){
+  if(!bc.log)return;
+  bc.log.clear();bc.feed.clear();bc.momentum.reset();bc.director.reset();bc.ticker.length=0;bc.shownFeed="";bc.duelSeen.clear();bc.cloakSeen.clear();
+  bc.lastBigEvent=null;bc.pendingClips.length=0;bc.flashLog.length=0;bc.endShownAt=null;bc.endDone=false;bc.summary=null;bc.combat=0;
+  if(bc.reel)bc.reel.clear();retireMeshes(0,true);
+  if(RP){bc.ring=RP.createRing({seconds:20,hz:10,maxShips:Math.max(64,ships.length+64)});}
+  if(replayState){replayRestore();replayState=null;document.body.classList.remove("replaying");}
+  warClock.setRate(1);warClock.slowT=-1;
+  hideEndCard();
+  const top=document.getElementById("bcTop");if(top)top.dataset.frame="";
+}
+// Opening matchups chosen for spectacle: two iconic fleets, capitals on both sides.
+const SPECTACLE=[[5,6],[12,10],[8,7],[5,10],[11,10],[9,8],[12,5],[18,10],[19,10],[6,12],[7,9],[21,20],[5,12],[10,8]];
+function spectacleWar(fresh){
+  const pair=SPECTACLE[(Math.random()*SPECTACLE.length)|0],flip=Math.random()<.5;
+  pickMain=flip?[pair[1],pair[0]]:pair.slice();pickAlly=[-1,-1];
+  buildPicker();
+  document.getElementById("pick").classList.remove("on");
+  watchMode="broadcast";startWar(fresh);watchMode="broadcast";updateWatchDock();
+}
+
 /* ===================== frame ===================== */
 let lastT=0,fpsA=60,statT=0;
+const PAINT_GAIN=[1,.72,1,.72,.68];
 // Natural hull finishes in the default slate view. Other palettes remain
 // deliberate ink studies. Mixed fleets choose by class, not just allegiance.
 // Ported from tribute-2: shared coarse hull geometry and one instance upload.
@@ -17426,8 +18395,9 @@ function disposeDistantHulls(){
 function drawDistantShips(m){
   const r=distantShipRenderer;if(!r||!r.count)return;
   while(r.data.length<r.count*16)r.data=new Float32Array(r.data.length*2);
-  let offset=0;for(const g of r.groups.values()){g.offset=offset;for(const s of g.members){const p=xPose(s,battleTime),c=(s.finish||(s.finish=hullFinish(s))).color,k=[1,.72,1,.72,.68][palI],i=offset++*16;
-    r.data.set([s.x,s.y,s.z,s.slen/g.length,Math.cos(s.yaw),Math.sin(s.yaw),p.ax[0],p.ax[1],p.ax[2],p.ang,c[0]*k,c[1]*k,c[2]*k,0,0,0],i);}}
+  const k=PAINT_GAIN[palI],D=r.data;
+  let offset=0;for(const g of r.groups.values()){g.offset=offset;for(const s of g.members){const p=xPose(s,battleTime),c=(s.finish||(s.finish=hullFinish(s))).color,i=offset++*16;
+    D[i]=s.x;D[i+1]=s.y;D[i+2]=s.z;D[i+3]=s.slen/g.length;D[i+4]=Math.cos(s.yaw);D[i+5]=Math.sin(s.yaw);D[i+6]=p.ax[0];D[i+7]=p.ax[1];D[i+8]=p.ax[2];D[i+9]=p.ang;D[i+10]=c[0]*k;D[i+11]=c[1]*k;D[i+12]=c[2]*k;D[i+13]=0;D[i+14]=0;D[i+15]=0;}}
   gl.useProgram(r.program);gl.uniformMatrix4fv(r.vp,false,m);gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);gl.bufferData(gl.ARRAY_BUFFER,r.data.subarray(0,offset*16),gl.STREAM_DRAW);
   for(const g of r.groups.values()){if(!g.members.length)continue;gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);for(let k=1;k<=4;k++)gl.vertexAttribPointer(k,4,gl.FLOAT,false,64,g.offset*64+(k-1)*16);gl.drawElementsInstanced(gl.TRIANGLES,g.indices,gl.UNSIGNED_INT,0,g.members.length);}
   gl.bindVertexArray(null);gl.useProgram(shipProg);
@@ -17508,26 +18478,38 @@ function hullFinish(s){
   return {color,trim,accent,pattern,surface,gloss,seed:unit};
 }
 
+let frameCount=0;
 function frame(nowMs){
   requestAnimationFrame(frame);
-  if(document.hidden){lastT=nowMs/1000;return;}
+  // A full-screen menu over an idle war only needs half the frames.
+  if((frameCount++&1)&&(document.getElementById("pick").classList.contains("on")||document.body.classList.contains("ending")))return;
   const wall=nowMs/1000;
   const elapsed=Math.min(.15,lastT?wall-lastT:1/60);lastT=wall;
   fpsA+=((elapsed>0?1/elapsed:60)-fpsA)*.05;
+  if(qualityProbe&&Number.isFinite(warT0)){qualityProbe.frames.push(elapsed*1000);finishQualityProbe(wall);}
   // Geometry loading must not choose the starting phase of a seeded battle.
-  if(warT0===Infinity)battleAccumulator=0;else battleAccumulator+=elapsed;
+  const simElapsed=replayFrame(elapsed)?0:warClock.advance(elapsed);
+  if(warT0===Infinity)battleAccumulator=0;else battleAccumulator+=simElapsed;
   let stepped=0;const simulationStarted=performance.now();
-  while(battleAccumulator>=1/30&&stepped<2){
+  const maxSteps=warClock.rate>1?Math.ceil(warClock.rate*2):2;
+  while(battleAccumulator>=1/30&&stepped<maxSteps){
+    capturePrevious();
     battleTime+=1/30;simStep(battleTime,1/30);introStep(battleTime,1/30);
     battleAccumulator-=1/30;stepped++;
-    if(performance.now()-simulationStarted>=10)break;
+    if(performance.now()-simulationStarted>=(warClock.rate>1?20:10))break;
   }
   battleAccumulator=Math.min(battleAccumulator,1/30);
-  const now=battleTime,dt=stepped/30;
+  if(perf.on)perf.acc.sim+=performance.now()-simulationStarted;
+  if(stepped)broadcastTick(battleTime,stepped/30);
+  const now=replayState?replayState.t:battleTime,dt=stepped/30;
+  try{
+  if(replayState)replayApply();
+  else if(Number.isFinite(warT0))interpolateIn(Math.max(0,Math.min(1,battleAccumulator*30)));
   const cameraStart=[cam.ex,cam.ey,cam.ez];
   /* camera: chase is the default hold — behind her, looking down her
      nose. Drag breaks into an orbit. Empty sky is free flight. */
-  if(pilotId!=null){updateWatchCamera(now,dt);}
+  if(replayState){replayCamera(elapsed);}
+  else if(pilotId!=null){updateWatchCamera(now,dt);}
   else if(sel!=null&&ships[sel]&&!ships[sel].dead){
     const s=ships[sel];
     if(!orb)orb=chaseCamInit(s);
@@ -17573,7 +18555,7 @@ function frame(nowMs){
     if(keys.has("q"))cam.ey-=sp;
     if(keys.has("e"))cam.ey+=sp;
   }
-  if(pilotId==null)updateWatchCamera(now,elapsed);
+  if(pilotId==null&&!replayState)updateWatchCamera(now,elapsed);
   if(camKick>0.4&&pilotId==null&&watchMode!=="action"){
     const k=camKick;
     cam.ex+=(Math.random()-0.5)*k;cam.ey+=(Math.random()-0.5)*k*0.55;cam.ez+=(Math.random()-0.5)*k;
@@ -17595,9 +18577,11 @@ function frame(nowMs){
     statT=now;
     if(rosterDirty)rosterDraw();
     if(pilotId!=null&&ships[pilotId])document.getElementById('flightStatus').textContent=ships[pilotId].meta.desig+' · '+Math.round(ships[pilotId].v||0)+' m/s · '+Math.round(ships[pilotId].hp/ships[pilotId].hpMax*100)+'% hull';
-    // Reduce only after a sustained interval; no up/down framebuffer oscillation.
-    if(wall-resolutionCheck>4){resolutionCheck=wall;if(fpsA<48&&dpr>.65){dpr=Math.max(.65,dpr*.85);resize();}}
+    // Hold the frame budget with the 3D render scale (HUD stays sharp).
+    if(image)adjustRenderScale(wall);
+    else if(wall-resolutionCheck>4){resolutionCheck=wall;if(fpsA<48&&dpr>.65){dpr=Math.max(.65,dpr*.85);resize();}}
     const st=document.getElementById("stat");
+    document.body.classList.toggle("forging",forged<total&&warT0===Infinity);
     if(forged<total&&warT0===Infinity)st.textContent="FORGING THE FLEETS · "+forged+" / "+total;
     else if(winner!=null)st.textContent=SIDE_NAME[winner]+" HOLDS THE SKY · N FOR THE NEXT WAR · "+Math.round(fpsA)+" FPS";
     else st.textContent="WAR · "+alive+" SHIPS ENGAGED · "+Math.round(fpsA)+" FPS";
@@ -17613,6 +18597,7 @@ function frame(nowMs){
       const brain=document.getElementById("cbrain");if(brain&&brain.closest("details")?.open)brain.innerHTML=battleReadout(ships[sel]);
     }
   }
+  }finally{interpolateOut();replayRestore();}
 }
 let rosterDirty=true;
 function roster(){rosterDirty=true;}
@@ -17652,6 +18637,17 @@ function rosterDraw(){
   el.innerHTML=col(0)+"<div class=\"sc-vs\">VS</div>"+col(1);
   updateHeroBtn();
 }
+for(const b of document.querySelectorAll("#bcSpeed [data-rate]"))b.addEventListener("click",()=>{const r=+b.dataset.rate;if(r)bc.lastRate=r;setRate(r===0&&warClock.rate===0?(bc.lastRate||1):r);});
+document.getElementById("bcReplayBtn").addEventListener("click",()=>instantReplay());
+document.getElementById("bcReplayChip").addEventListener("click",()=>instantReplay());
+document.getElementById("bcHelpBtn").addEventListener("click",()=>{const h=document.getElementById("bcHelp");h.hidden=!h.hidden;});
+document.getElementById("bcHelp").addEventListener("click",e=>{if(e.target.id==="bcHelp")e.currentTarget.hidden=true;});
+document.getElementById("bcTop").addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-hid]");if(!b)return;const id=+b.dataset.hid;if(ships[id]&&!ships[id].dead){select(id,false);ui("click");}});
+document.getElementById("qualitySel").value=qualityTier;
+document.getElementById("qualitySel").addEventListener("change",e=>{setQuality(e.target.value);toast("QUALITY · "+quality.name.toUpperCase());});
+for(const k of ["master","music","sfx"])document.getElementById("vol_"+k).addEventListener("input",e=>{const A=audio();if(A)A.setVolume(k,+e.target.value/100);});
+document.addEventListener?.("click",e=>{if(e.target.closest&&e.target.closest("button,summary"))ui("click");},{capture:true});
+setFleetSize(quality.fleet||150,false);
 
 function threeState(){return {ships,wrecks,boneyard,beams,tracers,plasmas,missiles,mines,dusts,flashes,ionState,worldBodies,starSystem,celes,cam,now:battleTime,warT0,sceneR,palI,selected:sel,pilotId,genId,height:cvs.height,viewportHeight:cvs.height,SLIDE,width:cvs.width,RACE_DEFS,BEAMCOL,watchMode,counts,forged,total};}
 window.ArmadaThree.runtime={geometry:window.ArmadaThree.geometryStore.geometry,xPose,xQAA,gunWorld,hullFinish,shipBarrels,barrelFrame,weaponMuzzle,weaponProfile,raceDefs:RACE_DEFS,slide:SLIDE,state:threeState,
@@ -17660,5 +18656,11 @@ window.ArmadaThree.runtime={geometry:window.ArmadaThree.geometryStore.geometry,x
 
 applyPal();resize();makeStars();
 buildPicker();
-openPicker();
+showWarMenu();
+syncAudioSliders();
+// Open straight into a live war behind the title: spectacle first, settings later.
+if(typeof navigator!=="undefined"&&navigator.userAgent&&!/[?&](bench=1|autostart=0)/.test(location.search)){
+  keepTitle=true;warSeed=(Math.random()*4294967296)|0;spectacleWar(false);keepTitle=false;
+  document.getElementById("warMenuMatch").textContent=fleetTitle(SIDE_NAME[0])+"  vs  "+fleetTitle(SIDE_NAME[1])+" · live";
+}
 requestAnimationFrame(frame);

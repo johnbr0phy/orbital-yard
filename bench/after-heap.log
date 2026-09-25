@@ -1,0 +1,3 @@
+heap [{"heapMB":22.8,"ships":116,"retired":0},{"heapMB":22.2,"ships":98,"retired":0},{"heapMB":31,"ships":85,"retired":0},{"heapMB":18,"ships":107,"retired":0},{"heapMB":21.2,"ships":98,"retired":0}]
+[]
+renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver) (SOFTWARE)

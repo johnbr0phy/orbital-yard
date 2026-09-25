@@ -10,7 +10,7 @@ b=code.index('  const cut=SRC.indexOf(MARK);',a)
 code=code[:a]+'  const SRC=window.ArmadaThree.engineSource;\n'+code[b:]
 code=code.replace('  requestAnimationFrame(frame);\n  const wall=', '  requestAnimationFrame(frame);\n  if(document.hidden){lastT=nowMs/1000;return;}\n  const wall=')
 # Preserve physics/input/camera and DOM updates; remove the raw WebGL render path.
-a=code.index('  const m=mat(),eye=[cam.ex,cam.ey,cam.ez];',code.index('function frame(nowMs)'))
+a=code.index('  const m=mat(frameVP),eye=[cam.ex,cam.ey,cam.ez];',code.index('function frame(nowMs)'))
 b=code.index('  updateCrewPortrait(now);drawFlightHUD(now);',a)
 code=code[:a]+'''  let alive=0;
   for(const s of ships){

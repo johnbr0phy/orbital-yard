@@ -1,0 +1,93 @@
+[after-high] 200: 192 ships, 3.1 fps, p50 300.0 p95 433.4 p99 483.3 ms, first ship 6731 ms, errors 0
+[after-high] 600: 572 ships, 2.4 fps, p50 283.4 p95 883.3 p99 916.7 ms, first ship 8676 ms, errors 0
+[after-high] 1200: 1142 ships, 2.2 fps, p50 299.9 p95 1200.0 p99 1233.3 ms, first ship 11125 ms, errors 0
+[
+ {
+  "size": 200,
+  "ships": 192,
+  "alive": 192,
+  "frames": 94,
+  "fps": 3.1213162657103486,
+  "p50": 300,
+  "p95": 433.40000000000146,
+  "p99": 483.3000000000029,
+  "simSecondsPerWallSecond": 0.20255350234928815,
+  "splitMsPerFrame": {
+   "frameJs": 8.060638297824784,
+   "sim": 5.644680851040051,
+   "collide": 1.103191489383499,
+   "traffic": 1.4053191487439611,
+   "ai": 1.1978723404314766,
+   "worker": 0.9127659574151039
+  },
+  "firstShipMs": 6731.200000000372,
+  "playableMs": 2448.000000000373,
+  "warStartMs": 3098.600000000559,
+  "longTasks": 102,
+  "longTasksDuringArrivals": 56,
+  "maxLongTaskMs": 587,
+  "heapStartMB": 9.50121784210205,
+  "heapEndMB": 38.4111385345459,
+  "viewport": "1280x720",
+  "errors": []
+ },
+ {
+  "size": 600,
+  "ships": 572,
+  "alive": 572,
+  "frames": 71,
+  "fps": 2.401447633221153,
+  "p50": 283.40000000000146,
+  "p95": 883.2999999999956,
+  "p99": 916.7000000000044,
+  "simSecondsPerWallSecond": 0.14994954705089802,
+  "splitMsPerFrame": {
+   "frameJs": 9.885915492989227,
+   "sim": 5.350704225514766,
+   "collide": 0.8408450704645103,
+   "traffic": 1.2577464789099677,
+   "ai": 1.3549295775329984,
+   "worker": 4.392957746457886
+  },
+  "firstShipMs": 8676.000000000373,
+  "playableMs": 4426.100000000372,
+  "warStartMs": 5209.5,
+  "longTasks": 83,
+  "longTasksDuringArrivals": 52,
+  "maxLongTaskMs": 910,
+  "heapStartMB": 6.81009578704834,
+  "heapEndMB": 87.68701553344727,
+  "viewport": "1280x720",
+  "errors": []
+ },
+ {
+  "size": 1200,
+  "ships": 1142,
+  "alive": 1142,
+  "frames": 66,
+  "fps": 2.2488065992251838,
+  "p50": 299.89999999999964,
+  "p95": 1200,
+  "p99": 1233.300000000003,
+  "simSecondsPerWallSecond": 0.13969859177004912,
+  "splitMsPerFrame": {
+   "frameJs": 13.636363636391858,
+   "sim": 6.049999999954845,
+   "collide": 0.8318181818379371,
+   "traffic": 1.181818181775849,
+   "ai": 1.3151515152192477,
+   "worker": 16.169696969699793
+  },
+  "firstShipMs": 11125.099999999442,
+  "playableMs": 6658.599999999442,
+  "warStartMs": 7979,
+  "longTasks": 83,
+  "longTasksDuringArrivals": 52,
+  "maxLongTaskMs": 1230,
+  "heapStartMB": 10.19881534576416,
+  "heapEndMB": 165.8363380432129,
+  "viewport": "1280x720",
+  "errors": []
+ }
+]
+renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver) (SOFTWARE)

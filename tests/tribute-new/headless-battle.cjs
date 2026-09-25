@@ -10,7 +10,7 @@ const html = fs.readFileSync(path.join(__dirname, '../../armada-war-tribute-new.
 const source = html.slice(html.indexOf('\n<script>\n') + 10, html.lastIndexOf('</script>'));
 new vm.Script(source, {filename: 'armada-war-tribute.html'});
 
-function loadBattle() {
+function loadBattle(options = {}) {
   const elements = new Map(), jobs = [], blobs = new Map(), events = new Map();
   const noop = () => {};
   const gl = new Proxy({}, {get: (o, k) => {
@@ -30,13 +30,16 @@ function loadBattle() {
     elements.set(id,e);return e;
   }
   const storage = {getItem:()=>null,setItem:noop};
-  const context = vm.createContext({console,ArmadaBattleAI:AI,performance:{now:()=>0},
+  // Broadcast / replay / quality modules are optional: older suites run the
+  // page exactly as before, new suites opt in with {modules:true}.
+  const modules = options.modules ? {ArmadaBroadcast:require('../../armada-broadcast-new.js'),ArmadaReplay:require('../../armada-replay-new.js'),ArmadaPost:require('../../armada-post-new.js')} : {};
+  const context = vm.createContext({console,ArmadaBattleAI:AI,...modules,performance:{now:()=>0},
     document:{getElementById:element,querySelectorAll:s=>s==='script'?[{textContent:source}]:[],
       querySelector:s=>s==='script'?{textContent:source}:element(s),createElement:()=>element('new'),
       documentElement:element('html'),body:element('body'),head:element('head')},
     location:{hostname:'localhost',protocol:'http:',search:'',pathname:'/'},
     localStorage:storage,sessionStorage:storage,URLSearchParams,
-    navigator:{hardwareConcurrency:3},innerWidth:1280,innerHeight:720,devicePixelRatio:1,
+    navigator:{hardwareConcurrency:options.cores||3},innerWidth:1280,innerHeight:720,devicePixelRatio:1,
     addEventListener:(type,fn)=>{if(!events.has(type))events.set(type,[]);events.get(type).push(fn);},requestAnimationFrame:noop,cancelAnimationFrame:noop,
     setTimeout:noop,clearTimeout:noop,setInterval:noop,clearInterval:noop,
     matchMedia:()=>({matches:false,addEventListener:noop}),

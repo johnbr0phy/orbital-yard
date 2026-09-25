@@ -1,0 +1,80 @@
+[
+ {
+  "matchup": "empire-rebels",
+  "tag": "before",
+  "shots": [
+   "empire-rebels-t06-wide-before.png",
+   "empire-rebels-t06-close-before.png",
+   "empire-rebels-t35-wide-before.png",
+   "empire-rebels-t35-close-before.png",
+   "empire-rebels-t70-wide-before.png",
+   "empire-rebels-t70-close-before.png"
+  ],
+  "errors": []
+ },
+ {
+  "matchup": "empire-rebels",
+  "tag": "after",
+  "shots": [
+   "empire-rebels-t06-wide-after.png",
+   "empire-rebels-t06-close-after.png",
+   "empire-rebels-t35-wide-after.png",
+   "empire-rebels-t35-close-after.png",
+   "empire-rebels-t70-wide-after.png",
+   "empire-rebels-t70-close-after.png"
+  ],
+  "errors": []
+ },
+ {
+  "matchup": "borg-federation",
+  "tag": "before",
+  "shots": [
+   "borg-federation-t06-wide-before.png",
+   "borg-federation-t06-close-before.png",
+   "borg-federation-t35-wide-before.png",
+   "borg-federation-t35-close-before.png",
+   "borg-federation-t70-wide-before.png",
+   "borg-federation-t70-close-before.png"
+  ],
+  "errors": []
+ },
+ {
+  "matchup": "borg-federation",
+  "tag": "after",
+  "shots": [
+   "borg-federation-t06-wide-after.png",
+   "borg-federation-t06-close-after.png",
+   "borg-federation-t35-wide-after.png",
+   "borg-federation-t35-close-after.png",
+   "borg-federation-t70-wide-after.png",
+   "borg-federation-t70-close-after.png"
+  ],
+  "errors": []
+ },
+ {
+  "matchup": "shadows-minbari",
+  "tag": "before",
+  "shots": [
+   "shadows-minbari-t06-wide-before.png",
+   "shadows-minbari-t06-close-before.png",
+   "shadows-minbari-t35-wide-before.png",
+   "shadows-minbari-t35-close-before.png",
+   "shadows-minbari-t70-wide-before.png",
+   "shadows-minbari-t70-close-before.png"
+  ],
+  "errors": []
+ },
+ {
+  "matchup": "shadows-minbari",
+  "tag": "after",
+  "shots": [
+   "shadows-minbari-t06-wide-after.png",
+   "shadows-minbari-t06-close-after.png",
+   "shadows-minbari-t35-wide-after.png",
+   "shadows-minbari-t35-close-after.png",
+   "shadows-minbari-t70-wide-after.png",
+   "shadows-minbari-t70-close-after.png"
+  ],
+  "errors": []
+ }
+]
