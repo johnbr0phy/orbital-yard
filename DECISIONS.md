@@ -26,6 +26,7 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 - **Grades run at half strength**, with contrast pivoting at 0.3 so black never crushes. A full-strength "Ember worlds" grade turned neutral grey hulls mauve.
 - **MSAA on the hull pass plus FXAA on the composite.** MSAA uses a multisampled RGBA16F renderbuffer resolved by blit: 0, 2, 4 and 4 samples for Low, Medium, High and Ultra. FXAA always runs. The default framebuffer keeps `antialias:true`. The build script matches that exact line, and it's harmless because the only thing drawn to it is the composite triangle.
 - **Chromatic aberration is not implemented** (the brief wanted it off by default). Vignette and grain are both off in the Low tier and under `prefers-reduced-motion`.
+- **Anything additive can exceed white now.** Dense additive geometry that used to clamp harmlessly in 8 bits (debris dust clouds, the ion lance's line cylinders, stacked hit sparks) blooms into white shapes in HDR. Dust uses over-blending, the ion lance scales by projected line density, and weapon hits stay at display energy.
 - **Fallbacks.** Without `EXT_color_buffer_float` the pipeline uses RGBA8 with no HDR but keeps grade and FXAA. If pipeline creation throws, the page falls back to the old direct-to-canvas path. `?post=0` forces that path for A/B checks.
 
 ## Light
@@ -73,7 +74,7 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 - **The story never asserts causation.** An early draft wrote "the tide swung … when X met Y". The turning-point line now reports the window and what happened in it.
 - **Pilot captions use the older flavour lines.** `thoughtLine()` returned AI telemetry for every ship, so the flavour writing had become unreachable. The captions build on that writing by hiding the AI object from the text builder only.
 - **Picture-in-picture is not built.** A second full scene render costs a frame, and it wasn't worth it on phones.
-- **Replay is a snapshot ring, not re-simulation.** It records 10 Hz snapshots of transform, pose, liveness and hull for every ship, plus capped weapon segments, over 20 s. Flashes are logged with their start times. Dead hulls keep their GPU mesh for 24 s, or longer while a highlight clip pins it. Wrecks are shown by back-extrapolating their velocity. That is exact for drift but approximate for wrecks that collided during the window.
+- **Replay is a snapshot ring, not re-simulation.** It records 10 Hz snapshots of transform, pose, liveness and hull for every ship, plus capped weapon segments, over 20 s. Flashes are logged with their start times. Dead hulls keep their GPU mesh for 24 s, or longer while a highlight clip pins it. Wrecks are shown by back-extrapolating their velocity. That is exact for drift but approximate for wrecks that collided during the window. A disabled capital's mesh lives on as its wreck, so before its death the replay draws the hull from that wreck.
 - **R now means replay.** Random war moved to G. N still opens the picker.
 
 ## Picker

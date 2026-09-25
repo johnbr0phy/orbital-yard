@@ -66,3 +66,13 @@ test('dead hulls keep their mesh for the replay window only, unless a highlight 
   assert.equal(b.run('ships[__pinned].replayMesh'),null,'released once unpinned');
   assert.ok(b.run('battleTime')>t+29);
 });
+
+test('a corpse that dissolves after its highlight was captured keeps its mesh for that highlight',()=>{
+  const b=battle();
+  b.run('for(let i=1;i<=60*40;i++)frame(1000+i*1000/60);');
+  // A live hull stands in for a drifting corpse: a clip names it, then it retires.
+  const id=b.run('(()=>{const s=ships.find(q=>q&&q.vao&&!q.dead);const r=bc.ring.range();bc.reel.offer(bc.ring.clip(r[1]-4,r[1],[s.id],{score:999,ev:{type:"capitalKill",t:r[1]-1}}));retireMesh(s,battleTime);s.vao=null;return s.id;})()');
+  assert.equal(b.run(`ships[${id}].replayMesh.pins`),1,'pinned by the clip it appears in');
+  b.run(`for(let i=1;i<=30*30;i++){battleTime+=1/30;simStep(battleTime,1/30);broadcastTick(battleTime,1/30);}`);
+  assert.ok(b.run(`!!ships[${id}].replayMesh`),'kept past the 24 s window while the clip holds it');
+});

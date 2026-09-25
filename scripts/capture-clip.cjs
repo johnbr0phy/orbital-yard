@@ -54,13 +54,17 @@ const ffmpeg = process.env.FFMPEG || '/opt/pw-browsers/ffmpeg-1011/ffmpeg-linux'
   console.error('war over', JSON.stringify(result));
   // Keep the best N clips, play them in time order, record at 30 fps.
   const started = await page.evaluate(n => {
+    // The victory itself is not a moment; keep the best kills.
+    for (let i = bc.reel.clips.length - 1; i >= 0; i--) if (bc.reel.clips[i].meta.ev.type === 'victory') bc.reel.clips.splice(i, 1);
     bc.reel.clips.splice(n);
     document.body.classList.add('idle');
     return playHighlights(false);
   }, clips);
   if (!started) throw new Error('no highlights to record');
   fs.mkdirSync(path.dirname(outFile), {recursive: true});
-  const enc = spawn(ffmpeg, ['-y', '-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', '30', '-i', '-', '-c:v', 'libvpx', '-b:v', '5M', '-crf', '8', '-auto-alt-ref', '0', outFile], {stdio: ['pipe', 'ignore', 'inherit']});
+  const enc = spawn(ffmpeg, ['-y', '-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', '30', '-i', 'pipe:0', '-c:v', 'libvpx', '-b:v', '2500k', '-crf', '10', '-auto-alt-ref', '0', outFile], {stdio: ['pipe', 'ignore', 'inherit']});
+  // Warm-up: let the HUD and replay bar settle before the first recorded frame.
+  await page.evaluate(() => { for (let i = 0; i < 4; i++) frame(window.__t += 1000 / 30); });
   let frames = 0;
   while (frames < 30 * 70) {
     const live = await page.evaluate(() => { frame(window.__t += 1000 / 30); document.getElementById('bcEnd').hidden = true; return !!replayState; });

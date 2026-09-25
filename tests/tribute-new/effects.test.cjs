@@ -5,6 +5,8 @@ test('burst storms stay inside the fixed flash budget',()=>{
  // it is still fixed, and flashes plus engine sprites still fit the shared pool.
  const b=loadBattle();assert.equal(b.run('for(let i=0;i<3000;i++)flash(0,0,0,0,20,10);flashes.length'),b.run('MAX_FLASHES'));
  assert.ok(b.run('MAX_FLASHES<=320&&MAX_FLASHES+MAX_ENGINE_SPRITES+2<=flPool.length/7'));
+ // A full budget of small hit flashes still makes room for a death.
+ assert.ok(b.run('for(let i=0;i<3000;i++)flash(0,0,0,0,12,1);flash(0,0,0,0,400,10);flashes.length===MAX_FLASHES&&flashes.some(f=>f.size===400)'));
  assert.equal(b.run('new Set([5,8,10,12,15].map(deathEffectKind)).size'),5);
 });
 test('engine outlets follow authored bells and organic ships have no artificial burn',()=>{

@@ -11573,7 +11573,9 @@ void main(){
     float fleet=floor((vC-20.0)*100.0+.5);
     vec3 drive=fleet==6.0?vec3(1.0,.42,.30):fleet==9.0?vec3(1.0,.58,.22):fleet==14.0?vec3(.45,.66,1.0):vec3(.25,.48,1.0);
     vec3 flame=mix(drive,vec3(.88,.96,1.0),exp(-r*r*14.0));
-    o=vec4(flame*(1.0+uHdr*.8*exp(-r*r*14.0)),exp(-r*r*6.0)*(1.0-vSeed*.8));return;
+    // Three nested sprites per outlet stack additively: keep drives at
+    // display energy so a Star Destroyer's stern glows blue, not white.
+    o=vec4(flame,exp(-r*r*6.0)*(1.0-vSeed*.8)*.5);return;
   }else if(vC>=10.0){
     // Uneven expanding ejecta cool rapidly in vacuum; no persistent fireball ring.
     float lobe=.84+.10*sin(a*5.0+vSeed*37.0)+.06*sin(a*9.0-vO*3.0);
@@ -11629,13 +11631,25 @@ void main(){
     float spike=0.72+0.28*sin(a*(3.0+floor(vSeed*4.0))+vSeed*43.0)
                     +0.14*sin(a*(7.0+floor(vSeed*5.0))-vSeed*17.0);
     r/=max(spike,0.2);
-    col=mix(vec3(1.0,0.97,0.88),vec3(1.0,0.45,0.16),clamp(vO*1.4,0.0,1.0));
-    rw=0.45;
+    // Flame from the first frame (slow motion stretches any white phase),
+    // cooling to ember and broken up by seeded grain, so a big death reads
+    // as fire, not a lamp. Edges feather out below (no flat disc rim).
+    col=mix(vec3(1.0,0.80,0.56),vec3(0.95,0.36,0.10),clamp(vO*4.0,0.0,1.0));
+    float fire=.58+.42*sin(d.x*23.0+vSeed*41.0)*sin(d.y*19.0-vSeed*29.0+vO*4.0);
+    col*=mix(.8,fire,clamp(vO*5.0,0.0,1.0))*mix(1.0,.55,smoothstep(.2,.9,vO));
+    rw=0.3;
   }else col=mix(uC0,uC1,vC);
   if(r>1.0)discard;
   float core=exp(-r*r*7.0);
   float ring=smoothstep(0.42,0.88,r)*(1.0-smoothstep(0.88,1.0,r));
-  o=vec4(col*(1.0+uHdr*core*(1.0-vO)),(core*0.6+ring*rw)*vA);
+  // Weapon hits (0, 1 and heavy 3) stack by the dozen on one hull: keep them
+  // at display energy and lighter, so a busy capital is not a white disc.
+  float hit=vC<1.5?.55:(vC>2.5&&vC<3.5)?.7:1.0,energy=vC<1.5||(vC>2.5&&vC<3.5)?0.0:uHdr;
+  // Explosions: only the hot centre carries energy, and the body fades out
+  // toward its lobed edge.
+  bool fireball=vC>1.5&&vC<2.5;
+  if(fireball){hit=.72*(1.0-smoothstep(.45,1.0,r));core=pow(core,1.6);energy*=.5;}
+  o=vec4(col*(1.0+energy*core*(1.0-vO)),(core*0.6+ring*rw)*vA*hit);
 }`);
 const FU={vp:gl.getUniformLocation(flashProg,"uVP"),t:gl.getUniformLocation(flashProg,"uT"),
   px:gl.getUniformLocation(flashProg,"uPx"),c0:gl.getUniformLocation(flashProg,"uC0"),
@@ -14962,7 +14976,16 @@ function craftThought(s,now){
   return line;
 }
 const MAX_FLASHES=320,MAX_ENGINE_SPRITES=192;
-function flash(x,y,z,t0,size,c){const f={x,y,z,t0,size,c,seed:Math.random()};if(flashes.length<MAX_FLASHES)flashes.push(f);if(bc.ring&&bc.flashLog.length<6000)bc.flashLog.push(f);}
+function flash(x,y,z,t0,size,c){
+  const f={x,y,z,t0,size,c,seed:Math.random()};
+  if(flashes.length<MAX_FLASHES)flashes.push(f);
+  else if(size>=60||(c>=10&&c<20)||c>=30){
+    // A full budget must not swallow a death: evict the smallest queued flash.
+    let k=-1,min=size;for(let i=0;i<flashes.length;i++)if(flashes[i].size<min){min=flashes[i].size;k=i;}
+    if(k>=0)flashes[k]=f;
+  }
+  if(bc.ring&&bc.flashLog.length<6000)bc.flashLog.push(f);
+}
 function deathEffectKind(race){return race===8||race===1||race===21?12:race===12?13:race===10?11:race===7||race===15?14:10;}
 function effectLife(kind){return kind>=30&&kind<36?(kind<31?.7:kind<35?1.8:.55):kind>=10?1.35:kind>2.5?2.15:.8;}
 // Three nested glow samples per outlet; shared flash buffer and draw call, no particles.
@@ -14995,6 +15018,15 @@ function streamUpload(values){
   const n=values.length;if(n>streamF32.length){let m=streamF32.length;while(m<n)m*=2;streamF32=new Float32Array(m);}
   for(let i=0;i<n;i++)streamF32[i]=values[i];
   gl.bufferData(gl.ARRAY_BUFFER,streamF32.subarray(0,n),gl.STREAM_DRAW);
+}
+// Alpha scale for a skin of n lines of radius r (world m) on beam b: at most
+// about one line's worth of light per pixel once the skin is only a few
+// pixels wide. Only under the HDR pipeline; LDR clamps at white anyway.
+function ionDensity(b,post){
+  const ab0=b.b[0]-b.a[0],ab1=b.b[1]-b.a[1],ab2=b.b[2]-b.a[2],len2=Math.max(1e-6,ab0*ab0+ab1*ab1+ab2*ab2);
+  const u=Math.max(0,Math.min(1,((cam.ex-b.a[0])*ab0+(cam.ey-b.a[1])*ab1+(cam.ez-b.a[2])*ab2)/len2));
+  const near=Math.max(1,Math.hypot(b.a[0]+ab0*u-cam.ex,b.a[1]+ab1*u-cam.ey,b.a[2]+ab2*u-cam.ez));
+  return (r,n)=>post?Math.min(1,2*r*cvs.height/near/n):1;
 }
 function boltSkin(a,b,r,n,into){
   /* a cylinder of lines: world-metre radius so a crown bolt reads at 40 km */
@@ -15045,7 +15077,7 @@ function deathFlourish(t,now){
   const L=t.slen||20,c=Math.cos(t.yaw||0),n=Math.sin(t.yaw||0);
   flash(t.x,t.y,t.z,now,Math.max(34,L*(tier>=2?1.1:2.2)),30);
   if(tier>=1)for(let i=0;i<(tier===1?3:6);i++){const u=(Math.random()-.5)*L*.8;flash(t.x+c*u,t.y+(Math.random()-.5)*L*.1,t.z+n*u,now+.2+Math.random()*(tier===1?.9:1.8),Math.max(20,L*.18),2);}
-  if(tier>=2){flash(t.x,t.y,t.z,now+.35,Math.max(120,L*.9),30);flash(t.x,t.y,t.z,now+.12,Math.min(900,Math.max(90,L*.5)),2);}
+  if(tier>=2){flash(t.x,t.y,t.z,now+.35,Math.max(120,L*.9),30);flash(t.x,t.y,t.z,now+.12,Math.min(600,Math.max(90,L*.3)),2);}
   if(tier===3){flash(t.x,t.y,t.z,now+.6,Math.max(400,L*1.6),30);flash(t.x,t.y,t.z,now+.1,Math.min(1200,L*.7),4);}
 }
 // A capital below 35% hull starts to die before it dies: internal blasts
@@ -17840,8 +17872,8 @@ function bcEvent(type,data){
   if(bc.feed&&/kill|Kill/.test(type))bc.feed.push(ev);
   const w=BC.WEIGHTS[type]||0;
   if(w>=26){bc.ticker.unshift({t:ev.t,text:tickerText(ev),side:ev.side,until:performance.now()/1000+(w>=90?6:4.5)});if(bc.ticker.length>4)bc.ticker.length=4;}
-  if(w>=90){bc.lastBigEvent=ev;bc.replayChipUntil=performance.now()/1000+12;bc.pendingClips.push({ev,at:ev.t+3.4});}
-  else if(w>=56&&type!=="ionCharge")bc.pendingClips.push({ev,at:ev.t+3.4});
+  if(w>=90&&type!=="victory"){bc.lastBigEvent=ev;bc.replayChipUntil=performance.now()/1000+12;bc.pendingClips.push({ev,at:ev.t+3.4});}
+  else if(w>=56&&type!=="ionCharge"&&type!=="victory")bc.pendingClips.push({ev,at:ev.t+3.4});
   audioForEvent(ev);
   return ev;
 }
@@ -17929,7 +17961,9 @@ function replaySegments(){
 // A dead hull's mesh lives on for the replay window (and while a highlight holds it).
 function retireMesh(s,now){
   if(!s.vao)return;
-  s.replayMesh={vao:s.vao,vbo:s.vbo,ibo:s.ibo,icount:s.icount,t:now,pins:0};bc.retired.push(s);
+  // A corpse retires after its clips were captured: count the pins it already has.
+  let pins=0;if(bc.reel)for(const c of bc.reel.clips)if(c.ids.includes(s.id))pins++;
+  s.replayMesh={vao:s.vao,vbo:s.vbo,ibo:s.ibo,icount:s.icount,t:now,pins};bc.retired.push(s);
 }
 function retireMeshes(now,all){
   let k=0;
@@ -18006,7 +18040,8 @@ function replayApply(){
     replaySaved.ships.push(rec);
     const has=src.sample(r.t,s.id,replayOut);
     if(!has||!replayOut[6]){s.vao=null;continue;}
-    const mesh=s.vao?null:s.replayMesh;
+    // A disabled capital handed its mesh to its drifting wreck: borrow it back.
+    const mesh=s.vao?null:s.replayMesh||(s.disabled?wrecks.find(w=>w.disabled&&!w.gone&&w.src===s.id&&w.vao):null);
     if(!s.vao&&!mesh){continue;}
     if(mesh){s.vao=mesh.vao;s.icount=mesh.icount;}
     s.x=replayOut[0];s.y=replayOut[1];s.z=replayOut[2];s.yaw=replayOut[3];s.roll=replayOut[4];s.pitch=replayOut[5];
@@ -18031,7 +18066,9 @@ function replayCamera(wallDt){
   if(r.subject!=null&&src.sample(Math.min(r.t,r.slowAt!=null?r.slowAt:r.t),r.subject,replayOut)&&replayOut[6]){c=[replayOut[0],replayOut[1],replayOut[2]];size=ships[r.subject]?.slen||300;}
   if(!c)return;
   r.angle+=wallDt*.12;
-  const d=Math.max(220,size*3.2),e=[c[0]+Math.cos(r.angle)*d,c[1]+d*.32,c[2]+Math.sin(r.angle)*d];
+  // Three lengths frames a frigate or a Star Destroyer; a 19 km dreadnought
+  // at 63 km is lost to distance, so huge hulls come in closer.
+  const d=Math.max(220,Math.min(size*3.2,size*1.25+4000)),e=[c[0]+Math.cos(r.angle)*d,c[1]+d*.32,c[2]+Math.sin(r.angle)*d];
   if(!r.camPos)r.camPos=e.slice();
   const k=1-Math.exp(-wallDt*2.2);for(let i=0;i<3;i++)r.camPos[i]+=(e[i]-r.camPos[i])*k;
   [cam.ex,cam.ey,cam.ez]=r.camPos;

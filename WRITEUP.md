@@ -52,6 +52,40 @@ I spent this pass on the thing the brief cared about most: someone who has never
 4. **A hero-capital shadow map on Ultra**, so fighters can pass through a Star Destroyer's shadow.
 5. **Proper per-ship staged deaths** that delay the breakup visually without touching combat: the pieces exist at death, only their reveal would be staged.
 
+## Verification log (what worked, what didn't)
+
+- **ACES on display-referred shaders.** Didn't work: crushed blacks and washed the hull mid-tones (measured). Replaced with a shoulder-only curve.
+- **Key light at full star colour.** Didn't work: a red star painted the Imperial fleet pink while the planets stayed neutral. Now 10%.
+- **Full-strength grades.** Didn't work: they turned grey hulls mauve. Now half strength, with contrast pivoting low.
+- **First bloom setting.** Didn't work: capital death clusters became white blobs. The threshold went up, the HDR flash gain down, and coarse levels are weighted down.
+- **Pixels, not assumptions.** The pipeline looked like it darkened hulls by 40%. The measurement showed the `?post=0` comparison had never applied the star light, so there was no pipeline bug.
+- **Replay determinism test.** It failed 3 of 4 runs on flash and spark counts, which are cosmetic `Math.random`, not simulation. The test now compares only simulation state.
+- **The first Broadcast director** showed 13 establishing shots in one war and missed the Millennium Falcon's death. Death forecasts and the wide-shot limit fixed both; all 7 capital and hero deaths were on screen in the re-run.
+- **An `xPose` memo cache.** Measured no gain, so I reverted it rather than keep complexity that doesn't pay.
+- **The swept broad phase.** Worked: 3.6× cheaper prediction, byte-identical battle traces.
+- **Mistakes I made along the way:**
+  - My flash-kind branch for engines silently capped the new arrival rings at 72 px until a screenshot showed it.
+  - The top HUD bar rebuilt its buttons 8 times a second.
+  - Highlight clips first included the victory event.
+  - During replays the HUD showed present-day counts.
+  - A capital's death flash was silently dropped whenever the 320-flash budget was full of hit sparks, which is exactly when the money shot matters. Big flashes now evict the smallest queued one, and there's a test for it.
+  - Capital explosions read as flat white discs. They now cool to ember in the first instants and break up with grain.
+  - The clip still showed white discs. I dumped the live flash kinds in the replay and found they were stacked weapon-hit sparks (a dozen fighters on one hull), not explosions. Hit sparks now stay at display energy and draw lighter.
+  - The clip still showed soft white discs. I first blamed engine glows and fire, and changed both, and the discs didn't move. Skipping one GL draw call at a time on the same frame found the real cause: a dead capital speckles into up to 1,800 dust motes around one spot, drawn additively. The old 8-bit target clamped that to a grey smudge; the HDR target summed it far above white and bloomed it into discs. Dust now uses over-blending. The engine and fire changes stayed, since they looked better anyway.
+  - The same bisection found the ion lance: its 44 skin lines collapse into a few pixels at broadcast distance and summed to about 30× white, making two white bars. Each layer now scales by its projected line density, so the lance keeps its faction colour.
+  - The Super Star Destroyer's highlight showed empty space. Two causes: the replay camera stood 3.2 lengths off a 19 km hull, and a disabled capital hands its mesh to its drifting wreck, so the replay had no hull to draw before the death. Huge hulls are now framed closer, the replay borrows the wreck's mesh, and corpses that dissolve after their clip was captured keep the clip's pin (with a test).
+
+  All fixed.
+- **`tests/three/browser-smoke.cjs`** runs its control and regeneration checks, then fails its final "no console errors" assertion. The only errors are the Google Fonts certificate through this sandbox's proxy and a favicon 404, and the committed page does the same here.
+
+## Where to look
+
+- **Before/after gallery:** `design/tribute-new/review/index.html`
+- **Captured highlight clip:** `design/tribute-new/review/highlights.webm` (software-rendered frame by frame at exact 1/30 s steps, so it plays at true speed)
+- **Style sheet:** `design/tribute-new/style.html` (regenerated from code by `design/tribute-new/style-gen.cjs`)
+- **Benchmarks:** `scripts/bench-tribute.cjs`
+- **Fleet ratings:** `scripts/fleet-ratings.cjs`
+
 ## The last question
 
 Would someone who has never seen this page watch a whole war without touching anything, then hit replay and send it to a friend? I think the first half is now yes: it opens live, it explains itself, it cuts to what matters and slows down for it. The second half depends on how it runs on their machine. A phone gets a small, smooth war; a laptop gets a medium one. Seeing a 600-ship war move at full speed still needs the simulation rewrite above.
