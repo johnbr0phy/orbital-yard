@@ -46,16 +46,13 @@
   }
 
   // Detail choice for a hull from its projected size in pixels. Hysteresis:
-  // a hull must grow 15% past a threshold to step up and shrink 15% below it
-  // to step down, so a ship hovering at a boundary never flickers.
-  // Levels: 0 full mesh, 1 coarse instanced, 2 coarse instanced (tiny).
+  // a coarse hull must grow 15% past the threshold to get its full mesh, and a
+  // full hull must shrink 15% below it to lose it, so a ship hovering at the
+  // boundary never flickers. Levels: 0 full mesh, 1 shared instanced coarse
+  // mesh (the forge's .12-facet cut, three representatives per class).
   function lodLevel(pixels, previous, dense) {
-    const up = dense ? 48 : 28, tiny = 6;
-    const lo = previous == null ? 1 : previous;
-    const t1 = up * (lo >= 1 ? 1.15 : .85), t2 = tiny * (lo >= 2 ? 1.15 : .85);
-    if (pixels >= t1) return 0;
-    if (pixels < t2) return 2;
-    return 1;
+    const up = dense ? 48 : 28, coarse = previous == null ? 1 : previous;
+    return pixels >= up * (coarse >= 1 ? 1.15 : .85) ? 0 : 1;
   }
   // Crossfade weight when a hull changes level: 0 → 1 over `fade` seconds.
   function lodFade(changedAt, now, fade = .35) { return Math.max(0, Math.min(1, (now - changedAt) / fade)); }

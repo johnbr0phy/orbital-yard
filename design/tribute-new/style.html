@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tribute War Style Sheet</title>
+<meta name="description" content="Visual style sheet for The Tribute War: one lighting and colour language for 23 fleets. Values are taken from armada-war-tribute-new.html, armada-post-new.js and armada-systems-new.js.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#0b0f14;--panel:#111821;--panel2:#0e141c;--line:#1f2a36;--ink:#e6edf3;--dim:#8b9aab;--faint:#5d6b7b;--accent:#7cc4ff;--warn:#ffb86b;--bad:#ff7a7a;--good:#7fe0a8;
+--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans);overflow-x:hidden}
+a{color:var(--accent)}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.wrap{max-width:1240px;margin:0 auto;padding:0 16px}
+header.top{padding:48px 0 28px;border-bottom:1px solid var(--line);background:radial-gradient(80% 120% at 85% 0%,#2a1a10 0%,transparent 55%),radial-gradient(70% 120% at 0% 100%,#101c2e 0%,transparent 60%)}
+header.top h1{font-size:clamp(28px,5vw,46px);line-height:1.05;margin:0 0 10px;letter-spacing:-.01em}
+header.top .lede{font-size:clamp(16px,2.2vw,20px);color:#c9d4df;max-width:760px;margin:0 0 16px}
+.meta{color:var(--dim);font-size:13px;max-width:820px}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:18px;font-size:13px}
+nav.toc a{color:var(--dim);text-decoration:none;border-bottom:1px dotted var(--faint)}
+nav.toc a:hover{color:var(--ink)}
+section{padding:40px 0 8px}
+section>h2{font-size:24px;margin:0 0 6px;display:flex;gap:10px;align-items:baseline}
+section>h2 .n{font-family:var(--mono);color:var(--faint);font-size:15px}
+section>p.intro{color:#c3cdd8;max-width:860px;margin:0 0 18px}
+h3{margin:0;font-size:17px}
+h4{margin:14px 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.small{font-size:13px}.dim{color:var(--dim)}
+.note{font-size:12.5px;color:var(--dim);margin:6px 0 0}
+em.tag{font-style:normal;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--warn);border:1px solid #5a4020;border-radius:3px;padding:0 4px;white-space:nowrap}
+.legend{font-size:13px;color:var(--dim);margin:0 0 18px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.card .body{padding:12px 14px 14px}
+/* principles */
+.prin{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr))}
+.prin .card{padding:16px}
+.prin h3{margin-bottom:6px}
+.prin ul{margin:8px 0 0;padding-left:18px;font-size:13.5px;color:#c9d4df}
+.prin li{margin:3px 0}
+.formula{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-top:10px;overflow-x:auto;white-space:pre-wrap;color:#bcd}
+.rig{display:block;width:100%;height:auto;margin-top:10px}
+/* swatches */
+.swrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.wsw{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sw{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sw .chip{display:block;height:34px;border-radius:6px;border:1px solid rgba(255,255,255,.08)}
+.chip.sm{display:inline-block;width:28px;height:14px;border-radius:3px;flex:none}
+.swl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim)}
+.sw code{font-size:12px}
+.swsub{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+.mini{display:inline-block;width:16px;height:16px;border-radius:3px;border:1px solid rgba(255,255,255,.1);margin-right:3px;vertical-align:middle}
+.minis{display:inline-flex;flex-wrap:wrap;gap:0;flex:none}
+table.kv{width:100%;border-collapse:collapse;font-size:12.5px}
+table.kv th{text-align:left;font-weight:500;color:var(--dim);padding:3px 8px 3px 0;vertical-align:top;white-space:nowrap;width:1%}
+table.kv td{padding:3px 0;font-family:var(--mono);font-size:11.5px;word-break:break-word}
+table.kv td code{color:var(--accent)}
+/* systems */
+.sys .sky{height:92px;padding:12px 14px;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+.sys .sysno{position:absolute;top:10px;right:12px;font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.55)}
+.sys h3{font-size:19px;text-shadow:0 1px 8px #000}
+.star{display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap}
+.star .dot{width:14px;height:14px;border-radius:50%;box-shadow:0 0 8px currentColor;flex:none}
+.star .arrow{color:var(--faint);font-size:10px;text-transform:uppercase}
+.sys .row{display:grid;gap:4px}
+.pls{display:grid;gap:4px;margin-top:6px}
+.pl{display:flex;justify-content:space-between;gap:8px;font-size:12px;align-items:center;flex-wrap:wrap}
+.pln{color:var(--dim)}
+/* fleets */
+.fleet{padding:14px}
+.fleet header{display:flex;gap:10px;align-items:flex-start}
+.fleet .idx{font-family:var(--mono);color:var(--faint);font-size:13px;padding-top:2px}
+.fleet .fr{margin:1px 0 0;font-size:11.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+.hullbar{display:grid;grid-template-columns:6fr 3fr 1fr;height:10px;border-radius:5px;overflow:hidden;margin-top:12px}
+.hullbar span:nth-child(1){background:var(--h)}.hullbar span:nth-child(2){background:var(--t)}.hullbar span:nth-child(3){background:var(--a)}
+.eng{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;margin-top:10px;color:#c9d4df}
+.eng .chip{margin-top:3px}
+details{margin-top:10px;font-size:12.5px}
+summary{cursor:pointer;color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.07em}
+ul.ov{list-style:none;padding:0;margin:6px 0 0;display:grid;gap:4px}
+ul.ov li{display:flex;gap:8px;align-items:center}
+/* weapons */
+.wgrid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,370px),1fr))}
+.wrow{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:8px;min-width:0}
+.whead{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.whead .fire{margin-left:auto;background:#17212c;border:1px solid var(--line);padding:1px 6px;border-radius:4px;color:var(--accent)}
+.wcell{background:#05080c;border:1px solid #16202b;border-radius:6px;padding:6px 8px}
+.wlab{display:block;font-size:11.5px;color:var(--dim);margin-bottom:2px}
+svg.wsk{display:block;width:100%;height:auto;max-height:52px}
+.fo{display:inline-flex;align-items:center;gap:4px;font-size:12px;margin:2px 12px 2px 0}
+/* explosions */
+.tiers{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr))}
+.tier{padding:14px}
+.tier .stage{background:#030507;border-radius:8px;border:1px solid #141c26;margin:10px 0}
+svg.bsvg{display:block;width:100%;height:auto}
+.tier dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12.5px}
+.tier dt{color:var(--dim)}.tier dd{margin:0;font-family:var(--mono);font-size:11.5px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-top:14px}
+table.dt{width:100%;border-collapse:collapse;font-size:13px;min-width:0}
+table.dt th,table.dt td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+table.dt th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);font-weight:500}
+table.dt tr:last-child td{border-bottom:0}
+.grad{display:inline-block;width:40px;height:40px;border-radius:50%}
+/* don'ts */
+.donts{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr))}
+.dont{padding:0}
+.dont .demo{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+.dont .demo>div{position:relative;min-height:110px}
+.dont .demo span.lbl{position:absolute;z-index:2;left:8px;top:6px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:3px;background:rgba(0,0,0,.55)}
+.dont .no .lbl{color:var(--bad)}.dont .yes .lbl{color:var(--good)}
+.dont .txt{padding:12px 14px}
+.dont .txt p{margin:4px 0;font-size:13.5px}
+.dont .txt b.why{color:var(--bad)}.dont .txt b.fix{color:var(--good)}
+.demo svg{display:block;width:100%;height:100%;position:absolute;inset:0}
+footer{border-top:1px solid var(--line);margin-top:40px;padding:22px 0 40px;color:var(--dim);font-size:12.5px}
+@media (max-width:480px){
+  body{font-size:14.5px}
+  header.top{padding:32px 0 20px}
+  .swrow{gap:6px}
+  .sw .chip{height:28px}
+  .sw code{font-size:11px}
+  .swsub{font-size:9.5px}
+  table.dt th,table.dt td{padding:7px 6px}
+  table.tiers-t{font-size:11px}
+  table.tiers-t th,table.tiers-t td{padding:6px 4px;font-size:10.5px}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <p class="meta mono">design/tribute-new · style sheet · for developers</p>
+  <h1>Every fleet we grew up with,<br>lit by the same sun</h1>
+  <p class="lede">The Tribute War puts 23 fleets in one sky. Each one must be recognisable from its silhouette alone, while all of them share one light, one grade and one idea of what energy looks like.</p>
+  <p class="meta">Swatches and numbers are read out of the code (<code>hullFinish()</code>, <code>RACE_DEFS</code> + <code>FLEET_BEAM_HEX</code>, the flash shader, <code>setupWarLight()</code>, <code>GRADES</code>, <code>TIERS</code>, <code>ArmadaSystems.generate</code>). Anything marked <em class="tag">intention</em> is design guidance with no code behind it yet. This is a fan tribute: no logos, no copied artwork, only colour and shape language.</p>
+  <nav class="toc"><a href="#principles">1 Principles</a><a href="#systems">2 Star systems</a><a href="#paint">3 Paint and material</a><a href="#weapons">4 Weapon signatures</a><a href="#explosions">5 Explosion tiers</a><a href="#donts">6 Do not do this</a></nav>
+</div></header>
+
+<main class="wrap">
+<section id="principles">
+  <h2><span class="n">01</span>Principles</h2>
+  <p class="intro">Three rules. Everything else on this page follows from them.</p>
+  <div class="prin">
+    <article class="card"><h3>One sun per system</h3>
+      <p class="small">Every hull in the battle is lit by the same rig, built once per system in <code>setupWarLight()</code>. A red dwarf warms the whole fleet a little; it never repaints it.</p>
+      <ul>
+        <li><b>Key</b>: direction of the system's star body; colour is the star pulled 90% toward white at luminance 1.03. Planets take its direction without the tint.</li>
+        <li><b>Fill</b>: from the side opposite the sun, raised 0.25. Its colour comes from the nebula (<code>nebB + ½·nebA</code>) mixed 10% into a cool white <code>[.9,.94,1]</code>, at luminance 0.9.</li>
+        <li><b>Rim</b>: a cool Fresnel rim tinted by the fill, <code>(.10 + .24·dark)</code>, so it is strongest on dark hulls. Shadow chitin and Borg get an extra grazing-angle lift.</li>
+        <li><b>Eclipse</b>: the four worlds nearest the battle can shadow the sun. <b>One</b> explosion point light: the brightest death flash of the last 0.9 s.</li>
+      </ul>
+      <svg class="rig" viewBox="0 0 340 120" role="img" aria-label="Lighting rig diagram">
+        <circle cx="40" cy="30" r="14" fill="#ffd9a0"/><text x="40" y="60" fill="#8b9aab" font-size="10" text-anchor="middle" font-family="IBM Plex Mono,monospace">key (star)</text>
+        <line x1="56" y1="36" x2="140" y2="62" stroke="#ffd9a0" stroke-width="2" stroke-dasharray="4 3"/>
+        <path d="M130 70 L210 58 L250 70 L210 82 Z" fill="#6b7682"/><path d="M130 70 L210 58 L250 70" fill="none" stroke="#ffe7c2" stroke-width="2"/><path d="M130 70 L210 82 L250 70" fill="none" stroke="#9cc3ff" stroke-width="1.6" opacity=".9"/>
+        <circle cx="306" cy="98" r="10" fill="#9cb8e8" opacity=".75"/><text x="300" y="120" fill="#8b9aab" font-size="10" text-anchor="middle" font-family="IBM Plex Mono,monospace">fill (nebula)</text>
+        <line x1="294" y1="94" x2="240" y2="78" stroke="#9cb8e8" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="190" y="106" fill="#9cc3ff" font-size="10" text-anchor="middle" font-family="IBM Plex Mono,monospace">cool rim on the shadow edge</text>
+      </svg>
+      <div class="formula">shade = (.19 + .62·key + .26·fill + .10·sky) × tone
+col  *= mix(fillCol, sunCol, key × 1.6)
+col  += fillCol·[.55,.65,.85]·(1−N·V)^2.5·(.10+.24·dark)</div>
+    </article>
+    <article class="card"><h3>Energy drives bloom, not brightness</h3>
+      <p class="small">The scene renders to a half-float target. Hulls are authored at display values and stay near them after tone mapping; only light stacked above white blooms.</p>
+      <ul>
+        <li>Bloom prefilter passes only luminance above <b>1.5</b> (soft knee 0.5), after decoding to linear.</li>
+        <li>Up-chain levels are weighted <b>0.62</b> each: a tight glow, not fog. Low tier uses 3 levels, High and Ultra 5.</li>
+        <li>Tone curve: Khronos Neutral shoulder, identity below 0.8, so painted hulls keep their values.</li>
+        <li>Auto-exposure only darkens (factor clamped .32 to 1): a capital's death blooms, then the eye recovers over about 2.5 s.</li>
+        <li>Weapon cores, explosions, engines, windows carry energy above white. Brighter beam colours get ×1.35 gain.</li>
+      </ul>
+      <div class="tw" style="margin-top:12px"><table class="dt tiers-t"><tr><th>Tier</th><th>bloom lv</th><th>MSAA</th><th>nebula oct</th><th>grain</th><th>DPR cap</th><th>min scale</th><th>fleet</th></tr><tr><th>Low</th><td>3</td><td>0×</td><td>0</td><td>no</td><td>1</td><td>0.6</td><td>100</td></tr><tr><th>Medium</th><td>4</td><td>2×</td><td>2</td><td>yes</td><td>1.25</td><td>0.65</td><td>300</td></tr><tr><th>High</th><td>5</td><td>4×</td><td>3</td><td>yes</td><td>1.5</td><td>0.7</td><td>300</td></tr><tr><th>Ultra</th><td>5</td><td>4×</td><td>4</td><td>yes</td><td>2</td><td>0.75</td><td>600</td></tr></table></div>
+    </article>
+    <article class="card"><h3>Silhouettes first</h3>
+      <p class="small">A franchise is recognised by its outline long before its colour. Paint supports the shape; it never replaces it.</p>
+      <ul>
+        <li>Paint is procedural in the ship shader: panel cells, stripes, waves, rings. No textures, no extra meshes, no draw calls.</li>
+        <li>Hull colour saturation is muted to 62% (trim 55%, accent 75%), so no fleet shouts over the others.</li>
+        <li>Dark hulls (Shadows, Borg, TIE panels) get rim and fill lift so their outline stays readable against black.</li>
+        <li>Hulls under about 5 projected pixels become batched coloured silhouettes; heroes and selected ships keep full meshes.</li>
+        <li>Recognisable, never copied: proportions and colour language are the tribute; logos and markings stay out. <em class="tag">intention</em></li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section id="systems">
+  <h2><span class="n">02</span>Palette per star system</h2>
+  <p class="intro">Eight system styles from <code>armada-systems-new.js</code>, each with a grade from <code>GRADES</code> in <code>armada-post-new.js</code>. The composite applies grades at <b>half strength</b>: the applied lift is <code>lift × .5</code> and the applied gain is <code>1 + (gain − 1) × .5</code>. The "derived fill" swatch is the hull fill colour computed with the <code>setupWarLight()</code> formula. Besides the worlds listed on each card, every system adds one world behind the opposing fleet and one below the battle.</p>
+  <div class="grid"><article class="card sys">
+  <div class="sky" style="background:radial-gradient(120% 90% at 78% 22%, #925432 0%, transparent 55%), radial-gradient(110% 100% at 15% 90%, #2d2243 0%, transparent 60%), #05070a"><span class="sysno">style 0</span><h3>Giant sun</h3></div>
+  <div class="body">
+    <div class="swrow"><div class="sw"><span class="chip" style="background:#422617"></span><span class="swl">nebula A</span><code>#422617</code></div><div class="sw"><span class="chip" style="background:#140f1f"></span><span class="swl">nebula B</span><code>#140f1f</code></div><div class="sw"><span class="chip" style="background:#e6e4f5"></span><span class="swl">derived fill</span><code>#e6e4f5</code><span class="swsub">hull fill light</span></div></div>
+    <table class="kv"><tr><th>lift</th><td>[.010, .006, .002] <span class="dim">→ [.005, .003, .001] applied</span></td></tr>
+    <tr><th>gain</th><td>[1.04, .99, .92] <span class="dim">→ [1.02, .99, .96] applied</span></td></tr>
+    <tr><th>saturation</th><td>1.02</td></tr><tr><th>contrast</th><td>1.04</td></tr><tr><th>nebula k</th><td>0.5</td></tr></table>
+    <h4>Star and key light</h4><div class="row"><div class="star"><span class="dot" style="background:#ff6114"></span><code>#ff6114</code><span class="arrow">key</span><span class="dot" style="background:#fffffb"></span><code>[1.09, 1.02, .99]</code></div><div class="star"><span class="dot" style="background:#ffb847"></span><code>#ffb847</code><span class="arrow">key</span><span class="dot" style="background:#fffffa"></span><code>[1.06, 1.03, .98]</code></div><div class="star"><span class="dot" style="background:#8cb8ff"></span><code>#8cb8ff</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.01, 1.03, 1.06]</code></div><div class="star"><span class="dot" style="background:#ff3321"></span><code>#ff3321</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.10, 1.01, 1.00]</code></div></div><p class="note">Any of the four star colours can be picked by the seed. The key light is the star pulled 90% toward white at luminance 1.03.</p>
+    <h4>Worlds</h4><p class="small">Large star (r 1.38), rocky world, volcanic world.</p>
+    <div class="pls"><div class="pl"><span class="pln">Gas giant / rocky (shared palette pick)</span><span class="minis"><span class="mini" style="background:#66594a" title="#66594a"></span><span class="mini" style="background:#4a5c66" title="#4a5c66"></span><span class="mini" style="background:#5e5459" title="#5e5459"></span><span class="mini" style="background:#575e4f" title="#575e4f"></span><span class="mini" style="background:#615c52" title="#615c52"></span></span></div><div class="pl"><span class="pln">Volcanic world</span><span class="minis"><span class="mini" style="background:#1c110d" title="#1c110d"></span><span class="mini" style="background:#a63d17" title="#a63d17"></span><span class="mini" style="background:#a65717" title="#a65717"></span></span></div></div>
+  </div></article>
+<article class="card sys">
+  <div class="sky" style="background:radial-gradient(120% 90% at 78% 22%, #385a92 0%, transparent 55%), radial-gradient(110% 100% at 15% 90%, #70387b 0%, transparent 60%), #05070a"><span class="sysno">style 1</span><h3>Five worlds</h3></div>
+  <div class="body">
+    <div class="swrow"><div class="sw"><span class="chip" style="background:#1a2942"></span><span class="swl">nebula A</span><code>#1a2942</code></div><div class="sw"><span class="chip" style="background:#331a38"></span><span class="swl">nebula B</span><code>#331a38</code></div><div class="sw"><span class="chip" style="background:#e1e4ff"></span><span class="swl">derived fill</span><code>#e1e4ff</code><span class="swsub">hull fill light</span></div></div>
+    <table class="kv"><tr><th>lift</th><td>[.004, .006, .010] <span class="dim">→ [.002, .003, .005] applied</span></td></tr>
+    <tr><th>gain</th><td>[.99, 1.00, 1.02] <span class="dim">→ [.99, 1.00, 1.01] applied</span></td></tr>
+    <tr><th>saturation</th><td>1</td></tr><tr><th>contrast</th><td>1.03</td></tr><tr><th>nebula k</th><td>0.45</td></tr></table>
+    <h4>Star and key light</h4><div class="row"><div class="star"><span class="dot" style="background:#fff2db"></span><code>#fff2db</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.03, 1.03, 1.02]</code></div></div><p class="note">No star body in this style: the fallback base [1, .95, .86] lights the fleet.</p>
+    <h4>Worlds</h4><p class="small">No star. Ocean, ringed gas giant, rocky, ice, volcanic in a row.</p>
+    <div class="pls"><div class="pl"><span class="pln">Ocean world</span><span class="minis"><span class="mini" style="background:#1a3040" title="#1a3040"></span><span class="mini" style="background:#1a394b" title="#1a394b"></span></span></div><div class="pl"><span class="pln">Gas giant / rocky (shared palette pick)</span><span class="minis"><span class="mini" style="background:#66594a" title="#66594a"></span><span class="mini" style="background:#4a5c66" title="#4a5c66"></span><span class="mini" style="background:#5e5459" title="#5e5459"></span><span class="mini" style="background:#575e4f" title="#575e4f"></span><span class="mini" style="background:#615c52" title="#615c52"></span></span></div><div class="pl"><span class="pln">Ice world</span><span class="minis"><span class="mini" style="background:#5e6e75" title="#5e6e75"></span><span class="mini" style="background:#919ea3" title="#919ea3"></span></span></div><div class="pl"><span class="pln">Volcanic world</span><span class="minis"><span class="mini" style="background:#1c110d" title="#1c110d"></span><span class="mini" style="background:#a63d17" title="#a63d17"></span><span class="mini" style="background:#a65717" title="#a65717"></span></span></div></div>
+  </div></article>
+<article class="card sys">
+  <div class="sky" style="background:radial-gradient(120% 90% at 78% 22%, #876b43 0%, transparent 55%), radial-gradient(110% 100% at 15% 90%, #22495a 0%, transparent 60%), #05070a"><span class="sysno">style 2</span><h3>Ringed kingdom</h3></div>
+  <div class="body">
+    <div class="swrow"><div class="sw"><span class="chip" style="background:#3d301f"></span><span class="swl">nebula A</span><code>#3d301f</code></div><div class="sw"><span class="chip" style="background:#0f2129"></span><span class="swl">nebula B</span><code>#0f2129</code></div><div class="sw"><span class="chip" style="background:#dae8f4"></span><span class="swl">derived fill</span><code>#dae8f4</code><span class="swsub">hull fill light</span></div></div>
+    <table class="kv"><tr><th>lift</th><td>[.004, .008, .008] <span class="dim">→ [.002, .004, .004] applied</span></td></tr>
+    <tr><th>gain</th><td>[1.03, 1.00, .95] <span class="dim">→ [1.02, 1.00, .97] applied</span></td></tr>
+    <tr><th>saturation</th><td>1.04</td></tr><tr><th>contrast</th><td>1.05</td></tr><tr><th>nebula k</th><td>0.45</td></tr></table>
+    <h4>Star and key light</h4><div class="row"><div class="star"><span class="dot" style="background:#ff6114"></span><code>#ff6114</code><span class="arrow">key</span><span class="dot" style="background:#fffffb"></span><code>[1.09, 1.02, .99]</code></div><div class="star"><span class="dot" style="background:#ffb847"></span><code>#ffb847</code><span class="arrow">key</span><span class="dot" style="background:#fffffa"></span><code>[1.06, 1.03, .98]</code></div><div class="star"><span class="dot" style="background:#8cb8ff"></span><code>#8cb8ff</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.01, 1.03, 1.06]</code></div><div class="star"><span class="dot" style="background:#ff3321"></span><code>#ff3321</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.10, 1.01, 1.00]</code></div></div><p class="note">Any of the four star colours can be picked by the seed. The key light is the star pulled 90% toward white at luminance 1.03.</p>
+    <h4>Worlds</h4><p class="small">Ringed gas giant with 5 moons, small distant star.</p>
+    <div class="pls"><div class="pl"><span class="pln">Gas giant / rocky (shared palette pick)</span><span class="minis"><span class="mini" style="background:#66594a" title="#66594a"></span><span class="mini" style="background:#4a5c66" title="#4a5c66"></span><span class="mini" style="background:#5e5459" title="#5e5459"></span><span class="mini" style="background:#575e4f" title="#575e4f"></span><span class="mini" style="background:#615c52" title="#615c52"></span></span></div><div class="pl"><span class="pln">Ice world</span><span class="minis"><span class="mini" style="background:#5e6e75" title="#5e6e75"></span><span class="mini" style="background:#919ea3" title="#919ea3"></span></span></div></div>
+  </div></article>
+<article class="card sys">
+  <div class="sky" style="background:radial-gradient(120% 90% at 78% 22%, #9d4965 0%, transparent 55%), radial-gradient(110% 100% at 15% 90%, #654f2d 0%, transparent 60%), #05070a"><span class="sysno">style 3</span><h3>Binary dawn</h3></div>
+  <div class="body">
+    <div class="swrow"><div class="sw"><span class="chip" style="background:#47212e"></span><span class="swl">nebula A</span><code>#47212e</code></div><div class="sw"><span class="chip" style="background:#2e2414"></span><span class="swl">nebula B</span><code>#2e2414</code></div><div class="sw"><span class="chip" style="background:#e7e4ee"></span><span class="swl">derived fill</span><code>#e7e4ee</code><span class="swsub">hull fill light</span></div></div>
+    <table class="kv"><tr><th>lift</th><td>[.010, .004, .008] <span class="dim">→ [.005, .002, .004] applied</span></td></tr>
+    <tr><th>gain</th><td>[1.05, .97, .96] <span class="dim">→ [1.02, .98, .98] applied</span></td></tr>
+    <tr><th>saturation</th><td>1.05</td></tr><tr><th>contrast</th><td>1.04</td></tr><tr><th>nebula k</th><td>0.5</td></tr></table>
+    <h4>Star and key light</h4><div class="row"><div class="star"><span class="dot" style="background:#ff6114"></span><code>#ff6114</code><span class="arrow">key</span><span class="dot" style="background:#fffffb"></span><code>[1.09, 1.02, .99]</code></div><div class="star"><span class="dot" style="background:#ffb847"></span><code>#ffb847</code><span class="arrow">key</span><span class="dot" style="background:#fffffa"></span><code>[1.06, 1.03, .98]</code></div><div class="star"><span class="dot" style="background:#8cb8ff"></span><code>#8cb8ff</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.01, 1.03, 1.06]</code></div><div class="star"><span class="dot" style="background:#ff3321"></span><code>#ff3321</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.10, 1.01, 1.00]</code></div></div><p class="note">Any of the four star colours can be picked by the seed. The key light is the star pulled 90% toward white at luminance 1.03.</p>
+    <h4>Worlds</h4><p class="small">Two stars, ocean world with 2 moons.</p>
+    <div class="pls"><div class="pl"><span class="pln">Ocean world</span><span class="minis"><span class="mini" style="background:#1a3040" title="#1a3040"></span><span class="mini" style="background:#1a394b" title="#1a394b"></span></span></div></div>
+  </div></article>
+<article class="card sys">
+  <div class="sky" style="background:radial-gradient(120% 90% at 78% 22%, #1c70a8 0%, transparent 55%), radial-gradient(110% 100% at 15% 90%, #2d2d7b 0%, transparent 60%), #05070a"><span class="sysno">style 4</span><h3>Ocean frontier</h3></div>
+  <div class="body">
+    <div class="swrow"><div class="sw"><span class="chip" style="background:#0d334d"></span><span class="swl">nebula A</span><code>#0d334d</code></div><div class="sw"><span class="chip" style="background:#141438"></span><span class="swl">nebula B</span><code>#141438</code></div><div class="sw"><span class="chip" style="background:#d6e7ff"></span><span class="swl">derived fill</span><code>#d6e7ff</code><span class="swsub">hull fill light</span></div></div>
+    <table class="kv"><tr><th>lift</th><td>[.002, .007, .012] <span class="dim">→ [.001, .004, .006] applied</span></td></tr>
+    <tr><th>gain</th><td>[.95, 1.00, 1.05] <span class="dim">→ [.97, 1.00, 1.02] applied</span></td></tr>
+    <tr><th>saturation</th><td>1.02</td></tr><tr><th>contrast</th><td>1.03</td></tr><tr><th>nebula k</th><td>0.5</td></tr></table>
+    <h4>Star and key light</h4><div class="row"><div class="star"><span class="dot" style="background:#fff2db"></span><code>#fff2db</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.03, 1.03, 1.02]</code></div></div><p class="note">No star body in this style: the fallback base [1, .95, .86] lights the fleet.</p>
+    <h4>Worlds</h4><p class="small">No star. Large ocean world, 3 moons, ringed gas giant.</p>
+    <div class="pls"><div class="pl"><span class="pln">Ocean world</span><span class="minis"><span class="mini" style="background:#1a3040" title="#1a3040"></span><span class="mini" style="background:#1a394b" title="#1a394b"></span></span></div><div class="pl"><span class="pln">Gas giant / rocky (shared palette pick)</span><span class="minis"><span class="mini" style="background:#66594a" title="#66594a"></span><span class="mini" style="background:#4a5c66" title="#4a5c66"></span><span class="mini" style="background:#5e5459" title="#5e5459"></span><span class="mini" style="background:#575e4f" title="#575e4f"></span><span class="mini" style="background:#615c52" title="#615c52"></span></span></div></div>
+  </div></article>
+<article class="card sys">
+  <div class="sky" style="background:radial-gradient(120% 90% at 78% 22%, #437bca 0%, transparent 55%), radial-gradient(110% 100% at 15% 90%, #65709d 0%, transparent 60%), #05070a"><span class="sysno">style 5</span><h3>Ice giant moons</h3></div>
+  <div class="body">
+    <div class="swrow"><div class="sw"><span class="chip" style="background:#1f385c"></span><span class="swl">nebula A</span><code>#1f385c</code></div><div class="sw"><span class="chip" style="background:#2e3347"></span><span class="swl">nebula B</span><code>#2e3347</code></div><div class="sw"><span class="chip" style="background:#d9e7ff"></span><span class="swl">derived fill</span><code>#d9e7ff</code><span class="swsub">hull fill light</span></div></div>
+    <table class="kv"><tr><th>lift</th><td>[.004, .008, .014] <span class="dim">→ [.002, .004, .007] applied</span></td></tr>
+    <tr><th>gain</th><td>[.94, .99, 1.07] <span class="dim">→ [.97, .99, 1.04] applied</span></td></tr>
+    <tr><th>saturation</th><td>0.94</td></tr><tr><th>contrast</th><td>1.04</td></tr><tr><th>nebula k</th><td>0.45</td></tr></table>
+    <h4>Star and key light</h4><div class="row"><div class="star"><span class="dot" style="background:#fff2db"></span><code>#fff2db</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.03, 1.03, 1.02]</code></div></div><p class="note">No star body in this style: the fallback base [1, .95, .86] lights the fleet.</p>
+    <h4>Worlds</h4><p class="small">No star. Ice world (60% ringed) with 7 moons.</p>
+    <div class="pls"><div class="pl"><span class="pln">Ice world</span><span class="minis"><span class="mini" style="background:#5e6e75" title="#5e6e75"></span><span class="mini" style="background:#919ea3" title="#919ea3"></span></span></div></div>
+  </div></article>
+<article class="card sys">
+  <div class="sky" style="background:radial-gradient(120% 90% at 78% 22%, #5a4370 0%, transparent 55%), radial-gradient(110% 100% at 15% 90%, #22222d 0%, transparent 60%), #05070a"><span class="sysno">style 6</span><h3>Eclipse</h3></div>
+  <div class="body">
+    <div class="swrow"><div class="sw"><span class="chip" style="background:#291f33"></span><span class="swl">nebula A</span><code>#291f33</code></div><div class="sw"><span class="chip" style="background:#0f0f14"></span><span class="swl">nebula B</span><code>#0f0f14</code></div><div class="sw"><span class="chip" style="background:#dfe5fc"></span><span class="swl">derived fill</span><code>#dfe5fc</code><span class="swsub">hull fill light</span></div></div>
+    <table class="kv"><tr><th>lift</th><td>[.000, .000, .004] <span class="dim">→ [.000, .000, .002] applied</span></td></tr>
+    <tr><th>gain</th><td>[1.00, .98, .98] <span class="dim">→ [1.00, .99, .99] applied</span></td></tr>
+    <tr><th>saturation</th><td>0.86</td></tr><tr><th>contrast</th><td>1.12</td></tr><tr><th>nebula k</th><td>0.3</td></tr></table>
+    <h4>Star and key light</h4><div class="row"><div class="star"><span class="dot" style="background:#ff6114"></span><code>#ff6114</code><span class="arrow">key</span><span class="dot" style="background:#fffffb"></span><code>[1.09, 1.02, .99]</code></div><div class="star"><span class="dot" style="background:#ffb847"></span><code>#ffb847</code><span class="arrow">key</span><span class="dot" style="background:#fffffa"></span><code>[1.06, 1.03, .98]</code></div><div class="star"><span class="dot" style="background:#8cb8ff"></span><code>#8cb8ff</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.01, 1.03, 1.06]</code></div><div class="star"><span class="dot" style="background:#ff3321"></span><code>#ff3321</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.10, 1.01, 1.00]</code></div></div><p class="note">Any of the four star colours can be picked by the seed. The key light is the star pulled 90% toward white at luminance 1.03.</p>
+    <h4>Worlds</h4><p class="small">Star with a rocky world 0.035 rad off its face, 2 moons.</p>
+    <div class="pls"><div class="pl"><span class="pln">Gas giant / rocky (shared palette pick)</span><span class="minis"><span class="mini" style="background:#66594a" title="#66594a"></span><span class="mini" style="background:#4a5c66" title="#4a5c66"></span><span class="mini" style="background:#5e5459" title="#5e5459"></span><span class="mini" style="background:#575e4f" title="#575e4f"></span><span class="mini" style="background:#615c52" title="#615c52"></span></span></div></div>
+  </div></article>
+<article class="card sys">
+  <div class="sky" style="background:radial-gradient(120% 90% at 78% 22%, #9d3e27 0%, transparent 55%), radial-gradient(110% 100% at 15% 90%, #381c38 0%, transparent 60%), #05070a"><span class="sysno">style 7</span><h3>Ember worlds</h3></div>
+  <div class="body">
+    <div class="swrow"><div class="sw"><span class="chip" style="background:#471c12"></span><span class="swl">nebula A</span><code>#471c12</code></div><div class="sw"><span class="chip" style="background:#1a0d1a"></span><span class="swl">nebula B</span><code>#1a0d1a</code></div><div class="sw"><span class="chip" style="background:#ede2f4"></span><span class="swl">derived fill</span><code>#ede2f4</code><span class="swsub">hull fill light</span></div></div>
+    <table class="kv"><tr><th>lift</th><td>[.012, .004, .000] <span class="dim">→ [.006, .002, .000] applied</span></td></tr>
+    <tr><th>gain</th><td>[1.06, .96, .88] <span class="dim">→ [1.03, .98, .94] applied</span></td></tr>
+    <tr><th>saturation</th><td>1.04</td></tr><tr><th>contrast</th><td>1.06</td></tr><tr><th>nebula k</th><td>0.5</td></tr></table>
+    <h4>Star and key light</h4><div class="row"><div class="star"><span class="dot" style="background:#ff6114"></span><code>#ff6114</code><span class="arrow">key</span><span class="dot" style="background:#fffffb"></span><code>[1.09, 1.02, .99]</code></div><div class="star"><span class="dot" style="background:#ffb847"></span><code>#ffb847</code><span class="arrow">key</span><span class="dot" style="background:#fffffa"></span><code>[1.06, 1.03, .98]</code></div><div class="star"><span class="dot" style="background:#8cb8ff"></span><code>#8cb8ff</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.01, 1.03, 1.06]</code></div><div class="star"><span class="dot" style="background:#ff3321"></span><code>#ff3321</code><span class="arrow">key</span><span class="dot" style="background:#ffffff"></span><code>[1.10, 1.01, 1.00]</code></div></div><p class="note">Any of the four star colours can be picked by the seed. The key light is the star pulled 90% toward white at luminance 1.03.</p>
+    <h4>Worlds</h4><p class="small">Volcanic main world, star, small volcanic world, 3 moons.</p>
+    <div class="pls"><div class="pl"><span class="pln">Volcanic world</span><span class="minis"><span class="mini" style="background:#1c110d" title="#1c110d"></span><span class="mini" style="background:#a63d17" title="#a63d17"></span><span class="mini" style="background:#a65717" title="#a65717"></span></span></div><div class="pl"><span class="pln">Gas giant / rocky (shared palette pick)</span><span class="minis"><span class="mini" style="background:#66594a" title="#66594a"></span><span class="mini" style="background:#4a5c66" title="#4a5c66"></span><span class="mini" style="background:#5e5459" title="#5e5459"></span><span class="mini" style="background:#575e4f" title="#575e4f"></span><span class="mini" style="background:#615c52" title="#615c52"></span></span></div></div>
+  </div></article></div>
+</section>
+
+<section id="paint">
+  <h2><span class="n">03</span>Paint and material sheet</h2>
+  <p class="intro"><code>hullFinish(s)</code> gives each fleet a family row <code>[hull, trim, accent, pattern, surface, gloss]</code>, then applies class overrides. Before the shader sees them, colours are muted: hull saturation × <b>.62</b> (then clamped .02 to .94), trim × <b>.55</b>, accent × <b>.75</b>. Each vessel also gets a stable tone of <b>.92 to 1.05</b>, a warm/cool shift of up to ±.0125 on red and blue, and gloss × .68 to .84.</p>
+  <p class="legend">Big swatches show the colour after muting at tone 1.0; the small "raw" value is the literal in the code. Accent is the colour of windows, seams and running lights (energy above white). The ship shader has no PBR roughness or metalness inputs, so "roughness ≈ 1 − gloss" and the metalness numbers are guidance for anyone porting to a PBR material. <em class="tag">intention</em></p>
+  <div class="grid"><article class="card fleet" id="fleet-0">
+  <header><span class="idx">00</span><div><h3>Yard</h3><p class="fr">THE YARD FLEET · the originals</p></div></header>
+  <div class="hullbar" style="--h:#b6c3c6;--t:#273a44;--a:#60d1e2"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#b6c3c6"></span><span class="swl">hull</span><code>#b6c3c6</code><span class="swsub">raw #b0c4c9</span></div><div class="sw"><span class="chip" style="background:#273a44"></span><span class="swl">trim</span><code>#273a44</code><span class="swsub">raw #1a3d4f</span></div><div class="sw"><span class="chip" style="background:#60d1e2"></span><span class="swl">accent</span><code>#60d1e2</code><span class="swsub">raw #42d9f0</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>1</code> lateral hull stripe</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.45</code> → .31-.38 per vessel · roughness ≈ .62-.69</td></tr>
+    <tr><th>material</th><td>ceramic · metalness ≈ .2 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#67bca6"></span><span>No plume in code. Drive glow uses the beam colour #67bca6 <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>cookoff</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-1">
+  <header><span class="idx">01</span><div><h3>Shoal</h3><p class="fr">THE SHOAL · the originals</p></div></header>
+  <div class="hullbar" style="--h:#50776e;--t:#6c4b5c;--a:#5ed2b2"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#50776e"></span><span class="swl">hull</span><code>#50776e</code><span class="swsub">raw #3d7d6e</span></div><div class="sw"><span class="chip" style="background:#6c4b5c"></span><span class="swl">trim</span><code>#6c4b5c</code><span class="swsub">raw #804563</span></div><div class="sw"><span class="chip" style="background:#5ed2b2"></span><span class="swl">accent</span><code>#5ed2b2</code><span class="swsub">raw #40dbb0</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>2</code> flowing wave bands</td></tr>
+    <tr><th>surface</th><td><code>1</code> Shadow chitin: dark cells, wet rim</td></tr>
+    <tr><th>gloss</th><td><code>0.7</code> → .48-.59 per vessel · roughness ≈ .41-.52</td></tr>
+    <tr><th>material</th><td>organic chitin · metalness ≈ 0 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#ff739d"></span><span>No plume in code (organic ships get no rocket exhaust). Drive glow uses the beam colour #ff739d <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>burst</b>, flash kind 12 (dark violet dissipation).</p>
+</article>
+<article class="card fleet" id="fleet-2">
+  <header><span class="idx">02</span><div><h3>Lattice</h3><p class="fr">THE LATTICE · the originals</p></div></header>
+  <div class="hullbar" style="--h:#9795b3;--t:#372a4c;--a:#ae80e0"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#9795b3"></span><span class="swl">hull</span><code>#9795b3</code><span class="swsub">raw #9694c4</span></div><div class="sw"><span class="chip" style="background:#372a4c"></span><span class="swl">trim</span><code>#372a4c</code><span class="swsub">raw #3d2663</span></div><div class="sw"><span class="chip" style="background:#ae80e0"></span><span class="swl">accent</span><code>#ae80e0</code><span class="swsub">raw #b87afa</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>4</code> concentric ring bands</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.65</code> → .44-.55 per vessel · roughness ≈ .45-.56</td></tr>
+    <tr><th>material</th><td>ceramic / crystal · metalness ≈ .1 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#6974ff"></span><span>No plume in code. Drive glow uses the beam colour #6974ff <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>shatter</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-3">
+  <header><span class="idx">03</span><div><h3>Drift</h3><p class="fr">THE DRIFT · the originals</p></div></header>
+  <div class="hullbar" style="--h:#89705b;--t:#36474b;--a:#d49754"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#89705b"></span><span class="swl">hull</span><code>#89705b</code><span class="swsub">raw #966e4d</span></div><div class="sw"><span class="chip" style="background:#36474b"></span><span class="swl">trim</span><code>#36474b</code><span class="swsub">raw #2b4a52</span></div><div class="sw"><span class="chip" style="background:#d49754"></span><span class="swl">accent</span><code>#d49754</code><span class="swsub">raw #e6943b</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>3</code> mottled patches</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.25</code> → .17-.21 per vessel · roughness ≈ .79-.83</td></tr>
+    <tr><th>material</th><td>salvaged metal · metalness ≈ .7 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#cc782a"></span><span>No plume in code. Drive glow uses the beam colour #cc782a <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>cookoff</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-4">
+  <header><span class="idx">04</span><div><h3>Choir</h3><p class="fr">THE CHOIR · the originals</p></div></header>
+  <div class="hullbar" style="--h:#cfc7b1;--t:#465767;--a:#d2b36e"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#cfc7b1"></span><span class="swl">hull</span><code>#cfc7b1</code><span class="swsub">raw #d4c7a3</span></div><div class="sw"><span class="chip" style="background:#465767"></span><span class="swl">trim</span><code>#465767</code><span class="swsub">raw #3b5975</span></div><div class="sw"><span class="chip" style="background:#d2b36e"></span><span class="swl">accent</span><code>#d2b36e</code><span class="swsub">raw #dbb357</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>4</code> concentric ring bands</td></tr>
+    <tr><th>surface</th><td><code>3</code> bronze collar, patina seams</td></tr>
+    <tr><th>gloss</th><td><code>0.7</code> → .48-.59 per vessel · roughness ≈ .41-.52</td></tr>
+    <tr><th>material</th><td>pearl ceramic · metalness ≈ .15 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#fff0ac"></span><span>No plume in code. Drive glow uses the beam colour #fff0ac <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>flash</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-5">
+  <header><span class="idx">05</span><div><h3>Imperial</h3><p class="fr">THE IMPERIAL STARFLEET · star wars</p></div></header>
+  <div class="hullbar" style="--h:#bcc4cc;--t:#434c57;--a:#61a2d2"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#bcc4cc"></span><span class="swl">hull</span><code>#bcc4cc</code><span class="swsub">raw #b8c4d1</span></div><div class="sw"><span class="chip" style="background:#434c57"></span><span class="swl">trim</span><code>#434c57</code><span class="swsub">raw #3d4d61</span></div><div class="sw"><span class="chip" style="background:#61a2d2"></span><span class="swl">accent</span><code>#61a2d2</code><span class="swsub">raw #4fa6e6</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>0</code> plain panel cells (hash panels only)</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.65</code> → .44-.55 per vessel · roughness ≈ .45-.56</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .7 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:linear-gradient(90deg,#407aff,#e0f5ff)"></span><span>Authored drive outlets: shared kind-20 plume #407aff → #e0f5ff core, grows with throttle.</span></div>
+  <details open><summary>Class overrides</summary><ul class="ov"><li><span class="minis"><span class="mini" style="background:#a2afbc" title="hull"></span><span class="mini" style="background:#0e1115" title="trim"></span><span class="mini" style="background:#b6342d" title="accent"></span></span><span><b>TIE</b> <span class="dim">pattern 5</span></span></li></ul></details>
+  <p class="small dim">Dies as <b>tie</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-6">
+  <header><span class="idx">06</span><div><h3>Rebel</h3><p class="fr">THE REBEL ALLIANCE · star wars</p></div></header>
+  <div class="hullbar" style="--h:#cbc4b1;--t:#6c332e;--a:#92c2e8"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#cbc4b1"></span><span class="swl">hull</span><code>#cbc4b1</code><span class="swsub">raw #cfc4a6</span></div><div class="sw"><span class="chip" style="background:#6c332e"></span><span class="swl">trim</span><code>#6c332e</code><span class="swsub">raw #912921</span></div><div class="sw"><span class="chip" style="background:#92c2e8"></span><span class="swl">accent</span><code>#92c2e8</code><span class="swsub">raw #85c4f7</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>6</code> stripe plus nose band (Rebel livery)</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.4</code> → .27-.34 per vessel · roughness ≈ .66-.73</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .6 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:linear-gradient(90deg,#407aff,#e0f5ff)"></span><span>Authored drive outlets: shared kind-20 plume #407aff → #e0f5ff core, grows with throttle.</span></div>
+  <details open><summary>Class overrides</summary><ul class="ov"><li><span class="minis"><span class="mini" style="background:#723630" title="trim"></span></span><span><b>X-wing / T-65 / YT-1300</b> <span class="dim">pattern 6</span></span></li><li><span class="minis"><span class="mini" style="background:#b9985c" title="trim"></span></span><span><b>Y-wing</b> <span class="dim">pattern 1</span></span></li><li><span class="minis"><span class="mini" style="background:#94473d" title="hull"></span><span class="mini" style="background:#d5d1bf" title="trim"></span></span><span><b>A-wing</b> <span class="dim">pattern 6</span></span></li><li><span class="minis"><span class="mini" style="background:#a4a5a2" title="hull"></span><span class="mini" style="background:#6f7271" title="trim"></span><span class="mini" style="background:#73b4ce" title="accent"></span></span><span><b>Nebulon-B</b> <span class="dim">pattern 3, gloss .24</span></span></li><li><span class="minis"><span class="mini" style="background:#aaa89b" title="hull"></span><span class="mini" style="background:#6c6455" title="trim"></span></span><span><b>Mon Cal / MC-</b> <span class="dim">pattern 3</span></span></li></ul></details>
+  <p class="small dim">Dies as <b>cookoff</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-7">
+  <header><span class="idx">07</span><div><h3>Minbari</h3><p class="fr">THE MINBARI FEDERATION · babylon 5</p></div></header>
+  <div class="hullbar" style="--h:#7796b9;--t:#313f5e;--a:#72bbce"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#7796b9"></span><span class="swl">hull</span><code>#7796b9</code><span class="swsub">raw #6699d1</span></div><div class="sw"><span class="chip" style="background:#313f5e"></span><span class="swl">trim</span><code>#313f5e</code><span class="swsub">raw #264078</span></div><div class="sw"><span class="chip" style="background:#72bbce"></span><span class="swl">accent</span><code>#72bbce</code><span class="swsub">raw #5ebfd9</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>2</code> flowing wave bands</td></tr>
+    <tr><th>surface</th><td><code>4</code> wave plating (Minbari/Vorlon)</td></tr>
+    <tr><th>gloss</th><td><code>0.7</code> → .48-.59 per vessel · roughness ≈ .41-.52</td></tr>
+    <tr><th>material</th><td>crystalline · metalness ≈ .15 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#638cff"></span><span>No plume in code. Drive glow uses the beam colour #638cff <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>crystal</b>, flash kind 14 (cold flash).</p>
+</article>
+<article class="card fleet" id="fleet-8">
+  <header><span class="idx">08</span><div><h3>Shadows</h3><p class="fr">THE SHADOWS · babylon 5</p></div></header>
+  <div class="hullbar" style="--h:#2d303a;--t:#120f1a;--a:#532d74"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#2d303a"></span><span class="swl">hull</span><code>#2d303a</code><span class="swsub">raw #2b3040</span></div><div class="sw"><span class="chip" style="background:#120f1a"></span><span class="swl">trim</span><code>#120f1a</code><span class="swsub">raw #130e21</span></div><div class="sw"><span class="chip" style="background:#532d74"></span><span class="swl">accent</span><code>#532d74</code><span class="swsub">raw #5c2987</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>2</code> flowing wave bands</td></tr>
+    <tr><th>surface</th><td><code>1</code> Shadow chitin: dark cells, wet rim</td></tr>
+    <tr><th>gloss</th><td><code>0.85</code> → .58-.71 per vessel · roughness ≈ .29-.42</td></tr>
+    <tr><th>material</th><td>organic chitin · metalness ≈ 0 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#dc36ff"></span><span>No plume in code (organic ships get no rocket exhaust). Drive glow uses the beam colour #dc36ff <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>dissolve</b>, flash kind 12 (dark violet dissipation).</p>
+</article>
+<article class="card fleet" id="fleet-9">
+  <header><span class="idx">09</span><div><h3>EarthForce</h3><p class="fr">EARTHFORCE · babylon 5</p></div></header>
+  <div class="hullbar" style="--h:#9da5ad;--t:#394654;--a:#85aae3"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#9da5ad"></span><span class="swl">hull</span><code>#9da5ad</code><span class="swsub">raw #99a6b3</span></div><div class="sw"><span class="chip" style="background:#394654"></span><span class="swl">trim</span><code>#394654</code><span class="swsub">raw #304761</span></div><div class="sw"><span class="chip" style="background:#85aae3"></span><span class="swl">accent</span><code>#85aae3</code><span class="swsub">raw #7aabf7</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>1</code> lateral hull stripe</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.55</code> → .37-.46 per vessel · roughness ≈ .54-.63</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .7 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:linear-gradient(90deg,#407aff,#e0f5ff)"></span><span>Authored drive outlets: shared kind-20 plume #407aff → #e0f5ff core, grows with throttle.</span></div>
+  <details open><summary>Class overrides</summary><ul class="ov"><li><span class="minis"><span class="mini" style="background:#aaa1c0" title="hull"></span><span class="mini" style="background:#506474" title="trim"></span><span class="mini" style="background:#7ec7c1" title="accent"></span></span><span><b>White Star</b> <span class="dim">surface 4, pattern 2, gloss .8</span></span></li><li><span class="minis"><span class="mini" style="background:#b2b7b7" title="hull"></span><span class="mini" style="background:#956742" title="trim"></span></span><span><b>Starfury / Thunderbolt</b> <span class="dim">pattern 1</span></span></li></ul></details>
+  <p class="small dim">Dies as <b>cookoff</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-10">
+  <header><span class="idx">10</span><div><h3>Federation</h3><p class="fr">THE FEDERATION · star trek</p></div></header>
+  <div class="hullbar" style="--h:#d8dbd6;--t:#54626e;--a:#4e9de2"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#d8dbd6"></span><span class="swl">hull</span><code>#d8dbd6</code><span class="swsub">raw #d6dbd4</span></div><div class="sw"><span class="chip" style="background:#54626e"></span><span class="swl">trim</span><code>#54626e</code><span class="swsub">raw #4a637a</span></div><div class="sw"><span class="chip" style="background:#4e9de2"></span><span class="swl">accent</span><code>#4e9de2</code><span class="swsub">raw #38a1fc</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>7</code> panels with dark aft/ventral field</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.65</code> → .44-.55 per vessel · roughness ≈ .45-.56</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .65 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#ffca32"></span><span>No plume in code. Drive glow uses the beam colour #ffca32 <em class="tag">intention</em></span></div>
+  <details open><summary>Class overrides</summary><ul class="ov"><li><span class="minis"><span class="mini" style="background:#676d74" title="trim"></span></span><span><b>Defiant</b> <span class="dim">pattern 1</span></span></li></ul></details>
+  <p class="small dim">Dies as <b>warp</b>, flash kind 11 (reactor blue).</p>
+</article>
+<article class="card fleet" id="fleet-11">
+  <header><span class="idx">11</span><div><h3>Klingon</h3><p class="fr">THE KLINGON EMPIRE · star trek</p></div></header>
+  <div class="hullbar" style="--h:#738158;--t:#43352a;--a:#b4d862"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#738158"></span><span class="swl">hull</span><code>#738158</code><span class="swsub">raw #6e8542</span></div><div class="sw"><span class="chip" style="background:#43352a"></span><span class="swl">trim</span><code>#43352a</code><span class="swsub">raw #4d331f</span></div><div class="sw"><span class="chip" style="background:#b4d862"></span><span class="swl">accent</span><code>#b4d862</code><span class="swsub">raw #adde40</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>1</code> lateral hull stripe</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.55</code> → .37-.46 per vessel · roughness ≈ .54-.63</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .7 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#28ad55"></span><span>No plume in code. Drive glow uses the beam colour #28ad55 <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>cookoff</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-12">
+  <header><span class="idx">12</span><div><h3>Borg</h3><p class="fr">THE BORG COLLECTIVE · star trek</p></div></header>
+  <div class="hullbar" style="--h:#4e5551;--t:#171d1b;--a:#44dd62"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#4e5551"></span><span class="swl">hull</span><code>#4e5551</code><span class="swsub">raw #4a574f</span></div><div class="sw"><span class="chip" style="background:#171d1b"></span><span class="swl">trim</span><code>#171d1b</code><span class="swsub">raw #131f1a</span></div><div class="sw"><span class="chip" style="background:#44dd62"></span><span class="swl">accent</span><code>#44dd62</code><span class="swsub">raw #1feb47</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>0</code> plain panel cells (hash panels only)</td></tr>
+    <tr><th>surface</th><td><code>5</code> Borg machinery recesses, green power points</td></tr>
+    <tr><th>gloss</th><td><code>0.5</code> → .34-.42 per vessel · roughness ≈ .58-.66</td></tr>
+    <tr><th>material</th><td>metal (machinery) · metalness ≈ .8 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#b7ff19"></span><span>No plume in code. Drive glow uses the beam colour #b7ff19 <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>cleave</b>, flash kind 13 (Borg green, square-cornered).</p>
+</article>
+<article class="card fleet" id="fleet-13">
+  <header><span class="idx">13</span><div><h3>Mondoshawan</h3><p class="fr">THE MONDOSHAWAN · the fifth element</p></div></header>
+  <div class="hullbar" style="--h:#c4a773;--t:#5e4c31;--a:#a17743"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#c4a773"></span><span class="swl">hull</span><code>#c4a773</code><span class="swsub">raw #d4a652</span></div><div class="sw"><span class="chip" style="background:#5e4c31"></span><span class="swl">trim</span><code>#5e4c31</code><span class="swsub">raw #6b4a1a</span></div><div class="sw"><span class="chip" style="background:#a17743"></span><span class="swl">accent</span><code>#a17743</code><span class="swsub">raw #ad7530</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>4</code> concentric ring bands</td></tr>
+    <tr><th>surface</th><td><code>3</code> bronze collar, patina seams</td></tr>
+    <tr><th>gloss</th><td><code>0.75</code> → .51-.63 per vessel · roughness ≈ .37-.49</td></tr>
+    <tr><th>material</th><td>bronze · metalness ≈ .75 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#ffd5a8"></span><span>No plume in code. Drive glow uses the beam colour #ffd5a8 <em class="tag">intention</em></span></div>
+  <details open><summary>Class overrides</summary><ul class="ov"><li><span class="minis"><span class="mini" style="background:#ddaf54" title="hull"></span><span class="mini" style="background:#1a1c1d" title="trim"></span><span class="mini" style="background:#e0d199" title="accent"></span></span><span><b>Taxi / cab</b> <span class="dim">pattern 9, surface 0</span></span></li><li><span class="minis"><span class="mini" style="background:#cbd3d9" title="hull"></span><span class="mini" style="background:#233046" title="trim"></span><span class="mini" style="background:#4270db" title="accent"></span></span><span><b>Police</b> <span class="dim">pattern 1</span></span></li><li><span class="minis"><span class="mini" style="background:#c4d2d3" title="hull"></span><span class="mini" style="background:#608492" title="trim"></span><span class="mini" style="background:#e6c076" title="accent"></span></span><span><b>Fhloston</b> <span class="dim">pattern 7</span></span></li><li><span class="minis"><span class="mini" style="background:#8b8e81" title="hull"></span><span class="mini" style="background:#51352b" title="trim"></span><span class="mini" style="background:#b16339" title="accent"></span></span><span><b>other convoy craft</b> <span class="dim">pattern 3</span></span></li></ul></details>
+  <p class="small dim">Dies as <b>bronze</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-14">
+  <header><span class="idx">14</span><div><h3>USCM</h3><p class="fr">THE USCM TASK FORCE · aliens</p></div></header>
+  <div class="hullbar" style="--h:#8b9395;--t:#3c4646;--a:#b89a55"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#8b9395"></span><span class="swl">hull</span><code>#8b9395</code><span class="swsub">raw #879496</span></div><div class="sw"><span class="chip" style="background:#3c4646"></span><span class="swl">trim</span><code>#3c4646</code><span class="swsub">raw #364747</span></div><div class="sw"><span class="chip" style="background:#b89a55"></span><span class="swl">accent</span><code>#b89a55</code><span class="swsub">raw #c2993d</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>8</code> panels, stripe and hazard chevrons</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.3</code> → .20-.25 per vessel · roughness ≈ .75-.80</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .7 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:linear-gradient(90deg,#407aff,#e0f5ff)"></span><span>Authored drive outlets: shared kind-20 plume #407aff → #e0f5ff core, grows with throttle.</span></div>
+  <details open><summary>Class overrides</summary><ul class="ov"><li><span class="minis"><span class="mini" style="background:#687358" title="hull"></span><span class="mini" style="background:#32392c" title="trim"></span></span><span><b>Cheyenne / dropship</b> <span class="dim">pattern 8</span></span></li><li><span class="minis"><span class="mini" style="background:#bfbaa9" title="hull"></span><span class="mini" style="background:#5b5b53" title="trim"></span></span><span><b>Nostromo / Narcissus</b></span></li></ul></details>
+  <p class="small dim">Dies as <b>cookoff</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-15">
+  <header><span class="idx">15</span><div><h3>Engineers</h3><p class="fr">THE ENGINEERS · aliens</p></div></header>
+  <div class="hullbar" style="--h:#878977;--t:#3f443b;--a:#747e54"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#878977"></span><span class="swl">hull</span><code>#878977</code><span class="swsub">raw #878a6e</span></div><div class="sw"><span class="chip" style="background:#3f443b"></span><span class="swl">trim</span><code>#3f443b</code><span class="swsub">raw #3d4536</span></div><div class="sw"><span class="chip" style="background:#747e54"></span><span class="swl">accent</span><code>#747e54</code><span class="swsub">raw #738047</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>2</code> flowing wave bands</td></tr>
+    <tr><th>surface</th><td><code>2</code> weathered ribbed metal (biomech)</td></tr>
+    <tr><th>gloss</th><td><code>0.55</code> → .37-.46 per vessel · roughness ≈ .54-.63</td></tr>
+    <tr><th>material</th><td>biomech bone-metal · metalness ≈ .35 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#57b8df"></span><span>No plume in code (organic ships get no rocket exhaust). Drive glow uses the beam colour #57b8df <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>fossil</b>, flash kind 14 (cold flash).</p>
+</article>
+<article class="card fleet" id="fleet-16">
+  <header><span class="idx">16</span><div><h3>Yautja</h3><p class="fr">THE YAUTJA CLANS · predator</p></div></header>
+  <div class="hullbar" style="--h:#6e7b75;--t:#433e37;--a:#5fbda0"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#6e7b75"></span><span class="swl">hull</span><code>#6e7b75</code><span class="swsub">raw #697d73</span></div><div class="sw"><span class="chip" style="background:#433e37"></span><span class="swl">trim</span><code>#433e37</code><span class="swsub">raw #473d30</span></div><div class="sw"><span class="chip" style="background:#5fbda0"></span><span class="swl">accent</span><code>#5fbda0</code><span class="swsub">raw #47c49e</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>3</code> mottled patches</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.8</code> → .54-.67 per vessel · roughness ≈ .33-.46</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .6 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#ff5075"></span><span>No plume in code. Drive glow uses the beam colour #ff5075 <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>cloakpop</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-17">
+  <header><span class="idx">17</span><div><h3>First Ones</h3><p class="fr">THE FIRST ONES · babylon 5</p></div></header>
+  <div class="hullbar" style="--h:#444c52;--t:#2b2f32;--a:#c0dff6"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#444c52"></span><span class="swl">hull</span><code>#444c52</code><span class="swsub">raw #404d57</span></div><div class="sw"><span class="chip" style="background:#2b2f32"></span><span class="swl">trim</span><code>#2b2f32</code><span class="swsub">raw #282f36</span></div><div class="sw"><span class="chip" style="background:#c0dff6"></span><span class="swl">accent</span><code>#c0dff6</code><span class="swsub">raw #b8e0ff</span></div></div>
+  <p class="note">Whole fleet replaced: hull from 8 ancientColors by First One index, trim = hull × .62, accent = that ancient's FO_WEAPONS colour, pattern 2, surface 0, gloss .48. Swatch shows ancient 0.</p>
+  <table class="kv">
+    <tr><th>pattern</th><td><code>2</code> flowing wave bands</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.48</code> → .33-.40 per vessel · roughness ≈ .60-.67</td></tr>
+    <tr><th>material</th><td>varies per ancient · metalness ≈ .2-.5 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#d6c8ff"></span><span>No plume in code. Drive glow uses the beam colour #d6c8ff <em class="tag">intention</em></span></div>
+  <details open><summary>Class overrides</summary><ul class="ov"><li><span class="minis"><span class="mini" style="background:#b9a16c" title="hull"></span><span class="mini" style="background:#5c6a4e" title="trim"></span><span class="mini" style="background:#72caa8" title="accent"></span></span><span><b>Vorlon</b> <span class="dim">surface 3</span></span></li><li><span class="minis"><span class="mini" style="background:#7591a2" title="hull"></span><span class="mini" style="background:#3b4d64" title="trim"></span><span class="mini" style="background:#9ae1f0" title="accent"></span></span><span><b>Thought</b></span></li><li><span class="minis"><span class="mini" style="background:#8e5447" title="hull"></span><span class="mini" style="background:#3a2123" title="trim"></span><span class="mini" style="background:#e28c58" title="accent"></span></span><span><b>Triumviron</b></span></li><li><span class="minis"><span class="mini" style="background:#8b775c" title="hull"></span><span class="mini" style="background:#525e47" title="trim"></span><span class="mini" style="background:#c1dc7f" title="accent"></span></span><span><b>First Born / Lorien</b></span></li></ul></details>
+  <p class="small dim">Dies as <b>flash</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-18">
+  <header><span class="idx">18</span><div><h3>Romulan</h3><p class="fr">ROMULAN STAR EMPIRE · star trek</p></div></header>
+  <div class="hullbar" style="--h:#607f64;--t:#2a3c34;--a:#75e88e"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#607f64"></span><span class="swl">hull</span><code>#607f64</code><span class="swsub">raw #528559</span></div><div class="sw"><span class="chip" style="background:#2a3c34"></span><span class="swl">trim</span><code>#2a3c34</code><span class="swsub">raw #1f4030</span></div><div class="sw"><span class="chip" style="background:#75e88e"></span><span class="swl">accent</span><code>#75e88e</code><span class="swsub">raw #59f27a</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>7</code> panels with dark aft/ventral field</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.65</code> → .44-.55 per vessel · roughness ≈ .45-.56</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .6 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#16e2b0"></span><span>No plume in code. Drive glow uses the beam colour #16e2b0 <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>warp</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-19">
+  <header><span class="idx">19</span><div><h3>Dominion</h3><p class="fr">THE DOMINION · star trek</p></div></header>
+  <div class="hullbar" style="--h:#7c778f;--t:#3e3a4e;--a:#a68be5"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#7c778f"></span><span class="swl">hull</span><code>#7c778f</code><span class="swsub">raw #7d759c</span></div><div class="sw"><span class="chip" style="background:#3e3a4e"></span><span class="swl">trim</span><code>#3e3a4e</code><span class="swsub">raw #40385c</span></div><div class="sw"><span class="chip" style="background:#a68be5"></span><span class="swl">accent</span><code>#a68be5</code><span class="swsub">raw #ab87ff</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>1</code> lateral hull stripe</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.65</code> → .44-.55 per vessel · roughness ≈ .45-.56</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .6 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#9861ff"></span><span>No plume in code. Drive glow uses the beam colour #9861ff <em class="tag">intention</em></span></div>
+  
+  <p class="small dim">Dies as <b>warp</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-20">
+  <header><span class="idx">20</span><div><h3>Space Marines</h3><p class="fr">SPACE MARINES · warhammer 40,000</p></div></header>
+  <div class="hullbar" style="--h:#575b62;--t:#414244;--a:#827b69"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#575b62"></span><span class="swl">hull</span><code>#575b62</code><span class="swsub">raw #545c66</span></div><div class="sw"><span class="chip" style="background:#414244"></span><span class="swl">trim</span><code>#414244</code><span class="swsub">raw #404246</span></div><div class="sw"><span class="chip" style="background:#827b69"></span><span class="swl">accent</span><code>#827b69</code><span class="swsub">raw #857a63</span></div></div>
+  <p class="note">Whole fleet replaced: chapter hull by liverySeed % 4 (Gloriana = 0), trim [.25,.26,.275], accent [.52,.48,.39], pattern 15, gloss .10. Swatch shows chapter 0.</p>
+  <table class="kv">
+    <tr><th>pattern</th><td><code>15</code> chapter enamel, graphite machinery, launch decks</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.1</code> → .07-.08 per vessel · roughness ≈ .92-.93</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .75 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#ffece0"></span><span>No plume in code. Drive glow uses the beam colour #ffece0 <em class="tag">intention</em></span></div>
+  <details open><summary>Class overrides</summary><ul class="ov"><li><span class="minis"><span class="mini" style="background:#575b62" title="hull"></span></span><span><b>chapter 0 (Gloriana)</b></span></li><li><span class="minis"><span class="mini" style="background:#605856" title="hull"></span></span><span><b>chapter 1</b></span></li><li><span class="minis"><span class="mini" style="background:#5a605b" title="hull"></span></span><span><b>chapter 2</b></span></li><li><span class="minis"><span class="mini" style="background:#5d5e60" title="hull"></span></span><span><b>chapter 3</b></span></li></ul></details>
+  <p class="small dim">Dies as <b>cookoff</b>, flash kind 10 (thermal ember).</p>
+</article>
+<article class="card fleet" id="fleet-21">
+  <header><span class="idx">21</span><div><h3>Tyranids</h3><p class="fr">TYRANIDS · warhammer 40,000</p></div></header>
+  <div class="hullbar" style="--h:#a29c8c;--t:#413a48;--a:#7e9152"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#a29c8c"></span><span class="swl">hull</span><code>#a29c8c</code><span class="swsub">raw #a69c82</span></div><div class="sw"><span class="chip" style="background:#413a48"></span><span class="swl">trim</span><code>#413a48</code><span class="swsub">raw #453852</span></div><div class="sw"><span class="chip" style="background:#7e9152"></span><span class="swl">accent</span><code>#7e9152</code><span class="swsub">raw #7a9440</span></div></div>
+  <p class="note">Whole fleet replaced: one of three brood hull/trim pairs by liverySeed % 3, accent [.48,.58,.25], gloss .22, surface 0. Swatch shows brood 0.</p>
+  <table class="kv">
+    <tr><th>pattern</th><td><code>14</code> dorsal carapace field</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.22</code> → .15-.18 per vessel · roughness ≈ .82-.85</td></tr>
+    <tr><th>material</th><td>organic chitin · metalness ≈ 0 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#c6ad29"></span><span>No plume in code (organic ships get no rocket exhaust). Drive glow uses the beam colour #c6ad29 <em class="tag">intention</em></span></div>
+  <details open><summary>Class overrides</summary><ul class="ov"><li><span class="minis"><span class="mini" style="background:#a29c8c" title="hull"></span><span class="mini" style="background:#413a48" title="trim"></span></span><span><b>brood 0</b></span></li><li><span class="minis"><span class="mini" style="background:#968d7a" title="hull"></span><span class="mini" style="background:#4e3532" title="trim"></span></span><span><b>brood 1</b></span></li><li><span class="minis"><span class="mini" style="background:#7c8173" title="hull"></span><span class="mini" style="background:#37433e" title="trim"></span></span><span><b>brood 2</b></span></li></ul></details>
+  <p class="small dim">Dies as <b>burst</b>, flash kind 12 (dark violet dissipation).</p>
+</article>
+<article class="card fleet" id="fleet-22">
+  <header><span class="idx">22</span><div><h3>Tesla</h3><p class="fr">TESLA · the electric armada</p></div></header>
+  <div class="hullbar" style="--h:#d0d3d7;--t:#212328;--a:#68bbea"><span></span><span></span><span></span></div>
+  <div class="swrow"><div class="sw"><span class="chip" style="background:#d0d3d7"></span><span class="swl">hull</span><code>#d0d3d7</code><span class="swsub">raw #cfd4d9</span></div><div class="sw"><span class="chip" style="background:#212328"></span><span class="swl">trim</span><code>#212328</code><span class="swsub">raw #1f242b</span></div><div class="sw"><span class="chip" style="background:#68bbea"></span><span class="swl">accent</span><code>#68bbea</code><span class="swsub">raw #52bfff</span></div></div>
+  
+  <table class="kv">
+    <tr><th>pattern</th><td><code>0</code> plain panel cells (hash panels only)</td></tr>
+    <tr><th>surface</th><td><code>0</code> standard painted plate</td></tr>
+    <tr><th>gloss</th><td><code>0.85</code> → .58-.71 per vessel · roughness ≈ .29-.42</td></tr>
+    <tr><th>material</th><td>metal · metalness ≈ .8 <em class="tag">intention</em></td></tr>
+  </table>
+  <div class="eng"><span class="chip sm" style="background:#36dcff"></span><span>No plume in code. Drive glow uses the beam colour #36dcff <em class="tag">intention</em></span></div>
+  <details open><summary>Class overrides</summary><ul class="ov"><li><span class="minis"><span class="mini" style="background:#912220" title="hull"></span><span class="mini" style="background:#16191c" title="trim"></span></span><span><b>Roadster</b> <span class="dim">pattern 11, gloss .95</span></span></li><li><span class="minis"><span class="dim">same colours</span></span><span><b>Optimus</b> <span class="dim">pattern 10</span></span></li><li><span class="minis"><span class="dim">same colours</span></span><span><b>Falcon</b> <span class="dim">pattern 12</span></span></li><li><span class="minis"><span class="mini" style="background:#acb2b8" title="hull"></span></span><span><b>Starship</b> <span class="dim">pattern 13, gloss .95</span></span></li></ul></details>
+  <p class="small dim">Dies as <b>cookoff</b>, flash kind 10 (thermal ember).</p>
+</article></div>
+</section>
+
+<section id="weapons">
+  <h2><span class="n">04</span>Weapon signatures side by side</h2>
+  <p class="intro">Beam colours come from <code>FLEET_BEAM_HEX</code>, which overwrites the <code>beam</code> and <code>ion</code> literals in <code>RACE_DEFS</code> at load (the old literals are listed small under each row, for anyone reading RACE_DEFS and wondering). Every fleet's ion colour is derived as <code>beam × .82 + .18</code>. The <code>fire</code> type picks the shape. Size sets width and traverse speed; the fleet sets colour and projectile speed. Every sketch uses the fleet colour for the sheath and white for the core, as the renderer does.</p>
+  <p class="legend">Note: <code>WEAPONS-NEW.md</code> still says "Imperial fighters fire green and Rebels red". Current code gives Imperial <code>#ff3829</code> (red) and Rebel <code>#66ff73</code> (green), and the comment "TIEs spit red, the wall spits green" beside the turbo→laser swap is out of date. Only the shape changes for hulls under 38 m.</p>
+  <div class="wgrid"><article class="wrow">
+  <div class="whead"><b>Yard</b><span class="dim">the originals</span><code class="fire">bolt</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#67bca6"></span><span class="swl">beam</span><code>#67bca6</code></div><div class="sw"><span class="chip" style="background:#82c8b6"></span><span class="swl">ion</span><code>#82c8b6</code></div></div>
+  <div class="wcell"><span class="wlab">Travelling bolt, 1400 u/s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="bolt sketch"><defs><filter id="g3dk6tl" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><line x1="18" y1="20" x2="70" y2="20" stroke="#67bca6" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+      <rect x="62" y="15" width="64" height="10" rx="5" fill="#67bca6" filter="url(#g3dk6tl)"/><rect x="64" y="16" width="60" height="8" rx="4" fill="#67bca6"/><rect x="70" y="18.5" width="50" height="3" rx="1.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gds1dte" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#82c8b6" opacity=".5" filter="url(#gds1dte)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#82c8b6" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#c1e4db" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #85c794 / #73ff99 (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Shoal</b><span class="dim">the originals</span><code class="fire">bio</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#ff739d"></span><span class="swl">beam</span><code>#ff739d</code></div><div class="sw"><span class="chip" style="background:#ff8caf"></span><span class="swl">ion</span><code>#ff8caf</code></div></div>
+  <div class="wcell"><span class="wlab">Plasma blob, 240 splash</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="plasma sketch"><defs><filter id="gl2knm2" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M10 20 Q60 12 96 20 Q60 28 10 20Z" fill="#ff739d" opacity=".35"/><circle cx="112" cy="20" r="15" fill="#ff739d" opacity=".55" filter="url(#gl2knm2)"/><circle cx="112" cy="20" r="10" fill="#ff739d"/><circle cx="114" cy="19" r="4.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gusi8kl" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#ff8caf" opacity=".5" filter="url(#gusi8kl)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#ff8caf" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#ffc6d7" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #c7756b / #ff5242 (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Lattice</b><span class="dim">the originals</span><code class="fire">shard</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#6974ff"></span><span class="swl">beam</span><code>#6974ff</code></div><div class="sw"><span class="chip" style="background:#848dff"></span><span class="swl">ion</span><code>#848dff</code></div></div>
+  <div class="wcell"><span class="wlab">Rail spear: white core, fleet colour bleed, 380 u</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="rail sketch"><defs><filter id="gee78wg" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M8 18 L150 20 L8 22 Z" fill="#6974ff" filter="url(#gee78wg)"/><path d="M8 19.2 L152 20 L8 20.8 Z" fill="#ffffff"/><line x1="8" y1="21.8" x2="140" y2="20.4" stroke="#6974ff" stroke-width="1"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="g3vjchv" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#848dff" opacity=".5" filter="url(#g3vjchv)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#848dff" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#c2c6ff" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #a88ce8 / #bf6bff (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Drift</b><span class="dim">the originals</span><code class="fire">junk</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#cc782a"></span><span class="swl">beam</span><code>#cc782a</code></div><div class="sw"><span class="chip" style="background:#d59050"></span><span class="swl">ion</span><code>#d59050</code></div></div>
+  <div class="wcell"><span class="wlab">Staggered kinetic burst, 3-7 rounds, 650 u/s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="kinetic sketch"><defs><filter id="ge00g5i" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><line x1="6" y1="14" x2="16" y2="14" stroke="#cc782a" stroke-width="2.2" stroke-linecap="round" opacity="0.45"/><circle cx="16" cy="14" r="1.8" fill="#ffffff"/><line x1="26" y1="24" x2="36" y2="24" stroke="#cc782a" stroke-width="2.2" stroke-linecap="round" opacity="0.53"/><circle cx="36" cy="24" r="1.8" fill="#ffffff"/><line x1="48" y1="17" x2="58" y2="17" stroke="#cc782a" stroke-width="2.2" stroke-linecap="round" opacity="0.61"/><circle cx="58" cy="17" r="1.8" fill="#ffffff"/><line x1="70" y1="22" x2="80" y2="22" stroke="#cc782a" stroke-width="2.2" stroke-linecap="round" opacity="0.69"/><circle cx="80" cy="22" r="1.8" fill="#ffffff"/><line x1="90" y1="15" x2="100" y2="15" stroke="#cc782a" stroke-width="2.2" stroke-linecap="round" opacity="0.77"/><circle cx="100" cy="15" r="1.8" fill="#ffffff"/><line x1="112" y1="21" x2="122" y2="21" stroke="#cc782a" stroke-width="2.2" stroke-linecap="round" opacity="0.8500000000000001"/><circle cx="122" cy="21" r="1.8" fill="#ffffff"/><line x1="132" y1="18" x2="142" y2="18" stroke="#cc782a" stroke-width="2.2" stroke-linecap="round" opacity="0.9299999999999999"/><circle cx="142" cy="18" r="1.8" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gmt3zm0" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#d59050" opacity=".5" filter="url(#gmt3zm0)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#d59050" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#eac8a8" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #ffc261 / #ffdb40 (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Choir</b><span class="dim">the originals</span><code class="fire">song</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#fff0ac"></span><span class="swl">beam</span><code>#fff0ac</code></div><div class="sw"><span class="chip" style="background:#fff3bb"></span><span class="swl">ion</span><code>#fff3bb</code></div></div>
+  <div class="wcell"><span class="wlab">Coherent emission, .65 s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ribbon sketch"><defs><filter id="gkeprf1" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M8 20 L152 20" stroke="#fff0ac" stroke-width="12" stroke-linecap="round" opacity=".45" filter="url(#gkeprf1)"/><path d="M8 20 L152 20" stroke="#fff0ac" stroke-width="6" stroke-linecap="round"/><path d="M8 20 L152 20" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="20" r="6" fill="#ffffff" opacity=".9"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="go3lo48" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#fff3bb" opacity=".5" filter="url(#go3lo48)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#fff3bb" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#fff9dd" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #ffd98a / #f0e3ff (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Imperial</b><span class="dim">star wars</span><code class="fire">turbo</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#ff3829"></span><span class="swl">beam</span><code>#ff3829</code></div><div class="sw"><span class="chip" style="background:#ff5c50"></span><span class="swl">ion</span><code>#ff5c50</code></div></div>
+  <div class="wcell"><span class="wlab">Heavy twin-skin bolt with inner core; hulls under 38 m fire as "laser"</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="turbo sketch"><defs><filter id="gtncijy" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><g filter="url(#gtncijy)"><rect x="40" y="11" width="80" height="18" rx="9" fill="#ff3829"/></g><rect x="42" y="12" width="76" height="16" rx="8" fill="#ff3829"/><rect x="48" y="17" width="66" height="6" rx="3" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="glntcge" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#ff5c50" opacity=".5" filter="url(#glntcge)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#ff5c50" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#ffada7" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  
+</article>
+<article class="wrow">
+  <div class="whead"><b>Rebel</b><span class="dim">star wars</span><code class="fire">laser</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#66ff73"></span><span class="swl">beam</span><code>#66ff73</code></div><div class="sw"><span class="chip" style="background:#82ff8c"></span><span class="swl">ion</span><code>#82ff8c</code></div></div>
+  <div class="wcell"><span class="wlab">Travelling bolt (fighter guns 800 u/s)</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="bolt sketch"><defs><filter id="g4ziuhy" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><line x1="18" y1="20" x2="70" y2="20" stroke="#66ff73" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+      <rect x="62" y="15" width="64" height="10" rx="5" fill="#66ff73" filter="url(#g4ziuhy)"/><rect x="64" y="16" width="60" height="8" rx="4" fill="#66ff73"/><rect x="70" y="18.5" width="50" height="3" rx="1.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="g5hqrrr" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#82ff8c" opacity=".5" filter="url(#g5hqrrr)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#82ff8c" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#c0ffc6" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  
+</article>
+<article class="wrow">
+  <div class="whead"><b>Minbari</b><span class="dim">babylon 5</span><code class="fire">neutron</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#638cff"></span><span class="swl">beam</span><code>#638cff</code></div><div class="sw"><span class="chip" style="background:#7fa1ff"></span><span class="swl">ion</span><code>#7fa1ff</code></div></div>
+  <div class="wcell"><span class="wlab">Coherent neutron beam, .75 s, under 280 u</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ribbon sketch"><defs><filter id="gjhthkw" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M8 20 L152 20" stroke="#638cff" stroke-width="12" stroke-linecap="round" opacity=".45" filter="url(#gjhthkw)"/><path d="M8 20 L152 20" stroke="#638cff" stroke-width="6" stroke-linecap="round"/><path d="M8 20 L152 20" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="20" r="6" fill="#ffffff" opacity=".9"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="g6qt00m" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#7fa1ff" opacity=".5" filter="url(#g6qt00m)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#7fa1ff" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#bfd0ff" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #8cbfff / #b3d9ff (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Shadows</b><span class="dim">babylon 5</span><code class="fire">slicer</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#dc36ff"></span><span class="swl">beam</span><code>#dc36ff</code></div><div class="sw"><span class="chip" style="background:#e25aff"></span><span class="swl">ion</span><code>#e25aff</code></div></div>
+  <div class="wcell"><span class="wlab">Held slicing lance, 2.4 s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="lance sketch"><defs><filter id="gvjhlfh" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M8 20 L152 20" stroke="#dc36ff" stroke-width="20" stroke-linecap="round" opacity=".45" filter="url(#gvjhlfh)"/><path d="M8 20 L152 20" stroke="#dc36ff" stroke-width="12" stroke-linecap="round"/><path d="M8 20 L152 20" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gi7wrmg" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#e25aff" opacity=".5" filter="url(#gi7wrmg)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#e25aff" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#f1adff" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #b84dff / #d966ff (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>EarthForce</b><span class="dim">babylon 5</span><code class="fire">pulse</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#ff944a"></span><span class="swl">beam</span><code>#ff944a</code></div><div class="sw"><span class="chip" style="background:#ffa76b"></span><span class="swl">ion</span><code>#ffa76b</code></div></div>
+  <div class="wcell"><span class="wlab">Short pulses, 850 u/s (Defiant-class also pulses)</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="pulse sketch"><defs><filter id="g2eo4z5" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><rect x="14" y="15" width="36" height="10" rx="5" fill="#ff944a" opacity="0.5" filter="url(#g2eo4z5)"/><rect x="16" y="18.5" width="30" height="3" rx="1.5" fill="#ffffff"/><rect x="58" y="15" width="34" height="10" rx="5" fill="#ff944a" opacity="0.75" filter="url(#g2eo4z5)"/><rect x="60" y="18.5" width="28" height="3" rx="1.5" fill="#ffffff"/><rect x="102" y="15" width="32" height="10" rx="5" fill="#ff944a" opacity="1" filter="url(#g2eo4z5)"/><rect x="104" y="18.5" width="26" height="3" rx="1.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="guv7gqq" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#ffa76b" opacity=".5" filter="url(#guv7gqq)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#ffa76b" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#ffd3b5" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #a6ccff / #cce6ff (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Federation</b><span class="dim">star trek</span><code class="fire">phaser</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#ffca32"></span><span class="swl">beam</span><code>#ffca32</code></div><div class="sw"><span class="chip" style="background:#ffd457"></span><span class="swl">ion</span><code>#ffd457</code></div></div>
+  <div class="wcell"><span class="wlab">Coherent held beam, .48 s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ribbon sketch"><defs><filter id="gzvue60" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M8 20 L152 20" stroke="#ffca32" stroke-width="12" stroke-linecap="round" opacity=".45" filter="url(#gzvue60)"/><path d="M8 20 L152 20" stroke="#ffca32" stroke-width="6" stroke-linecap="round"/><path d="M8 20 L152 20" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="20" r="6" fill="#ffffff" opacity=".9"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gbmi413" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#ffd457" opacity=".5" filter="url(#gbmi413)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#ffd457" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#ffe9ab" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #ffb84d / #8cbfff (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Klingon</b><span class="dim">star trek</span><code class="fire">disruptor</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#28ad55"></span><span class="swl">beam</span><code>#28ad55</code></div><div class="sw"><span class="chip" style="background:#4fbc74"></span><span class="swl">ion</span><code>#4fbc74</code></div></div>
+  <div class="wcell"><span class="wlab">Travelling bolt, 1000 u/s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="bolt sketch"><defs><filter id="g5pu5ze" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><line x1="18" y1="20" x2="70" y2="20" stroke="#28ad55" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+      <rect x="62" y="15" width="64" height="10" rx="5" fill="#28ad55" filter="url(#g5pu5ze)"/><rect x="64" y="16" width="60" height="8" rx="4" fill="#28ad55"/><rect x="70" y="18.5" width="50" height="3" rx="1.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gi08nch" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#4fbc74" opacity=".5" filter="url(#gi08nch)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#4fbc74" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#a7ddb9" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #73ff66 / #99ff80 (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Borg</b><span class="dim">star trek</span><code class="fire">cutter</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#b7ff19"></span><span class="swl">beam</span><code>#b7ff19</code></div><div class="sw"><span class="chip" style="background:#c4ff42"></span><span class="swl">ion</span><code>#c4ff42</code></div></div>
+  <div class="wcell"><span class="wlab">Fat held cutting lance, 1.4 s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="lance sketch"><defs><filter id="g2oqcqq" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M8 20 L152 20" stroke="#b7ff19" stroke-width="20" stroke-linecap="round" opacity=".45" filter="url(#g2oqcqq)"/><path d="M8 20 L152 20" stroke="#b7ff19" stroke-width="12" stroke-linecap="round"/><path d="M8 20 L152 20" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gh32y2d" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#c4ff42" opacity=".5" filter="url(#gh32y2d)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#c4ff42" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#e1ffa1" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #66ff59 / #80ff73 (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Mondoshawan</b><span class="dim">the fifth element</span><code class="fire">bolt</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#ffd5a8"></span><span class="swl">beam</span><code>#ffd5a8</code></div><div class="sw"><span class="chip" style="background:#ffddb8"></span><span class="swl">ion</span><code>#ffddb8</code></div></div>
+  <div class="wcell"><span class="wlab">Travelling bolt, 1400 u/s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="bolt sketch"><defs><filter id="gkm6rve" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><line x1="18" y1="20" x2="70" y2="20" stroke="#ffd5a8" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+      <rect x="62" y="15" width="64" height="10" rx="5" fill="#ffd5a8" filter="url(#gkm6rve)"/><rect x="64" y="16" width="60" height="8" rx="4" fill="#ffd5a8"/><rect x="70" y="18.5" width="50" height="3" rx="1.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gfrfryn" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#ffddb8" opacity=".5" filter="url(#gfrfryn)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#ffddb8" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#ffeedb" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #ffad4d / #ffcc66 (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>USCM</b><span class="dim">aliens</span><code class="fire">smart</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#c4d2b4"></span><span class="swl">beam</span><code>#c4d2b4</code></div><div class="sw"><span class="chip" style="background:#cfdac2"></span><span class="swl">ion</span><code>#cfdac2</code></div></div>
+  <div class="wcell"><span class="wlab">Staggered kinetic burst, 3-11 rounds, 650 u/s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="kinetic sketch"><defs><filter id="gf0ak2g" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><line x1="6" y1="14" x2="16" y2="14" stroke="#c4d2b4" stroke-width="2.2" stroke-linecap="round" opacity="0.45"/><circle cx="16" cy="14" r="1.8" fill="#ffffff"/><line x1="26" y1="24" x2="36" y2="24" stroke="#c4d2b4" stroke-width="2.2" stroke-linecap="round" opacity="0.53"/><circle cx="36" cy="24" r="1.8" fill="#ffffff"/><line x1="48" y1="17" x2="58" y2="17" stroke="#c4d2b4" stroke-width="2.2" stroke-linecap="round" opacity="0.61"/><circle cx="58" cy="17" r="1.8" fill="#ffffff"/><line x1="70" y1="22" x2="80" y2="22" stroke="#c4d2b4" stroke-width="2.2" stroke-linecap="round" opacity="0.69"/><circle cx="80" cy="22" r="1.8" fill="#ffffff"/><line x1="90" y1="15" x2="100" y2="15" stroke="#c4d2b4" stroke-width="2.2" stroke-linecap="round" opacity="0.77"/><circle cx="100" cy="15" r="1.8" fill="#ffffff"/><line x1="112" y1="21" x2="122" y2="21" stroke="#c4d2b4" stroke-width="2.2" stroke-linecap="round" opacity="0.8500000000000001"/><circle cx="122" cy="21" r="1.8" fill="#ffffff"/><line x1="132" y1="18" x2="142" y2="18" stroke="#c4d2b4" stroke-width="2.2" stroke-linecap="round" opacity="0.9299999999999999"/><circle cx="142" cy="18" r="1.8" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="g635kdt" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#cfdac2" opacity=".5" filter="url(#g635kdt)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#cfdac2" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#e7ede0" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #ccd9bf / #f2ffd9 (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Engineers</b><span class="dim">aliens</span><code class="fire">bio</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#57b8df"></span><span class="swl">beam</span><code>#57b8df</code></div><div class="sw"><span class="chip" style="background:#75c5e5"></span><span class="swl">ion</span><code>#75c5e5</code></div></div>
+  <div class="wcell"><span class="wlab">Plasma blob, 240 splash</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="plasma sketch"><defs><filter id="gd5u9g5" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M10 20 Q60 12 96 20 Q60 28 10 20Z" fill="#57b8df" opacity=".35"/><circle cx="112" cy="20" r="15" fill="#57b8df" opacity=".55" filter="url(#gd5u9g5)"/><circle cx="112" cy="20" r="10" fill="#57b8df"/><circle cx="114" cy="19" r="4.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="g0dlw6k" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#75c5e5" opacity=".5" filter="url(#g0dlw6k)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#75c5e5" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#bae2f2" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #99b3d9 / #bfd9ff (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Yautja</b><span class="dim">predator</span><code class="fire">caster</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#ff5075"></span><span class="swl">beam</span><code>#ff5075</code></div><div class="sw"><span class="chip" style="background:#ff708e"></span><span class="swl">ion</span><code>#ff708e</code></div></div>
+  <div class="wcell"><span class="wlab">Plasma bolt, 380 splash</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="plasma sketch"><defs><filter id="gf7jnei" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M10 20 Q60 12 96 20 Q60 28 10 20Z" fill="#ff5075" opacity=".35"/><circle cx="112" cy="20" r="15" fill="#ff5075" opacity=".55" filter="url(#gf7jnei)"/><circle cx="112" cy="20" r="10" fill="#ff5075"/><circle cx="114" cy="19" r="4.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="g5r8ol2" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#ff708e" opacity=".5" filter="url(#g5r8ol2)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#ff708e" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#ffb7c6" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #ff4d33 / #ff804d (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>First Ones</b><span class="dim">babylon 5</span><code class="fire">song</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#d6c8ff"></span><span class="swl">beam</span><code>#d6c8ff</code></div><div class="sw"><span class="chip" style="background:#ddd2ff"></span><span class="swl">ion</span><code>#ddd2ff</code></div></div>
+  <div class="wcell"><span class="wlab">Coherent emission, .65 s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ribbon sketch"><defs><filter id="gvf7pgh" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M8 20 L152 20" stroke="#d6c8ff" stroke-width="12" stroke-linecap="round" opacity=".45" filter="url(#gvf7pgh)"/><path d="M8 20 L152 20" stroke="#d6c8ff" stroke-width="6" stroke-linecap="round"/><path d="M8 20 L152 20" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="20" r="6" fill="#ffffff" opacity=".9"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gn9qjs0" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#ddd2ff" opacity=".5" filter="url(#gn9qjs0)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#ddd2ff" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#eee8ff" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  <div class="wcell"><span class="wlab">First One arc (ancient 6, Living lightning)</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="arc sketch"><defs><filter id="gbef8ce" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M8 20 L28 10 L46 27 L66 12 L86 28 L104 9 L124 25 L140 14 L154 20" fill="none" stroke="#4dffd4" stroke-width="7" opacity=".5" filter="url(#gbef8ce)" stroke-linejoin="round"/><path d="M8 20 L28 10 L46 27 L66 12 L86 28 L104 9 L124 25 L140 14 L154 20" fill="none" stroke="#4dffd4" stroke-width="3.5" stroke-linejoin="round"/><path d="M8 20 L28 10 L46 27 L66 12 L86 28 L104 9 L124 25 L140 14 L154 20" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+  <p class="note mono">literal in RACE_DEFS: #ffe06b / #d17aff (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Romulan</b><span class="dim">star trek</span><code class="fire">disruptor</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#16e2b0"></span><span class="swl">beam</span><code>#16e2b0</code></div><div class="sw"><span class="chip" style="background:#40e7be"></span><span class="swl">ion</span><code>#40e7be</code></div></div>
+  <div class="wcell"><span class="wlab">Travelling bolt, 1000 u/s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="bolt sketch"><defs><filter id="g5rr0jf" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><line x1="18" y1="20" x2="70" y2="20" stroke="#16e2b0" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+      <rect x="62" y="15" width="64" height="10" rx="5" fill="#16e2b0" filter="url(#g5rr0jf)"/><rect x="64" y="16" width="60" height="8" rx="4" fill="#16e2b0"/><rect x="70" y="18.5" width="50" height="3" rx="1.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gsrjait" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#40e7be" opacity=".5" filter="url(#gsrjait)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#40e7be" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#9ff3df" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #59f27a / #59f27a (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Dominion</b><span class="dim">star trek</span><code class="fire">phaser</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#9861ff"></span><span class="swl">beam</span><code>#9861ff</code></div><div class="sw"><span class="chip" style="background:#ab7dff"></span><span class="swl">ion</span><code>#ab7dff</code></div></div>
+  <div class="wcell"><span class="wlab">Coherent held beam, .48 s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ribbon sketch"><defs><filter id="g595mug" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M8 20 L152 20" stroke="#9861ff" stroke-width="12" stroke-linecap="round" opacity=".45" filter="url(#g595mug)"/><path d="M8 20 L152 20" stroke="#9861ff" stroke-width="6" stroke-linecap="round"/><path d="M8 20 L152 20" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="20" r="6" fill="#ffffff" opacity=".9"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="gbln00r" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#ab7dff" opacity=".5" filter="url(#gbln00r)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#ab7dff" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#d5beff" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #9e82ff / #9e82ff (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Space Marines</b><span class="dim">warhammer 40,000</span><code class="fire">smart</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#ffece0"></span><span class="swl">beam</span><code>#ffece0</code></div><div class="sw"><span class="chip" style="background:#ffefe6"></span><span class="swl">ion</span><code>#ffefe6</code></div></div>
+  <div class="wcell"><span class="wlab">Staggered kinetic burst, 3-11 rounds, 650 u/s</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="kinetic sketch"><defs><filter id="gpp2srh" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><line x1="6" y1="14" x2="16" y2="14" stroke="#ffece0" stroke-width="2.2" stroke-linecap="round" opacity="0.45"/><circle cx="16" cy="14" r="1.8" fill="#ffffff"/><line x1="26" y1="24" x2="36" y2="24" stroke="#ffece0" stroke-width="2.2" stroke-linecap="round" opacity="0.53"/><circle cx="36" cy="24" r="1.8" fill="#ffffff"/><line x1="48" y1="17" x2="58" y2="17" stroke="#ffece0" stroke-width="2.2" stroke-linecap="round" opacity="0.61"/><circle cx="58" cy="17" r="1.8" fill="#ffffff"/><line x1="70" y1="22" x2="80" y2="22" stroke="#ffece0" stroke-width="2.2" stroke-linecap="round" opacity="0.69"/><circle cx="80" cy="22" r="1.8" fill="#ffffff"/><line x1="90" y1="15" x2="100" y2="15" stroke="#ffece0" stroke-width="2.2" stroke-linecap="round" opacity="0.77"/><circle cx="100" cy="15" r="1.8" fill="#ffffff"/><line x1="112" y1="21" x2="122" y2="21" stroke="#ffece0" stroke-width="2.2" stroke-linecap="round" opacity="0.8500000000000001"/><circle cx="122" cy="21" r="1.8" fill="#ffffff"/><line x1="132" y1="18" x2="142" y2="18" stroke="#ffece0" stroke-width="2.2" stroke-linecap="round" opacity="0.9299999999999999"/><circle cx="142" cy="18" r="1.8" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="g6nqx7e" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#ffefe6" opacity=".5" filter="url(#g6nqx7e)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#ffefe6" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#fff7f2" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #ffb361 / #ffb361 (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Tyranids</b><span class="dim">warhammer 40,000</span><code class="fire">bio</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#c6ad29"></span><span class="swl">beam</span><code>#c6ad29</code></div><div class="sw"><span class="chip" style="background:#d0bc50"></span><span class="swl">ion</span><code>#d0bc50</code></div></div>
+  <div class="wcell"><span class="wlab">Plasma blob, 240 splash</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="plasma sketch"><defs><filter id="gaxm5iv" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><path d="M10 20 Q60 12 96 20 Q60 28 10 20Z" fill="#c6ad29" opacity=".35"/><circle cx="112" cy="20" r="15" fill="#c6ad29" opacity=".55" filter="url(#gaxm5iv)"/><circle cx="112" cy="20" r="10" fill="#c6ad29"/><circle cx="114" cy="19" r="4.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="g0jcmym" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#d0bc50" opacity=".5" filter="url(#g0jcmym)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#d0bc50" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#e8dda7" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #adeb45 / #adeb45 (unused)</p>
+</article>
+<article class="wrow">
+  <div class="whead"><b>Tesla</b><span class="dim">the electric armada</span><code class="fire">pulse</code></div>
+  <div class="wsw"><div class="sw"><span class="chip" style="background:#36dcff"></span><span class="swl">beam</span><code>#36dcff</code></div><div class="sw"><span class="chip" style="background:#5ae2ff"></span><span class="swl">ion</span><code>#5ae2ff</code></div></div>
+  <div class="wcell"><span class="wlab">Short pulses, 850 u/s (Defiant-class also pulses)</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="pulse sketch"><defs><filter id="gsknjx0" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><rect x="14" y="15" width="36" height="10" rx="5" fill="#36dcff" opacity="0.5" filter="url(#gsknjx0)"/><rect x="16" y="18.5" width="30" height="3" rx="1.5" fill="#ffffff"/><rect x="58" y="15" width="34" height="10" rx="5" fill="#36dcff" opacity="0.75" filter="url(#gsknjx0)"/><rect x="60" y="18.5" width="28" height="3" rx="1.5" fill="#ffffff"/><rect x="102" y="15" width="32" height="10" rx="5" fill="#36dcff" opacity="1" filter="url(#gsknjx0)"/><rect x="104" y="18.5" width="26" height="3" rx="1.5" fill="#ffffff"/></svg></div>
+  <div class="wcell"><span class="wlab">Ion lance: charge glow, then collapsing column</span><svg class="wsk" viewBox="0 0 160 40" role="img" aria-label="ion sketch"><defs><filter id="g8cxy34" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><circle cx="22" cy="20" r="14" fill="#5ae2ff" opacity=".5" filter="url(#g8cxy34)"/><circle cx="22" cy="20" r="7" fill="#ffffff"/>
+      <path d="M30 20 L156 20" stroke="#5ae2ff" stroke-width="16" opacity=".35"/><path d="M30 20 L156 20" stroke="#adf1ff" stroke-width="7"/><path d="M30 20 L156 20" stroke="#ffffff" stroke-width="2.5"/></svg></div>
+  
+  <p class="note mono">literal in RACE_DEFS: #59ccff / #59ccff (unused)</p>
+</article></div>
+  <h4 style="margin-top:22px">First One weapons (<code>FO_WEAPONS</code>)</h4>
+  <p class="small"><span class="fo"><span class="mini" style="background:#b8e0ff" title="#b8e0ff"></span>Rift cascade <span class="dim">r 410</span></span><span class="fo"><span class="mini" style="background:#ffb861" title="#ffb861"></span>Gravity collapse <span class="dim">r 520</span></span><span class="fo"><span class="mini" style="background:#d4b8ff" title="#d4b8ff"></span>Thought wave <span class="dim">r 600</span></span><span class="fo"><span class="mini" style="background:#7affad" title="#7affad"></span>Convergence <span class="dim">r 450</span></span><span class="fo"><span class="mini" style="background:#a6ffd6" title="#a6ffd6"></span>Dark incision <span class="dim">r 240</span></span><span class="fo"><span class="mini" style="background:#e8ffb8" title="#e8ffb8"></span>First light <span class="dim">r 650</span></span><span class="fo"><span class="mini" style="background:#4dffd4" title="#4dffd4"></span>Living lightning <span class="dim">r 440</span></span><span class="fo"><span class="mini" style="background:#b3d9ff" title="#b3d9ff"></span>Crystal fracture <span class="dim">r 500</span></span></p>
+  <p class="note">The ion charge-up is a muzzle glow (flash kind 21) in a fixed cyan: <code>#2e8cc2</code> → <code>#d6f5ff</code> core, energy rising with charge progress. The lance that follows uses the fleet's ion colour: an outer sheath, a mid layer halfway to white, a white core, and a short early bloom. First Ones use each ancient's own colour.</p>
+</section>
+
+<section id="explosions">
+  <h2><span class="n">05</span>Explosion scale tiers</h2>
+  <p class="intro">Every death flash goes through <code>deathFlash()</code>, which limits the flash to <code>max(30, 1.1 × slen)</code>. The recipe's base size is <code>big = max(46, slen × (capital ? 3 : 2))</code>. Death kinds (10 and above) live 1.35 s and are capped at <b>240 px</b>. Heat and First One kinds (3 to 9) live 2.15 s and are capped at <b>640 px</b>. Explosions are heat that cools in vacuum: uneven lobes seeded per flash, and no persistent fireball ring.</p>
+  <div class="tiers">
+    <article class="card tier"><h3>Fighter</h3><div class="stage"><svg viewBox="0 0 200 140" class="bsvg" role="img" aria-label="fighter explosion"><defs>
+<radialGradient id="heat"><stop offset="0" stop-color="#fff7e0"/><stop offset=".35" stop-color="#ffd7a0"/><stop offset=".7" stop-color="#ff7329"/><stop offset="1" stop-color="#f23b0b" stop-opacity="0"/></radialGradient>
+<radialGradient id="teal"><stop offset="0" stop-color="#e0fffa"/><stop offset=".5" stop-color="#1febb8"/><stop offset="1" stop-color="#1febb8" stop-opacity="0"/></radialGradient>
+<radialGradient id="nova"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#59d1ff" stop-opacity=".7"/><stop offset="1" stop-color="#59d1ff" stop-opacity="0"/></radialGradient>
+<filter id="soft"><feGaussianBlur stdDeviation="2"/></filter><filter id="soft6"><feGaussianBlur stdDeviation="6"/></filter></defs><line x1="111.9" y1="70" x2="123.8" y2="70.0" stroke="#ff7329" stroke-width="1.4" stroke-linecap="round"/><line x1="103.57279579161435" y1="81.35099688271575" x2="107.8" y2="94.7" stroke="#ff7329" stroke-width="1.4" stroke-linecap="round"/><line x1="91.27549358883186" y1="78.09277380639581" x2="79.4" y2="89.1" stroke="#ff7329" stroke-width="1.4" stroke-linecap="round"/><line x1="88.31670597370741" y1="67.73932737991636" x2="70.5" y2="64.3" stroke="#ff7329" stroke-width="1.4" stroke-linecap="round"/><line x1="93.66555083477284" y1="59.926035846145126" x2="83.0" y2="43.0" stroke="#ff7329" stroke-width="1.4" stroke-linecap="round"/><line x1="103.29707977049783" y1="58.56587279295118" x2="109.3" y2="37.8" stroke="#ff7329" stroke-width="1.4" stroke-linecap="round"/><path d="M114.6 70.0L114.3 71.9L112.2 73.3L109.1 73.8L107.4 74.3L108.9 76.8L112.1 82.1L113.7 87.9L112.2 91.1L108.4 90.2L104.6 87.2L102.0 85.0L100.0 84.6L98.1 84.3L96.7 82.2L96.2 79.1L95.7 77.4L93.2 78.9L87.9 82.1L82.1 83.7L78.9 82.2L79.8 78.4L82.8 74.6L85.0 72.0L85.4 70.0L85.7 68.1L87.8 66.7L90.9 66.2L92.6 65.7L91.1 63.2L87.9 57.9L86.3 52.1L87.8 48.9L91.6 49.8L95.4 52.8L98.0 55.0L100.0 55.4L101.9 55.7L103.3 57.8L103.8 60.9L104.3 62.6L106.8 61.1L112.1 57.9L117.9 56.3L121.1 57.8L120.2 61.6L117.2 65.4L115.0 68.0Z" fill="url(#heat)" opacity="1"/><circle cx="100" cy="70" r="5" fill="#fff"/></svg></div>
+      <dl><dt>threshold</dt><dd>small craft, slen under ~40 (TIE turbo→laser swap at 38)</dd><dt>flash size</dt><dd>30 (floor wins for slen ≤ 27)</dd><dt>shape</dt><dd>one lobed puff, few sparks</dd><dt>debris</dt><dd>≤ 6 fragments</dd></dl></article>
+    <article class="card tier"><h3>Frigate</h3><div class="stage"><svg viewBox="0 0 200 140" class="bsvg" role="img" aria-label="frigate explosion"><defs>
+<radialGradient id="heat"><stop offset="0" stop-color="#fff7e0"/><stop offset=".35" stop-color="#ffd7a0"/><stop offset=".7" stop-color="#ff7329"/><stop offset="1" stop-color="#f23b0b" stop-opacity="0"/></radialGradient>
+<radialGradient id="teal"><stop offset="0" stop-color="#e0fffa"/><stop offset=".5" stop-color="#1febb8"/><stop offset="1" stop-color="#1febb8" stop-opacity="0"/></radialGradient>
+<radialGradient id="nova"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#59d1ff" stop-opacity=".7"/><stop offset="1" stop-color="#59d1ff" stop-opacity="0"/></radialGradient>
+<filter id="soft"><feGaussianBlur stdDeviation="2"/></filter><filter id="soft6"><feGaussianBlur stdDeviation="6"/></filter></defs><g filter="url(#soft)"><path d="M78.1 76.0L80.2 77.1L85.9 79.7L89.9 83.4L89.4 86.1L86.1 86.8L83.2 87.2L81.3 88.1L79.1 88.3L76.2 86.1L74.0 83.4L73.1 84.2L72.0 89.7L69.4 95.9L66.2 97.5L64.6 93.8L64.8 88.5L64.8 85.3L63.7 84.3L62.8 83.1L63.0 81.2L62.6 79.9L59.0 79.5L53.0 78.5L49.3 76.0L51.6 73.3L58.0 72.3L63.3 72.4L64.5 71.7L63.3 69.3L62.8 66.8L63.8 65.3L64.7 63.3L65.2 59.5L66.5 55.6L69.3 55.7L72.0 60.9L73.1 67.3L73.7 69.7L75.6 67.2L79.2 63.6L82.4 62.5L84.1 63.9L85.6 65.5L87.9 66.8L89.2 68.9L86.8 72.0L81.6 74.7Z" fill="url(#heat)" opacity="0.8"/><path d="M148.0 62.0L145.3 64.3L141.1 65.5L137.7 66.0L136.1 66.7L135.8 68.0L135.4 69.4L134.2 70.1L132.4 69.7L131.0 69.2L130.2 70.2L129.5 73.3L128.0 77.6L125.5 80.7L122.9 81.1L121.0 78.9L120.1 75.7L119.4 73.2L118.3 71.7L116.9 70.5L116.3 68.8L117.5 66.4L120.0 64.1L122.2 62.8L122.1 62.0L119.6 60.9L116.1 58.8L113.7 56.1L113.6 53.7L115.2 52.2L117.1 51.1L118.4 49.5L119.5 47.2L121.1 45.3L123.5 45.2L126.1 47.6L128.0 51.6L128.9 55.0L129.6 56.0L130.9 54.9L133.1 53.2L135.2 52.6L136.6 53.4L137.4 54.8L138.7 55.8L141.4 56.4L145.1 57.4L147.9 59.4Z" fill="url(#heat)" opacity="0.75"/></g><line x1="120.3" y1="70" x2="140.6" y2="70.0" stroke="#ff7329" stroke-width="1.3" stroke-linecap="round"/><line x1="113.4434917562059" y1="85.21060581965176" x2="129.3" y2="103.2" stroke="#ff7329" stroke-width="1.3" stroke-linecap="round"/><line x1="100.30019217687324" y1="90.297780288912" x2="100.7" y2="117.8" stroke="#ff7329" stroke-width="1.3" stroke-linecap="round"/><line x1="90.17283867281935" y1="87.76279539513882" x2="75.2" y2="114.8" stroke="#ff7329" stroke-width="1.3" stroke-linecap="round"/><line x1="84.03804003404363" y1="82.54216225557643" x2="57.3" y2="103.6" stroke="#ff7329" stroke-width="1.3" stroke-linecap="round"/><line x1="80.29541902760418" y1="74.88052135558246" x2="44.6" y2="83.7" stroke="#ff7329" stroke-width="1.3" stroke-linecap="round"/><line x1="80.81862330847926" y1="63.354340648364136" x2="43.8" y2="50.5" stroke="#ff7329" stroke-width="1.3" stroke-linecap="round"/><line x1="90.71538053749737" y1="51.94769152056953" x2="71.9" y2="15.4" stroke="#ff7329" stroke-width="1.3" stroke-linecap="round"/><line x1="107.6918955723279" y1="51.21370865486212" x2="123.8" y2="11.9" stroke="#ff7329" stroke-width="1.3" stroke-linecap="round"/><line x1="118.9584155888278" y1="62.742694827879234" x2="159.4" y2="47.3" stroke="#ff7329" stroke-width="1.3" stroke-linecap="round"/><path d="M119.5 70.0L118.6 72.4L120.8 75.6L121.1 78.7L119.8 81.4L120.8 86.0L124.4 94.4L125.3 103.0L119.9 104.4L111.0 96.6L104.4 86.5L101.8 83.5L100.0 89.0L96.6 96.1L92.3 98.6L88.4 98.0L83.6 98.3L77.5 99.4L73.5 96.5L76.4 88.1L84.5 78.9L89.4 74.4L84.5 74.2L73.2 73.5L64.8 70.0L64.3 65.3L68.0 61.4L70.6 57.8L72.4 54.0L77.4 52.6L85.7 55.7L92.0 59.6L92.5 57.1L90.1 46.0L90.3 33.6L94.6 29.3L100.0 34.3L103.7 41.8L106.5 45.8L109.4 47.4L111.0 50.9L110.8 55.9L112.2 57.8L119.8 54.8L131.9 51.6L139.9 53.5L137.4 60.0L127.4 66.4Z" fill="url(#heat)" opacity="1"/><path d="M93.5 58.0L90.1 58.8L87.9 59.0L88.0 59.7L89.6 61.3L90.9 63.3L90.9 64.9L89.9 65.7L89.0 66.6L88.2 68.2L87.2 69.8L85.6 69.8L84.0 67.5L83.2 64.1L83.0 61.9L82.3 62.0L80.7 63.6L78.7 64.9L77.1 64.9L76.3 63.9L75.4 63.0L73.8 62.2L72.2 61.2L72.2 59.6L74.5 58.0L77.9 57.2L80.1 57.0L80.0 56.3L78.4 54.7L77.1 52.7L77.1 51.1L78.1 50.3L79.0 49.4L79.8 47.8L80.8 46.2L82.4 46.2L84.0 48.5L84.8 51.9L85.0 54.1L85.7 54.0L87.3 52.4L89.3 51.1L90.9 51.1L91.7 52.1L92.6 53.0L94.2 53.8L95.8 54.8L95.8 56.4Z" fill="url(#heat)" opacity="0.9"/><circle cx="100" cy="70" r="7" fill="#fff"/></svg></div>
+      <dl><dt>threshold</dt><dd>slen ≈ 40-180</dd><dt>flash size</dt><dd>44-198 (1.1 × slen)</dd><dt>shape</dt><dd>main bloom + offset cluster, sparks</dd><dt>debris</dt><dd>breakup or disabled hulk</dd></dl></article>
+    <article class="card tier"><h3>Capital</h3><div class="stage"><svg viewBox="0 0 200 140" class="bsvg" role="img" aria-label="capital explosion"><defs>
+<radialGradient id="heat"><stop offset="0" stop-color="#fff7e0"/><stop offset=".35" stop-color="#ffd7a0"/><stop offset=".7" stop-color="#ff7329"/><stop offset="1" stop-color="#f23b0b" stop-opacity="0"/></radialGradient>
+<radialGradient id="teal"><stop offset="0" stop-color="#e0fffa"/><stop offset=".5" stop-color="#1febb8"/><stop offset="1" stop-color="#1febb8" stop-opacity="0"/></radialGradient>
+<radialGradient id="nova"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#59d1ff" stop-opacity=".7"/><stop offset="1" stop-color="#59d1ff" stop-opacity="0"/></radialGradient>
+<filter id="soft"><feGaussianBlur stdDeviation="2"/></filter><filter id="soft6"><feGaussianBlur stdDeviation="6"/></filter></defs><rect x="18" y="66" width="164" height="8" rx="3" fill="#1a2028"/><path d="M31.8 73.0L33.4 74.0L34.1 75.2L33.6 76.2L32.4 76.7L31.3 77.1L30.6 77.6L30.1 78.4L29.4 78.8L28.3 78.5L27.2 77.3L26.4 76.0L26.0 75.4L25.6 76.0L24.8 77.3L23.7 78.5L22.6 78.8L21.9 78.4L21.4 77.6L20.7 77.1L19.6 76.7L18.4 76.2L17.9 75.2L18.6 74.0L20.2 73.0L22.0 72.5L23.0 72.2L23.0 71.8L22.5 71.0L22.2 70.1L22.5 69.5L23.1 69.2L23.6 68.9L23.9 67.8L24.2 66.2L24.9 64.6L26.0 63.9L27.1 64.6L27.8 66.2L28.1 67.8L28.4 68.9L28.9 69.2L29.5 69.5L29.8 70.1L29.5 71.0L29.0 71.8L29.0 72.2L30.0 72.5Z" fill="url(#heat)" opacity="0.45"/><path d="M54.7 67.0L55.8 67.7L58.0 69.0L59.9 70.8L59.9 72.4L58.2 72.8L55.9 72.3L54.3 71.9L53.5 72.0L52.9 72.5L52.0 72.3L51.2 71.5L50.6 71.1L49.9 72.2L48.6 74.4L46.8 76.3L45.2 76.3L44.8 74.6L45.3 72.3L45.7 70.7L45.6 69.9L45.1 69.3L45.3 68.4L46.1 67.6L46.5 67.0L45.4 66.3L43.2 65.0L41.3 63.2L41.3 61.6L43.0 61.2L45.3 61.7L46.9 62.1L47.7 62.0L48.3 61.5L49.2 61.7L50.0 62.5L50.6 62.9L51.3 61.8L52.6 59.6L54.4 57.7L56.0 57.7L56.4 59.4L55.9 61.7L55.5 63.3L55.6 64.1L56.1 64.7L55.9 65.6L55.1 66.4Z" fill="url(#heat)" opacity="0.52"/><path d="M81.7 73.0L81.3 73.8L81.4 74.7L83.1 76.3L85.1 78.7L85.2 80.7L82.7 80.5L79.4 78.5L77.5 76.9L77.1 77.5L76.9 79.4L76.2 80.8L75.2 81.2L74.0 81.8L72.5 83.1L70.7 83.8L69.9 82.2L70.8 78.8L72.3 75.9L72.3 75.3L69.9 76.1L66.9 76.4L65.4 75.6L65.4 74.3L65.6 73.0L65.3 71.7L65.8 70.5L68.2 70.1L71.2 70.7L72.4 70.9L71.3 69.1L69.6 65.7L69.4 62.9L70.9 62.6L72.7 63.8L74.1 64.8L75.2 65.1L76.2 65.8L76.7 67.5L76.9 68.9L78.0 68.2L80.6 66.0L83.7 64.5L85.0 65.4L83.9 68.0L81.8 70.3L81.0 71.5L81.4 72.2Z" fill="url(#heat)" opacity="0.5900000000000001"/><path d="M105.3 67.0L106.4 67.9L107.1 69.0L106.8 69.9L106.0 70.6L105.5 71.4L105.9 73.1L106.5 75.8L106.6 78.7L105.4 80.5L103.3 80.2L101.3 78.4L99.8 76.3L98.7 75.1L97.7 74.8L96.6 74.7L95.9 73.8L95.9 72.1L96.3 70.5L96.1 69.8L94.5 70.1L91.6 70.4L88.5 70.0L86.8 68.7L86.8 67.0L88.1 65.5L89.3 64.2L89.8 62.9L90.0 61.4L90.9 60.2L92.8 60.0L95.3 61.1L97.3 62.7L98.3 63.4L98.6 62.4L98.9 60.1L99.8 57.8L101.1 56.8L102.5 57.0L103.7 57.7L105.1 57.8L107.1 57.5L109.3 57.5L110.7 58.6L110.5 60.8L108.6 63.3L106.3 65.2L105.0 66.3Z" fill="url(#heat)" opacity="0.66"/><path d="M132.2 73.0L129.6 73.7L129.7 74.4L131.5 76.0L132.9 77.9L132.8 79.5L132.0 80.6L131.4 82.1L131.1 84.7L130.2 87.1L128.3 87.4L126.0 84.8L124.4 80.8L123.7 78.2L123.0 78.3L121.4 80.1L119.5 81.5L117.9 81.4L116.8 80.6L115.3 80.0L112.7 79.7L110.3 78.8L110.0 76.9L112.6 74.6L116.6 73.0L119.2 72.3L119.1 71.6L117.3 70.0L115.9 68.1L116.0 66.5L116.8 65.4L117.4 63.9L117.7 61.3L118.6 58.9L120.5 58.6L122.8 61.2L124.4 65.2L125.1 67.8L125.8 67.7L127.4 65.9L129.3 64.5L130.9 64.6L132.0 65.4L133.5 66.0L136.1 66.3L138.5 67.2L138.8 69.1L136.2 71.4Z" fill="url(#heat)" opacity="0.73"/><path d="M164.2 67.0L159.9 68.4L155.1 68.6L153.6 68.9L156.0 71.0L159.1 74.7L159.7 77.7L158.0 78.7L155.8 78.8L154.2 79.5L152.4 79.8L150.5 78.0L149.0 74.4L148.3 72.2L147.1 74.1L144.2 78.6L140.6 81.5L138.7 80.4L139.1 76.9L140.0 73.9L139.9 72.3L139.6 70.9L140.6 69.3L142.0 67.9L141.1 67.0L137.1 65.4L132.8 62.7L132.3 60.1L136.0 59.5L140.8 60.7L143.4 61.4L144.0 60.5L144.3 58.9L145.3 58.2L146.5 57.6L147.4 55.2L149.0 51.4L151.3 49.4L153.1 51.9L153.0 57.3L152.2 61.5L152.7 62.1L155.4 60.6L158.3 59.9L159.9 60.7L160.9 62.1L162.8 63.3L164.8 64.9Z" fill="url(#heat)" opacity="0.8"/><path d="M188.9 73.0L189.6 75.1L189.1 77.2L186.6 78.4L182.7 78.2L179.2 77.3L177.4 76.8L177.6 78.2L178.3 81.1L178.2 84.2L177.1 86.1L175.4 86.4L173.6 86.4L171.7 87.1L169.3 88.9L166.4 90.3L164.0 89.7L163.0 86.8L164.0 82.6L165.8 79.0L166.9 76.9L166.3 76.0L164.6 75.4L163.4 74.3L163.5 73.0L164.4 71.8L164.6 70.6L163.2 68.7L160.7 65.6L159.0 61.8L159.5 58.9L162.1 58.0L165.6 59.1L168.5 60.8L170.5 61.6L172.1 61.3L173.6 61.0L175.0 62.0L175.9 64.4L176.1 66.8L176.6 67.8L178.5 66.7L181.9 64.7L185.9 63.5L188.8 64.2L189.7 66.3L189.1 68.8L188.5 71.0Z" fill="url(#heat)" opacity="0.8700000000000001"/><g filter="url(#soft6)"><path d="M132.5 70.0L121.5 72.8L122.1 75.9L129.7 82.3L135.5 90.5L135.2 97.0L131.6 101.6L129.2 108.0L128.0 118.5L124.3 128.7L116.1 130.0L106.5 119.1L100.0 102.5L97.2 91.5L94.1 92.1L87.7 99.7L79.5 105.5L73.0 105.2L68.4 101.6L62.0 99.2L51.5 98.0L41.3 94.3L40.0 86.1L50.9 76.5L67.5 70.0L78.5 67.2L77.9 64.1L70.3 57.7L64.5 49.5L64.8 43.0L68.4 38.4L70.8 32.0L72.0 21.5L75.7 11.3L83.9 10.0L93.5 20.9L100.0 37.5L102.8 48.5L105.9 47.9L112.3 40.3L120.5 34.5L127.0 34.8L131.6 38.4L138.0 40.8L148.5 42.0L158.7 45.7L160.0 53.9L149.1 63.5Z" fill="url(#heat)" opacity="0.7"/></g><line x1="123.8" y1="70" x2="147.6" y2="70.0" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="118.69219327966485" y1="84.73234232549775" x2="140.8" y2="102.1" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="108.69107912191548" y1="92.1563793002513" x2="120.5" y2="122.2" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="100.79030992878661" y1="93.78687474672662" x2="102.0" y2="130.0" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="95.58123715944937" y1="93.38620394503924" x2="88.2" y2="132.6" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="90.06924668382328" y1="91.62915020460224" x2="72.1" y2="130.9" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="82.48176053611152" y1="86.11059546031308" x2="48.7" y2="117.2" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="76.50718259774536" y1="73.81149977099851" x2="29.0" y2="81.5" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="79.38505786850048" y1="58.106129271136076" x2="36.3" y2="33.2" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="90.50382733280665" y1="48.17655607666724" x2="70.3" y2="1.7" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="101.44578180375109" y1="46.24395413845262" x2="104.5" y2="-4.7" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="108.20534979886529" y1="47.65918008043883" x2="125.7" y2="0.2" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="112.69462103951368" y1="49.868268910420625" x2="139.1" y2="8.0" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><line x1="117.76836526617916" y1="54.16569560202791" x2="153.5" y2="22.4" stroke="#ff7329" stroke-width="1.2" stroke-linecap="round"/><path d="M138.6 70.0L131.9 74.2L127.8 77.4L124.8 80.3L118.8 80.9L113.6 80.5L115.4 85.4L121.6 98.1L122.6 109.2L115.6 107.6L106.9 95.6L102.2 87.0L100.0 89.0L96.7 95.2L92.5 97.8L88.2 98.4L82.1 101.0L75.4 102.1L74.7 95.3L82.4 83.5L89.3 76.2L84.4 76.5L70.0 78.0L59.9 75.3L61.4 70.0L68.1 65.8L72.2 62.6L75.2 59.7L81.2 59.1L86.4 59.5L84.6 54.6L78.4 41.9L77.4 30.8L84.4 32.4L93.1 44.4L97.8 53.0L100.0 51.0L103.3 44.8L107.5 42.2L111.8 41.6L117.9 39.0L124.6 37.9L125.3 44.7L117.6 56.5L110.7 63.8L115.6 63.5L130.0 62.0L140.1 64.7Z" fill="url(#heat)" opacity="1"/><circle cx="100" cy="70" r="9" fill="#fff"/></svg></div>
+      <dl><dt>threshold</dt><dd>hulls ≥ 10 or slen ≥ 180 (isCapital)</dd><dt>flash size</dt><dd>≥ 198, screen cap 240 px</dd><dt>shape</dt><dd>cook-off chain along the keel, then 1.1× final</dd><dt>debris</dt><dd>≤ 32 fragments, hulks ≤ 180 s</dd></dl></article>
+    <article class="card tier"><h3>First One</h3><div class="stage"><svg viewBox="0 0 200 140" class="bsvg" role="img" aria-label="First One weapon flash"><defs>
+<radialGradient id="heat"><stop offset="0" stop-color="#fff7e0"/><stop offset=".35" stop-color="#ffd7a0"/><stop offset=".7" stop-color="#ff7329"/><stop offset="1" stop-color="#f23b0b" stop-opacity="0"/></radialGradient>
+<radialGradient id="teal"><stop offset="0" stop-color="#e0fffa"/><stop offset=".5" stop-color="#1febb8"/><stop offset="1" stop-color="#1febb8" stop-opacity="0"/></radialGradient>
+<radialGradient id="nova"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#59d1ff" stop-opacity=".7"/><stop offset="1" stop-color="#59d1ff" stop-opacity="0"/></radialGradient>
+<filter id="soft"><feGaussianBlur stdDeviation="2"/></filter><filter id="soft6"><feGaussianBlur stdDeviation="6"/></filter></defs><circle cx="100" cy="70" r="66" fill="url(#nova)" opacity=".55"/><circle cx="100" cy="70" r="62" fill="none" stroke="#59d1ff" stroke-width="3" opacity=".55"/><path d="M140.6 70.0L142.0 72.8L143.1 75.7L144.1 78.8L144.7 82.0L145.0 85.3L144.9 88.6L144.5 92.0L143.7 95.2L142.5 98.4L140.9 101.4L139.0 104.2L136.8 106.8L134.2 109.0L131.4 110.9L128.4 112.5L125.2 113.7L122.0 114.5L118.6 114.9L115.3 115.0L112.0 114.7L108.8 114.1L105.7 113.1L102.8 112.0L100.0 110.6L97.4 109.0L95.1 107.3L92.9 105.5L91.0 103.7L89.2 101.8L87.6 100.0L86.1 98.2L84.7 96.5L83.3 94.9L82.0 93.4L80.7 92.0L79.4 90.6L78.0 89.3L76.6 88.0L75.1 86.7L73.5 85.3L71.8 83.9L70.0 82.4L68.2 80.8L66.3 79.0L64.5 77.1L62.7 74.9L61.0 72.6L59.4 70.0L58.0 67.3L56.9 64.3L55.9 61.2L55.3 58.0L55.0 54.7L55.1 51.4L55.5 48.1L56.3 44.8L57.5 41.6L59.1 38.6L61.0 35.8L63.2 33.2L65.8 31.0L68.6 29.1L71.6 27.5L74.8 26.3L78.0 25.5L81.4 25.1L84.7 25.0L88.0 25.3L91.2 25.9L94.3 26.8L97.2 28.0L100.0 29.4L102.5 31.0L104.9 32.7L107.1 34.5L109.0 36.3L110.8 38.2L112.4 40.0L113.9 41.8L115.3 43.5L116.7 45.1L118.0 46.6L119.3 48.0L120.6 49.4L122.0 50.7L123.4 52.0L124.9 53.3L126.5 54.7L128.2 56.1L130.0 57.6L131.8 59.2L133.6 61.0L135.5 62.9L137.3 65.1L139.0 67.4Z" fill="url(#teal)" opacity="0.8"/><path d="M131.1 70.0L130.9 72.0L130.4 74.0L129.7 75.9L128.8 77.7L127.6 79.4L126.4 80.9L124.9 82.3L123.4 83.5L121.7 84.5L120.0 85.4L118.3 86.1L116.6 86.6L114.9 87.0L113.2 87.2L111.6 87.4L110.1 87.5L108.6 87.5L107.2 87.5L105.9 87.4L104.7 87.4L103.5 87.4L102.3 87.4L101.1 87.4L100.0 87.5L98.8 87.7L97.7 87.8L96.4 88.0L95.1 88.2L93.7 88.4L92.3 88.6L90.8 88.7L89.2 88.8L87.5 88.7L85.7 88.6L84.0 88.3L82.2 87.8L80.4 87.2L78.6 86.4L76.9 85.4L75.3 84.3L73.8 82.9L72.5 81.4L71.3 79.7L70.4 77.9L69.6 76.0L69.1 74.1L68.9 72.0L68.9 70.0L69.1 68.0L69.6 66.0L70.3 64.1L71.2 62.3L72.3 60.6L73.6 59.1L75.1 57.7L76.6 56.5L78.3 55.5L80.0 54.6L81.7 53.9L83.4 53.4L85.1 53.0L86.8 52.8L88.4 52.6L89.9 52.5L91.4 52.5L92.8 52.5L94.1 52.6L95.3 52.6L96.5 52.6L97.7 52.6L98.9 52.6L100.0 52.5L101.2 52.3L102.3 52.2L103.6 52.0L104.9 51.8L106.3 51.6L107.7 51.4L109.2 51.3L110.8 51.2L112.5 51.3L114.3 51.4L116.0 51.7L117.8 52.2L119.6 52.8L121.4 53.6L123.1 54.6L124.7 55.7L126.2 57.1L127.5 58.6L128.7 60.3L129.6 62.1L130.4 64.0L130.9 65.9L131.1 68.0Z" fill="url(#teal)" opacity="1"/><line x1="124.5" y1="70" x2="149.0" y2="70.0" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="120.65631804467432" y1="83.1744648785923" x2="145.0" y2="98.7" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="113.28851189301312" y1="90.58313512731354" x2="131.3" y2="118.5" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="107.99472529497062" y1="93.1588939169805" x2="120.2" y2="128.4" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="105.15936727512324" y1="93.9505935066417" x2="113.8" y2="134.1" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="101.67019601334916" y1="94.44300401499359" x2="104.7" y2="138.8" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="94.44196272296158" y1="93.86122841823219" x2="83.7" y2="139.9" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="83.9958089652666" y1="88.5503603556308" x2="51.6" y2="126.1" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="76.41752376634477" y1="76.64204898273768" x2="27.1" y2="90.5" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="76.341174907348" y1="63.63525371791613" x2="25.9" y2="50.1" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="80.26527470555394" y1="55.4813699836124" x2="38.0" y2="24.4" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="83.3888643426621" y1="51.99110852457827" x2="48.1" y2="13.7" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="85.48369089639517" y1="50.26356744473309" x2="55.3" y2="9.2" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="89.26398166517693" y1="47.97755893833876" x2="67.7" y2="3.7" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="97.62580482161778" y1="45.61530813696949" x2="93.1" y2="-1.0" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="110.22985225819984" y1="47.73792186754787" x2="128.6" y2="7.8" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="120.83845306918941" y1="57.115556912183195" x2="155.3" y2="35.8" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><line x1="124.45785249248074" y1="68.56352812208051" x2="161.0" y2="66.4" stroke="#1febb8" stroke-width="1" stroke-linecap="round"/><circle cx="100" cy="70" r="12" fill="#fff"/></svg></div>
+      <dl><dt>source</dt><dd>foRelease(): weapon impact</dd><dt>flash size</dt><dd>radius × 1.3 = 312-845, echo × .65</dd><dt>shape</dt><dd>two-petal spiked flower (kind 6/8) + ion-nova ring (kind 4)</dd><dt>cap</dt><dd>640 px, 2.15 s life</dd></dl></article>
+  </div>
+  <p class="note">First One hulls die with the Choir's <code>flash</code> recipe in thermal kind 10. The flower shapes above are their weapons landing, which is the largest light in the game.</p>
+  <h4 style="margin-top:22px">Death kinds (<code>deathEffectKind(race)</code>)</h4>
+  <div class="tw"><table class="dt"><tr><th>kind</th><th></th><th>look / cooled colour</th><th>fleets</th></tr><tr><td><code>10</code></td><td><span class="grad" style="background:radial-gradient(circle,#fffff5 0 18%,#f23b0b 55%,transparent 72%)"></span></td><td>thermal ember<br><code class="dim">[.95, .23, .04]</code></td><td>Yard, Lattice, Drift, Choir, Imperial, Rebel, EarthForce, Klingon, Mondoshawan, USCM, Yautja, First Ones, Romulan, Dominion, Space Marines, Tesla</td></tr><tr><td><code>11</code></td><td><span class="grad" style="background:radial-gradient(circle,#fffff5 0 18%,#297aff 55%,transparent 72%)"></span></td><td>reactor blue<br><code class="dim">[.16, .48, 1.00]</code></td><td>Federation</td></tr><tr><td><code>12</code></td><td><span class="grad" style="background:radial-gradient(circle,#fffff5 0 18%,#521a75 55%,transparent 72%)"></span></td><td>dark violet dissipation<br><code class="dim">[.32, .10, .46]</code></td><td>Shoal, Shadows, Tyranids</td></tr><tr><td><code>13</code></td><td><span class="grad" style="background:radial-gradient(circle,#fffff5 0 18%,#2ec738 55%,transparent 72%)"></span></td><td>Borg green, square-cornered<br><code class="dim">[.18, .78, .22]</code></td><td>Borg</td></tr><tr><td><code>14</code></td><td><span class="grad" style="background:radial-gradient(circle,#fffff5 0 18%,#479ee6 55%,transparent 72%)"></span></td><td>cold flash<br><code class="dim">[.28, .62, .90]</code></td><td>Minbari, Engineers</td></tr></table></div>
+  <p class="note">All death kinds share a white-hot core <code>#fff7e6</code> that fades fast (exp(−12·age)), then cool to the colour shown. Kind 12 cuts the core to 15% so Shadows go out dark. Kind 13 squares its lobes.</p>
+  <h4 style="margin-top:22px">First One and heat kinds (flash shader)</h4>
+  <div class="tw"><table class="dt"><tr><th>kind</th><th></th><th>name</th><th>used by</th></tr>
+    <tr><td><code>2-3</code></td><td><span class="grad" style="background:radial-gradient(circle,#fff7e0 0 22%,#ff7329 58%,transparent 72%)"></span></td><td>heat: white → ember</td><td class="small">hits, missiles, mines, sub-flashes. "An explosion is heat, not a team colour."</td></tr><tr><td><code>4</code></td><td><span class="grad" style="background:radial-gradient(circle,#ffffff 0 22%,#59d1ff 58%,transparent 72%)"></span></td><td>ion nova</td><td class="small">echo .22 s after every First One release (.65 × radius); also ion blasts and stun hits</td></tr><tr><td><code>5</code></td><td><span class="grad" style="background:radial-gradient(circle,#ffffd1 0 22%,#ffad1f 58%,transparent 72%)"></span></td><td>gold lightning</td><td class="small">defined in shader (Traveller, Lordship); not emitted by current code</td></tr><tr><td><code>6</code></td><td><span class="grad" style="background:radial-gradient(circle,#e0fffa 0 22%,#1febb8 58%,transparent 72%)"></span></td><td>teal flower</td><td class="small">First One weapon 6 (Living lightning)</td></tr><tr><td><code>7</code></td><td><span class="grad" style="background:radial-gradient(circle,#ffffd1 0 22%,#52ff47 58%,transparent 72%)"></span></td><td>gold-green ending</td><td class="small">defined in shader (Lorien, Dark Knife); not emitted by current code</td></tr><tr><td><code>8</code></td><td><span class="grad" style="background:radial-gradient(circle,#fff2e0 0 22%,#ff3814 58%,transparent 72%)"></span></td><td>red claw</td><td class="small">every other First One weapon release (1.3 × radius)</td></tr><tr><td><code>9</code></td><td><span class="grad" style="background:radial-gradient(circle,#ffffff 0 22%,#8cd1ff 58%,transparent 72%)"></span></td><td>ice bloom</td><td class="small">defined in shader (Thoughtforce, the Hand); not emitted by current code</td></tr></table></div>
+  <h4 style="margin-top:22px">Per-fleet death recipes (<code>boom</code>)</h4>
+  <div class="tw"><table class="dt"><tr><th>boom</th><th>fleets</th><th>sequence</th></tr><tr><td><code>cookoff</code></td><td>Yard, Drift, Rebel, EarthForce, Klingon, USCM, Space Marines, Tesla</td><td>Chain of up to 7 hot flashes marching along the keel, then a 1.1× final bloom (verse 0); or one bloom with a 5-flash cluster; or a small flash then a 1.5× secondary.</td></tr><tr><td><code>burst</code></td><td>Shoal, Tyranids</td><td>A living thing ruptures: one bloom, two dust bursts, 6-flash cluster. Mist, not magazines.</td></tr><tr><td><code>shatter</code></td><td>Lattice</td><td>Crystal failing along its grain: bloom, 22 long sparks, a 14-spoke ring.</td></tr><tr><td><code>flash</code></td><td>Choir, First Ones</td><td>She simply becomes light: one 1.9× bloom and a tight 4-flash cluster.</td></tr><tr><td><code>tie</code></td><td>Imperial</td><td>Cockpit blooms off-centre, 6 sparks; the panels just fall off.</td></tr><tr><td><code>crystal</code></td><td>Minbari</td><td>One clean 1.8× annihilation, then 18 bone-shard sparks.</td></tr><tr><td><code>dissolve</code></td><td>Shadows</td><td>No fire: a dark .55× bloom, two dust bursts, a faint cluster.</td></tr><tr><td><code>warp</code></td><td>Federation, Romulan, Dominion</td><td>Core goes first: a 14-spoke white ring, a .5× flash, then a 1.6× flash .28 s later.</td></tr><tr><td><code>cleave</code></td><td>Borg</td><td>Comes apart on the lattice: sparks along 4 axes, cube-cornered flashes.</td></tr><tr><td><code>bronze</code></td><td>Mondoshawan</td><td>A muted gold 1.2× bloom, 3-flash cluster, no shrapnel.</td></tr><tr><td><code>fossil</code></td><td>Engineers</td><td>Calcifies first: 8 slow flashes over .9 s, then cracks with a 1.15× bloom.</td></tr><tr><td><code>cloakpop</code></td><td>Yautja</td><td>The shimmer fails (16 sparks), then the hunter burns .12 s later.</td></tr></table></div>
+</section>
+
+<section id="donts">
+  <h2><span class="n">06</span>Do not do this</h2>
+  <p class="intro">Five ways a space battle turns to mush, and the mechanism in the code that prevents each one.</p>
+  <div class="donts">
+    <article class="card dont"><div class="demo"><div class="no"><span class="lbl">don't</span><svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice"><rect width="100" height="60" fill="#3a3f48"/><circle cx="50" cy="30" r="40" fill="#fff" opacity=".55" filter="url(#b8)"/><circle cx="50" cy="30" r="18" fill="#fff"/><defs><filter id="b8"><feGaussianBlur stdDeviation="8"/></filter></defs></svg></div><div class="yes"><span class="lbl">do</span><svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice"><rect width="100" height="60" fill="#06080b"/><path d="M20 34 L60 28 L78 34 L60 40Z" fill="#5d6874"/><circle cx="50" cy="30" r="9" fill="#ff9a40" opacity=".35" filter="url(#b2)"/><circle cx="50" cy="30" r="3" fill="#fff"/><defs><filter id="b2"><feGaussianBlur stdDeviation="2.5"/></filter></defs></svg></div></div>
+  <div class="txt"><h3>Blown-out bloom</h3><p><b class="why">Why not.</b> A glow over everything flattens depth, hides silhouettes, and makes every shot look the same size.</p><p><b class="fix">What we do.</b> Bloom only takes energy above 1.5× white (soft knee 0.5). Coarse levels are weighted 0.62, and exposure can only darken, so a flash blooms tightly and then settles.</p></div></article>
+    <article class="card dont"><div class="demo"><div class="no"><span class="lbl">don't</span><svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice"><rect width="100" height="60" fill="#140a22"/><line x1="0" y1="5" x2="100" y2="55" stroke="#f0f" stroke-width="3"/><line x1="16" y1="14" x2="90" y2="48" stroke="#0ff" stroke-width="3"/><line x1="32" y1="23" x2="80" y2="41" stroke="#ff0" stroke-width="3"/><line x1="48" y1="32" x2="70" y2="34" stroke="#f40" stroke-width="3"/><line x1="64" y1="41" x2="60" y2="27" stroke="#0f4" stroke-width="3"/><line x1="80" y1="50" x2="50" y2="20" stroke="#48f" stroke-width="3"/></svg></div><div class="yes"><span class="lbl">do</span><svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice"><rect width="100" height="60" fill="#07090d"/><line x1="8" y1="18" x2="60" y2="26" stroke="#ffca32" stroke-width="3"/><line x1="8" y1="18" x2="60" y2="26" stroke="#fff" stroke-width="1"/><line x1="92" y1="46" x2="44" y2="36" stroke="#28ad55" stroke-width="3"/><line x1="92" y1="46" x2="44" y2="36" stroke="#fff" stroke-width="1"/></svg></div></div>
+  <div class="txt"><h3>Rainbow soup</h3><p><b class="why">Why not.</b> When every beam, grade and nebula is saturated, no single fleet reads and the eye has nowhere to rest.</p><p><b class="fix">What we do.</b> One signature colour per fleet (FLEET_BEAM_HEX) with a white core. Hull paint is muted to 62% saturation. Grades apply at half strength (lift × .5, gain halfway to 1) with saturation between .86 and 1.05.</p></div></article>
+    <article class="card dont"><div class="demo"><div class="no"><span class="lbl">don't</span><svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice"><rect width="100" height="60" fill="#0a0d14"/><line x1="0" y1="30" x2="100" y2="30" stroke="#8cf" stroke-width="1.5" opacity=".8"/><circle cx="20" cy="21" r="6" fill="none" stroke="#8cf" opacity=".6"/><circle cx="38" cy="26.4" r="4" fill="none" stroke="#8cf" opacity=".6"/><circle cx="60" cy="33" r="9" fill="none" stroke="#8cf" opacity=".6"/><circle cx="78" cy="38.4" r="5" fill="none" stroke="#8cf" opacity=".6"/><circle cx="50" cy="30" r="4" fill="#fff"/></svg></div><div class="yes"><span class="lbl">do</span><svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice"><rect width="100" height="60" fill="#07090d"/><circle cx="80" cy="14" r="7" fill="#ffd9a0" opacity=".25" filter="url(#b3)"/><circle cx="80" cy="14" r="3" fill="#fff3dc"/><path d="M18 38 L52 32 L66 38 L52 44Z" fill="#6b7682"/><path d="M18 38 L52 32 L66 38" fill="none" stroke="#ffe7c2" stroke-width="1"/><defs><filter id="b3"><feGaussianBlur stdDeviation="3"/></filter></defs></svg></div></div>
+  <div class="txt"><h3>Lens flares on everything</h3><p><b class="why">Why not.</b> Flares are an artefact of camera glass. On every light they read as a filter, and they cover the silhouettes we are trying to show.</p><p><b class="fix">What we do.</b> There are no lens flares at all. The sun is a soft falloff in the sky shader (pow 48 and pow 6). Light shows up on the hull as key tint and specular.</p></div></article>
+    <article class="card dont"><div class="demo"><div class="no"><span class="lbl">don't</span><svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice"><rect width="100" height="60" fill="#0a0c10"/><circle cx="20" cy="30" r="12" fill="#9aa0a8" opacity=".8"/><circle cx="50" cy="30" r="12" fill="#9aa0a8" opacity=".8"/><circle cx="80" cy="30" r="12" fill="#9aa0a8" opacity=".8"/></svg></div><div class="yes"><span class="lbl">do</span><svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice"><rect width="100" height="60" fill="#06080b"/><circle cx="20" cy="30" r="12" fill="#f23b0b" opacity=".85"/><circle cx="20" cy="30" r="4" fill="#fff"/><circle cx="50" cy="30" r="12" fill="#297aff" opacity=".85"/><circle cx="50" cy="30" r="4" fill="#fff"/><circle cx="80" cy="30" r="12" fill="#2ec738" opacity=".85"/><circle cx="80" cy="30" r="4" fill="#fff"/></svg></div></div>
+  <div class="txt"><h3>Identical grey explosions</h3><p><b class="why">Why not.</b> If every ship dies the same way, a kill tells you nothing: you cannot tell whose ship went or how big it was.</p><p><b class="fix">What we do.</b> Per-fleet death recipes (12 boom styles) and deathEffectKind: ember, reactor blue, dark violet, square Borg green, cold Minbari/Engineer. Size follows slen, and lobes are seeded per flash.</p></div></article>
+    <article class="card dont"><div class="demo"><div class="no"><span class="lbl">don't</span><svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice"><rect width="100" height="60" fill="#07090d"/><path d="M14 30 L60 20 L86 30 L60 40Z" fill="#7a8490"/></svg></div><div class="yes"><span class="lbl">do</span><svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice"><rect width="100" height="60" fill="#07090d"/><path d="M14 30 L60 20 L86 30 Z" fill="#8a929c"/><path d="M14 30 L60 40 L86 30 Z" fill="#434b56"/><path d="M14 30 L60 40 L86 30" fill="none" stroke="#8fb4e8" stroke-width="1.2"/><path d="M14 30 L60 20 L86 30" fill="none" stroke="#ffe7c2" stroke-width="1"/><rect x="34" y="27" width="6" height="2" fill="#5f6873"/><rect x="46" y="25" width="6" height="2" fill="#5f6873"/><rect x="58" y="24" width="6" height="2" fill="#5f6873"/><rect x="42" y="33" width="6" height="2" fill="#5f6873"/><circle cx="70" cy="28" r=".9" fill="#7fe8ff"/><circle cx="52" cy="26" r=".9" fill="#7fe8ff"/></svg></div></div>
+  <div class="txt"><h3>Hulls that read as flat plastic</h3><p><b class="why">Why not.</b> Uniform colour with one flat light gives no scale and no material. A Star Destroyer then looks like a toy.</p><p><b class="fix">What we do.</b> Key plus nebula fill plus a cool Fresnel rim (stronger on dark hulls), procedural panel cells and stripes scaled by hull length, gloss-driven specular, sparse lit windows in accent colour, and per-vessel tone.</p></div></article>
+  </div>
+</section>
+</main>
+<footer><div class="wrap">
+  <p>Generated from source on 2026-09-25. Sources: <code>armada-war-tribute-new.html</code> (hullFinish, RACE_DEFS, FLEET_BEAM_HEX, FO_WEAPONS, flash and ship shaders, boom, deathEffectKind, setupWarLight), <code>armada-post-new.js</code> (GRADES, TIERS, bloom and composite), <code>armada-systems-new.js</code>, <code>WEAPONS-NEW.md</code>, <code>PAINT-FIRE-NEW.md</code>, <code>DEBRIS-NEW.md</code>. If the code changes, this page does not update itself.</p>
+  <p>The Tribute War is a non-commercial fan tribute. Franchise names identify the fleets being honoured and belong to their owners.</p>
+</div></footer>
+</body>
+</html>

@@ -160,11 +160,12 @@
         const subjectGone = d.shot && d.shot.subject != null && !alive(d.shot.subject) && !d.shot.payoff;
         let next = null;
         if (!d.phase) next = candidates.find(c => c.phase === 'establish') || best;
-        else if (held >= hold || (subjectGone && held >= 1.2)) {
-          // A far more important event can break the grammar after the floor.
+        else {
+          // A far more important event may interrupt any shot once the global
+          // floor has passed; otherwise each phase holds for its own floor.
           const urgent = best && best.score >= 90 && (!d.shot || best.score > (d.shot.score || 0) * 1.25) && best.subject !== d.shot?.subject;
-          if (urgent) next = {...best, phase: 'climax'};
-          else if (held >= ceil || subjectGone) next = nextInGrammar(d, candidates, best);
+          if (urgent && held >= minHold) next = {...best, phase: 'climax'};
+          else if ((held >= hold && held >= ceil) || (subjectGone && held >= Math.max(1.2, minHold))) next = nextInGrammar(d, candidates, best);
         }
         if (!next) return null;
         d.history.push({subject: d.shot?.subject, kind: d.shot?.kind, at: d.clock});

@@ -15409,11 +15409,21 @@ function appendEngineBurns(now,planes,offset){
   }
   return offset+count;
 }
-function boltSkin(a,b,r,n){
+// One growable upload buffer and cleared scratch arrays for everything the
+// weapons pass streams each frame: no per-draw Float32Array allocation.
+let streamF32=new Float32Array(1<<16);
+const scratchArrays=new Map();
+function scratchArray(key){let a=scratchArrays.get(key);if(!a){a=[];scratchArrays.set(key,a);}a.length=0;return a;}
+function streamUpload(values){
+  const n=values.length;if(n>streamF32.length){let m=streamF32.length;while(m<n)m*=2;streamF32=new Float32Array(m);}
+  for(let i=0;i<n;i++)streamF32[i]=values[i];
+  gl.bufferData(gl.ARRAY_BUFFER,streamF32.subarray(0,n),gl.STREAM_DRAW);
+}
+function boltSkin(a,b,r,n,into){
   /* a cylinder of lines: world-metre radius so a crown bolt reads at 40 km */
   const dir=V.norm(V.sub(b,a));
   const [u,v]=basis(dir);
-  const o=[];n=Math.max(4,n||6);
+  const o=into||[];n=Math.max(4,n||6);
   for(let j=0;j<n;j++){
     const an=j/n*6.283,c=Math.cos(an)*r,s=Math.sin(an)*r;
     const ox=u[0]*c+v[0]*s,oy=u[1]*c+v[1]*s,oz=u[2]*c+v[2]*s;
@@ -17202,19 +17212,22 @@ function camBasis(){
   const f=[cy*cp,sp,sy*cp],r=[-sy,0,cy];
   return [f,r,V.cross(r,f)];
 }
-function mat(){
+function mat(into){
   const [f,r,u]=camBasis();
   const e=[cam.ex,cam.ey,cam.ez];
   const zn=0.6,zf=Math.max(sceneR*9,watchGoal?.far||0,Math.hypot(...e)+sceneR*10),t=1/Math.tan(0.44),ar=cvs.width/cvs.height;
   const vx=r,vy=u,vz=[-f[0],-f[1],-f[2]];
   const tx=-V.dot(vx,e),ty=-V.dot(vy,e),tz=-V.dot(vz,e);
   const A=t/ar,Bq=t,C=(zf+zn)/(zn-zf),D=2*zf*zn/(zn-zf);
-  return new Float32Array([
+  const out=into||new Float32Array(16);
+  out.set([
     A*vx[0],Bq*vy[0],C*vz[0],-vz[0],
     A*vx[1],Bq*vy[1],C*vz[1],-vz[1],
     A*vx[2],Bq*vy[2],C*vz[2],-vz[2],
     A*tx,Bq*ty,C*tz+D,-tz]);
+  return out;
 }
+const frameVP=new Float32Array(16);
 function frustumPlanes(m){
   const row=i=>[m[i],m[4+i],m[8+i],m[12+i]];
   const r0=row(0),r1=row(1),r2=row(2),r3=row(3),P=[];
@@ -18107,6 +18120,8 @@ function adjustRenderScale(wall){
 /* ?perf=1: where the frame goes */
 const perfOn=typeof location!=="undefined"&&/[?&]perf=1/.test(location.search);
 const perf={on:perfOn,acc:{sim:0,ai:0,collide:0,traffic:0,forge:0,submit:0,gpu:0},show:{},frames:0,calls:0,tris:0,callsShown:0,trisShown:0,timer:null,query:null,queries:[],el:null,at:0};
+function lodSelect(pixels,previous,dense){return PX?PX.lodLevel(pixels,previous,dense):pixels<(dense?48:28)*(previous>=1?1.15:.85)?1:0;}
+function lodCrossfade(changedAt,now){return PX?PX.lodFade(changedAt,now):1;}
 function perfStats(){return {...perf.show,calls:perf.callsShown,tris:perf.trisShown};}
 if(perfOn){
   const timed=(fn,key)=>function(){const t=performance.now();try{return fn.apply(this,arguments);}finally{perf.acc[key]+=performance.now()-t;}};
@@ -18455,7 +18470,7 @@ function updateHud(wall,now){
   const chip=document.getElementById("bcReplayChip");chip.hidden=!(wall<bc.replayChipUntil&&!replayState&&bc.lastBigEvent);
   if(!chip.hidden)chip.textContent="↺ Replay · "+bc.lastBigEvent.name;
   const rp=document.getElementById("bcReplayBar");rp.hidden=!replayState;
-  if(replayState){const r=replayState;rp.querySelector("b").textContent=r.label;rp.querySelector("i").style.width=(100*(r.t-r.t0)/Math.max(.01,r.t1-r.t0)).toFixed(1)+"%";}
+  if(replayState){const r=replayState,lab=rp.querySelector("b"),bar=rp.querySelector("i");if(lab)lab.textContent=r.label;if(bar)bar.style.width=(100*(r.t-r.t0)/Math.max(.01,r.t1-r.t0)).toFixed(1)+"%";}
   const clock=document.getElementById("bcClock");if(clock)clock.textContent=BC.fmt(Math.max(0,now-warT0))+(warClock.slowing?" · SLOW MOTION":"");
   for(const b of document.querySelectorAll("#bcSpeed [data-rate]"))b.setAttribute("aria-pressed",String(+b.dataset.rate===warClock.rate));
 }
@@ -18621,6 +18636,7 @@ function spectacleWar(fresh){
 
 /* ===================== frame ===================== */
 let lastT=0,fpsA=60,statT=0;
+const PAINT_GAIN=[1,.72,1,.72,.68];
 // Natural hull finishes in the default slate view. Other palettes remain
 // deliberate ink studies. Mixed fleets choose by class, not just allegiance.
 // Ported from tribute-2: shared coarse hull geometry and one instance upload.
@@ -18659,8 +18675,9 @@ function disposeDistantHulls(){
 function drawDistantShips(m){
   const r=distantShipRenderer;if(!r||!r.count)return;
   while(r.data.length<r.count*16)r.data=new Float32Array(r.data.length*2);
-  let offset=0;for(const g of r.groups.values()){g.offset=offset;for(const s of g.members){const p=xPose(s,battleTime),c=(s.finish||(s.finish=hullFinish(s))).color,k=[1,.72,1,.72,.68][palI],i=offset++*16;
-    r.data.set([s.x,s.y,s.z,s.slen/g.length,Math.cos(s.yaw),Math.sin(s.yaw),p.ax[0],p.ax[1],p.ax[2],p.ang,c[0]*k,c[1]*k,c[2]*k,0,0,0],i);}}
+  const k=PAINT_GAIN[palI],D=r.data;
+  let offset=0;for(const g of r.groups.values()){g.offset=offset;for(const s of g.members){const p=xPose(s,battleTime),c=(s.finish||(s.finish=hullFinish(s))).color,i=offset++*16;
+    D[i]=s.x;D[i+1]=s.y;D[i+2]=s.z;D[i+3]=s.slen/g.length;D[i+4]=Math.cos(s.yaw);D[i+5]=Math.sin(s.yaw);D[i+6]=p.ax[0];D[i+7]=p.ax[1];D[i+8]=p.ax[2];D[i+9]=p.ang;D[i+10]=c[0]*k;D[i+11]=c[1]*k;D[i+12]=c[2]*k;D[i+13]=0;D[i+14]=0;D[i+15]=0;}}
   gl.useProgram(r.program);gl.uniformMatrix4fv(r.vp,false,m);gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);gl.bufferData(gl.ARRAY_BUFFER,r.data.subarray(0,offset*16),gl.STREAM_DRAW);
   for(const g of r.groups.values()){if(!g.members.length)continue;gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);for(let k=1;k<=4;k++)gl.vertexAttribPointer(k,4,gl.FLOAT,false,64,g.offset*64+(k-1)*16);gl.drawElementsInstanced(gl.TRIANGLES,g.indices,gl.UNSIGNED_INT,0,g.members.length);}
   gl.bindVertexArray(null);gl.useProgram(shipProg);
@@ -18825,7 +18842,7 @@ function frame(nowMs){
     camKick*=Math.max(0,1-dt*4.2);
   }else camKick=0;
   if(worldBodies.length){const end=[cam.ex,cam.ey,cam.ez],move=worldMove(watchMode==='free'?cameraStart:end,end,3);[cam.ex,cam.ey,cam.ez]=move.position;}
-  const m=mat(),eye=[cam.ex,cam.ey,cam.ez];
+  const m=mat(frameVP),eye=[cam.ex,cam.ey,cam.ez];
   const FRP=frustumPlanes(m);
   const submitStarted=performance.now();perfFrameStart();
   const post=imagePipeline();
@@ -18866,16 +18883,20 @@ function frame(nowMs){
       const distance=Math.hypot(s.x-cam.ex,s.y-cam.ey,s.z-cam.ez),pixels=hullBerth(s)*cvs.height/Math.max(1,distance*.942);
       // Low-detail geometry, never point substitutes. Selected/hero/damaged or
       // cloaked hulls keep their individual mesh and its visual state.
-      const lodPixels=ships.length>500?48:28;
-      s.coarseHull=pixels<lodPixels*(s.coarseHull?1.15:.85);
-      if(s.coarseHull&&s.farHull&&s.id!==sel&&!s.hero&&!s.damageStage&&(s.cloakAmt||0)<.04&&T-s.delay>2){
-        s.farHull.members.push(s);far.count++;continue;
-      }
-    }
+      // A level change crossfades: both meshes draw for 0.35 s while the full
+      // hull dithers in or out, so nothing pops.
+      const level=lodSelect(pixels,s.coarseHull?1:0,ships.length>500);
+      if((level>=1)!==!!s.coarseHull){s.coarseHull=level>=1;s.lodAt=now;}
+      const eligible=s.farHull&&s.id!==sel&&!s.hero&&!s.damageStage&&(s.cloakAmt||0)<.04&&T-s.delay>2;
+      const fade=eligible&&s.lodAt!=null?lodCrossfade(s.lodAt,now):1;
+      if(eligible&&(s.coarseHull||fade<1)){s.farHull.members.push(s);far.count++;}
+      if(eligible&&s.coarseHull&&fade>=1)continue;
+      s.lodDither=eligible&&fade<1?(s.coarseHull?1-fade:fade):1;
+    }else s.lodDither=1;
     const finish=s.finish||(s.finish=hullFinish(s));
-    const paintGain=[1,.72,1,.72,.68][palI];
-    gl.uniform3fv(SU.ink,finish.color.map(c=>c*paintGain));
-    gl.uniform3fv(SU.trim,finish.trim.map(c=>c*paintGain));gl.uniform3fv(SU.accent,finish.accent);
+    const paintGain=PAINT_GAIN[palI],fc=finish.color,ft=finish.trim;
+    gl.uniform3f(SU.ink,fc[0]*paintGain,fc[1]*paintGain,fc[2]*paintGain);
+    gl.uniform3f(SU.trim,ft[0]*paintGain,ft[1]*paintGain,ft[2]*paintGain);gl.uniform3fv(SU.accent,finish.accent);
     gl.uniform4f(SU.paint,finish.gloss,finish.seed,(s.meta.beam||s.exZ*2||s.slen*.3)/s.slen,(s.meta.height||s.exY*2||s.slen*.2)/s.slen);
     gl.uniform3f(SU.paintOffset,0,0,0);
     gl.uniform4f(SU.material,finish.surface,Math.max(1,s.slen),finish.pattern,s.dead?1:0);
@@ -18926,7 +18947,7 @@ function frame(nowMs){
     else if(am)gl.uniform4f(SU.anim,am,s.wf,Math.max(4,s.slen*0.35),
       Math.min(6,1.3+30/s.slen));
     else gl.uniform4f(SU.anim,0,0,1,0);
-    gl.uniform1f(SU.inz,Math.min(1,age/0.3));
+    gl.uniform1f(SU.inz,Math.min(1,age/0.3,s.lodDither??1));
     gl.uniform1f(SU.hurt,Math.max(0,Math.exp(-(now-s.hurtT)*7))*0.85);
     gl.uniform1f(SU.tone,RDd.tone);
     const ck=s.cloakAmt||0;
@@ -18959,8 +18980,8 @@ function frame(nowMs){
   for(const w of wrecks){
     if(w.gone)continue;
     if(!sphereVis(FRP,w.x,w.y,w.z,(w.rad||6)*1.6))continue;
-    const finish=w.paint||hullFinish({race:0}),gain=[1,.72,1,.72,.68][palI];
-    gl.uniform3fv(SU.ink,finish.color.map(c=>c*gain));gl.uniform3fv(SU.trim,finish.trim);gl.uniform3fv(SU.accent,finish.accent);
+    const finish=w.paint||(w.paint=hullFinish({race:0})),gain=PAINT_GAIN[palI],wc=finish.color;
+    gl.uniform3f(SU.ink,wc[0]*gain,wc[1]*gain,wc[2]*gain);gl.uniform3fv(SU.trim,finish.trim);gl.uniform3fv(SU.accent,finish.accent);
     gl.uniform4f(SU.paint,finish.gloss,finish.seed,...(w.paintAspect||[.35,.2]));gl.uniform3fv(SU.paintOffset,w.paintOffset||[0,0,0]);
     gl.uniform4f(SU.material,finish.surface,w.paintLength||w.rad*2,finish.pattern,1);
     gl.uniform3f(SU.pos,w.x,w.y,w.z);
@@ -18989,14 +19010,14 @@ function frame(nowMs){
     drawCoherentWeapons(now);
     /* explosion sparks: ember streaks, no faction colour */
     {
-      const sarr=[];
+      const sarr=scratchArray("sarr");
       for(const b of beams)if(b.spark&&b.t0<=now){
         if(b.ejecta){const u=Math.min(1,(now-b.t0)/.42),tail=Math.max(0,u-.12);for(const f of [tail,u])for(let j=0;j<3;j++)sarr.push(b.a[j]+(b.b[j]-b.a[j])*f);}
         else sarr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
       }
       if(sarr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(sarr),gl.STREAM_DRAW);
+        streamUpload(sarr);
         gl.uniform4f(BU.col,1.0,0.58,0.22,0.6);
         gl.drawArrays(gl.LINES,0,sarr.length/3);
       }
@@ -19004,16 +19025,12 @@ function frame(nowMs){
     /* every fleet in the sky fires in her own ink — the answering ally
        keeps her colours even while she bleeds for somebody else's war */
     for(const rc of warRaces){
-      const arr=[],arrR=[];
+      const arr=scratchArray("arr"),arrR=scratchArray("arrR");
       for(const b of beams)if(b.race===rc&&!b.coherent&&!b.ion&&!b.arc&&!b.rail&&!b.cut&&!b.fo&&!b.stun){
         const dst=b.col?arrR:arr;
         const w=b.wid||((b.heavy||b.turbo)?8:2.2);
-        const skin=boltSkin(b.a,b.b,w,b.heavy||b.turbo?10:6);
-        for(let i=0;i<skin.length;i++)dst.push(skin[i]);
-        if(b.heavy||b.turbo){
-          const core=boltSkin(b.a,b.b,w*0.28,6);
-          for(let i=0;i<core.length;i++)dst.push(core[i]);
-        }
+        boltSkin(b.a,b.b,w,b.heavy||b.turbo?10:6,dst);
+        if(b.heavy||b.turbo)boltSkin(b.a,b.b,w*0.28,6,dst);
         if(b.pulse){
           const mx=(b.a[0]+b.b[0])*0.5,my=(b.a[1]+b.b[1])*0.5,mz=(b.a[2]+b.b[2])*0.5;
           dst.push(b.a[0],b.a[1],b.a[2],mx,my,mz);
@@ -19021,14 +19038,14 @@ function frame(nowMs){
       }
       if(arr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(arr),gl.STREAM_DRAW);
+        streamUpload(arr);
         const c0=RACE_DEFS[rc].beam;
         gl.uniform4f(BU.col,c0[0],c0[1],c0[2],0.72);
         gl.drawArrays(gl.LINES,0,arr.length/3);
       }
       if(arrR.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(arrR),gl.STREAM_DRAW);
+        streamUpload(arrR);
         const signature=RACE_DEFS[rc].beam;
         gl.uniform4f(BU.col,signature[0],signature[1],signature[2],0.85);
         gl.drawArrays(gl.LINES,0,arrR.length/3);
@@ -19045,30 +19062,30 @@ function frame(nowMs){
         const core=boltSkin(b.a,b.b,Math.max(4,wr*0.14),8);
         const ic=b.col||RACE_DEFS[rc].ion;
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(outer),gl.STREAM_DRAW);
+        streamUpload(outer);
         gl.uniform4f(BU.col,ic[0],ic[1],ic[2],0.55*k2+0.12);
         gl.drawArrays(gl.LINES,0,outer.length/3);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(mid),gl.STREAM_DRAW);
+        streamUpload(mid);
         gl.uniform4f(BU.col,(ic[0]+1)*0.5,(ic[1]+1)*0.5,(ic[2]+1)*0.5,0.8*k2);
         gl.drawArrays(gl.LINES,0,mid.length/3);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(core),gl.STREAM_DRAW);
+        streamUpload(core);
         gl.uniform4f(BU.col,1.0,1.0,1.0,0.95*k2);
         gl.drawArrays(gl.LINES,0,core.length/3);
         if(now-b.t0<(b.fo?0.42:0.22)){
           const bloom=boltSkin(b.a,b.b,wr*(b.fo?2.4:1.7),12);
-          gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(bloom),gl.STREAM_DRAW);
+          streamUpload(bloom);
           gl.uniform4f(BU.col,ic[0],ic[1],ic[2],b.fo?0.55:0.45);
           gl.drawArrays(gl.LINES,0,bloom.length/3);
         }
       }
       /* arc lightning: rebuilt jagged every frame, so it crackles */
-      const aarr=[];
+      const aarr=scratchArray("aarr");
       for(const b of beams){
         if(b.race!==rc||!b.arc)continue;
         if(b.fo){
           const segs=8,jit=110,col=b.col||RACE_DEFS[rc].beam;
           let px=b.a[0],py=b.a[1],pz=b.a[2];
-          const skinArr=[];
+          const skinArr=scratchArray("skinArr");
           for(let j=1;j<=segs;j++){
             const u2=j/segs;
             const jx=b.a[0]+(b.b[0]-b.a[0])*u2+(j<segs?(Math.random()-0.5)*jit:0);
@@ -19079,7 +19096,7 @@ function frame(nowMs){
             px=jx;py=jy;pz=jz;
           }
           gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-          gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(skinArr),gl.STREAM_DRAW);
+          streamUpload(skinArr);
           gl.uniform4f(BU.col,col[0],col[1],col[2],0.95);
           gl.drawArrays(gl.LINES,0,skinArr.length/3);
           continue;
@@ -19096,25 +19113,25 @@ function frame(nowMs){
       }
       if(aarr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(aarr),gl.STREAM_DRAW);
+        streamUpload(aarr);
         const c=RACE_DEFS[rc].beam;
         gl.uniform4f(BU.col,(c[0]+2)/3,(c[1]+2)/3,(c[2]+2)/3,0.95);
         gl.drawArrays(gl.LINES,0,aarr.length/3);
       }
       /* railshots: a spear of white with the fleet's colour bleeding off it */
-      const rarr=[];
+      const rarr=scratchArray("rarr");
       for(const b of beams)if(b.race===rc&&b.rail){
         rarr.push(b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2]);
         rarr.push(b.a[0],b.a[1]+0.9,b.a[2],b.b[0],b.b[1]+0.9,b.b[2]);
       }
       if(rarr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(rarr),gl.STREAM_DRAW);
+        streamUpload(rarr);
         gl.uniform4f(BU.col,1.0,1.0,1.0,0.9);
         gl.drawArrays(gl.LINES,0,rarr.length/3);
       }
       /* stun: a pale ion-wash that hangs on the hull, not a hole in the sky */
-      const starr=[];
+      const starr=scratchArray("starr");
       for(const b of beams)if(b.race===rc&&b.stun){
         const skin=boltSkin(b.a,b.b,Math.max(5,b.wid||6),8);
         for(let i=0;i<skin.length;i++)starr.push(skin[i]);
@@ -19123,13 +19140,13 @@ function frame(nowMs){
       }
       if(starr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(starr),gl.STREAM_DRAW);
+        streamUpload(starr);
         const ic=RACE_DEFS[rc].ion;
         gl.uniform4f(BU.col,(ic[0]+1)*0.5,(ic[1]+1)*0.5,(ic[2]+1)*0.5,0.88);
         gl.drawArrays(gl.LINES,0,starr.length/3);
       }
       /* the cutter's held beam: a fat violet lance, not a hairline */
-      const carr=[];
+      const carr=scratchArray("carr");
       for(const b of beams)if(b.race===rc&&b.cut&&!b.coherent){
         const w=b.wid||8;
         const skin=boltSkin(b.a,b.b,w,10);
@@ -19139,7 +19156,7 @@ function frame(nowMs){
       }
       if(carr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(carr),gl.STREAM_DRAW);
+        streamUpload(carr);
         const c=RACE_DEFS[rc].beam;
         gl.uniform4f(BU.col,Math.min(1,(c[0]+1)*0.55),Math.min(1,(c[1]+0.4)*0.7),Math.min(1,(c[2]+1)*0.55),0.95);
         gl.drawArrays(gl.LINES,0,carr.length/3);
@@ -19153,31 +19170,31 @@ function frame(nowMs){
         const outer=boltSkin(b.a,b.b,wr,10);
         const core=boltSkin(b.a,b.b,Math.max(3,wr*0.22),6);
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(outer),gl.STREAM_DRAW);
+        streamUpload(outer);
         gl.uniform4f(BU.col,col[0],col[1],col[2],0.7*k2+0.15);
         gl.drawArrays(gl.LINES,0,outer.length/3);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(core),gl.STREAM_DRAW);
+        streamUpload(core);
         gl.uniform4f(BU.col,1.0,1.0,1.0,0.9*k2);
         gl.drawArrays(gl.LINES,0,core.length/3);
       }
       /* tracer fire: short bright rounds you can watch fly */
-      const trr=[];
+      const trr=scratchArray("trr");
       for(const tr of tracers)if(tr.race===rc&&!tr.energy&&now>=tr.t0)
         trr.push(tr.x,tr.y,tr.z,tr.x-tr.vx*0.035,tr.y-tr.vy*0.035,tr.z-tr.vz*0.035);
       if(trr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(trr),gl.STREAM_DRAW);
+        streamUpload(trr);
         const c=RACE_DEFS[rc].beam;
         gl.uniform4f(BU.col,(c[0]+1)/2,(c[1]+1)/2,(c[2]+1)/2,0.95);
         gl.drawArrays(gl.LINES,0,trr.length/3);
       }
       /* seeker trails ride the same colour as their fleet's fire */
-      const tarr=[];
+      const tarr=scratchArray("tarr");
       for(const ms of missiles)if(ms.race===rc)
         tarr.push(ms.x,ms.y,ms.z,ms.x-ms.vx*0.12,ms.y-ms.vy*0.12,ms.z-ms.vz*0.12);
       if(tarr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(tarr),gl.STREAM_DRAW);
+        streamUpload(tarr);
         const c=RACE_DEFS[rc].beam;
         gl.uniform4f(BU.col,c[0],c[1],c[2],0.7);
         gl.drawArrays(gl.LINES,0,tarr.length/3);
@@ -19187,7 +19204,7 @@ function frame(nowMs){
     gl.useProgram(starProg);
     gl.uniformMatrix4fv(USvp,false,m);
     for(const rc of warRaces){
-      const pa=[];
+      const pa=scratchArray("pa");
       for(const mi of mines)if(mi.race===rc)
         pa.push(mi.x,mi.y,mi.z,3.0+Math.sin(now*4+mi.ph)*1.4);
       for(const ms of missiles)if(ms.race===rc)pa.push(ms.x,ms.y,ms.z,3.6);
@@ -19196,7 +19213,7 @@ function frame(nowMs){
       if(pa.length){
         gl.bindVertexArray(mmVao);
         gl.bindBuffer(gl.ARRAY_BUFFER,mmVbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(pa),gl.STREAM_DRAW);
+        streamUpload(pa);
         gl.uniform3fv(USink,RACE_DEFS[rc].beam);
         gl.drawArrays(gl.POINTS,0,pa.length/4);
       }

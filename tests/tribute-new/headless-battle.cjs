@@ -30,7 +30,10 @@ function loadBattle(options = {}) {
     elements.set(id,e);return e;
   }
   const storage = {getItem:()=>null,setItem:noop};
-  const context = vm.createContext({console,ArmadaBattleAI:AI,performance:{now:()=>0},
+  // Broadcast / replay / quality modules are optional: older suites run the
+  // page exactly as before, new suites opt in with {modules:true}.
+  const modules = options.modules ? {ArmadaBroadcast:require('../../armada-broadcast-new.js'),ArmadaReplay:require('../../armada-replay-new.js'),ArmadaPost:require('../../armada-post-new.js')} : {};
+  const context = vm.createContext({console,ArmadaBattleAI:AI,...modules,performance:{now:()=>0},
     document:{getElementById:element,querySelectorAll:s=>s==='script'?[{textContent:source}]:[],
       querySelector:s=>s==='script'?{textContent:source}:element(s),createElement:()=>element('new'),
       documentElement:element('html'),body:element('body'),head:element('head')},

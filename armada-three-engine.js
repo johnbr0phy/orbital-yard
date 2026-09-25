@@ -14930,11 +14930,21 @@ function appendEngineBurns(now,planes,offset){
   }
   return offset+count;
 }
-function boltSkin(a,b,r,n){
+// One growable upload buffer and cleared scratch arrays for everything the
+// weapons pass streams each frame: no per-draw Float32Array allocation.
+let streamF32=new Float32Array(1<<16);
+const scratchArrays=new Map();
+function scratchArray(key){let a=scratchArrays.get(key);if(!a){a=[];scratchArrays.set(key,a);}a.length=0;return a;}
+function streamUpload(values){
+  const n=values.length;if(n>streamF32.length){let m=streamF32.length;while(m<n)m*=2;streamF32=new Float32Array(m);}
+  for(let i=0;i<n;i++)streamF32[i]=values[i];
+  gl.bufferData(gl.ARRAY_BUFFER,streamF32.subarray(0,n),gl.STREAM_DRAW);
+}
+function boltSkin(a,b,r,n,into){
   /* a cylinder of lines: world-metre radius so a crown bolt reads at 40 km */
   const dir=V.norm(V.sub(b,a));
   const [u,v]=basis(dir);
-  const o=[];n=Math.max(4,n||6);
+  const o=into||[];n=Math.max(4,n||6);
   for(let j=0;j<n;j++){
     const an=j/n*6.283,c=Math.cos(an)*r,s=Math.sin(an)*r;
     const ox=u[0]*c+v[0]*s,oy=u[1]*c+v[1]*s,oz=u[2]*c+v[2]*s;
@@ -16723,19 +16733,22 @@ function camBasis(){
   const f=[cy*cp,sp,sy*cp],r=[-sy,0,cy];
   return [f,r,V.cross(r,f)];
 }
-function mat(){
+function mat(into){
   const [f,r,u]=camBasis();
   const e=[cam.ex,cam.ey,cam.ez];
   const zn=0.6,zf=Math.max(sceneR*9,watchGoal?.far||0,Math.hypot(...e)+sceneR*10),t=1/Math.tan(0.44),ar=cvs.width/cvs.height;
   const vx=r,vy=u,vz=[-f[0],-f[1],-f[2]];
   const tx=-V.dot(vx,e),ty=-V.dot(vy,e),tz=-V.dot(vz,e);
   const A=t/ar,Bq=t,C=(zf+zn)/(zn-zf),D=2*zf*zn/(zn-zf);
-  return new Float32Array([
+  const out=into||new Float32Array(16);
+  out.set([
     A*vx[0],Bq*vy[0],C*vz[0],-vz[0],
     A*vx[1],Bq*vy[1],C*vz[1],-vz[1],
     A*vx[2],Bq*vy[2],C*vz[2],-vz[2],
     A*tx,Bq*ty,C*tz+D,-tz]);
+  return out;
 }
+const frameVP=new Float32Array(16);
 function frustumPlanes(m){
   const row=i=>[m[i],m[4+i],m[8+i],m[12+i]];
   const r0=row(0),r1=row(1),r2=row(2),r3=row(3),P=[];
@@ -18142,6 +18155,7 @@ function spectacleWar(fresh){
 
 /* ===================== frame ===================== */
 let lastT=0,fpsA=60,statT=0;
+const PAINT_GAIN=[1,.72,1,.72,.68];
 // Natural hull finishes in the default slate view. Other palettes remain
 // deliberate ink studies. Mixed fleets choose by class, not just allegiance.
 // Ported from tribute-2: shared coarse hull geometry and one instance upload.
@@ -18180,8 +18194,9 @@ function disposeDistantHulls(){
 function drawDistantShips(m){
   const r=distantShipRenderer;if(!r||!r.count)return;
   while(r.data.length<r.count*16)r.data=new Float32Array(r.data.length*2);
-  let offset=0;for(const g of r.groups.values()){g.offset=offset;for(const s of g.members){const p=xPose(s,battleTime),c=(s.finish||(s.finish=hullFinish(s))).color,k=[1,.72,1,.72,.68][palI],i=offset++*16;
-    r.data.set([s.x,s.y,s.z,s.slen/g.length,Math.cos(s.yaw),Math.sin(s.yaw),p.ax[0],p.ax[1],p.ax[2],p.ang,c[0]*k,c[1]*k,c[2]*k,0,0,0],i);}}
+  const k=PAINT_GAIN[palI],D=r.data;
+  let offset=0;for(const g of r.groups.values()){g.offset=offset;for(const s of g.members){const p=xPose(s,battleTime),c=(s.finish||(s.finish=hullFinish(s))).color,i=offset++*16;
+    D[i]=s.x;D[i+1]=s.y;D[i+2]=s.z;D[i+3]=s.slen/g.length;D[i+4]=Math.cos(s.yaw);D[i+5]=Math.sin(s.yaw);D[i+6]=p.ax[0];D[i+7]=p.ax[1];D[i+8]=p.ax[2];D[i+9]=p.ang;D[i+10]=c[0]*k;D[i+11]=c[1]*k;D[i+12]=c[2]*k;D[i+13]=0;D[i+14]=0;D[i+15]=0;}}
   gl.useProgram(r.program);gl.uniformMatrix4fv(r.vp,false,m);gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);gl.bufferData(gl.ARRAY_BUFFER,r.data.subarray(0,offset*16),gl.STREAM_DRAW);
   for(const g of r.groups.values()){if(!g.members.length)continue;gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,r.vbo);for(let k=1;k<=4;k++)gl.vertexAttribPointer(k,4,gl.FLOAT,false,64,g.offset*64+(k-1)*16);gl.drawElementsInstanced(gl.TRIANGLES,g.indices,gl.UNSIGNED_INT,0,g.members.length);}
   gl.bindVertexArray(null);gl.useProgram(shipProg);
