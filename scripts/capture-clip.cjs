@@ -41,10 +41,13 @@ const ffmpeg = process.env.FFMPEG || '/opt/pw-browsers/ffmpeg-1011/ffmpeg-linux'
   const result = await page.evaluate(() => {
     if (typeof endIntro === 'function' && intro && !intro.done) endIntro();
     watchMode = 'broadcast';
-    for (let i = 0; i < 30 * 600 && !(winner != null && battleTime - warT0 > (bc.log.events.find(e => e.type === 'victory')?.t ?? 1e9) - warT0 + 3); i++) {
+    // Step the simulation directly (no rendering); the event log, replay
+    // ring and highlight reel are all fed by broadcastTick.
+    for (let i = 0; i < 30 * 600 && !(winner != null && battleTime - (bc.log.events.find(e => e.type === 'victory')?.t ?? 1e9) > 4); i++) {
+      capturePrevious(); battleTime += 1 / 30; simStep(battleTime, 1 / 30); introStep(battleTime, 1 / 30); broadcastTick(battleTime, 1 / 30);
       if (replayState) endReplay();
-      frame(window.__t += 33.333);
     }
+    lastT = 0;
     hideEndCard();
     return {winner, t: battleTime - warT0, clips: bc.reel.clips.map(c => [c.meta.ev.type, c.meta.ev.name, +(c.end - c.start).toFixed(1)])};
   });

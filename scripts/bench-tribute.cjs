@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Deterministic Tribute War benchmark.
-   Usage: node scripts/bench-tribute.cjs [--sizes 200,600,1200] [--seconds 30]
+   Usage: node scripts/bench-tribute.cjs [--sizes 200,600,1200] [--seconds 30] [--url-file page.html]
           [--url http://localhost:8790/armada-war-tribute-new.html] [--out file.json]
           [--matchup 5,6] [--seed 1234] [--tier medium] [--label before]
 
@@ -135,14 +135,32 @@ async function runOne(browser, base, size) {
     pageStats: r.stats, errors, viewport: arg('viewport', '1280x720')};
 }
 
+// Five back-to-back wars: heap after a forced GC at the end of each war.
+async function heapWars(browser, base, wars, per, secs) {
+  const page = await browser.newPage({viewport: {width: 1280, height: 720}});
+  await page.route(/fonts\.(googleapis|gstatic)\.com|goatcounter|gc\.zgo\.at/, r => r.abort());
+  await page.goto(base + '?autostart=0' + (tier ? '&quality=' + tier : ''));
+  await page.waitForFunction(() => typeof startWar === 'function');
+  const heaps = [];
+  for (let w = 0; w < wars; w++) {
+    await page.evaluate(({per, seed, w}) => { pickMain = [[5, 6], [12, 10], [8, 7], [9, 11], [21, 20]][w % 5]; pickAlly = [-1, -1]; perFleet = per; warSeed = seed + w; document.getElementById('warMenu').hidden = true; startWar(false); }, {per, seed, w});
+    await page.waitForFunction(() => Number.isFinite(warT0), null, {timeout: 300000, polling: 250});
+    await page.waitForTimeout(secs * 1000);
+    heaps.push(await page.evaluate(() => { if (window.gc) { window.gc(); window.gc(); } return {heapMB: +(performance.memory.usedJSHeapSize / 1048576).toFixed(1), ships: ships.length, retired: typeof bc !== 'undefined' ? bc.retired.length : null}; }));
+  }
+  await page.close();
+  return heaps;
+}
+
 (async () => {
   const server = await serve();
-  const base = arg('url', `http://localhost:${server.address().port}/armada-war-tribute-new.html`);
+  const base = arg('url', `http://localhost:${server.address().port}/${arg('url-file', 'armada-war-tribute-new.html')}`);
   const browser = await chromium.launch({headless: !process.argv.includes('--headed'), executablePath: process.env.CHROMIUM_PATH || undefined,
-    args: ['--enable-precise-memory-info', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-background-timer-throttling', '--disable-renderer-backgrounding']});
+    args: ['--enable-precise-memory-info', '--js-flags=--expose-gc', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-background-timer-throttling', '--disable-renderer-backgrounding']});
   const out = {label, date: new Date().toISOString(), seed, matchup, seconds, runs: []};
   try {
-    for (const size of sizes) {
+    if (arg('heap-wars', null)) { out.heapWars = await heapWars(browser, base, +arg('heap-wars', 5), +arg('heap-size', 60), +arg('heap-seconds', 20)); console.error('heap', JSON.stringify(out.heapWars)); }
+    for (const size of (arg('heap-wars', null) && !process.argv.includes('--sizes')) ? [] : sizes) {
       const r = await runOne(browser, base, size);
       out.runs.push(r);
       console.error(`[${label}] ${size}: ${r.ships} ships, ${r.fps.toFixed(1)} fps, p50 ${r.p50.toFixed(1)} p95 ${r.p95.toFixed(1)} p99 ${r.p99.toFixed(1)} ms, first ship ${Math.round(r.firstShipMs)} ms, errors ${r.errors.length}`);

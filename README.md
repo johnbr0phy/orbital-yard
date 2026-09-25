@@ -81,6 +81,20 @@ Rebel, Minbari, Shadows, EarthForce, Starfleet, Klingon, Borg, the First Ones
 and more. Pick two, click a ship to chase her, and read what she is thinking
 as the war turns.
 
+**[Watch the new broadcast →](https://johnbr0phy.github.io/orbital-yard/armada-war-tribute-new.html)**
+
+`armada-war-tribute-new.html` opens straight into a live war and films it like
+a match. A Broadcast director cuts between establishing shots, building
+tension, the kill and the reaction, and slows time for big kills it can see.
+On screen you get a strength bar, a kill feed, the pilots' thoughts, and
+instant replay (`R`). Time runs from pause to 4× (`Space`, `1`–`5`). When the
+war ends, a result card with an MVP and the story of the battle comes up,
+along with highlights you can save as a card or WebM clip. Audio is
+synthesized; there are no samples. `?` lists the keys, `?perf=1` shows where
+each frame goes, and `?quality=low|medium|high|ultra` overrides the automatic
+tier. See [DECISIONS.md](DECISIONS.md), [PERFORMANCE.md](PERFORMANCE.md) and
+[WRITEUP.md](WRITEUP.md).
+
 The First Ones are not a navy. Eight unique giants — the Traveller, the
 Lordship, Thoughtforce, the Triumviron, Dark Knife, Lorien's vessel, Kosh's
 ship, a Hand servitor — each a different ancient, each kilometres long.

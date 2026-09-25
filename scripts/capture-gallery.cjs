@@ -43,13 +43,14 @@ async function capture(browser, base, file, m, tag) {
   await page.addStyleTag({content: '.hud,#watchDock,#battleOptions,#bcTop,#bcFeed,#bcTicker,#bcCaption,#bcMomentum,#bcMomentumLabel,#bcSpeed,#bcReplayChip,#warMenu,#card,#toast{display:none!important}'});
   await page.evaluate(({a, b, seed, size}) => { pickMain = [a, b]; pickAlly = [-1, -1]; perFleet = size; warSeed = seed; document.getElementById('pick').classList.remove('on'); startWar(false); }, m);
   await page.waitForFunction(() => Number.isFinite(warT0), null, {timeout: 300000});
-  await page.evaluate(() => { if (typeof endIntro === 'function' && intro && !intro.done) endIntro(); window.updateWatchCamera = () => {}; window.updateActionCamera = () => {}; sel = null; pilotId = null; });
+  await page.evaluate(() => { if (typeof endIntro === 'function' && intro && !intro.done) endIntro(); window.updateWatchCamera = () => {}; window.updateActionCamera = () => {}; sel = null; pilotId = null; watchMode = 'free'; });
   const shots = [];
   let done = 0;
   for (const t of TIMES) {
     await page.evaluate(target => {
       while (battleTime - warT0 < target) { if (typeof capturePrevious === 'function') capturePrevious(); battleTime += 1 / 30; simStep(battleTime, 1 / 30); introStep(battleTime, 1 / 30); if (typeof broadcastTick === 'function') broadcastTick(battleTime, 1 / 30); }
       if (typeof capturePrevious === 'function') capturePrevious();
+      if (typeof replayState !== 'undefined' && replayState) endReplay();
       battleAccumulator = -1e9; // frozen: frames render without stepping
     }, t);
     for (const view of ['wide', 'close']) {

@@ -25,7 +25,7 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 - **Bloom is dual-filter** (4/5-tap down, 8-tap up). It is fed only by luminance above 1.5× white with a soft knee, and coarse levels are weighted at 0.62 so the glow stays tight. Early versions produced white blobs in capital death clusters (224 overlapping kind-11 flashes up to 576 px), so the threshold went up, the flash HDR gain went down, and the level count dropped by one per tier.
 - **Grades run at half strength**, with contrast pivoting at 0.3 so black never crushes. A full-strength "Ember worlds" grade turned neutral grey hulls mauve.
 - **MSAA on the hull pass plus FXAA on the composite.** MSAA uses a multisampled RGBA16F renderbuffer resolved by blit: 0, 2, 4 and 4 samples for Low, Medium, High and Ultra. FXAA always runs. The default framebuffer keeps `antialias:true`. The build script matches that exact line, and it's harmless because the only thing drawn to it is the composite triangle.
-- **Chromatic aberration is not implemented** (the brief wanted it off by default). Grain and vignette are off in reduced-motion (grain) and absent in the Low tier (grain).
+- **Chromatic aberration is not implemented** (the brief wanted it off by default). Vignette and grain are both off in the Low tier and under `prefers-reduced-motion`.
 - **Fallbacks.** Without `EXT_color_buffer_float` the pipeline uses RGBA8 with no HDR but keeps grade and FXAA. If pipeline creation throws, the page falls back to the old direct-to-canvas path. `?post=0` forces that path for A/B checks.
 
 ## Light
@@ -50,7 +50,7 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 - **Replaced the prediction broad phase with a swept-box index**, plus numeric cell keys in the existing index. The candidate set is a guaranteed superset in the same order, so the chosen threat is identical. A recorded three-battle trace is byte-identical before and after, and the cost fell to 2,196 ms per simulated second (−30%).
 - **Not moved to a worker.** The simulation shares objects with GL mesh handles, DOM updates and the replay ring. GitHub Pages can't send COOP/COEP, so SharedArrayBuffer would need a service-worker shim, and that breaks `file://`. Copying 1,200 transforms back each tick is feasible, but the refactor touches most of an 18,000-line script. I spent the time on measured hot paths instead.
 - **No structure-of-arrays rewrite, and no camera-based AI level of detail.** A camera-dependent AI rate would make the war depend on where the viewer looks, which breaks "same seed, same war". A sim-only version (think less when far from any enemy) would save about 6% by the profile. I left it out because it changes combat.
-- **Consequence, stated plainly:** at 572 ships the simulation still needs more CPU than a 60 FPS frame budget allows on this container's CPU. The frame caps sim work at 10 ms, so a 600-ship war plays slower than real time there. The quality tiers therefore choose the default battle size, and Ultra is the only tier that defaults to 600 a side.
+- **Consequence, stated plainly:** at 572 ships the simulation still needs more CPU than a 60 FPS frame budget allows on this container's CPU. The frame caps sim work at 10 ms, so a 600-ship war plays slower than real time there. The quality tiers therefore choose the default battle size: Low 50 a side (about 100 ships), Medium 100 (about 190), High 150 (about 290), Ultra 300 (about 570). The 600-a-side button remains and says it needs a fast CPU. Measured combat-phase sim cost on this CPU: 575 ms per simulated second at 100 ships, 978 ms at 192, 1,691 ms at 287.
 
 ## Forge and loading
 
@@ -62,7 +62,7 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 
 ## Broadcast
 
-- **Event scoring:** First One kill 130 > capital breakup 96 ≈ capital kill 100 > hero kill 92 > hero duel 70 > ion strike 62 > squadron wipe 42 > dogfight 12. "About to happen" events (ion charge, capital or hero low on hull under fire) score highest just before they pay off.
+- **Event scoring:** First One kill 130 > capital kill 100 > hero kill 92 > hero duel 70 > ion strike 62 > squadron wipe 42 > dogfight 12. "About to happen" events (ion charge, capital or hero low on hull under fire) score highest just before they pay off.
 - **Director:** establish → build → climax → reaction.
   - Each phase has a hold floor, and a global floor of 3.2 s.
   - An urgent event (score ≥ 90, 1.25× the current shot) may cut once the global floor has passed.
@@ -79,7 +79,7 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 ## Picker
 
 - **Emblems are original and procedural**: a seeded frame and motif per fleet in its own colours, with no logos.
-- **Odds come from a real headless round-robin**: all 253 pairings at 20 ships a side, fitted as Bradley–Terry ratings on an Elo scale by `scripts/fleet-ratings.cjs`. They are labelled "simulated odds".
+- **Odds come from a real headless round-robin**: all 253 pairings at 20 ships a side, 100 simulated seconds each, sides alternating by pairing. An undecided battle scores by remaining strength share. Results are fitted as Bradley–Terry ratings on an Elo scale by `scripts/fleet-ratings.cjs` and stored in `bench/ratings/ratings.json`. At this size the Borg (1851) and First Ones (1795) lead, and the Dominion (1379) and Rebels (1383) trail. The picker labels them "simulated odds"; they aren't canon.
 - **No live turning hero ship per card.** Twenty-three forged hero meshes and viewports on a phone menu contradicts the performance targets. The live war behind the menu does that job.
 
 ## Audio

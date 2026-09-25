@@ -210,7 +210,7 @@ void main(){
     };
     const api = {
       floatOk, maxSamples, width: 0, height: 0, scale: 1, error: null,
-      settings: {tier: 'high', exposure: 1, bloom: .32, grain: .018, vignette: .28, key: .16, curve: 'neutral'},
+      settings: {tier: 'high', exposure: 1.08, bloom: .32, grain: .018, vignette: .28, key: .16, curve: 'neutral'},
       grade: GRADES[1], sky: {a: [0, 0, 0], b: [0, 0, 0], k: 0, sun: [0, 1, 0], sunCol: [1, 1, 1], seed: 0},
       // Allocate targets at scale × canvas size.
       resize(scale, tier) {
