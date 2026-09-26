@@ -11539,6 +11539,7 @@ void main(){
   if(kind>11.5&&kind<12.5)gl_PointSize=clamp(aS.x*(1.1-.7*o2)*uPx/max(gl_Position.w,1.0),1.0,240.0);
   if(kind>29.5&&kind<35.5){vA=1.0;gl_PointSize=clamp(aS.x*(kind<30.5?.35+1.65*o2:kind<34.5?.9+.2*o2:.6+.5*o2)*uPx/max(gl_Position.w,1.0),1.0,720.0);}
   if(kind>=20.0&&kind<29.5){vA=1.0;gl_PointSize=clamp(aS.x*uPx/max(gl_Position.w,1.0),1.0,72.0);}
+  if(kind>36.5&&kind<37.5){vA=1.0;gl_PointSize=clamp(aS.x*uPx/max(gl_Position.w,1.0),22.0,720.0);}
 }`,`#version 300 es
 precision highp float;
 in float vA;in float vC;in float vO;in float vSeed;
@@ -11549,6 +11550,13 @@ void main(){
   float r=length(d)*2.0;
   vec3 col;
   float rw=0.9;
+  if(vC>36.5&&vC<37.5){ // ion lance glow: faction colour packed in the seed, fade in vO
+    if(r>1.0)discard;
+    vec3 lc=vec3(floor(vSeed/256.0),mod(floor(vSeed/16.0),16.0),mod(vSeed,16.0))/15.0;
+    // Soft layers only: the beam's own lines draw the continuous white core, so no beads.
+    float glow=exp(-r*r*3.0)*(1.0-smoothstep(.85,1.0,r)),mid=exp(-r*r*12.0),f=1.0-vO*.8;
+    o=vec4(mix(lc,vec3(1.0),mid*.55)*(1.0+uHdr*2.0*mid*f),(glow*.34+mid*.4)*f);return;
+  }
   if(vC>29.5&&vC<35.5){
     if(r>1.0)discard;
     if(vC<30.5){ // shockwave: a thin ring racing outward, fading as it grows
@@ -16090,6 +16098,32 @@ function fireIonFrom(g,side,now,lock){
   }
   kickCam(15);
 }
+// The ion lance as a column of light: soft faction-coloured sprites strung along the beam,
+// never thinner than 10 px so it reads from across the battle, flaring in its first instant.
+// Brightness is divided by how much the sprites overlap on screen, so it cannot blow out.
+function appendIonLances(now,offset){
+  const cap=flPool.length/7;
+  for(const b of beams){
+    if(!b.ion||!b.a||!b.b)continue;
+    const life=b.fo?2.15:1.55,age=now-b.t0;if(age<0||age>life)continue;
+    const k2=1-age/life,flare=age<.3?1+(1-age/.3)*2:1;
+    const ab=[b.b[0]-b.a[0],b.b[1]-b.a[1],b.b[2]-b.a[2]],len=Math.max(1,Math.hypot(ab[0],ab[1],ab[2]));
+    const u=Math.max(0,Math.min(1,((cam.ex-b.a[0])*ab[0]+(cam.ey-b.a[1])*ab[1]+(cam.ez-b.a[2])*ab[2])/(len*len)));
+    const near=Math.max(1,Math.hypot(b.a[0]+ab[0]*u-cam.ex,b.a[1]+ab[1]*u-cam.ey,b.a[2]+ab[2]*u-cam.ez));
+    const S=Math.max((b.wid||36)*30,len*.08)*Math.max(.45,k2)*flare,H=cvs.height*.9,px=Math.max(22,S*H/near),Lpx=Math.max(px,len*H/near);
+    // Space by the size the nearest sprite can actually draw (point sprites cap at 720 px),
+    // so a close or long lance never breaks into beads.
+    const Se=Math.min(S,700*near/H),n=Math.min(200,Math.max(2,Math.ceil(len/(Se*.22)))),scale=Math.min(1,3.6/(n*Math.min(px,700)/Lpx));
+    const c=b.col||(RACE_DEFS[b.race]||RACE_DEFS[0]).ion||[.6,.8,1],q=v=>Math.max(0,Math.min(15,Math.round(v*scale*15)));
+    const seed=q(c[0])*256+q(c[1])*16+q(c[2]);
+    for(let j=0;j<n&&offset<cap;j++){
+      const t=(j+.5)/n,i=offset++*7;
+      flPool[i]=b.a[0]+ab[0]*t;flPool[i+1]=b.a[1]+ab[1]*t;flPool[i+2]=b.a[2]+ab[2]*t;flPool[i+3]=now-(1-k2)*1.3;
+      flPool[i+4]=S;flPool[i+5]=37;flPool[i+6]=seed;
+    }
+  }
+  return offset;
+}
 function appendIonCharges(now,offset){
   // At most two persistent muzzle glows. No expanding explosions or trails
   // left behind when the charging ship moves or its turret turns.
@@ -17903,7 +17937,16 @@ function bcKill(t,now){
 }
 function onScreen(t){const m=mat(),cw=m[3]*t.x+m[7]*t.y+m[11]*t.z+m[15];if(cw<1)return false;const cx=(m[0]*t.x+m[4]*t.y+m[8]*t.z+m[12])/cw,cy=(m[1]*t.x+m[5]*t.y+m[9]*t.z+m[13])/cw;return Math.abs(cx)<.9&&Math.abs(cy)<.9;}
 function bcIonCharge(g,lock){if(g)bcEvent("ionCharge",{side:g.side,ship:g.id,name:shipName(g),partner:null,until:lock.fire,x:g.x,y:g.y,z:g.z,size:g.slen,point:lock.point});}
-function bcIonStrike(g,lock){if(g)bcEvent("ionStrike",{side:g.side,ship:g.id,name:shipName(g),by:g.id,byName:shipName(g),x:lock.point[0],y:lock.point[1],z:lock.point[2],size:g.slen});}
+// The ion lance lights the whole screen for an instant, tinted with the faction's ion colour,
+// stronger the closer it fires. Off under reduced motion.
+function ionScreenFlash(g,p){
+  if(reducedMotion||!p)return;const el=document.getElementById("ionFlash");if(!el||!el.animate)return;
+  const c=((RACE_DEFS[g.race]||RACE_DEFS[0]).ion||[.6,.8,1]).map(v=>Math.round(Math.min(1,v*.6+.4)*255)),d=Math.hypot(p[0]-cam.ex,p[1]-cam.ey,p[2]-cam.ez);
+  const a=Math.max(.12,Math.min(.45,.45*9000/(d+6000)));
+  el.style.background="radial-gradient(circle at 50% 50%,rgba("+c+",.9),rgba("+c+",.35) 55%,rgba("+c+",0) 100%)";
+  el.animate([{opacity:a},{opacity:0}],{duration:520,easing:"cubic-bezier(.2,.7,.3,1)"});
+}
+function bcIonStrike(g,lock){if(g)ionScreenFlash(g,lock.point);if(g)bcEvent("ionStrike",{side:g.side,ship:g.id,name:shipName(g),by:g.id,byName:shipName(g),x:lock.point[0],y:lock.point[1],z:lock.point[2],size:g.slen});}
 function bcReinforce(side,race){bcEvent("reinforcements",{side,name:RACE_DEFS[race].name,x:0,y:0,z:0});}
 function bcVictory(side){bcEvent("victory",{side,name:SIDE_NAME[side]});}
 // Slow motion for big kills the viewer can actually see.
@@ -18312,7 +18355,7 @@ function updateAudio(wall,dt){
   const s=ships[pilotId??sel];A.engine(s&&!s.dead?s.id:null,ENGINE_STYLE[s?.race]||"turbine",s?Math.min(1,(s.v||0)/Math.max(1,s.spdMax||s.spd||20)):0);
   A.update(dt);
 }
-function unlockAudio(){const A=audio();if(A&&!A.unlocked){A.unlock();syncAudioSliders();}}
+function unlockAudio(){const A=audio();if(A&&!A.unlocked){A.unlock();syncAudioSliders();A.loadSamples?.("audio/manifest.json");}}
 addEventListener("pointerdown",unlockAudio,{capture:true});addEventListener("keydown",unlockAudio,{capture:true});
 document.addEventListener?.("visibilitychange",()=>{const A=audio();if(!A||!A.unlocked)return;if(document.hidden)A.suspend();else A.resume();});
 function syncAudioSliders(){const A=audio();if(!A)return;const v=A.volumes();for(const k of ["master","music","sfx"]){const el=document.getElementById("vol_"+k);if(el)el.value=String(Math.round(v[k]*100));}}

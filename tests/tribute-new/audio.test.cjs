@@ -103,3 +103,35 @@ test('never throws when optional node types are missing',()=>{
  for(const s of a.styles)a.weapon(s,0,0,-200);a.explosion(3,0,0,-100);a.engine('x','turbine',1);a.ui('open');a.stinger();a.update(.5);
  assert.ok(a.stats().played>0);
 });
+
+test('no audible tone sits or slides below 150 Hz (low falling tones read as raspberries)',()=>{
+ const ctx=fakeContext(),oscs=[],make=ctx.createOscillator;ctx.createOscillator=()=>{const o=make();oscs.push(o);return o;};
+ const a=ArmadaAudio.create({context:ctx,maxVoices:64});a.unlock();a.setIntensity(1);a.setListener(0,0,0,0,0,-1);
+ for(const s of a.styles){ctx.currentTime+=.1;a.weapon(s,0,0,-400);}
+ for(const tier of [0,1,2,3]){ctx.currentTime+=.1;a.explosion(tier,0,0,-500);}
+ for(const e of ['turbine','organic','roar','hum']){a.engine(e,e,0);a.engine(e,e,1);}
+ a.stinger();for(const k of ['open','close','confirm','tick','click'])a.ui(k);
+ for(let i=0;i<60*40;i++){ctx.currentTime+=1/60;a.update(1/60);}
+ // Modulators (LFOs) run below 20 Hz and are inaudible as tones; everything else must stay >= 150 Hz.
+ const bad=[];for(const o of oscs){const f=o.frequency,vals=[f.value,...f.events.map(e=>e[1])];if(vals.some(v=>v>=20&&v<150))bad.push(vals.map(v=>+(+v).toFixed(1)));}
+ assert.deepEqual(bad,[],'low tones: '+JSON.stringify(bad.slice(0,5)));
+ assert.ok(oscs.length>40,'exercised '+oscs.length+' oscillators');
+});
+
+test('recorded samples replace the synth per role and fall back where a role has none',()=>{
+ const ctx=fakeContext(),srcs=[],make=ctx.createBufferSource;ctx.createBufferSource=()=>{const s=make();srcs.push(s);return s;};
+ const a=ArmadaAudio.create({context:ctx,maxVoices:64});a.unlock();
+ const buf=n=>({duration:n,length:n*8000,sampleRate:8000});
+ assert.deepEqual(a.useSamples({laser:[buf(.3),buf(.4)],explosion2:buf(2),explosion1:buf(1),stinger:buf(3),music:buf(60),ambience:buf(20),empty:[]}).sort(),
+  ['ambience','explosion1','explosion2','laser','music','stinger']);
+ const loops=srcs.filter(s=>s.loop&&s.buffer&&s.buffer.duration>=20);assert.equal(loops.length,2,'music and ambience loop');
+ const before=srcs.length,osc0=ctx.created.osc;
+ assert.equal(a.weapon('laser',0,0,-300),true);
+ assert.equal(srcs.length,before+1,'laser plays one recording');assert.equal(ctx.created.osc,osc0,'no synth oscillators for a sampled laser');
+ assert.ok([.3,.4].includes(srcs.at(-1).buffer.duration));
+ assert.equal(a.weapon('phaser',0,0,-300),true);assert.ok(ctx.created.osc>osc0,'phaser has no recording: synth');
+ const n=srcs.length,info=a.explosion(2,0,0,-500);assert.ok(info&&info.tier===2);
+ assert.equal(srcs.length,n+3,'capital death: main recording plus two secondary blasts');
+ assert.equal(a.stinger(),true);assert.equal(srcs.at(-1).buffer.duration,3);
+ for(let i=0;i<120;i++){ctx.currentTime+=1/60;a.update(1/60);}
+});
