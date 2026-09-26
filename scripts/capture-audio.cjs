@@ -75,7 +75,7 @@ function wav(left, right, rate) {
     while (battleTime - warT0 < skip) step();
     window.__step = step;
   }, skip);
-  const started = await page.evaluate(() => { const A = audio(); A.unlock(); syncAudioSliders?.(); return A.unlocked; });
+  const started = await page.evaluate(async () => { const A = audio(); A.unlock(); syncAudioSliders?.(); window.__roles = await A.loadSamples?.("audio/manifest.json"); return A.unlocked; });
   if (!started) throw new Error('audio did not unlock');
   // Real-time loop in the page: one sim step per 1/30 s of wall time, camera and audio updated as in frame().
   await page.evaluate(seconds => new Promise(done => {
@@ -90,8 +90,8 @@ function wav(left, right, rate) {
     };
     tick();
   }), seconds);
-  const {l, r, rate, stats, lag} = await page.evaluate(() => ({l: window.__rec.l.flat(), r: window.__rec.r.flat(), rate: window.__rec.rate, stats: audio().stats(), lag: battleTime - warT0}));
+  const {l, r, rate, stats, lag, roles} = await page.evaluate(() => ({l: window.__rec.l.flat(), r: window.__rec.r.flat(), rate: window.__rec.rate, stats: audio().stats(), lag: battleTime - warT0, roles: window.__roles}));
   fs.writeFileSync(outFile, wav(l, r, rate));
-  console.log(JSON.stringify({file: path.relative(process.cwd(), outFile), seconds: +(l.length / rate).toFixed(1), rate, battleSeconds: +lag.toFixed(1), stats, errors}));
+  console.log(JSON.stringify({file: path.relative(process.cwd(), outFile), seconds: +(l.length / rate).toFixed(1), rate, battleSeconds: +lag.toFixed(1), samples: roles, stats, errors}));
   await browser.close(); server.close();
 })().catch(e => { console.error(e); process.exit(1); });

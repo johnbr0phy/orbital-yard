@@ -68,7 +68,7 @@
   function unlock(){
    if(!ctx){const C=root&&(root.AudioContext||root.webkitAudioContext);if(!C)return false;try{ctx=new C();}catch(e){return false;}}
    try{const r=ctx.resume&&ctx.resume();if(r&&r.catch)r.catch(()=>{});}catch(e){}
-   if(!unlocked){buildGraph();unlocked=true;musicInit();}
+   if(!unlocked){buildGraph();unlocked=true;musicInit();startBeds();}
    return true;
   }
 
@@ -164,12 +164,46 @@
     const cg=gain(.3);link(a,vca);link(b,vca);link(c,cg,vca);link(vca,g,lp,o);return{src:[a,b,c,trem],dur:.56};}
   };
 
+  // ---- recorded samples (optional) ----
+  // audio/manifest.json maps roles (weapon styles, explosion0-3, stinger, music, ambience) to
+  // one or more files; a role with recordings plays them, anything else uses the synth above.
+  const SMP={},pick=a=>a[Math.floor(Math.random()*a.length)];
+  const B={music:null,musicG:null,amb:null,ambG:null};
+  function useSamples(map){
+   for(const k in map||{}){const a=[].concat(map[k]).filter(Boolean);if(a.length)SMP[k]=a;}
+   if(unlocked)startBeds();return Object.keys(SMP);
+  }
+  async function loadSamples(url){
+   if(!ctx||typeof fetch!=='function'||typeof ctx.decodeAudioData!=='function')return[];
+   try{
+    const r=await fetch(url);if(!r.ok)return[];
+    const man=await r.json(),base=url.replace(/[^/]*$/,''),out={},cache={};
+    const load=f=>cache[f]||(cache[f]=fetch(base+f).then(x=>x.arrayBuffer()).then(b=>ctx.decodeAudioData(b)).catch(()=>null));
+    await Promise.all(Object.entries(man.roles||{}).map(async([role,files])=>{out[role]=(await Promise.all([].concat(files).map(load))).filter(Boolean);}));
+    return useSamples(out);
+   }catch(e){return[];}
+  }
+  function sample(role,t,o,rate=1,g=1,loop=false){
+   const b=SMP[role]&&pick(SMP[role]),s=b&&mk('createBufferSource');if(!s)return null;
+   try{s.buffer=b;s.loop=loop;}catch(e){}set(s.playbackRate,rate,t);const sg=gain(g);link(s,sg,o);
+   try{s.start(t);}catch(e){}return{src:s,dur:num(b.duration,1)/rate,g:sg};
+  }
+  // Music and ambience loops replace the synth pad and live under the intensity control.
+  function startBeds(){
+   if(!graph)return;const t=now();
+   if(SMP.music&&!B.music){const r=sample('music',t+.05,graph.duck,1,0,true);if(r){B.music=r.src;B.musicG=r.g;aim(P(r.g,'gain'),.5,t,2);M.sampled=true;if(M.pad)aim(P(M.pad,'gain'),0,t,.5);}}
+   if(SMP.ambience&&!B.amb){const r=sample('ambience',t+.05,graph.sfxIn,1,0,true);if(r){B.amb=r.src;B.ambG=r.g;aim(P(r.g,'gain'),.05,t,2);}}
+  }
+  // Big hits push the score down for a moment, the way a film mix makes room for them.
+  function duckFor(t,depth,hold){if(!graph||slow)return;const p=graph.duck.gain;call(p,'cancelScheduledValues',t);aim(p,depth,t,.03);aim(p,1,t+hold,.6);}
+
   function weapon(style,x,y,z,g=1){
    if(!unlocked)return false;
    style=R[style]?style:'laser';
    const pos=place(x,y,z);if(pos.d>20000){stats.dropped++;return false;}
    const big=style==='ion-fire',base=big?3:1,prio=base+closeness(pos.d)*.9;
-   const v=voice(style,prio,pos,clamp(num(g,1),0,2)*(big?1:.8)*loudness(pos.d/.85),pos.cutoff,R[style]);
+   const build=SMP[style]?(t,o)=>{const r=sample(style,t,o,jit(1,.06),jit(1,.12));return r?{src:[r.src],dur:r.dur}:R[style](t,o);}:R[style];
+   const v=voice(style,prio,pos,clamp(num(g,1),0,2)*(big?1:.8)*loudness(pos.d/.85),pos.cutoff,build);
    if(!v)return false;
    if(style!=='ion-charge')return true;
    return {cancel(){if(!v.killed&&v.end>now())kill(v);},get active(){return !v.killed&&v.end>now();}};
@@ -182,7 +216,13 @@
    tier=clamp(Math.round(num(tier,0)),0,3);
    const pos=place(x,y,z),d=pos.d,delay=Math.min(1.6,d/12000),cutoff=pos.cutoff*TIER.tone[tier],g=TIER.gain[tier]*loudness(d);
    const prio=(tier>=2?3:2)+closeness(d)*.9,dur=TIER.dur[tier];
-   const v=voice('explosion'+tier,prio,pos,g,cutoff,(t0,o)=>{
+   const rec=SMP['explosion'+tier];
+   const v=voice('explosion'+tier,prio,pos,g,cutoff,rec?(t0,o)=>{
+    const t=t0+delay,r=sample('explosion'+tier,t,o,jit(tier>=2?.94:1,.05),1),src=r?[r.src]:[];
+    if(tier>=2&&SMP.explosion1)for(const k of [.35,.8]){const r2=sample('explosion1',t+k*(.8+Math.random()*.4),o,jit(.9,.08),.45);if(r2)src.push(r2.src);}
+    if(tier>=2)duckFor(t,.35,1.2);
+    return{src,dur:delay+(r?r.dur:1)+(tier>=2?1.2:0)};
+   }:(t0,o)=>{
     const t=t0+delay,src=[],near=clamp(cutoff/9000,0,1);
     if(near>.15){const c=noiseSrc(t,t+.07,1),hp=filter('highpass',700,.6),cg=env(gain(),t,.001,.45*near,.05);link(c,hp,cg,o);src.push(c);}
     const body=noiseSrc(t,t+dur,1),lp=filter('lowpass',Math.min(cutoff,4500+tier*800),.5),bg=gain();
@@ -255,6 +295,8 @@
    aim(P(pad,'gain'),.3,t,3);
   }
   function setIntensity(v){M.target=clamp(num(v,0),0,1);if(!M.ready)return;const i=M.target,t=now();
+   if(B.musicG)aim(P(B.musicG,'gain'),.4+.25*i,t,2.5);if(B.ambG)aim(P(B.ambG,'gain'),.04+.3*i,t,2);
+   if(M.sampled)return;
    aim(P(M.pad,'gain'),.28+.1*i,t,2.5);aim(P(M.pulse,'gain'),Math.max(0,(i-.3)/.7)*.3,t,2.5);aim(P(M.padLP,'frequency'),800+i*900,t,2.5);}
   function musicStep(t){
    const s=M.step++,chord=CHORDS[M.chord];
@@ -265,6 +307,7 @@
   // A capital falls: a brass-like swell (filtered sawtooths opening and closing), no drum drop.
   function stinger(){
    if(!unlocked||!graph)return false;const c=clock();if(c-lastStinger<6)return false;lastStinger=c;
+   if(SMP.stinger){sample('stinger',now(),graph.duck,1,.8);return true;}
    const t=now(),lp=filter('lowpass',400,.7),g=gain(0);link(lp,g,graph.duck);
    for(const [s,det] of [[0,.998],[0,1.002],[7,1],[12,.997],[15,1.003],[19,1]]){const o=osc('sawtooth',hz(s)*det,t,t+3.2);link(o,lp);}
    if(lp){expo(lp.frequency,2200,t+.9);expo(lp.frequency,600,t+3);}
@@ -276,12 +319,12 @@
   function update(dt){
    if(!unlocked)return;const t=now();prune(t);
    const k=1-Math.exp(-Math.max(0,num(dt,0))/2);M.level+=(M.target-M.level)*k;
-   if(!M.ready)return;if(M.next<t)M.next=t+.05;
+   if(!M.ready||M.sampled)return;if(M.next<t)M.next=t+.05;
    for(let n=0;M.next<t+AHEAD&&n<8;n++){musicStep(M.next);M.next+=STEP;}
   }
 
   const api={
-   unlock,setVolume,setListener,weapon,explosion,engine:engineDrone,ui,setIntensity,setSlowMo,stinger,update,
+   unlock,setVolume,setListener,weapon,explosion,loadSamples,useSamples,engine:engineDrone,ui,setIntensity,setSlowMo,stinger,update,
    get unlocked(){return unlocked;},
    volumes:()=>({...vol}),
    stats(){prune();return{voices:voices.filter(v=>!v.killed).length,maxVoices,dropped:stats.dropped,played:stats.played,peak:stats.peak};},

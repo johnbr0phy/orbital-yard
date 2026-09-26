@@ -18312,7 +18312,7 @@ function updateAudio(wall,dt){
   const s=ships[pilotId??sel];A.engine(s&&!s.dead?s.id:null,ENGINE_STYLE[s?.race]||"turbine",s?Math.min(1,(s.v||0)/Math.max(1,s.spdMax||s.spd||20)):0);
   A.update(dt);
 }
-function unlockAudio(){const A=audio();if(A&&!A.unlocked){A.unlock();syncAudioSliders();}}
+function unlockAudio(){const A=audio();if(A&&!A.unlocked){A.unlock();syncAudioSliders();A.loadSamples?.("audio/manifest.json");}}
 addEventListener("pointerdown",unlockAudio,{capture:true});addEventListener("keydown",unlockAudio,{capture:true});
 document.addEventListener?.("visibilitychange",()=>{const A=audio();if(!A||!A.unlocked)return;if(document.hidden)A.suspend();else A.resume();});
 function syncAudioSliders(){const A=audio();if(!A)return;const v=A.volumes();for(const k of ["master","music","sfx"]){const el=document.getElementById("vol_"+k);if(el)el.value=String(Math.round(v[k]*100));}}

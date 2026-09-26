@@ -117,3 +117,21 @@ test('no audible tone sits or slides below 150 Hz (low falling tones read as ras
  assert.deepEqual(bad,[],'low tones: '+JSON.stringify(bad.slice(0,5)));
  assert.ok(oscs.length>40,'exercised '+oscs.length+' oscillators');
 });
+
+test('recorded samples replace the synth per role and fall back where a role has none',()=>{
+ const ctx=fakeContext(),srcs=[],make=ctx.createBufferSource;ctx.createBufferSource=()=>{const s=make();srcs.push(s);return s;};
+ const a=ArmadaAudio.create({context:ctx,maxVoices:64});a.unlock();
+ const buf=n=>({duration:n,length:n*8000,sampleRate:8000});
+ assert.deepEqual(a.useSamples({laser:[buf(.3),buf(.4)],explosion2:buf(2),explosion1:buf(1),stinger:buf(3),music:buf(60),ambience:buf(20),empty:[]}).sort(),
+  ['ambience','explosion1','explosion2','laser','music','stinger']);
+ const loops=srcs.filter(s=>s.loop&&s.buffer&&s.buffer.duration>=20);assert.equal(loops.length,2,'music and ambience loop');
+ const before=srcs.length,osc0=ctx.created.osc;
+ assert.equal(a.weapon('laser',0,0,-300),true);
+ assert.equal(srcs.length,before+1,'laser plays one recording');assert.equal(ctx.created.osc,osc0,'no synth oscillators for a sampled laser');
+ assert.ok([.3,.4].includes(srcs.at(-1).buffer.duration));
+ assert.equal(a.weapon('phaser',0,0,-300),true);assert.ok(ctx.created.osc>osc0,'phaser has no recording: synth');
+ const n=srcs.length,info=a.explosion(2,0,0,-500);assert.ok(info&&info.tier===2);
+ assert.equal(srcs.length,n+3,'capital death: main recording plus two secondary blasts');
+ assert.equal(a.stinger(),true);assert.equal(srcs.at(-1).buffer.duration,3);
+ for(let i=0;i<120;i++){ctx.currentTime+=1/60;a.update(1/60);}
+});
