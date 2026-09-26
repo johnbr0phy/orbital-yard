@@ -396,6 +396,7 @@ body:not(.menu-start) #brand{display:none}
  #card{bottom:calc(186px + env(safe-area-inset-bottom))}
  .bcMvp{flex-direction:column;align-items:flex-start}#bcHelp .cols{grid-template-columns:1fr}
 }
+#ionFlash{position:fixed;inset:0;pointer-events:none;opacity:0;mix-blend-mode:screen;z-index:3}
 @media(prefers-reduced-motion:reduce){.bcFeedLine,.bcTick,#bcReplayChip{animation:none}.bcBar i,.bcBar em{transition:none}}
 #pick .call{margin-top:12px;display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:10.5px;letter-spacing:.12em}
 #pick .call button{font:600 11px "IBM Plex Mono",monospace;color:var(--ink);background:transparent;border:1px solid var(--ink);border-radius:2px;padding:6px 10px;cursor:pointer;opacity:.6}
@@ -438,6 +439,7 @@ body:not(.menu-start) #brand{display:none}
   <label class="bcSetting">Music<input id="vol_music" type="range" min="0" max="100" value="50"></label>
   <label class="bcSetting">Effects<input id="vol_sfx" type="range" min="0" max="100" value="80"></label>
 </div></details>
+<div id="ionFlash" aria-hidden="true"></div>
 <nav id="watchDock" aria-label="Battle cameras"><div id="watchLabel">Watch the battle</div><div class="watchButtons"><button data-view="broadcast">Broadcast</button><button data-view="action">Action</button><button data-view="all">All ships</button><button data-view="top">Top down</button><button data-view="hero">Hero</button><button data-view="follow">Follow</button><button data-view="bridge">Crew</button><button data-view="fly">Take control</button></div></nav>
 <div id="cockpitHud" hidden><div class="cockpitBeam"></div><button id="helmLeave">Autopilot · Esc</button><div class="crosshair">┼</div><canvas id="flightInstruments" aria-label="Flight attitude and target bearing"></canvas><div id="flightReadouts"></div><div id="flightTarget"></div><canvas id="helmPortrait" width="520" height="300" aria-label="Your captain reacting on the bridge"></canvas><div id="flightStatus">At the helm</div><div class="flightHelp">Drag sky to steer · W/S throttle · A/D yaw · ↑/↓ pitch · Shift boost · C cruise · X brake · T target · Space fire · Esc autopilot</div><div id="flightTouch"><button data-flight="w" aria-label="Increase throttle">Faster</button><button data-flight="s" aria-label="Decrease throttle">Slower</button><button data-flight="a" aria-label="Turn left">←</button><button data-flight="d" aria-label="Turn right">→</button><button data-flight="arrowup" aria-label="Pitch up">↑</button><button data-flight="arrowdown" aria-label="Pitch down">↓</button><button data-flight="shift" aria-label="Boost">Boost</button><button data-flight="x" aria-label="Brake">Brake</button><button id="flightCruise">Cruise</button><button id="flightNext">Target</button><button data-flight=" " aria-label="Fire">Fire</button><button id="flightExit">Autopilot</button></div></div>
 <div id="card" aria-label="Ship and crew"></div>
