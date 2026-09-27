@@ -1,0 +1,383 @@
+{
+ "arc": [
+  "fal/arc-1.wav",
+  "fal/arc-2.wav",
+  "fal/arc-3.wav"
+ ],
+ "rail": [
+  "fal/rail-1.wav",
+  "fal/rail-2.wav",
+  "fal/rail-3.wav"
+ ],
+ "ion-charge": [
+  "fal/ion-charge-1.wav",
+  "fal/ion-charge-2.wav",
+  "fal/ion-charge-3.wav"
+ ],
+ "ion-fire": [
+  "fal/ion-fire-1.wav",
+  "fal/ion-fire-2.wav",
+  "fal/ion-fire-3.wav"
+ ],
+ "explosion0": [
+  "fal/explosion0-1.wav",
+  "fal/explosion0-2.wav",
+  "fal/explosion0-3.wav"
+ ],
+ "explosion1": [
+  "fal/explosion1-1.wav",
+  "fal/explosion1-2.wav",
+  "fal/explosion1-3.wav"
+ ],
+ "explosion2": [
+  "fal/explosion2-1.wav",
+  "fal/explosion2-2.wav",
+  "fal/explosion2-3.wav"
+ ],
+ "explosion3": [
+  "fal/explosion3-1.wav",
+  "fal/explosion3-2.wav",
+  "fal/explosion3-3.wav"
+ ],
+ "stinger": [
+  "fal/stinger-1.wav",
+  "fal/stinger-2.wav"
+ ],
+ "shot-0": [
+  "fal/shot-0-1.wav",
+  "fal/shot-0-2.wav",
+  "fal/shot-0-3.wav"
+ ],
+ "beam-0": [
+  "fal/beam-0-1.wav",
+  "fal/beam-0-2.wav"
+ ],
+ "ambience": [
+  "fal/ambience-1.wav"
+ ],
+ "shot-1": [
+  "fal/shot-1-1.wav",
+  "fal/shot-1-2.wav",
+  "fal/shot-1-3.wav"
+ ],
+ "engine-0": [
+  "fal/engine-0-1.wav"
+ ],
+ "beam-1": [
+  "fal/beam-1-1.wav",
+  "fal/beam-1-2.wav"
+ ],
+ "shot-2": [
+  "fal/shot-2-1.wav",
+  "fal/shot-2-2.wav",
+  "fal/shot-2-3.wav"
+ ],
+ "engine-1": [
+  "fal/engine-1-1.wav"
+ ],
+ "beam-2": [
+  "fal/beam-2-1.wav",
+  "fal/beam-2-2.wav"
+ ],
+ "shot-3": [
+  "fal/shot-3-1.wav",
+  "fal/shot-3-2.wav",
+  "fal/shot-3-3.wav"
+ ],
+ "beam-3": [
+  "fal/beam-3-1.wav",
+  "fal/beam-3-2.wav"
+ ],
+ "shot-4": [
+  "fal/shot-4-1.wav",
+  "fal/shot-4-2.wav",
+  "fal/shot-4-3.wav"
+ ],
+ "engine-2": [
+  "fal/engine-2-1.wav"
+ ],
+ "engine-3": [
+  "fal/engine-3-1.wav"
+ ],
+ "beam-4": [
+  "fal/beam-4-1.wav",
+  "fal/beam-4-2.wav"
+ ],
+ "shot-5": [
+  "fal/shot-5-1.wav",
+  "fal/shot-5-2.wav",
+  "fal/shot-5-3.wav"
+ ],
+ "engine-4": [
+  "fal/engine-4-1.wav"
+ ],
+ "beam-5": [
+  "fal/beam-5-1.wav",
+  "fal/beam-5-2.wav"
+ ],
+ "shot-6": [
+  "fal/shot-6-1.wav",
+  "fal/shot-6-2.wav",
+  "fal/shot-6-3.wav"
+ ],
+ "beam-6": [
+  "fal/beam-6-1.wav",
+  "fal/beam-6-2.wav"
+ ],
+ "engine-5": [
+  "fal/engine-5-1.wav"
+ ],
+ "shot-7": [
+  "fal/shot-7-1.wav",
+  "fal/shot-7-2.wav",
+  "fal/shot-7-3.wav"
+ ],
+ "engine-6": [
+  "fal/engine-6-1.wav"
+ ],
+ "beam-7": [
+  "fal/beam-7-1.wav",
+  "fal/beam-7-2.wav"
+ ],
+ "shot-8": [
+  "fal/shot-8-1.wav",
+  "fal/shot-8-2.wav",
+  "fal/shot-8-3.wav"
+ ],
+ "beam-8": [
+  "fal/beam-8-1.wav",
+  "fal/beam-8-2.wav"
+ ],
+ "engine-7": [
+  "fal/engine-7-1.wav"
+ ],
+ "shot-9": [
+  "fal/shot-9-1.wav",
+  "fal/shot-9-2.wav",
+  "fal/shot-9-3.wav"
+ ],
+ "beam-9": [
+  "fal/beam-9-1.wav",
+  "fal/beam-9-2.wav"
+ ],
+ "engine-8": [
+  "fal/engine-8-1.wav"
+ ],
+ "shot-10": [
+  "fal/shot-10-1.wav",
+  "fal/shot-10-2.wav",
+  "fal/shot-10-3.wav"
+ ],
+ "beam-10": [
+  "fal/beam-10-1.wav",
+  "fal/beam-10-2.wav"
+ ],
+ "engine-9": [
+  "fal/engine-9-1.wav"
+ ],
+ "shot-11": [
+  "fal/shot-11-1.wav",
+  "fal/shot-11-2.wav",
+  "fal/shot-11-3.wav"
+ ],
+ "beam-11": [
+  "fal/beam-11-1.wav",
+  "fal/beam-11-2.wav"
+ ],
+ "shot-12": [
+  "fal/shot-12-1.wav",
+  "fal/shot-12-2.wav",
+  "fal/shot-12-3.wav"
+ ],
+ "engine-10": [
+  "fal/engine-10-1.wav"
+ ],
+ "engine-11": [
+  "fal/engine-11-1.wav"
+ ],
+ "beam-12": [
+  "fal/beam-12-1.wav",
+  "fal/beam-12-2.wav"
+ ],
+ "shot-13": [
+  "fal/shot-13-1.wav",
+  "fal/shot-13-2.wav",
+  "fal/shot-13-3.wav"
+ ],
+ "beam-13": [
+  "fal/beam-13-1.wav",
+  "fal/beam-13-2.wav"
+ ],
+ "engine-12": [
+  "fal/engine-12-1.wav"
+ ],
+ "shot-14": [
+  "fal/shot-14-1.wav",
+  "fal/shot-14-2.wav",
+  "fal/shot-14-3.wav"
+ ],
+ "beam-14": [
+  "fal/beam-14-1.wav",
+  "fal/beam-14-2.wav"
+ ],
+ "engine-13": [
+  "fal/engine-13-1.wav"
+ ],
+ "shot-15": [
+  "fal/shot-15-1.wav",
+  "fal/shot-15-2.wav",
+  "fal/shot-15-3.wav"
+ ],
+ "engine-14": [
+  "fal/engine-14-1.wav"
+ ],
+ "beam-15": [
+  "fal/beam-15-1.wav",
+  "fal/beam-15-2.wav"
+ ],
+ "shot-16": [
+  "fal/shot-16-1.wav",
+  "fal/shot-16-2.wav",
+  "fal/shot-16-3.wav"
+ ],
+ "beam-16": [
+  "fal/beam-16-1.wav",
+  "fal/beam-16-2.wav"
+ ],
+ "shot-17": [
+  "fal/shot-17-1.wav",
+  "fal/shot-17-2.wav",
+  "fal/shot-17-3.wav"
+ ],
+ "engine-15": [
+  "fal/engine-15-1.wav"
+ ],
+ "beam-17": [
+  "fal/beam-17-1.wav",
+  "fal/beam-17-2.wav"
+ ],
+ "engine-16": [
+  "fal/engine-16-1.wav"
+ ],
+ "shot-18": [
+  "fal/shot-18-1.wav",
+  "fal/shot-18-2.wav",
+  "fal/shot-18-3.wav"
+ ],
+ "beam-18": [
+  "fal/beam-18-1.wav",
+  "fal/beam-18-2.wav"
+ ],
+ "engine-17": [
+  "fal/engine-17-1.wav"
+ ],
+ "shot-19": [
+  "fal/shot-19-1.wav",
+  "fal/shot-19-2.wav",
+  "fal/shot-19-3.wav"
+ ],
+ "engine-18": [
+  "fal/engine-18-1.wav"
+ ],
+ "beam-19": [
+  "fal/beam-19-1.wav",
+  "fal/beam-19-2.wav"
+ ],
+ "shot-20": [
+  "fal/shot-20-1.wav",
+  "fal/shot-20-2.wav",
+  "fal/shot-20-3.wav"
+ ],
+ "beam-20": [
+  "fal/beam-20-1.wav",
+  "fal/beam-20-2.wav"
+ ],
+ "engine-19": [
+  "fal/engine-19-1.wav"
+ ],
+ "shot-21": [
+  "fal/shot-21-1.wav",
+  "fal/shot-21-2.wav",
+  "fal/shot-21-3.wav"
+ ],
+ "engine-20": [
+  "fal/engine-20-1.wav"
+ ],
+ "beam-21": [
+  "fal/beam-21-1.wav",
+  "fal/beam-21-2.wav"
+ ],
+ "shot-22": [
+  "fal/shot-22-1.wav",
+  "fal/shot-22-2.wav",
+  "fal/shot-22-3.wav"
+ ],
+ "beam-22": [
+  "fal/beam-22-1.wav",
+  "fal/beam-22-2.wav"
+ ],
+ "engine-21": [
+  "fal/engine-21-1.wav"
+ ],
+ "engine-22": [
+  "fal/engine-22-1.wav"
+ ],
+ "music": [
+  "fal/music.mp3"
+ ],
+ "boom-burst": [
+  "fal/boom-burst-1.wav",
+  "fal/boom-burst-2.wav",
+  "fal/boom-burst-3.wav"
+ ],
+ "boom-shatter": [
+  "fal/boom-shatter-1.wav",
+  "fal/boom-shatter-2.wav",
+  "fal/boom-shatter-3.wav"
+ ],
+ "boom-flash": [
+  "fal/boom-flash-1.wav",
+  "fal/boom-flash-2.wav",
+  "fal/boom-flash-3.wav"
+ ],
+ "boom-tie": [
+  "fal/boom-tie-1.wav",
+  "fal/boom-tie-2.wav",
+  "fal/boom-tie-3.wav"
+ ],
+ "boom-crystal": [
+  "fal/boom-crystal-1.wav",
+  "fal/boom-crystal-2.wav",
+  "fal/boom-crystal-3.wav"
+ ],
+ "boom-dissolve": [
+  "fal/boom-dissolve-1.wav",
+  "fal/boom-dissolve-2.wav",
+  "fal/boom-dissolve-3.wav"
+ ],
+ "boom-warp": [
+  "fal/boom-warp-1.wav",
+  "fal/boom-warp-2.wav",
+  "fal/boom-warp-3.wav"
+ ],
+ "boom-cleave": [
+  "fal/boom-cleave-1.wav",
+  "fal/boom-cleave-2.wav",
+  "fal/boom-cleave-3.wav"
+ ],
+ "boom-bronze": [
+  "fal/boom-bronze-1.wav",
+  "fal/boom-bronze-2.wav",
+  "fal/boom-bronze-3.wav"
+ ],
+ "boom-fossil": [
+  "fal/boom-fossil-1.wav",
+  "fal/boom-fossil-2.wav",
+  "fal/boom-fossil-3.wav"
+ ],
+ "boom-cloakpop": [
+  "fal/boom-cloakpop-1.wav",
+  "fal/boom-cloakpop-2.wav",
+  "fal/boom-cloakpop-3.wav"
+ ]
+}
