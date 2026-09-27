@@ -166,6 +166,8 @@ Each fleet gets one row. **These are my readings of how each fleet is portrayed,
 - **Six plans**: pincer, ambush, hold, raid, decapitate and siege. Each fleet has favourites in its doctrine row; the seed picks. `?plan=PINCER,HOLD` forces them (for tests, captures and the plan experiment).
 - **A plan is a fleet-wide posture plus orders**, not a label. A pincer splits wings to the flanks and only closes once they are there; a hold waits at its line; a siege stands off at long range; a raid holds a reserve that jumps in behind; a decapitation sends a strike group at the flagship; an ambush waits in cover or, with no terrain, arrives late behind the enemy.
 - **Plans switch when they fail**, captioned. A plan gets 18 s before it can be judged, failure is measured against losses since the plan began (not since the war began, which made plans flip every few seconds), and a fleet switches at most twice. After that it charges.
+- **A convoy must be hunted.** The side that has to stop a convoy never draws hold or siege. Found in the gallery: a Borg hold let a Federation convoy walk out at 0:59 with one loss a side. With the rule, 6 test convoy wars split 4 to 2 and the hunters fight.
+- **A station can be "taken" before first contact.** It goes to whoever reaches it first with 1.5× the other side's weight nearby. I left that: getting there first is a real advantage and the ticker says so.
 - **Objectives**: annihilation (weight 4), flagship (2.5), convoy (2) and station (1.5). They are shown on the title card and as a HUD chip, blended at 25% into the momentum bar, reported in the ticker and named on the end card. `?objective=` forces one.
 
 ## Terrain
@@ -175,9 +177,11 @@ Each fleet gets one row. **These are my readings of how each fleet is portrayed,
 
 ## Watching
 
-- **A war opens on the Action camera.** B toggles Broadcast; the watch dock lists Action first. Action rides with a subject (chase 8 s, duel 9 s, capital 10 s, squadron 13 s).
+- **A war opens on the Action camera.** B toggles Broadcast; the watch dock lists Action first. Action rides with a subject (chase 9 s, duel 10 s, capital 11 s, squadron 13 s, wide views 8 s). A death holds 3.4 s, and nothing but a death cuts a shot before 6 s. At the old timings Action's median shot was 7.0–8.0 s across the three watched wars; now it's 8.0–8.5 s.
+- **Action doesn't replay what it missed; Broadcast does.** Action is "ride with one ship", and replays would break that. So Action can miss a capital death elsewhere on the field (7 of 20 in the watched wars). Broadcast missed none.
 - **Broadcast story shots hold 10 to 25 s.** Only an event that outscores the story may cut away, and only once the shot has settled (7 s for climax and reaction shots, 6 s for a story shot). A flagship falling or a First One kill (score 125 or more) may cut earlier. The director comes back to the story afterwards unless a clearly better one (1.3×) exists.
 - **A big death the camera missed is replayed, never dropped.** Several can queue and replay together; a replay held back by the rate limit waits instead of vanishing.
+- **Event captions about a ship in action are withdrawn when it dies** (vendetta, ace duel, rescue screen, last stand, raid). Found in the gallery: a vendetta caption outlived its hunter.
 - **Captions come from live AI state**, one at a time, each held long enough to read (at least 3 s before a bigger event replaces it). A decision must have held 0.8 s to be captioned. Each caption carries a check and is withdrawn when the state it describes stops being true, so it can't contradict the sim. The same line doesn't repeat within 25 s. The older flavour lines remain the fallback.
 
 ## Debris
@@ -205,6 +209,10 @@ Each fleet gets one row. **These are my readings of how each fleet is portrayed,
 - **On the reference machine the default is 50 a side.** Chromium's probe on the same machine reads 0.98 to 1.05 (three page loads).
 - **Every size stays selectable, 600 included.** Each size button's tooltip gives its measured speed on this machine ("about 0.1× real time on this machine (measured)") and slow sizes are marked. A fast desktop gets whatever its probe earns: a machine twice as fast as the reference defaults to 100 a side (factor 1.20 needed), three times as fast to 200. Running 600 a side in real time needs a factor of about 10.7, which no current desktop CPU reaches on one thread. A desktop 2.5× faster than the reference (my estimate for a fast one, not measured) would run it at about 0.23× real time. I'd rather say that than let a GPU tier promise it.
 - **Why not the GPU tier:** the simulation, not the renderer, is what makes a large war slow. A laptop with a strong GPU and a reference-class CPU would have got 300 a side from the old tier rule (Ultra) and played it at 0.21× real time.
+
+## Audio
+
+- **Close explosions and lasers were made darker**, because the new cameras sit close to the fight and the old voices had only been tuned from far away. The near crack is a band around 1.2 kHz (was a 700 Hz highpass), the explosion body stops by about 3 kHz (was 4.5 kHz), and the laser sweep starts at 1,150 Hz (was 1,700). Energy at 2–8 kHz fell from 21% to 9.1% on the same capture. No tone goes below 150 Hz, and the test for that passes. Details: `bench/story/audio-report.md`.
 
 ## Other calls
 

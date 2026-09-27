@@ -18406,11 +18406,13 @@ function storyEvent(ev){
   // Lines about what a ship is doing now are withdrawn when it dies (a vendetta, a ram run, an ace duel).
   const live=LIVE_CAPTION[ev.type],sid=ev.ship,pid=ev.partner;
   const check=live?()=>!!ships[sid]&&!ships[sid].dead&&(live<2||!!ships[pid]&&!ships[pid].dead):null;
-  if(e&&SCORE_TYPES[ev.type])offerCaption({text:data.text,subject:ev.ship??null,partner:ev.partner??null,event:e,weight:BC.WEIGHTS[ev.type]||20,until:battleTime+captionHold(data.text),check});
+  if(e&&SCORE_TYPES[ev.type])offerCaption({text:data.text,subject:ev.ship??null,partner:ev.partner??null,event:e,weight:BC.WEIGHTS[ev.type]||20,until:battleTime+captionHold(data.text),check,always:!!ALWAYS_CAPTION[ev.type]});
 }
 // Fleets with a jump drive run to get clear and jump; the rest run for the edge.
 function fleeWord(s){return s&&ArmadaBattleAI.DOCTRINE[s.race]?.escape==="edge"?"running for the edge":"running to jump clear";}
 // 1: the ship must be alive for the line to stay true; 2: both ships.
+// Command and plans concern the whole war: captioned wherever the camera is.
+const ALWAYS_CAPTION={flagshipDown:1,successor:1,planSwitch:1};
 const LIVE_CAPTION={vendetta:2,aceDuel:2,rescueStart:1,lastStand:1,raid:1};
 function pct(s){return Math.max(0,Math.round(100*s.hp/Math.max(1,s.hpMax)))+"%";}
 function storyText(ev,s,p,sq){
@@ -18813,10 +18815,14 @@ function updateTags(now){
     if(o&&o.kind==="STATION")want.push({x:o.point[0],y:o.point[1],z:o.point[2],t:"◎ STATION",c:"#e8eef2"});
     if(o&&o.kind==="CONVOY")want.push({x:o.point[0],y:o.point[1],z:o.point[2],t:"⇥ JUMP POINT",c:raceColour(sideRace[o.side])});
   }
-  const m=mat(),w=cvs.clientWidth||innerWidth,h=cvs.clientHeight||innerHeight;let n=0;
+  const m=mat(),w=cvs.clientWidth||innerWidth,h=cvs.clientHeight||innerHeight;let n=0;const placed=[];
   for(const q of want){
     const cw=m[3]*q.x+m[7]*q.y+m[11]*q.z+m[15];if(cw<1)continue;
-    const cx=(m[0]*q.x+m[4]*q.y+m[8]*q.z+m[12])/cw,cy=(m[1]*q.x+m[5]*q.y+m[9]*q.z+m[13])/cw;if(Math.abs(cx)>.98||Math.abs(cy)>.98)continue;
+    const cx=(m[0]*q.x+m[4]*q.y+m[8]*q.z+m[12])/cw;let cy=(m[1]*q.x+m[5]*q.y+m[9]*q.z+m[13])/cw;if(Math.abs(cx)>.98||Math.abs(cy)>.98)continue;
+    // Tags never sit on top of each other: nudge up a line until clear (the text is about 6.5 px a letter).
+    const px=(cx*.5+.5)*w,half=q.t.length*3.3+6;let py=(.5-cy*.5)*h;
+    for(let k=0;k<5&&placed.some(r=>Math.abs(r[0]-px)<r[2]+half&&Math.abs(r[1]-py)<14);k++)py-=14;
+    placed.push([px,py,half]);cy=1-2*py/h;
     let el=tagEls[n];if(!el){el=document.createElement("div");el.className="bcTag";host.appendChild?.(el);tagEls[n]=el;}
     if(el.textContent!==q.t)el.textContent=q.t;el.style.setProperty?.("--c",q.c);el.classList.toggle("flag",!!q.flag);el.hidden=false;
     el.style.transform="translate("+((cx*.5+.5)*w).toFixed(0)+"px,"+((.5-cy*.5)*h).toFixed(0)+"px) translate(-50%,-100%)";n++;
@@ -18845,7 +18851,7 @@ function offerCaption(c){
 }
 function captionRelevant(c,subject){
   if(c.check&&!c.check())return false;
-  if(c.weight>=90)return true;
+  if(c.always||c.weight>=90)return true;
   if(subject!=null&&(c.subject===subject||c.partner===subject))return true;
   const e=c.event;if(e&&Number.isFinite(e.x)&&onScreenPoint(e.x,e.y,e.z))return true;
   return c.weight>=55;
@@ -18857,7 +18863,7 @@ function tickCaption(now,subjectShip){
   const q=(bc.captionQueue||(bc.captionQueue=[])).filter(c=>now-c.offered<(c.weight>=50?8:4.5)&&now>=c.offered-.01);bc.captionQueue=q;
   if(cur){
     const held=now-cur.at,valid=!cur.check||cur.check();
-    const bigger=q.find(c=>c.weight>=Math.max(60,cur.weight*1.5)&&captionRelevant(c,subject));
+    const bigger=q.find(c=>(c.weight>=Math.max(60,cur.weight*1.5)||c.always&&c.weight>cur.weight)&&captionRelevant(c,subject));
     if(!valid&&held>1.2)bc.caption=null;
     else if(bigger&&held>3)bc.caption=null;
     else if(held<cur.hold)return cur;
