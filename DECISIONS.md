@@ -80,7 +80,7 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 ## Picker
 
 - **Emblems are original and procedural**: a seeded frame and motif per fleet in its own colours, with no logos.
-- **Odds come from a real headless round-robin**: all 253 pairings at 20 ships a side, 100 simulated seconds each, sides alternating by pairing. An undecided battle scores by remaining strength share. Results are fitted as Bradley–Terry ratings on an Elo scale by `scripts/fleet-ratings.cjs` and stored in `bench/ratings/ratings.json`. At this size the Borg (1851) and First Ones (1795) lead, and the Dominion (1379) and Rebels (1383) trail. The picker labels them "simulated odds"; they aren't canon.
+- **Odds come from a real headless round-robin**: all 253 pairings at 20 ships a side, 100 simulated seconds each, sides alternating by pairing. An undecided battle scores by remaining strength share. Results are fitted as Bradley–Terry ratings on an Elo scale by `scripts/fleet-ratings.cjs` and stored in `bench/ratings/ratings.json`. At this size the First Ones (2137) and the Borg (1751) lead, and the Choir (1374), the Empire (1394) and the Dominion (1395) trail. (Re-fitted after the throttle and First Ones changes; before them the Borg (1851) and First Ones (1795) led.) The picker labels them "simulated odds"; they aren't canon.
 - **No live turning hero ship per card.** Twenty-three forged hero meshes and viewports on a phone menu contradicts the performance targets. The live war behind the menu does that job.
 
 ## Audio

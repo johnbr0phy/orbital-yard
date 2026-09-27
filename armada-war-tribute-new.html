@@ -18603,7 +18603,7 @@ const FLEET_FLAVOUR=["Ceramic navies from the Orbital Yard's own drawing boards.
  "A hive that eats the sky.","Rockets, a roadster and a robot at the wheel."];
 // Relative fleet strength (Elo scale) from scripts/fleet-ratings.cjs: every
 // pairing, both sides, 24 ships a side, headless. Diagnostic, not canon.
-const FLEET_RATINGS=[1482,1554,1434,1428,1397,1451,1383,1462,1564,1491,1468,1447,1851,1479,1463,1462,1454,1795,1502,1379,1615,1473,1468]; // bench/ratings/ratings.json: 253 battles, 20 ships a side
+const FLEET_RATINGS=[1434,1491,1461,1424,1374,1394,1423,1489,1445,1481,1456,1453,1751,1477,1460,1438,1481,2137,1486,1395,1592,1512,1448]; // bench/ratings/ratings.json: 253 battles, 20 ships a side
 function fleetOdds(a,b){return BC&&a>=0&&b>=0&&a!==b?BC.odds(FLEET_RATINGS[a],FLEET_RATINGS[b]):null;}
 // Original emblems: a seeded frame, motif and palette per fleet. No logos.
 function fleetEmblem(i,size=40){
