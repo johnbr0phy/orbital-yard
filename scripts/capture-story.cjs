@@ -25,8 +25,8 @@ const SCENARIOS = [
   {id: 'last-stand-volley', a: 12, b: 10, seed: 2202, seeds: [2202, 1101, 3303, 4404], size: 60, until: {event: 'lastStand', kind: 'VOLLEY'}, after: .6, frame: 'ship', views: ['mid']},
   {id: 'abandon-ship', a: 12, b: 10, seed: 3303, size: 60, until: {event: 'pods'}, after: 2.5, frame: 'ship', views: ['near', 'mid']},
   {id: 'ace', a: 6, b: 5, seed: 2202, size: 60, until: {event: 'ace'}, after: .5, frame: 'ship', views: ['near', 'mid']},
-  {id: 'ace-duel', a: 5, b: 6, seed: 1101, seeds: [1101, 2202, 3303, 4404, 5505], size: 60, until: {event: 'aceDuel'}, after: .5, frame: 'pair', views: ['near', 'mid']},
-  {id: 'vendetta-chase', a: 6, b: 5, seed: 2202, seeds: [2202, 1101, 3303], size: 60, until: {event: 'vendetta'}, after: 1, frame: 'pair', views: ['near', 'mid']},
+  {id: 'ace-duel', a: 5, b: 6, seed: 1101, seeds: [1101, 2202, 3303, 4404, 5505], size: 60, until: {event: 'aceDuel', alive: true}, after: 1.5, frame: 'pair', views: ['near', 'mid']},
+  {id: 'vendetta-chase', a: 6, b: 5, seed: 2202, seeds: [2202, 1101, 3303], size: 60, until: {event: 'vendetta', alive: true}, after: 2.5, frame: 'pair', views: ['near', 'mid']},
   {id: 'rescue-screen', a: 10, b: 12, seed: 1101, size: 60, until: {event: 'rescueStart'}, after: 4, frame: 'squadAndShip', views: ['mid', 'far']},
   {id: 'rescue-outcome', a: 10, b: 12, seed: 1101, size: 60, until: {event: 'rescue'}, after: .5, frame: 'ship', views: ['mid']},
   // Each plan twice: the title card at 7.5 s, then the posture from above once the fleets move.
@@ -96,8 +96,15 @@ async function capture(browser, base, sc) {
     if (until.time != null) { while (battleTime - warT0 < until.time) step(); }
     else {
       const match = e => e.type === until.event && (!until.kind || e.kind === until.kind) && (!until.shatter || ships[e.ship]?.destruction === 'catastrophic');
-      while (battleTime - warT0 < 240 && !(ev = bc.log.events.find(match))) step();
-      if (ev) { const t = ev.t + (after || 0); while (battleTime < t) step(); }
+      // until.alive: the moment's ship must still be alive when the shot is taken.
+      const used = new Set();
+      for (;;) {
+        while (battleTime - warT0 < 240 && !(ev = bc.log.events.find(e => match(e) && !used.has(e)))) step();
+        if (!ev) break;
+        used.add(ev); const t = ev.t + (after || 0); while (battleTime < t) step();
+        if (!until.alive || (ships[ev.ship] && !ships[ev.ship].dead && (ev.partner == null || ships[ev.partner] && !ships[ev.partner].dead))) break;
+        ev = null;
+      }
     }
     capturePrevious(); if (replayState) endReplay(); battleAccumulator = -1e9;
     return ev ? {type: ev.type, t: +(ev.t - warT0).toFixed(1), ship: ev.ship ?? null, partner: ev.partner ?? null, squad: ev.squad ?? null, text: ev.text || ev.name || '', x: ev.x, y: ev.y, z: ev.z} : null;
@@ -113,18 +120,18 @@ async function capture(browser, base, sc) {
       rocks: (starSystem.field?.rocks || []).map(r => [r.p[0], r.p[2], r.r]), T: +(battleTime - warT0).toFixed(1),
       plans: battleAI.story.planNames(), names: SIDE_NAME.slice()}));
     const xs = st.ships.map(s => s[0]), zs = st.ships.map(s => s[1]);
-    const lo = [Math.min(...xs) - 600, Math.min(...zs) - 600], span = Math.max(Math.max(...xs) - lo[0] + 600, Math.max(...zs) - lo[1] + 600);
-    const W = 720, P = v => (v * W / span).toFixed(1), col = ['#6cf08a', '#ff5a4a'];
-    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${W + 40}" viewBox="0 0 ${W} ${W + 40}" font-family="monospace" font-size="12"><rect width="100%" height="100%" fill="#0b1016"/>`;
+    const lo = [Math.min(...xs) - 600, Math.min(...zs) - 600], sx = Math.max(...xs) - lo[0] + 600, sz = Math.max(...zs) - lo[1] + 600;
+    const W = 720, span = Math.max(sx, sz * W / 520), H = Math.max(240, Math.round(sz * W / span)), P = v => (v * W / span).toFixed(1), col = ['#6cf08a', '#ff5a4a'];
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H + 40}" viewBox="0 0 ${W} ${H + 40}" font-family="monospace" font-size="12"><rect width="100%" height="100%" fill="#0b1016"/>`;
     for (const r of st.rocks) svg += `<circle cx="${P(r[0] - lo[0])}" cy="${P(r[1] - lo[1])}" r="${Math.max(1.5, +P(r[2]))}" fill="#3a3f46"/>`;
     for (const s of st.ships) svg += `<circle cx="${P(s[0] - lo[0])}" cy="${P(s[1] - lo[1])}" r="${s[3] >= 180 ? 5 : 1.8}" fill="${col[s[2]]}"/>`;
     for (const q of st.squads) {
       const live = st.ships.filter(s => s[4] != null && st.squads[s[4]] === q);
       if (!live.length || q.role === 'main' || !q.role) continue;
       const cx = live.reduce((a, s) => a + s[0], 0) / live.length, cz = live.reduce((a, s) => a + s[1], 0) / live.length;
-      svg += `<text x="${P(cx - lo[0])}" y="${+P(cz - lo[1]) - 6}" fill="${col[q.side]}" text-anchor="middle">${q.role}</text>`;
+      svg += `<text x="${P(cx - lo[0])}" y="${+P(cz - lo[1]) - 6}" fill="${col[q.side]}" text-anchor="middle">${q.name ? q.name + ': ' : ''}${q.role}</text>`;
     }
-    svg += `<text x="10" y="${W + 26}" fill="#cfd8de">${st.T} s · ${st.names[0]}: ${(st.plans[0] || '').toLowerCase()} (green) · ${st.names[1]}: ${(st.plans[1] || '').toLowerCase()} (red) · grid ${Math.round(span)} m</text></svg>`;
+    svg += `<text x="10" y="${H + 26}" fill="#cfd8de">${st.T} s · ${st.names[0]}: ${(st.plans[0] || '').toLowerCase()} (green) · ${st.names[1]}: ${(st.plans[1] || '').toLowerCase()} (red) · plot width ${Math.round(span)} m · x across, z down</text></svg>`;
     fs.writeFileSync(path.join(out, `${sc.id}-plot.svg`), svg);
     shots.push({name: `${sc.id}-plot.svg`, camera: 'plot'});
   }
@@ -199,4 +206,21 @@ async function capture(browser, base, sc) {
   await browser.close(); server.close();
   const merged = prior.filter(p => !report.some(r => r.id === p.id)).concat(report);
   fs.writeFileSync(file, JSON.stringify(merged, null, 1));
+  fs.writeFileSync(path.join(out, 'index.html'), indexPage(merged));
 })();
+
+// A plain page over the gallery, in scenario order, with what the sim said at each moment.
+function indexPage(report) {
+  const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+  const byId = new Map(report.map(r => [r.id, r]));
+  const cards = SCENARIOS.map(sc => byId.get(sc.id)).filter(Boolean).map(r => {
+    const head = `<h2>${esc(r.id)}</h2><p class="m">${r.missing ? 'not captured: no ' + esc(r.missing) + ' in the seeds tried' : r.error ? 'error: ' + esc(r.error) : 'seed ' + esc(r.seed) + (r.event ? ' · ' + esc(r.event.t) + ' s · ' + esc(r.event.text) : '')}</p>`;
+    const shots = (r.shots || []).map(s => `<figure><img loading="lazy" src="${esc(s.name)}" alt="${esc(r.id)} ${esc(s.name)}"><figcaption>${esc(s.name)}${s.caption ? ' · caption: “' + esc(s.caption) + '”' : ''}${s.tags && s.tags.length ? ' · tags: ' + esc(s.tags.join(', ')) : ''}</figcaption></figure>`).join('');
+    return `<section>${head}<div class="g">${shots}</div></section>`;
+  }).join('\n');
+  return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Story gallery</title>
+<style>body{margin:0;padding:16px;background:#0b1016;color:#dfe7ec;font:14px/1.45 system-ui,sans-serif}h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:22px 0 2px}.m{margin:0 0 8px;color:#9fb0bc}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:10px}figure{margin:0}img{width:100%;height:auto;display:block;border-radius:4px;background:#000}figcaption{font-size:12px;color:#9fb0bc;margin-top:4px;overflow-wrap:anywhere}</style>
+<h1>Tribute War: story gallery</h1><p class="m">Generated by scripts/capture-story.cjs. Every moment was produced by the simulation; only the camera is placed. Rendered in software (SwiftShader) at 1280×720: look checks, not performance numbers. Plots are drawn from simulation state.</p>
+${cards}`;
+}

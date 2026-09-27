@@ -130,7 +130,9 @@
   // Rule: nothing tonal below ~150 Hz and no falling low tones. A low sine sliding down
   // over noise reads as a raspberry, not a gun. Weight comes from noise, not from pitch.
   const R={
-   laser(t,o){const f=jit(1700,.1),a=osc('sine',f,t,t+.14),b=osc('sine',f*1.5,t,t+.14),g=env(gain(),t,.002,.24,.12),g2=env(gain(),t,.002,.07,.08);
+   // Started at 1.7 kHz until the cameras moved in close: its 2.55 kHz partial made the
+   // mix harsh (21% of energy at 2-8 kHz). Same sweep, a third lower.
+   laser(t,o){const f=jit(1150,.1),a=osc('sine',f,t,t+.14),b=osc('sine',f*1.5,t,t+.14),g=env(gain(),t,.002,.24,.12),g2=env(gain(),t,.002,.07,.08);
     expo(P(a,'frequency'),f*.36,t+.11);expo(P(b,'frequency'),f*.5,t+.1);link(a,g,o);link(b,g2,o);return{src:[a,b],dur:.14};},
    phaser(t,o){const f=jit(620,.05),a=osc('sine',f,t,t+.46),b=osc('sine',f*1.01,t,t+.46),c=osc('triangle',f*2,t,t+.46),vib=osc('sine',7,t,t+.46),vg=gain(f*.012),g=gain(),lp=filter('lowpass',3200,.5);
     link(vib,vg,P(a,'frequency'));set(P(g,'gain'),0,t);ramp(P(g,'gain'),.13,t+.05);ramp(P(g,'gain'),.1,t+.34);ramp(P(g,'gain'),0,t+.44);
@@ -224,8 +226,10 @@
     return{src,dur:delay+(r?r.dur:1)+(tier>=2?1.2:0)};
    }:(t0,o)=>{
     const t=t0+delay,src=[],near=clamp(cutoff/9000,0,1);
-    if(near>.15){const c=noiseSrc(t,t+.07,1),hp=filter('highpass',700,.6),cg=env(gain(),t,.001,.45*near,.05);link(c,hp,cg,o);src.push(c);}
-    const body=noiseSrc(t,t+dur,1),lp=filter('lowpass',Math.min(cutoff,4500+tier*800),.5),bg=gain();
+    // Close up (where the cameras now live) the crack and body were tuned too bright: 34% of
+    // explosion energy sat at 2-8 kHz. The crack is a band around 1.2 kHz, the body stops by 3 kHz.
+    if(near>.15){const c=noiseSrc(t,t+.07,1),hp=filter('bandpass',1200,.8),cg=env(gain(),t,.001,.5*near,.05);link(c,hp,cg,o);src.push(c);}
+    const body=noiseSrc(t,t+dur,1),lp=filter('lowpass',Math.min(cutoff,2200+tier*350),.5),bg=gain();
     set(P(bg,'gain'),0,t);ramp(P(bg,'gain'),.9,t+.004+tier*.006);aim(P(bg,'gain'),0,t+.03+tier*.05,dur*.22);ramp(P(bg,'gain'),0,t+dur);
     if(lp)expo(lp.frequency,Math.max(180,cutoff*.03),t+dur*.8);link(body,lp,bg,o);src.push(body);
     if(tier>=1){// weight without pitch: the low band of the same noise, briefly

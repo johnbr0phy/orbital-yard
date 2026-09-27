@@ -147,6 +147,19 @@ test('captions come from the minds and are withdrawn the moment the sim stops ma
   assert.equal(r.bad,0,JSON.stringify(r));assert.ok(r.shown>50&&r.decisions>0&&r.events>0,JSON.stringify(r));
 });
 
+test('an event caption about a ship in action is withdrawn when that ship dies',()=>{
+  const w=war(6,5,2202,40,20);
+  const r=w.run(`(()=>{const a=ships.find(s=>s.side===0&&!s.dead&&s.arr&&s.slen<60),b=ships.find(s=>s.side===1&&!s.dead&&s.arr&&s.slen<60);
+    battleAI.story.emit({type:'vendetta',side:0,ship:a.id,partner:b.id,lost:a.id,x:a.x,y:a.y,z:a.z,size:a.slen});
+    bc.caption=null;bc.captionQueue=[];battleTime+=1/30;simStep(battleTime,1/30);
+    const first=tickCaption(battleTime,a);const before=first&&/hunting/.test(first.text);
+    a.lastHit=null;kill(a,battleTime);let after=false;
+    for(let i=0;i<60;i++){battleTime+=1/30;simStep(battleTime,1/30);const c=tickCaption(battleTime,b);if(i>40&&c&&/hunting/.test(c.text))after=true;}
+    return {before,after};})()`);
+  assert.ok(r.before,'the vendetta is captioned '+JSON.stringify(r));
+  assert.ok(!r.after,'and withdrawn once the hunter is dead '+JSON.stringify(r));
+});
+
 test('determinism: time scale and Math.random change nothing in the story',()=>{
   const run=(schedule,seed)=>{const b=loadBattle({modules:true});b.run(`Math.random=(()=>{let s=${seed};return ()=>{s=(s*16807)%2147483647;return s/2147483647;};})()`);
     b.start(6,5,2202,26);b.run('endIntro();lastT=1;');let t=1000;

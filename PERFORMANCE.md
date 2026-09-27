@@ -145,4 +145,15 @@ The story changes the war on purpose, so the trace changes. `bench/story/trace-b
 | 450 | 857 | 4,325 |
 | 600 | 1,142 | 5,862 |
 
-BROWSER_BENCH
+## Browser frame times (SwiftShader, software)
+
+`scripts/bench-tribute.cjs --sizes 200,600 --seconds 30 --tier low`, before (baseline tree) and after, same session, same machine. **Software rendering: these are not GPU numbers.** Raw data: `bench/story/browser-before-low.json`, `bench/story/browser-after-low.json`.
+
+| build | ships | FPS | p50 ms | p95 ms | p99 ms | sim-s per wall-s | war running (s) | max long task ms | heap at end MB |
+|---|---|---|---|---|---|---|---|---|---|
+| before | 192 | 7.58 | 133 | 167 | 217 | 0.49 | 2.3 | 278 | 58 |
+| before | 572 | 6.15 | 150 | 217 | 250 | 0.28 | 4.1 | 329 | 131 |
+| after | 192 | 7.63 | 133 | 167 | 200 | 0.50 | 2.3 | 260 | 40 |
+| after | 572 | 6.26 | 150 | 217 | 250 | 0.28 | 4.1 | 322 | 116 |
+
+No measurable change in software. The 30-second window is mostly arrivals and first contact, where the story layer does little; the headless numbers above cover the combat phase. No GPU was available here, so the GPU column the brief asks for is **not measured**; `--headed` on real hardware produces it.

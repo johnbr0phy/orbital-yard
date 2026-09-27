@@ -18402,10 +18402,15 @@ function storyEvent(ev){
   if(!Number.isFinite(data.x)&&s){data.x=s.x;data.y=s.y;data.z=s.z;}
   data.text=storyText(ev,s,p,sq);if(data.text)data.text=data.text.charAt(0).toUpperCase()+data.text.slice(1);
   const e=bcEvent(ev.type,data);
-  if(e&&SCORE_TYPES[ev.type])offerCaption({text:data.text,subject:ev.ship??null,partner:ev.partner??null,event:e,weight:BC.WEIGHTS[ev.type]||20,until:battleTime+captionHold(data.text)});
+  // Lines about what a ship is doing now are withdrawn when it dies (a vendetta, a ram run, an ace duel).
+  const live=LIVE_CAPTION[ev.type],sid=ev.ship,pid=ev.partner;
+  const check=live?()=>!!ships[sid]&&!ships[sid].dead&&(live<2||!!ships[pid]&&!ships[pid].dead):null;
+  if(e&&SCORE_TYPES[ev.type])offerCaption({text:data.text,subject:ev.ship??null,partner:ev.partner??null,event:e,weight:BC.WEIGHTS[ev.type]||20,until:battleTime+captionHold(data.text),check});
 }
 // Fleets with a jump drive run to get clear and jump; the rest run for the edge.
 function fleeWord(s){return s&&ArmadaBattleAI.DOCTRINE[s.race]?.escape==="edge"?"running for the edge":"running to jump clear";}
+// 1: the ship must be alive for the line to stay true; 2: both ships.
+const LIVE_CAPTION={vendetta:2,aceDuel:2,rescueStart:1,lastStand:1,raid:1};
 function pct(s){return Math.max(0,Math.round(100*s.hp/Math.max(1,s.hpMax)))+"%";}
 function storyText(ev,s,p,sq){
   const n=ev.n,S=shipLabel(s),P=p?shipLabel(p):"",side=ev.side>=0?sideShort(ev.side):"";
@@ -18795,6 +18800,8 @@ function updateTags(now){
   if(st.ready&&Number.isFinite(warT0)&&!replayState){
     for(const side of [0,1]){const f=ships[st.sides[side].flag];if(f&&!f.dead&&f.vao&&f.arr)want.push({x:f.x,y:f.y+(f.exY||f.slen*.2)*1.4,z:f.z,t:"⚑ "+shortName(f).replace(/^the /,""),c:raceColour(f.race),flag:true});}
     for(const s of ships)if(s.ace&&!s.dead&&s.vao&&s.arr&&!s.cloaked&&want.length<12)want.push({x:s.x,y:s.y+s.slen,z:s.z,t:"✦ "+s.ace,c:raceColour(s.race)});
+    // The shot's own characters: a hero in a duel or chase is named while it is on camera.
+    for(const id of [actionCamera?.subject,actionCamera?.partner]){const s=ships[id];if(s&&s.hero&&!s.ace&&!s.dead&&s.vao&&s.arr&&!s.cloaked&&st.sides[s.side].flag!==s.id)want.push({x:s.x,y:s.y+s.slen*1.2+8,z:s.z,t:"★ "+shortName(s).replace(/^the /,""),c:raceColour(s.race)});}
     // A breaking squadron is marked over its live members, so a rout reads at any distance.
     for(const sq of battleAI.squads||[]){
       if(!sq||sq.state!=="routing"||!sq.name||want.length>=14)continue;
@@ -18836,6 +18843,7 @@ function offerCaption(c){
   c.offered=battleTime;q.push(c);q.sort((a,b)=>b.weight-a.weight);if(q.length>6)q.length=6;
 }
 function captionRelevant(c,subject){
+  if(c.check&&!c.check())return false;
   if(c.weight>=90)return true;
   if(subject!=null&&(c.subject===subject||c.partner===subject))return true;
   const e=c.event;if(e&&Number.isFinite(e.x)&&onScreenPoint(e.x,e.y,e.z))return true;
