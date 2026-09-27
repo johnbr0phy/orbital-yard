@@ -1,0 +1,365 @@
+{
+ "summary": {
+  "matchup": [
+   "THE IMPERIAL STARFLEET",
+   "THE REBEL ALLIANCE"
+  ],
+  "seed": 1101,
+  "size": 60,
+  "mode": "broadcast",
+  "plans": [
+   "SIEGE",
+   "RAID"
+  ],
+  "objective": "CONVOY",
+  "winner": 1,
+  "reason": "convoy",
+  "duration": 82.7,
+  "cuts": 8,
+  "medianHold": 10.63,
+  "minHold": 3.47,
+  "fastCuts": 1,
+  "kinds": {
+   "top": 1,
+   "chase": 2,
+   "capital": 3,
+   "squad": 2
+  },
+  "phases": {
+   "establish": 1,
+   "story": 3,
+   "climax": 3,
+   "build": 1
+  },
+  "deadStretches": [
+   [
+    0,
+    19.9
+   ]
+  ],
+  "repeatedShots": 2,
+  "bigDeaths": 0,
+  "bigDeathsOnScreen": 0,
+  "bigDeathsReplayed": 0,
+  "missed": [],
+  "captions": 16,
+  "decisionCaptions": 6,
+  "eventCaptions": 5,
+  "captionMedianSeconds": 4.799999999999997,
+  "shortCaptions": 0,
+  "wallSeconds": 91
+ },
+ "autoReplays": [],
+ "cuts": [
+  {
+   "t": -0.25,
+   "kind": "arrival",
+   "subject": 2,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet arrivals"
+  },
+  {
+   "t": 2.82,
+   "kind": "formation",
+   "subject": 2,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet approach · IMPERIAL"
+  },
+  {
+   "t": 5.92,
+   "kind": "formation",
+   "subject": 61,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet approach · REBEL"
+  },
+  {
+   "t": 9.02,
+   "kind": "top",
+   "subject": 0,
+   "partner": null,
+   "phase": "establish",
+   "label": "Broadcast · The field · Battle from above"
+  },
+  {
+   "t": 18.58,
+   "kind": "chase",
+   "subject": 68,
+   "partner": null,
+   "phase": "story",
+   "label": "Broadcast · Story · Pursuit · REBEL"
+  },
+  {
+   "t": 37.52,
+   "kind": "capital",
+   "subject": 62,
+   "partner": null,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · REBEL"
+  },
+  {
+   "t": 48.22,
+   "kind": "chase",
+   "subject": 68,
+   "partner": null,
+   "phase": "story",
+   "label": "Broadcast · Story · Pursuit · REBEL"
+  },
+  {
+   "t": 54.62,
+   "kind": "capital",
+   "subject": 0,
+   "partner": null,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · IMPERIAL"
+  },
+  {
+   "t": 65.28,
+   "kind": "squad",
+   "subject": 102,
+   "partner": null,
+   "phase": "story",
+   "label": "Broadcast · Story · Blue squadron · breaking"
+  },
+  {
+   "t": 68.75,
+   "kind": "capital",
+   "subject": 0,
+   "partner": null,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · IMPERIAL"
+  },
+  {
+   "t": 79.38,
+   "kind": "squad",
+   "subject": 30,
+   "partner": null,
+   "phase": "build",
+   "label": "Broadcast · Building · Obsidian squadron · breaking"
+  }
+ ],
+ "captions": [
+  {
+   "t": 2.05,
+   "text": "“Shedding the jump. burning onto her heading.” — Bastion",
+   "kind": "thought"
+  },
+  {
+   "t": 6.68,
+   "text": "“Crossing the void. they cannot hurt us. we do not need to hurry.” — Alliance",
+   "kind": "thought"
+  },
+  {
+   "t": 11.25,
+   "text": "“The lines have met. they cannot hurt us. we do not need to hurry.” — Ultimatum",
+   "kind": "thought"
+  },
+  {
+   "t": 20.28,
+   "text": "Grey Leader running the convoy lane, 9.2 km to the jump point.",
+   "kind": "decision"
+  },
+  {
+   "t": 25.75,
+   "text": "Grey 4 running the convoy lane, 8.6 km to the jump point.",
+   "kind": "decision"
+  },
+  {
+   "t": 31.22,
+   "text": "Yellow 3 running the convoy lane, 7.5 km to the jump point.",
+   "kind": "decision"
+  },
+  {
+   "t": 36.68,
+   "text": "Tan 2 running the convoy lane, 3.2 km to the jump point.",
+   "kind": "decision"
+  },
+  {
+   "t": 42.05,
+   "text": "“Broadside on the line. TIE ADVANCED X1 is in the battery.” — Guardian",
+   "kind": "thought"
+  },
+  {
+   "t": 46.58,
+   "text": "“Broadside on the line. TIE/IN INTERCEPTOR is in the battery.” — Guardian",
+   "kind": "thought"
+  },
+  {
+   "t": 51.12,
+   "text": "Grey Leader running the convoy lane, 5.8 km to the jump point.",
+   "kind": "decision"
+  },
+  {
+   "t": 55.52,
+   "text": "Blue squadron is breaking. 5 ships running for the edge.",
+   "kind": "event"
+  },
+  {
+   "t": 60.32,
+   "text": "A convoy ship makes the jump: 1 of 2 needed.",
+   "kind": "event"
+  },
+  {
+   "t": 65.12,
+   "text": "The Imperial plan has failed: they would not come to the line. Switching to the charge.",
+   "kind": "event"
+  },
+  {
+   "t": 71.92,
+   "text": "Obsidian squadron is breaking. 2 ships running for the edge.",
+   "kind": "event"
+  },
+  {
+   "t": 76.72,
+   "text": "Red squadron is breaking. 8 ships running for the edge.",
+   "kind": "event"
+  },
+  {
+   "t": 81.48,
+   "text": "Obsidian squadron has broken. Obsidian 3 running for the edge, hull 2%.",
+   "kind": "decision"
+  }
+ ],
+ "deaths": [],
+ "replays": [],
+ "winner": 1,
+ "winReason": "convoy",
+ "T": 82.74999999999785,
+ "events": [
+  {
+   "t": -0.2,
+   "type": "warPlan",
+   "text": "The Empire will screen and siege. The Rebels will raid and run."
+  },
+  {
+   "t": 19.9,
+   "type": "contact",
+   "text": "First shots: Blue 7 opens fire on the Immobilizer 418."
+  },
+  {
+   "t": 34,
+   "type": "ionCharge",
+   "text": "MAR-YK05958 GUARDIAN"
+  },
+  {
+   "t": 37.1,
+   "type": "ionCharge",
+   "text": "ISD-AM121866 BASTION"
+  },
+  {
+   "t": 38.5,
+   "type": "raid",
+   "text": "Blue squadron jumps out mid-raid. They'll be back behind the Empire."
+  },
+  {
+   "t": 39.5,
+   "type": "raid",
+   "text": "Red squadron jumps out mid-raid. They'll be back behind the Empire."
+  },
+  {
+   "t": 43.3,
+   "type": "ionCharge",
+   "text": "MAR-VA35270 INDEPENDENCE"
+  },
+  {
+   "t": 45.4,
+   "type": "ionCharge",
+   "text": "ISD-AM121866 BASTION"
+  },
+  {
+   "t": 48.2,
+   "type": "ionStrike",
+   "text": "MAR-VA35270 INDEPENDENCE"
+  },
+  {
+   "t": 54.4,
+   "type": "ionCharge",
+   "text": "SSD-ND127898 ULTIMATUM"
+  },
+  {
+   "t": 55.4,
+   "type": "rout",
+   "text": "Blue squadron is breaking. 5 ships running for the edge."
+  },
+  {
+   "t": 58.1,
+   "type": "convoySaved",
+   "text": "A convoy ship makes the jump: 1 of 2 needed."
+  },
+  {
+   "t": 61.2,
+   "type": "planSwitch",
+   "text": "The Imperial plan has failed: they would not come to the line. Switching to the charge."
+  },
+  {
+   "t": 63.8,
+   "type": "ionCharge",
+   "text": "SSD-ND127898 ULTIMATUM"
+  },
+  {
+   "t": 66.4,
+   "type": "raid",
+   "text": "Blue squadron jumps out mid-raid. They'll be back behind the Empire."
+  },
+  {
+   "t": 67.4,
+   "type": "planWorked",
+   "text": "The Rebel raiders have hit and run twice."
+  },
+  {
+   "t": 70.2,
+   "type": "rout",
+   "text": "Obsidian squadron is breaking. 2 ships running for the edge."
+  },
+  {
+   "t": 73.5,
+   "type": "rout",
+   "text": "Red squadron is breaking. 8 ships running for the edge."
+  },
+  {
+   "t": 76.7,
+   "type": "victory",
+   "text": "THE REBEL ALLIANCE"
+  },
+  {
+   "t": 76.7,
+   "type": "convoySaved",
+   "text": "A convoy ship makes the jump: 2 of 2 needed."
+  },
+  {
+   "t": 76.9,
+   "type": "escape",
+   "text": "Blue squadron jumps out. They will live to fight another day."
+  }
+ ],
+ "kills": [
+  28.4,
+  30.1,
+  33,
+  46.2,
+  53.5,
+  53.7,
+  61.5,
+  64.3,
+  65.1,
+  67.6,
+  68.7,
+  69.1,
+  70,
+  78.7,
+  80.8,
+  81.7,
+  81.8
+ ],
+ "plans": [
+  "SIEGE",
+  "RAID"
+ ],
+ "objective": "CONVOY",
+ "names": [
+  "THE IMPERIAL STARFLEET",
+  "THE REBEL ALLIANCE"
+ ]
+}

@@ -71,6 +71,7 @@ function seedWithTerrain(kind, from) {
 
 async function capture(browser, base, sc) {
   // A moment that does not happen in one war is looked for in the next seed.
+  if (sc.until.event && !sc.seeds) sc = {...sc, seeds: [sc.seed, 1101, 2202, 3303, 4404].filter((v, i, a) => a.indexOf(v) === i)};
   if (sc.seeds && !sc.tried) {
     for (const seed of sc.seeds) { const r = await capture(browser, base, {...sc, seed, tried: true}); if (!r.missing) return r; }
     return {id: sc.id, missing: sc.until.event, seeds: sc.seeds};
@@ -125,7 +126,6 @@ async function capture(browser, base, sc) {
         cam.ex = eye[0]; cam.ey = eye[1]; cam.ez = eye[2];
         const dx = L.focus[0] - eye[0], dy = L.focus[1] - eye[1], dz = L.focus[2] - eye[2];
         cam.yaw = Math.atan2(dz, dx); cam.pitch = Math.atan2(dy, Math.hypot(dx, dz)); watchGoal = {far: L.far * k};
-        bc.caption = null;
         return {distance: Math.round(Math.hypot(dx, dy, dz)), subject: shipLabel(subject), camera: kind};
       }
       // Places, not ships: a kill site, an ion lance, the terrain, the objective.
@@ -144,7 +144,6 @@ async function capture(browser, base, sc) {
       const dx = look[0] - eye[0], dy = look[1] - eye[1], dz = look[2] - eye[2];
       cam.yaw = Math.atan2(dz, dx); cam.pitch = Math.atan2(dy, Math.hypot(dx, dz)); watchGoal = {far: Math.hypot(dx, dy, dz) * 30};
       actionCamera = {subject: subject ? subject.id : null, partner: null, kind: 'chase', clock: 0, index: 0, history: [], kindAt: {}};
-      bc.caption = null;
       return {distance: Math.round(d), subject: subject ? shipLabel(subject) : null, camera: 'place'};
     }, {frame: sc.frame, view, found: found || {}});
     await page.waitForTimeout(2200);

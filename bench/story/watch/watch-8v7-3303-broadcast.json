@@ -1,0 +1,773 @@
+{
+ "summary": {
+  "matchup": [
+   "THE SHADOWS",
+   "THE MINBARI FEDERATION"
+  ],
+  "seed": 3303,
+  "size": 60,
+  "mode": "broadcast",
+  "plans": [
+   "DECAPITATE",
+   "HOLD"
+  ],
+  "objective": "STATION",
+  "winner": 1,
+  "reason": "station",
+  "duration": 148.9,
+  "cuts": 16,
+  "medianHold": 9,
+  "minHold": 5.33,
+  "fastCuts": 0,
+  "kinds": {
+   "top": 1,
+   "duel": 1,
+   "chase": 4,
+   "capital": 8,
+   "squad": 2
+  },
+  "phases": {
+   "establish": 1,
+   "build": 3,
+   "story": 4,
+   "climax": 6,
+   "reaction": 2
+  },
+  "deadStretches": [],
+  "repeatedShots": 2,
+  "bigDeaths": 5,
+  "bigDeathsOnScreen": 5,
+  "bigDeathsReplayed": 0,
+  "missed": [],
+  "captions": 36,
+  "decisionCaptions": 14,
+  "eventCaptions": 20,
+  "captionMedianSeconds": 3.84,
+  "shortCaptions": 7,
+  "wallSeconds": 102
+ },
+ "autoReplays": [],
+ "cuts": [
+  {
+   "t": -0.25,
+   "kind": "arrival",
+   "subject": 1,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet arrivals"
+  },
+  {
+   "t": 2.82,
+   "kind": "formation",
+   "subject": 1,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet approach · SHADOWS"
+  },
+  {
+   "t": 5.92,
+   "kind": "formation",
+   "subject": 33,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet approach · MINBARI"
+  },
+  {
+   "t": 9.02,
+   "kind": "top",
+   "subject": 0,
+   "partner": null,
+   "phase": "establish",
+   "label": "Broadcast · The field · Battle from above"
+  },
+  {
+   "t": 18.58,
+   "kind": "duel",
+   "subject": 4,
+   "partner": 33,
+   "phase": "build",
+   "label": "Broadcast · Building · Crossfire · SHADOWS"
+  },
+  {
+   "t": 31.38,
+   "kind": "chase",
+   "subject": 84,
+   "partner": 24,
+   "phase": "story",
+   "label": "Broadcast · Story · Pursuit · MINBARI"
+  },
+  {
+   "t": 37.78,
+   "kind": "capital",
+   "subject": 48,
+   "partner": 9,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · MINBARI"
+  },
+  {
+   "t": 44.95,
+   "kind": "chase",
+   "subject": 84,
+   "partner": 24,
+   "phase": "story",
+   "label": "Broadcast · Story · Pursuit · MINBARI"
+  },
+  {
+   "t": 51.35,
+   "kind": "capital",
+   "subject": 36,
+   "partner": null,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · MINBARI"
+  },
+  {
+   "t": 62.02,
+   "kind": "capital",
+   "subject": 34,
+   "partner": null,
+   "phase": "build",
+   "label": "Broadcast · Building · Capital ship · MINBARI"
+  },
+  {
+   "t": 74.82,
+   "kind": "squad",
+   "subject": 38,
+   "partner": null,
+   "phase": "story",
+   "label": "Broadcast · Story · Light squadron"
+  },
+  {
+   "t": 85.48,
+   "kind": "capital",
+   "subject": 44,
+   "partner": 24,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · MINBARI"
+  },
+  {
+   "t": 92.62,
+   "kind": "squad",
+   "subject": 38,
+   "partner": null,
+   "phase": "story",
+   "label": "Broadcast · Story · Light squadron"
+  },
+  {
+   "t": 97.95,
+   "kind": "capital",
+   "subject": 33,
+   "partner": null,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · MINBARI"
+  },
+  {
+   "t": 108.62,
+   "kind": "capital",
+   "subject": 35,
+   "partner": null,
+   "phase": "build",
+   "label": "Broadcast · Building · Capital ship · MINBARI"
+  },
+  {
+   "t": 119.02,
+   "kind": "capital",
+   "subject": 46,
+   "partner": 32,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · MINBARI"
+  },
+  {
+   "t": 128.02,
+   "kind": "chase",
+   "subject": 7,
+   "partner": null,
+   "phase": "reaction",
+   "label": "Broadcast · Aftermath · Pursuit · SHADOWS"
+  },
+  {
+   "t": 133.62,
+   "kind": "capital",
+   "subject": 32,
+   "partner": 41,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · SHADOWS"
+  },
+  {
+   "t": 140.68,
+   "kind": "chase",
+   "subject": 49,
+   "partner": null,
+   "phase": "reaction",
+   "label": "Broadcast · Aftermath · Pursuit · MINBARI"
+  }
+ ],
+ "captions": [
+  {
+   "t": 1.38,
+   "text": "“Shedding the jump. burning onto her heading.” — the Shadow Vessel",
+   "kind": "thought"
+  },
+  {
+   "t": 6.02,
+   "text": "The Minbari take the station.",
+   "kind": "event"
+  },
+  {
+   "t": 9.65,
+   "text": "Umbra squadron going for the Minbari flagship.",
+   "kind": "decision"
+  },
+  {
+   "t": 13.38,
+   "text": "First shots: Wave 4 opens fire on the Shadow Scout.",
+   "kind": "event"
+  },
+  {
+   "t": 18.18,
+   "text": "Umbra squadron going for the Minbari flagship.",
+   "kind": "decision"
+  },
+  {
+   "t": 22.02,
+   "text": "Dukhat's Blade has lost Dawn 5. Now hunting the Shadow Scout that did it.",
+   "kind": "event"
+  },
+  {
+   "t": 28.15,
+   "text": "The Minbari take the station.",
+   "kind": "event"
+  },
+  {
+   "t": 31.75,
+   "text": "Dukhat's Blade is hunting the Shadow Scout that killed Dawn 5.",
+   "kind": "decision"
+  },
+  {
+   "t": 36.82,
+   "text": "Hush squadron going for the Minbari flagship.",
+   "kind": "decision"
+  },
+  {
+   "t": 38.18,
+   "text": "Shore squadron peels off to screen Shore 3, hull 34%.",
+   "kind": "event"
+  },
+  {
+   "t": 43.02,
+   "text": "Dusk Leader clips the wreck of Shantavi. Gone.",
+   "kind": "event"
+  },
+  {
+   "t": 47.15,
+   "text": "Dukhat's Blade is hunting the Shadow Scout that killed Dawn 5.",
+   "kind": "decision"
+  },
+  {
+   "t": 49.42,
+   "text": "Marai is going down firing everything it has.",
+   "kind": "event"
+  },
+  {
+   "t": 53.55,
+   "text": "Umbra squadron has broken. Umbra 2 running for the edge, hull 22%.",
+   "kind": "decision"
+  },
+  {
+   "t": 59.02,
+   "text": "Dukhat's Blade is down. The hunt for the Shadow Scout ends there.",
+   "kind": "event"
+  },
+  {
+   "t": 64.48,
+   "text": "Crest squadron coming in off their flank.",
+   "kind": "decision"
+  },
+  {
+   "t": 68.22,
+   "text": "The Shadows plan has failed: the strike was shot down. Switching to the pincer.",
+   "kind": "event"
+  },
+  {
+   "t": 74.35,
+   "text": "Marai survives. Light squadron held.",
+   "kind": "event"
+  },
+  {
+   "t": 78.08,
+   "text": "Hush 9 breaking off, hull 40%, falling back on Hush 5.",
+   "kind": "decision"
+  },
+  {
+   "t": 79.42,
+   "text": "Veil Leader covering Veil 3, hull 39%.",
+   "kind": "decision"
+  },
+  {
+   "t": 83.15,
+   "text": "Flyer 7 covering Marai, hull 15%.",
+   "kind": "decision"
+  },
+  {
+   "t": 86.48,
+   "text": "Shore 2 is going down firing everything it has.",
+   "kind": "event"
+  },
+  {
+   "t": 90.88,
+   "text": "",
+   "kind": null
+  },
+  {
+   "t": 92.22,
+   "text": "Hush 2 covering Dusk 2, hull 34%.",
+   "kind": "decision"
+  },
+  {
+   "t": 94.35,
+   "text": "The Minbari take the station.",
+   "kind": "event"
+  },
+  {
+   "t": 98.08,
+   "text": "“They will break on us. SHADOW HUNTER is already in the battery.” — Anla'shok",
+   "kind": "thought"
+  },
+  {
+   "t": 107.15,
+   "text": "Veil Leader breaking off, hull 23%, falling back to the Greater Battlecrab’s screen.",
+   "kind": "decision"
+  },
+  {
+   "t": 112.88,
+   "text": "The Ghost has lost Hush 3. Now hunting the Tinashi-Class War that did it.",
+   "kind": "event"
+  },
+  {
+   "t": 119.02,
+   "text": "Chime squadron peels off to screen Shore Leader, hull 34%.",
+   "kind": "event"
+  },
+  {
+   "t": 123.82,
+   "text": "The Ghost is hunting the Tinashi-Class War that killed Hush 3.",
+   "kind": "decision"
+  },
+  {
+   "t": 125.15,
+   "text": "The screen could not save Shore Leader.",
+   "kind": "event"
+  },
+  {
+   "t": 128.88,
+   "text": "Veil 2 breaking off, hull 60%, falling back to the Greater Battlecrab’s screen.",
+   "kind": "decision"
+  },
+  {
+   "t": 130.22,
+   "text": "The Ghost is going down firing everything it has.",
+   "kind": "event"
+  },
+  {
+   "t": 134.62,
+   "text": "The Ghost is down. The hunt for the Tinashi-Class War ends there.",
+   "kind": "event"
+  },
+  {
+   "t": 137.68,
+   "text": "Shade squadron is breaking. 1 ship running for the edge.",
+   "kind": "event"
+  },
+  {
+   "t": 142.48,
+   "text": "Star 4 survives. Shore squadron held.",
+   "kind": "event"
+  },
+  {
+   "t": 144.75,
+   "text": "Star 4 is going down firing everything it has.",
+   "kind": "event"
+  }
+ ],
+ "deaths": [
+  {
+   "t": 38.18,
+   "id": 48,
+   "name": "Shore 3",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 54.55,
+   "id": 84,
+   "name": "Dukhat's Blade",
+   "seen": true,
+   "capital": false,
+   "hero": true,
+   "mode": "broadcast"
+  },
+  {
+   "t": 85.85,
+   "id": 44,
+   "name": "Star 3",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 124.18,
+   "id": 46,
+   "name": "Shore Leader",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 134.18,
+   "id": 32,
+   "name": "The Ghost",
+   "seen": true,
+   "capital": true,
+   "hero": true,
+   "mode": "broadcast"
+  }
+ ],
+ "replays": [],
+ "winner": 1,
+ "winReason": "station",
+ "T": 148.88333333332744,
+ "events": [
+  {
+   "t": -0.2,
+   "type": "warPlan",
+   "text": "The Shadows will try to decapitate. The Minbari will hold the line."
+  },
+  {
+   "t": 3.9,
+   "type": "stationTaken",
+   "text": "The Minbari take the station."
+  },
+  {
+   "t": 13.3,
+   "type": "contact",
+   "text": "First shots: Wave 4 opens fire on the Shadow Scout."
+  },
+  {
+   "t": 19.6,
+   "type": "vendetta",
+   "text": "Dukhat's Blade has lost Dawn 5. Now hunting the Shadow Scout that did it."
+  },
+  {
+   "t": 26.3,
+   "type": "stationTaken",
+   "text": "The Minbari take the station."
+  },
+  {
+   "t": 34,
+   "type": "ionCharge",
+   "text": "WC-VALEN 68888 VALTAYN"
+  },
+  {
+   "t": 34.9,
+   "type": "rescueStart",
+   "text": "Shore squadron peels off to screen Shore 3, hull 34%."
+  },
+  {
+   "t": 38.2,
+   "type": "capitalKill",
+   "text": "Shore 3"
+  },
+  {
+   "t": 38.5,
+   "type": "rescue",
+   "text": "The screen could not save Shore 3."
+  },
+  {
+   "t": 38.9,
+   "type": "wreckStrike",
+   "text": "Dusk Leader clips the wreck of Shantavi. Gone."
+  },
+  {
+   "t": 42.8,
+   "type": "ionCharge",
+   "text": "WC-VALEN 68888 VALTAYN"
+  },
+  {
+   "t": 47.2,
+   "type": "rout",
+   "text": "Umbra squadron is breaking. 7 ships running for the edge."
+  },
+  {
+   "t": 48.3,
+   "type": "rescueStart",
+   "text": "Light squadron peels off to screen Marai, hull 35%."
+  },
+  {
+   "t": 48.8,
+   "type": "lastStand",
+   "text": "Marai is going down firing everything it has."
+  },
+  {
+   "t": 52,
+   "type": "ionCharge",
+   "text": "WC-VALEN 68888 VALTAYN"
+  },
+  {
+   "t": 54.5,
+   "type": "heroKill",
+   "text": "Dukhat's Blade"
+  },
+  {
+   "t": 54.6,
+   "type": "vendettaFailed",
+   "text": "Dukhat's Blade is down. The hunt for the Shadow Scout ends there."
+  },
+  {
+   "t": 60.8,
+   "type": "ionCharge",
+   "text": "WC-VALEN 68888 VALTAYN"
+  },
+  {
+   "t": 61.2,
+   "type": "escape",
+   "text": "Umbra squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 67.4,
+   "type": "planSwitch",
+   "text": "The Shadows plan has failed: the strike was shot down. Switching to the pincer."
+  },
+  {
+   "t": 69.9,
+   "type": "ionCharge",
+   "text": "WC-VALEN 68888 VALTAYN"
+  },
+  {
+   "t": 70.5,
+   "type": "rescue",
+   "text": "Marai survives. Light squadron held."
+  },
+  {
+   "t": 79.2,
+   "type": "ionCharge",
+   "text": "WC-VALEN 68888 VALTAYN"
+  },
+  {
+   "t": 85.8,
+   "type": "capitalKill",
+   "text": "Star 3"
+  },
+  {
+   "t": 86.4,
+   "type": "lastStand",
+   "text": "Shore 2 is going down firing everything it has."
+  },
+  {
+   "t": 88.5,
+   "type": "ace",
+   "text": "Hush 5 makes ace with 3 kills. Callsign: Vane."
+  },
+  {
+   "t": 92.2,
+   "type": "stationTaken",
+   "text": "The Minbari take the station."
+  },
+  {
+   "t": 94.7,
+   "type": "ionCharge",
+   "text": "WC-VALEN 14296 ANLA'SHOK"
+  },
+  {
+   "t": 103.4,
+   "type": "ionCharge",
+   "text": "WC-VALEN 00010 MARAI"
+  },
+  {
+   "t": 107.9,
+   "type": "ionStrike",
+   "text": "WC-VALEN 00010 MARAI"
+  },
+  {
+   "t": 109.6,
+   "type": "vendetta",
+   "text": "The Ghost has lost Hush 3. Now hunting the Tinashi-Class War that did it."
+  },
+  {
+   "t": 116,
+   "type": "rescueStart",
+   "text": "Shore squadron peels off to screen Star 4, hull 33%."
+  },
+  {
+   "t": 116.9,
+   "type": "rescueStart",
+   "text": "Chime squadron peels off to screen Shore Leader, hull 34%."
+  },
+  {
+   "t": 124.2,
+   "type": "capitalKill",
+   "text": "Shore Leader"
+  },
+  {
+   "t": 124.2,
+   "type": "rescue",
+   "text": "The screen could not save Shore Leader."
+  },
+  {
+   "t": 129.1,
+   "type": "vendetta",
+   "text": "The Ghost has lost Hush 2. Now hunting the Tinashi-Class War that did it."
+  },
+  {
+   "t": 129.4,
+   "type": "lastStand",
+   "text": "The Ghost is going down firing everything it has."
+  },
+  {
+   "t": 131.3,
+   "type": "rescueStart",
+   "text": "Chime squadron peels off to screen Shore 4, hull 37%."
+  },
+  {
+   "t": 134.2,
+   "type": "heroKill",
+   "text": "The Ghost"
+  },
+  {
+   "t": 134.2,
+   "type": "vendettaFailed",
+   "text": "The Ghost is down. The hunt for the Tinashi-Class War ends there."
+  },
+  {
+   "t": 136.2,
+   "type": "wreckStrike",
+   "text": "Dusk 3 clips the wreck of Callenn. Gone."
+  },
+  {
+   "t": 137.6,
+   "type": "rout",
+   "text": "Shade squadron is breaking. 1 ship running for the edge."
+  },
+  {
+   "t": 137.7,
+   "type": "planSwitch",
+   "text": "The Shadows plan has failed: the wings never met. Switching to the decapitation strike."
+  },
+  {
+   "t": 137.7,
+   "type": "stationTaken",
+   "text": "The Minbari take the station."
+  },
+  {
+   "t": 138.7,
+   "type": "rescue",
+   "text": "Star 4 survives. Shore squadron held."
+  },
+  {
+   "t": 140.2,
+   "type": "ionCharge",
+   "text": "BATTLECRAB 90805"
+  },
+  {
+   "t": 141.5,
+   "type": "wreckStrike",
+   "text": "Veil 4 clips the wreck of Callenn. Gone."
+  },
+  {
+   "t": 142.8,
+   "type": "victory",
+   "text": "THE MINBARI FEDERATION"
+  },
+  {
+   "t": 143.6,
+   "type": "rescueStart",
+   "text": "Shore squadron peels off to screen Light 4, hull 34%."
+  },
+  {
+   "t": 144,
+   "type": "lastStand",
+   "text": "Star 4 is going down firing everything it has."
+  },
+  {
+   "t": 144.2,
+   "type": "wreckStrike",
+   "text": "Veil 2 clips the wreck of The Ghost. Gone."
+  },
+  {
+   "t": 144.7,
+   "type": "rout",
+   "text": "Veil squadron is breaking. 1 ship running for the edge."
+  }
+ ],
+ "kills": [
+  19.6,
+  21.6,
+  23.2,
+  29,
+  31.6,
+  32.6,
+  34.2,
+  35.3,
+  36.8,
+  38.2,
+  38.5,
+  38.5,
+  38.8,
+  39.4,
+  40.8,
+  42.6,
+  44,
+  46.1,
+  48.6,
+  48.7,
+  49.2,
+  49.3,
+  52.2,
+  53.8,
+  54.1,
+  54.5,
+  54.9,
+  56.4,
+  57.6,
+  59.6,
+  59.7,
+  60.7,
+  61.9,
+  66,
+  67.2,
+  67.6,
+  68.9,
+  73.8,
+  74.1,
+  74.5,
+  82.6,
+  85.8,
+  88.4,
+  88.5,
+  102.6,
+  106.9,
+  109.5,
+  112.3,
+  113,
+  124.2,
+  126.6,
+  129,
+  134.2,
+  136.1,
+  141.5,
+  141.6,
+  144.2,
+  145.2
+ ],
+ "plans": [
+  "DECAPITATE",
+  "HOLD"
+ ],
+ "objective": "STATION",
+ "names": [
+  "THE SHADOWS",
+  "THE MINBARI FEDERATION"
+ ]
+}

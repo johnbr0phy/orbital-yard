@@ -172,3 +172,30 @@ test('director: story shots hold at least ten seconds, yield to a capital kill, 
   let back=null;for(let i=0;i<60&&!back;i++){const c=d.update(.25,[story,{phase:'build',kind:'duel',subject:7,score:30}],()=>true);if(c)back=c;}
   assert.ok(back&&back.story==='r1'&&back.resumed,JSON.stringify(back));
 });
+
+test('fear is contagious by doctrine: a frightened neighbour raises fear, never for the Borg',()=>{
+  const defs=AI.PROFILES.map(()=>({hold:500,doct:{CHARGE:1}}));
+  const fearOf=race=>{
+    const m=new AI.FleetMinds(defs);m.reset(3);
+    const me={id:0,side:0,race,seed:11,x:0,y:0,z:0,yaw:0,hp:10,hpMax:10,slen:24,arr:true},pal={id:1,side:0,race,seed:12,x:120,y:0,z:0,yaw:0,hp:10,hpMax:10,slen:24,arr:true};
+    m.seedShip(me);m.seedShip(pal);m.story.ready=true;m.story.sides[0].flag=-1;
+    const calm=m.story.fearTarget(me,me.ai,.2,1,.5);
+    me.ai.friends=[pal];pal.ai.fear=.95;me.ai.fear=.1;me.ai.witness=2;
+    return m.story.fearTarget(me,me.ai,.2,1,.5)-calm;
+  };
+  assert.ok(fearOf(6)>.2,'Rebels catch fear from neighbours: '+fearOf(6));
+  assert.ok(fearOf(1)>fearOf(6),'the Shoal spreads it faster than the Rebels');
+  assert.ok(Math.abs(fearOf(12))<1e-9,'the Borg do not');
+});
+
+test('pursuit follows doctrine: some fleets run down the broken, others re-engage',()=>{
+  const defs=AI.PROFILES.map(()=>({hold:500,doct:{CHARGE:1}}));
+  const bonus=race=>{
+    const m=new AI.FleetMinds(defs);m.reset(3);m.story.ready=true;
+    const s={id:0,side:0,race,seed:1,x:0,y:0,z:0,hp:10,hpMax:10,slen:24},t={id:1,side:1,race:6,seed:2,x:300,y:0,z:0,hp:10,hpMax:10,slen:24,routing:true};
+    m.ships=[s,t];m.seedShip(s);m.seedShip(t);
+    return m.story.targetBonus(s,s.ai,{id:1});
+  };
+  assert.ok(bonus(5)>0,'the Empire runs down routing enemies');
+  assert.ok(bonus(10)<0,'Starfleet re-engages elsewhere');
+});

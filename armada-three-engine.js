@@ -18323,7 +18323,8 @@ function bcKill(t,now){
   const ev=bcEvent(type,{side:t.side,ship:t.id,name:killName(t),klass:shipClass(t),size:t.slen,hero:!!t.hero,value:BC.shipValue({hp:t.hpMax,hpMax:t.hpMax}),
     by:by?by.id:null,byName:by?killName(by):null,x:t.x,y:t.y,z:t.z});
   if(t.squad>=0&&squads[t.squad]){const q=squads[t.squad];if(q.mem.length>=3&&q.mem.every(id=>ships[id].dead||id===t.id))bcEvent("squadronWipe",{side:t.side,ship:t.id,name:shipClass(t)+" flight",x:t.x,y:t.y,z:t.z,size:t.slen});}
-  if(type!=="kill"){const seen=onScreen(t);if(seen)maybeSlowMo(t,ev);else if(watchMode==="broadcast"&&ev.type!=="kill")bc.autoReplay={ev,at:now+2.2};}
+  // A big death the camera missed is queued for "let's see that again"; deaths that land close together replay together.
+  if(type!=="kill"){const seen=!replayState&&onScreen(t);if(seen)maybeSlowMo(t,ev);else if(watchMode==="broadcast"&&ev.type!=="kill"){if(bc.autoReplay&&now<bc.autoReplay.at+1.5){bc.autoReplay.evs.push(ev);bc.autoReplay.at=Math.max(bc.autoReplay.at,now+1.2);}else bc.autoReplay={evs:[ev],at:now+2.2};}}
 }
 // The bar and the momentum model carry the objective: a quarter of the share
 // is the objective's state (flagship hull, convoy runs, station hold).
@@ -18465,11 +18466,14 @@ function broadcastTick(now,dt){
     bc.ring.record(now,ships,s=>!s.dead&&!!s.vao&&T-s.delay>=0,replaySegments());
   }
   // Broadcast: a big kill the camera missed gets "let's see that again".
+  // A replay that cannot start yet (one is playing, or one just played) waits instead of being dropped.
+  if(bc.autoReplay&&now>=bc.autoReplay.at&&(replayState||now-(bc.lastAuto??-99)<=12)&&now-bc.autoReplay.evs[0].t<14)bc.autoReplay.at=replayState?now+.5:(bc.lastAuto??0)+12.05;
   if(bc.autoReplay&&now>=bc.autoReplay.at){
-    const ev=bc.autoReplay.ev;bc.autoReplay=null;
-    if(watchMode==="broadcast"&&!replayState&&winner==null&&now-(bc.lastAuto??-99)>18&&document.getElementById("warMenu").hidden!==false){
+    const evs=bc.autoReplay.evs.slice(0,3);bc.autoReplay=null;
+    if(watchMode==="broadcast"&&!replayState&&winner==null&&now-(bc.lastAuto??-99)>12&&document.getElementById("warMenu").hidden!==false){
       bc.lastAuto=now;const r=bc.ring&&bc.ring.range();
-      if(r&&ev.t-4>=r[0])startReplay({t0:ev.t-4,t1:Math.min(r[1],ev.t+2),focus:[ev.x,ev.y,ev.z],subject:ev.ship,slowAt:ev.t,label:"Replay · "+ev.name});
+      const q=r?evs.filter(ev=>ev.t-4>=r[0]).map(ev=>({t0:ev.t-3.5,t1:Math.min(r[1],ev.t+2),focus:[ev.x,ev.y,ev.z],subject:ev.ship,slowAt:ev.t,label:"Replay · "+ev.name})):[];
+      if(q.length){const first=q.shift();startReplay({...first,queue:q});bc.autoReplays=(bc.autoReplays||[]).concat(evs.map(e=>e.ship));}
     }
   }
   for(let i=bc.pendingClips.length-1;i>=0;i--)if(now>=bc.pendingClips[i].at){captureClip(bc.pendingClips[i].ev);bc.pendingClips.splice(i,1);}
@@ -18685,7 +18689,8 @@ function updateBroadcastCamera(now,dt){
   if(age<9)return updateActionCamera(now,dt); // the arrival sequence is already scripted
   if(!actionCamera)actionCamera={clock:0,until:0,index:0,subject:null,partner:null,kind:null,history:[],kindAt:{},lastWide:0,scanAt:0};
   const a=actionCamera;a.clock+=dt;
-  const s=ships[a.subject],died=s&&s.dead&&now-(s.deadT??-99)<2.8;
+  // Hold the payoff: stay on a death for 3.8 s before the director moves on.
+  const s=ships[a.subject],died=s&&s.dead&&now-(s.deadT??-99)<3.8;
   let layout=null;
   if(!died&&a.clock>=(a.nextThink||0)){
     a.nextThink=a.clock+.25;
@@ -18833,7 +18838,7 @@ function tickCaption(now,subjectShip){
     const held=now-cur.at,valid=!cur.check||cur.check();
     const bigger=q.find(c=>c.weight>=Math.max(60,cur.weight*1.5)&&captionRelevant(c,subject));
     if(!valid&&held>1.2)bc.caption=null;
-    else if(bigger&&held>2.2)bc.caption=null;
+    else if(bigger&&held>3)bc.caption=null;
     else if(held<cur.hold)return cur;
     else bc.caption=null;
   }

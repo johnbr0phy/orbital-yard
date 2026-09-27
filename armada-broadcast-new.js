@@ -154,7 +154,7 @@
   const PHASE_ORDER = ['establish', 'build', 'climax', 'reaction'];
   // Longer holds than a sports cut: a war is followed, not flicked through.
   // A story shot follows one squadron, duel or pursuit while it develops.
-  const HOLD = {establish: [6, 9], build: [8, 12], climax: [6, 9], reaction: [5, 7.5], story: [10, 25]};
+  const HOLD = {establish: [6, 9], build: [8, 12], climax: [7, 10], reaction: [7, 9], story: [10, 25]};
   function createDirector({minHold = 3.2} = {}) {
     const d = {
       phase: null, shot: null, started: -Infinity, clock: 0, history: [], resume: null,
@@ -175,8 +175,11 @@
           // A story is interrupted only by something that outscores it
           // (a capital kill, an ion strike, a flagship falling), then resumed.
           const urgent = best && best.score >= 90 && (!d.shot || best.score > (d.shot.score || 0) * 1.25) && best.subject !== d.shot?.subject;
+          // A climax or its aftermath holds 7 s, a story 6 s, before another death may take it (a
+          // flagship or a First One still may); a death the camera misses is replayed, not chased.
+          const settled = held >= (d.phase === 'climax' || d.phase === 'reaction' ? 7 : d.phase === 'story' ? 6 : 0) || (best && best.score >= 125);
           const outranks = d.phase === 'story' && best && best.phase !== 'story' && best.score >= Math.max(62, (d.shot.score || 0) * 1.15) && best.subject !== d.shot.subject;
-          if ((urgent || outranks) && held >= minHold) {
+          if ((urgent || outranks) && held >= minHold && settled) {
             if (d.phase === 'story' && storyLive && !subjectGone) d.resume = {...d.shot, resumed: true};
             next = {...best, phase: 'climax'};
           } else if (d.phase === 'story') {
