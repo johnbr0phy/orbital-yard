@@ -74,3 +74,36 @@ test('convoy ticker lines keep the count at the moment each ship fell',()=>{
     return bc.log.events.filter(e=>e.type==='convoyLost').map(e=>e.text);})()`);
   assert.deepEqual(r.map(t=>t.match(/(\d+) lost/)[1]),['1','2']);
 });
+
+test('one button hides all UI; U toggles it and Esc brings it back',()=>{
+  const page=require('node:fs').readFileSync(require('node:path').join(__dirname,'../../armada-war-tribute-new.html'),'utf8');
+  assert.match(page,/<button type="button" id="uiHide"[^>]*aria-label="Hide all UI"/);
+  assert.match(page,/<button type="button" id="uiBack"/,'a way back when everything is hidden');
+  // Everything but the canvas, the ion flash and the way back is hidden.
+  assert.match(page,/body\.noui>:not\(#gl\):not\(#ionFlash\):not\(#uiBack\)\{visibility:hidden!important;pointer-events:none!important\}/);
+  assert.match(page,/if\(k==="u"&&!e\.repeat\)setNoUi\(!document\.body\.classList\.contains\("noui"\)\)/);
+  assert.match(page,/if\(document\.body\.classList\.contains\("noui"\)\)\{setNoUi\(false\);return;\}/,'Esc shows the UI first');
+  assert.match(page,/function openPicker\(\)\{setNoUi\(false\);/,'menus never open invisible');
+});
+
+test('the swarm has guns: hive ships hunt instead of holding, and spit seeking volleys',()=>{
+  const b=loadBattle();b.start(21,5,1101,40);
+  const hook=`globalThis.__v={};(()=>{const rf=raceFire;raceFire=function(s,...r){const n=plasmas.length;rf(s,...r);const k=plasmas.length-n;
+    if(s.race===21&&k>0){const c=s.slen>=180?'cap':s.slen>=60?'mid':'small';__v[c]=Math.max(__v[c]||0,k);__v.seek=(__v.seek||0)+plasmas.slice(n).filter(p=>p.seek!=null&&p.kind==='spore').length;__v.n=(__v.n||0)+k;}};})()`;
+  b.run(hook);b.step(20);
+  const held=J(b,`ships.filter(s=>s.race===21&&s.slen>=180&&s.ai&&!s.dead&&s.ai.order&&s.ai.order.kind==='HOLD').length`);
+  assert.equal(J(b,'battleAI.story.objective&&battleAI.story.objective.kind'),'STATION','a station war, where capitals used to sit on the station');
+  assert.equal(held,0,'no hive ship holds ground');
+  // A brawl: the hive ships march in and reach their bio-cannons' 1,150 m by about 80 s.
+  const w=loadBattle({cores:1,modules:true});w.start(21,5,3303,40);
+  w.run(hook);w.step(100);
+  const v=J(w,'__v');
+  assert.equal(v.cap,7,'a hive ship spits seven spores '+JSON.stringify(v));
+  assert.equal(v.small,2,JSON.stringify(v));
+  assert.equal(v.seek,v.n,'every spore seeks');
+  // A spore that starts off-line curves onto its prey.
+  const c=J(b,`(()=>{const t=ships.find(q=>q.side===1&&!q.dead&&q.arr);t.v=0;plasmas=[{x:t.x-600,y:t.y,z:t.z+300,vx:300,vy:0,vz:0,t0:battleTime,life:8,side:0,race:21,ph:0,dead:false,kind:'spore',seek:t.id,from:ships.find(q=>q.side===0).id}];
+    const pl=plasmas[0];for(let i=0;i<90&&!pl.dead;i++){battleTime+=1/30;simStep(battleTime,1/30);}
+    return {hit:pl.dead};})()`);
+  assert.ok(c.hit,'the spore reaches its prey');
+});

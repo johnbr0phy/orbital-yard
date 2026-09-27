@@ -601,6 +601,8 @@
     D(null,false,0,.60,.40,10,1,'edge',0,0,[.8,.2,0],true,[3,2,0,1,1,0],'The swarm cannot rout; when the hive ship dies the broods lose synapse and go feral.'),
     D(.60,true,.8,.25,.10,4,.5,'jump',.5,.7,[.4,.2,.4],false,[2,1,1,3,2,1],'A startup fleet: fast, improvised, and willing to pull out and relaunch.')
   ];
+  // The swarm never holds ground: its capitals go to the prey, even in a station war.
+  DOCTRINE[21].hunts=true;
   const SQUAD_NAMES={5:['Black','Onyx','Obsidian','Sabre','Scimitar','Night','Storm','Ash','Void','Iron'],
     6:['Red','Gold','Blue','Green','Grey','Yellow','Tan','Silver','Orange','Purple'],
     7:['Flyer','Crest','Wave','Dawn','Light','Star','Shore','Chime'],8:['Umbra','Hush','Veil','Dusk','Shade','Thorn'],
@@ -1029,7 +1031,7 @@
         const holdLine=(p.kind==='HOLD')&&p.state!=='done';
         if(holdLine&&!p.line)p.line=[own.x+dir*900,own.y,own.z];
         for(const c of this.ships()){
-          if(c.side!==side||!this.live(c)||!c.arr||!c.ai||!(c.hulls||c.slen>=180)||(c.ai.order&&['RAM','DRIFT'].includes(c.ai.order.kind)))continue;
+          if(c.side!==side||!this.live(c)||!c.arr||!c.ai||!(c.hulls||c.slen>=180)||(c.ai.order&&['RAM','DRIFT'].includes(c.ai.order.kind))||this.doctrine(c).hunts)continue;
           if(o&&o.kind==='STATION'&&!o.done&&(c.hulls||0)<50)this.setOrder(c,'HOLD',{point:o.point,until,spread:400});
           else if(holdLine&&(c.hulls||0)<50)this.setOrder(c,'HOLD',{point:p.line,until,spread:500});
         }

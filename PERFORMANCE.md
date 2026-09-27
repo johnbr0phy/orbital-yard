@@ -129,7 +129,22 @@ Squadron morale and capital crises are bucketed by ship id across steps; plans, 
 
 ## Behaviour change, new trace
 
-The story changes the war on purpose, so the trace changes. `bench/story/trace-before.txt` is the baseline (`16ea5e01…`); `bench/story/trace-after.txt` is this build (`945a530c…`), recorded twice with identical output.
+The story changes the war on purpose, so the trace changes. `bench/story/trace-before.txt` is the baseline (`16ea5e01…`). The story pass recorded `945a530c…`; the owner-feedback round (throttle, First Ones, Tyranid spores) changes the war again, and `bench/story/trace-after.txt` is now the current build (`034d4243…`), recorded twice with identical output.
+
+## Re-measured after the owner-feedback round
+
+The throttle (ships speed up and slow down with the fight) changes the war itself: fleets close sooner, so by 48 s the 300-a-side war has lost 35 ships instead of 17. Measured interleaved in one session against the story-pass commit (`832363e`), `sim-bench.cjs --size 300`:
+
+| window (war seconds) | build | ms CPU per simulated second | alive at start / mean alive |
+|---|---|---|---|
+| 38–48 | story pass | 2,870 / 2,863 | 562 / 557 |
+| 38–48 | now | 3,363 / 3,436 | 556 / 544 |
+| 30–90 | now | 3,337 / 3,296 | 571 / 490 |
+
+- **The machine was about 9% slower this session** than when the tables above were recorded (the story pass measured 2,612–2,675 then, 2,863–2,870 now).
+- **The rise is the war, not the throttle.** Timed directly inside the same window, `throttle` and `approachSpeed` cost 59 and 17 ms per simulated second (150,734 calls), about 2.4% of the simulation, and that includes the timer's own overhead. The rest is more fighting earlier.
+- **The story layer stays under 1%:** `story-cost.cjs` gives 25.2 ms per simulated second (0.83%) at 300 a side over 30–90 s, and 4.7 ms (0.79%) at 60 a side over 20–120 s.
+- **Battle size.** The reference costs below were not re-fitted. The page prefers its own measured wars over the probe when it scales them, and keeps 45% of the budget for rendering, so a war that costs about 15% more than the reference is absorbed after the first war on a machine.
 
 ## Cost by battle size (after, idle)
 
