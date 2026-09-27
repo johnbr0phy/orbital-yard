@@ -21,7 +21,7 @@ const SCENARIOS = [
   {id: 'flagship-death', a: 6, b: 5, seed: 1101, seeds: [1101, 2202, 3303, 81, 82], size: 60, force: {plans: ['DECAPITATE', 'DECAPITATE'], objective: 'ANNIHILATE'}, until: {event: 'flagshipDown'}, after: .35, frame: 'kill', views: ['near', 'mid']},
   {id: 'successor', a: 6, b: 5, seed: 1101, seeds: [1101, 2202, 3303, 81, 82], size: 60, force: {plans: ['DECAPITATE', 'DECAPITATE'], objective: 'ANNIHILATE'}, until: {event: 'successor'}, after: 3, frame: 'ship', views: ['mid', 'far']},
   {id: 'ram-turn', a: 12, b: 10, seed: 1101, size: 60, until: {event: 'lastStand', kind: 'RAM'}, after: 1, frame: 'pair', views: ['mid', 'far']},
-  {id: 'ram-impact', a: 12, b: 10, seed: 1101, size: 60, until: {event: 'ram'}, after: .3, frame: 'pair', views: ['near', 'mid']},
+  {id: 'ram-impact', a: 5, b: 6, seed: 2202, seeds: [2202, 1101, 3303], size: 60, until: {event: 'ram'}, after: .3, frame: 'pair', views: ['near', 'mid']},
   {id: 'last-stand-volley', a: 12, b: 10, seed: 2202, seeds: [2202, 1101, 3303, 4404], size: 60, until: {event: 'lastStand', kind: 'VOLLEY'}, after: .6, frame: 'ship', views: ['mid']},
   {id: 'abandon-ship', a: 12, b: 10, seed: 3303, size: 60, until: {event: 'pods'}, after: 2.5, frame: 'ship', views: ['near', 'mid']},
   {id: 'ace', a: 6, b: 5, seed: 2202, size: 60, until: {event: 'ace'}, after: .5, frame: 'ship', views: ['near', 'mid']},
@@ -49,7 +49,9 @@ const SCENARIOS = [
   {id: 'terrain-moon', a: 6, b: 5, seed: 1101, size: 60, terrain: 'moon', until: {time: 26}, frame: 'moon', views: ['far']},
   {id: 'ion-005', a: 5, b: 6, seed: 1101, size: 60, until: {event: 'ionStrike'}, after: .05, frame: 'ion', views: ['near', 'far']},
   {id: 'ion-080', a: 5, b: 6, seed: 1101, size: 60, until: {event: 'ionStrike'}, after: .8, frame: 'ion', views: ['near', 'far']},
-  {id: 'debris', a: 5, b: 6, seed: 1101, seeds: [1101, 2202, 3303, 4404], size: 60, until: {event: 'capitalKill'}, after: 1.2, frame: 'kill', views: ['near', 'mid', 'far']}
+  // A capital that breaks apart: hot fracture edges early, dark chunks once they cool.
+  {id: 'debris', a: 5, b: 6, seed: 1101, seeds: [1101, 2202, 3303, 4404], size: 60, until: {event: 'capitalKill', shatter: true}, after: 1.5, frame: 'kill', views: ['near', 'mid', 'far']},
+  {id: 'debris-cooled', a: 5, b: 6, seed: 1101, seeds: [1101, 2202, 3303, 4404], size: 60, until: {event: 'capitalKill', shatter: true}, after: 9, frame: 'kill', views: ['near']}
 ];
 
 function serve() {
@@ -93,7 +95,7 @@ async function capture(browser, base, sc) {
     let ev = null;
     if (until.time != null) { while (battleTime - warT0 < until.time) step(); }
     else {
-      const match = e => e.type === until.event && (!until.kind || e.kind === until.kind);
+      const match = e => e.type === until.event && (!until.kind || e.kind === until.kind) && (!until.shatter || ships[e.ship]?.destruction === 'catastrophic');
       while (battleTime - warT0 < 240 && !(ev = bc.log.events.find(match))) step();
       if (ev) { const t = ev.t + (after || 0); while (battleTime < t) step(); }
     }
@@ -102,6 +104,30 @@ async function capture(browser, base, sc) {
   }, sc);
   if (sc.until.event && !found) { await page.close(); return {id: sc.id, seed, missing: sc.until.event}; }
   const shots = [];
+  // Plans are shapes: fighters vanish from a top camera, so also draw a
+  // top-down plot straight from the simulation (x across, z down).
+  if (sc.views.includes('top')) {
+    const st = await page.evaluate(() => ({
+      ships: ships.filter(s => s && !s.dead && s.arr).map(s => [Math.round(s.x), Math.round(s.z), s.side, Math.round(s.slen), s.squad]),
+      squads: squads.map(q => ({side: q.side, role: q.role, name: q.name, mem: q.mem})),
+      rocks: (starSystem.field?.rocks || []).map(r => [r.p[0], r.p[2], r.r]), T: +(battleTime - warT0).toFixed(1),
+      plans: battleAI.story.planNames(), names: SIDE_NAME.slice()}));
+    const xs = st.ships.map(s => s[0]), zs = st.ships.map(s => s[1]);
+    const lo = [Math.min(...xs) - 600, Math.min(...zs) - 600], span = Math.max(Math.max(...xs) - lo[0] + 600, Math.max(...zs) - lo[1] + 600);
+    const W = 720, P = v => (v * W / span).toFixed(1), col = ['#6cf08a', '#ff5a4a'];
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${W + 40}" viewBox="0 0 ${W} ${W + 40}" font-family="monospace" font-size="12"><rect width="100%" height="100%" fill="#0b1016"/>`;
+    for (const r of st.rocks) svg += `<circle cx="${P(r[0] - lo[0])}" cy="${P(r[1] - lo[1])}" r="${Math.max(1.5, +P(r[2]))}" fill="#3a3f46"/>`;
+    for (const s of st.ships) svg += `<circle cx="${P(s[0] - lo[0])}" cy="${P(s[1] - lo[1])}" r="${s[3] >= 180 ? 5 : 1.8}" fill="${col[s[2]]}"/>`;
+    for (const q of st.squads) {
+      const live = st.ships.filter(s => s[4] != null && st.squads[s[4]] === q);
+      if (!live.length || q.role === 'main' || !q.role) continue;
+      const cx = live.reduce((a, s) => a + s[0], 0) / live.length, cz = live.reduce((a, s) => a + s[1], 0) / live.length;
+      svg += `<text x="${P(cx - lo[0])}" y="${+P(cz - lo[1]) - 6}" fill="${col[q.side]}" text-anchor="middle">${q.role}</text>`;
+    }
+    svg += `<text x="10" y="${W + 26}" fill="#cfd8de">${st.T} s · ${st.names[0]}: ${(st.plans[0] || '').toLowerCase()} (green) · ${st.names[1]}: ${(st.plans[1] || '').toLowerCase()} (red) · grid ${Math.round(span)} m</text></svg>`;
+    fs.writeFileSync(path.join(out, `${sc.id}-plot.svg`), svg);
+    shots.push({name: `${sc.id}-plot.svg`, camera: 'plot'});
+  }
   for (const view of sc.views) {
     const info = await page.evaluate(({frame, view, found}) => {
       // Frame with the product's own cameras: the cinema director for a

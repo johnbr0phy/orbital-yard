@@ -601,7 +601,7 @@
     21:['Brood','Maw','Spine','Claw','Sway','Hunger'],22:['Falcon','Merlin','Raptor','Dragon','Kestrel','Grasshopper']};
   const DEFAULT_SQUADS=['Alpha','Bravo','Cobalt','Delta','Echo','Falcon','Granite','Hammer','Jade','Kestrel','Lancer','Mercury'];
   const ACE_NAMES=['Vane','Kestrel','Hollow','Saint','Jackal','Ember','Rook','Tally','Spinner','Ghost','Nines','Brass','Lucky','Halo','Tinder','Mako','Dagger','Sparrow','Wick','Cinder','Quill','Slate','Morrow','Juno'];
-  const ACE_KILLS=3;
+  const ACE_KILLS=2;
   const OBJECTIVES=[['ANNIHILATE',4],['FLAGSHIP',2.5],['CONVOY',2],['STATION',1.5]];
 
   /* ------------------------------ war story ------------------------------
@@ -910,7 +910,10 @@
       }
       if(killer&&killer.side!==t.side&&this.live(killer)){
         // Aces: a small craft that reaches the threshold earns a callsign.
-        if(!killer.hero&&!killer.ace&&!(killer.hulls>0)&&(killer.band===0||killer.slen<60)&&(killer.kills||0)>=ACE_KILLS){
+        // The side's first ace needs ACE_KILLS, each later one a kill more, at most four.
+        const ks=this.sides[killer.side];
+        if(!killer.hero&&!killer.ace&&!(killer.hulls>0)&&(killer.band===0||killer.slen<60)&&(ks.aces||0)<4&&(killer.kills||0)>=ACE_KILLS+(ks.aces||0)){
+          ks.aces=(ks.aces||0)+1;
           killer.ace=ACE_NAMES[this.aceUsed++%ACE_NAMES.length]+(this.aceUsed>ACE_NAMES.length?' '+Math.ceil(this.aceUsed/ACE_NAMES.length):'');
           const a=this.minds.seedShip(killer);a.traits.skill=Math.min(.98,a.traits.skill+.06);a.traits.courage=Math.min(.98,a.traits.courage+.05);
           this.emit({type:'ace',side:killer.side,ship:killer.id,name:killer.ace,kills:killer.kills,x:killer.x,y:killer.y,z:killer.z,size:killer.slen});

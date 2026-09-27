@@ -157,7 +157,7 @@ Each fleet gets one row. **These are my readings of how each fleet is portrayed,
 
 ## Characters
 
-- **Aces**: a small craft with 3 kills earns a callsign from a neutral list (never a franchise name), +0.06 skill and +0.05 courage, and a ✦ marker. Aces weight enemy aces as targets, and the director builds duels from that.
+- **Aces**: a small craft earns a callsign from a neutral list (never a franchise name), +0.06 skill and +0.05 courage, and a ✦ marker. A side's first ace needs 2 kills, each later ace one more, at most four a side. I started at a flat 3 kills, and the full metrics run showed aces in 3 of 30 wars: small craft rarely get credited kills (in one 60-a-side Empire vs Rebels war, 8 of 82 fighters scored at all and none scored 3). Aces weight enemy aces as targets, and the director builds duels from that.
 - **Vendettas**: an ace or hero who sees a squadron mate die within 3 km remembers the killer. The chase is a story shot. It ends settled or with the ace's death.
 - **Rescues**: a squadron screens a crippled capital for 22 s (saved if the capital is alive at the end, lost if not); a shuttle, runabout, dropship or tug latches onto a disabled capital's hull and drags it toward its own side's edge, where it jumps out (saved), or loses it (the tug dies, the hull breaks up, or it can't latch within 45 s).
 

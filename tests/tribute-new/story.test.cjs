@@ -95,7 +95,7 @@ test('abandon ship: pods launch, a friendly picks them up or a ruthless enemy fi
   assert.ok(r.states.some(s=>s!=='drift')||r.ev.length>1||r.states.length===r.n,JSON.stringify(r));
 });
 
-test('an ace earns a callsign at three kills and a vendetta starts when a wingman dies',()=>{
+test('an ace earns a callsign (first ace of a side at two kills) and a vendetta starts when a wingman dies',()=>{
   const w=war(5,6,1101,30,30,{objective:'ANNIHILATE'});
   const r=w.run(`(()=>{const q=squads.find(q=>q.side===0&&q.mem.filter(id=>!ships[id].dead&&ships[id].arr).length>=3&&!q.hero);
     const [aceId,wingId]=q.mem.filter(id=>!ships[id].dead);const ace=ships[aceId],wing=ships[wingId];

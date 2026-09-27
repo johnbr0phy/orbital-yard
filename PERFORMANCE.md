@@ -96,3 +96,53 @@ With the worker pool (`hardwareConcurrency − 1`, max 4) that CPU is split acro
 | First ship < 2 s, playable < 5 s | War running in 2.1 s at 192 ships and 4.1 s at 572 (Low, software). First ship measured 4.2 s, dominated by software frame rate. **Not demonstrated** at < 2 s. |
 | No long task > 50 ms in arrivals | **Not demonstrable** under software GL (every frame is > 50 ms). The forge streams in small batches. |
 | Flat heap across five wars | **Met** (18–31 MB after GC, no trend). |
+
+# Story pass: performance
+
+All simulation numbers below are **headless Node, CPU only** (no rendering), on the same 4-core Intel Xeon @ 2.10 GHz, measured with the machine idle. Browser numbers are **software-rendered (SwiftShader)** and labelled so.
+
+## Simulation CPU at 300 a side (572 ships)
+
+`scripts/sim-bench.cjs --size 300`, Empire vs Rebels, seed 1234. "Before" is the baseline tree (commit `57ed33c`) measured in the same session, interleaved with "after", two runs each.
+
+| window (war seconds) | build | ms CPU per simulated second | mean live ships in window |
+|---|---|---|---|
+| 38–48 | before | 3,672 / 3,642 | (462 alive at 38 s) |
+| 38–48 | after | 2,612 / 2,675 | (562 alive at 38 s) |
+| 30–90 | before | 2,769 / 2,785 | 330 |
+| 30–90 | after | 2,955 / 3,067 | 489 |
+
+How to read it: **the two builds don't fight the same war**, so a fixed window compares different moments. In the story build the fleets hold, flank or wait before they close, so at 38 s the after war is still mostly manoeuvring (cheap), and over 30–90 s it keeps 48% more ships alive (more ships to simulate). Per live ship over 30–90 s, after costs 6.2 ms against 8.4 ms before.
+
+**The story layer's own cost** (`scripts/story-cost.cjs`, which times the page's `storyStep` inside `simStep`):
+
+| war | story ms per simulated second | share of the simulation |
+|---|---|---|
+| 300 a side, 30–90 s | 22.3 | 0.79% |
+| 60 a side, 20–120 s | 4.5 | 0.90% |
+
+Squadron morale and capital crises are bucketed by ship id across steps; plans, objectives, rescues and ace duels run once a simulated second. The order checks inside each pilot's `think()` aren't separable and are counted as simulation.
+
+## Refactor that had to stay byte-identical
+
+- **Spatial-index cell keys wrapped to small integers** (`((x&1023)<<20)|((y&1023)<<10)|(z&1023)`), so V8 keeps them as small integers in the map. The three-battle state trace from `sim-bench.cjs --trace` is **byte-identical** before and after (`16ea5e01…`). A/B on the baseline tree: 3,804 → 3,639 ms per simulated second (−4%), measured under load at the time.
+
+## Behaviour change, new trace
+
+The story changes the war on purpose, so the trace changes. `bench/story/trace-before.txt` is the baseline (`16ea5e01…`); `bench/story/trace-after.txt` is this build (`945a530c…`), recorded twice with identical output.
+
+## Cost by battle size (after, idle)
+
+`sim-bench.cjs --size N`, war seconds 38–48. These are the reference numbers the page's battle-size choice scales from (DECISIONS.md, "Battle size").
+
+| per side | ships | ms CPU per simulated second |
+|---|---|---|
+| 50 | 100 | 419 |
+| 100 | 192 | 660 |
+| 150 | 287 | 1,301 |
+| 200 | 382 | 1,620 |
+| 300 | 572 | 2,587 |
+| 450 | 857 | 4,325 |
+| 600 | 1,142 | 5,862 |
+
+BROWSER_BENCH

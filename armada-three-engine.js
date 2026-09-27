@@ -18400,7 +18400,7 @@ function storyEvent(ev){
   const data={...ev,name:sq&&["rout","rally","escape","raid"].includes(ev.type)?sq.name+" squadron":shipLabel(s),byName:p?shipLabel(p):null,t:undefined};
   delete data.t;delete data.type;
   if(!Number.isFinite(data.x)&&s){data.x=s.x;data.y=s.y;data.z=s.z;}
-  data.text=storyText(ev,s,p,sq);
+  data.text=storyText(ev,s,p,sq);if(data.text)data.text=data.text.charAt(0).toUpperCase()+data.text.slice(1);
   const e=bcEvent(ev.type,data);
   if(e&&SCORE_TYPES[ev.type])offerCaption({text:data.text,subject:ev.ship??null,partner:ev.partner??null,event:e,weight:BC.WEIGHTS[ev.type]||20,until:battleTime+captionHold(data.text)});
 }
@@ -18855,9 +18855,11 @@ function tickCaption(now,subjectShip){
     else bc.caption=null;
   }
   const pick=q.find(c=>captionRelevant(c,subject));
-  if(pick){q.splice(q.indexOf(pick),1);bc.caption={...pick,at:now,hold:captionHold(pick.text),kind:"event"};return bc.caption;}
+  // A caption is a sentence: "the Akira covering Alpha 4" starts with a capital.
+  const sentence=t=>t&&t.charAt(0).toUpperCase()+t.slice(1);
+  if(pick){q.splice(q.indexOf(pick),1);bc.caption={...pick,text:sentence(pick.text),at:now,hold:captionHold(pick.text),kind:"event"};return bc.caption;}
   const d=decisionCaption(now,subjectShip);
-  if(d){bc.caption={...d,at:now,hold:captionHold(d.text),kind:"decision"};return bc.caption;}
+  if(d){bc.caption={...d,text:sentence(d.text),at:now,hold:captionHold(d.text),kind:"decision"};return bc.caption;}
   if(subjectShip&&!subjectShip.dead&&subjectShip.meta){
     const th=captionThought(subjectShip,now);
     if(th){const id=subjectShip.id;bc.caption={text:"“"+th+"” — "+shipLabel(subjectShip),weight:1,at:now,hold:4.5,kind:"thought",check:()=>ships[id]&&!ships[id].dead};return bc.caption;}
