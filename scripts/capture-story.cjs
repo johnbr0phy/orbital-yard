@@ -18,15 +18,15 @@ const quality = arg('quality', 'high');
 // until: event type to wait for (or a time in war seconds); frame: who to look at.
 const SCENARIOS = [
   {id: 'rout', a: 6, b: 5, seed: 2202, size: 60, until: {event: 'rout'}, after: 3, frame: 'squad', views: ['mid', 'far']},
-  {id: 'flagship-death', a: 5, b: 6, seed: 1101, size: 60, force: {plans: ['SIEGE', 'DECAPITATE']}, until: {event: 'flagshipDown'}, after: .35, frame: 'ship', views: ['near', 'mid']},
-  {id: 'successor', a: 5, b: 6, seed: 1101, size: 60, force: {plans: ['SIEGE', 'DECAPITATE']}, until: {event: 'successor'}, after: .5, frame: 'ship', views: ['mid', 'far']},
+  {id: 'flagship-death', a: 6, b: 5, seed: 1101, seeds: [1101, 2202, 3303, 81, 82], size: 60, force: {plans: ['DECAPITATE', 'DECAPITATE'], objective: 'ANNIHILATE'}, until: {event: 'flagshipDown'}, after: .35, frame: 'kill', views: ['near', 'mid']},
+  {id: 'successor', a: 6, b: 5, seed: 1101, seeds: [1101, 2202, 3303, 81, 82], size: 60, force: {plans: ['DECAPITATE', 'DECAPITATE'], objective: 'ANNIHILATE'}, until: {event: 'successor'}, after: .5, frame: 'ship', views: ['mid', 'far']},
   {id: 'ram-turn', a: 12, b: 10, seed: 1101, size: 60, until: {event: 'lastStand', kind: 'RAM'}, after: 1, frame: 'pair', views: ['mid', 'far']},
   {id: 'ram-impact', a: 12, b: 10, seed: 1101, size: 60, until: {event: 'ram'}, after: .3, frame: 'pair', views: ['near', 'mid']},
-  {id: 'last-stand-volley', a: 5, b: 6, seed: 2202, size: 60, until: {event: 'lastStand', kind: 'VOLLEY'}, after: .6, frame: 'ship', views: ['mid']},
+  {id: 'last-stand-volley', a: 12, b: 10, seed: 2202, seeds: [2202, 1101, 3303, 4404], size: 60, until: {event: 'lastStand', kind: 'VOLLEY'}, after: .6, frame: 'ship', views: ['mid']},
   {id: 'abandon-ship', a: 12, b: 10, seed: 3303, size: 60, until: {event: 'pods'}, after: 2.5, frame: 'ship', views: ['near', 'mid']},
   {id: 'ace', a: 6, b: 5, seed: 2202, size: 60, until: {event: 'ace'}, after: .5, frame: 'ship', views: ['near', 'mid']},
-  {id: 'ace-duel', a: 5, b: 6, seed: 1101, size: 60, until: {event: 'aceDuel'}, after: .5, frame: 'pair', views: ['mid', 'far']},
-  {id: 'vendetta-chase', a: 6, b: 5, seed: 2202, size: 60, until: {event: 'vendetta'}, after: 2.5, frame: 'pair', views: ['near', 'mid']},
+  {id: 'ace-duel', a: 5, b: 6, seed: 1101, seeds: [1101, 2202, 3303, 4404, 5505], size: 60, until: {event: 'aceDuel'}, after: .5, frame: 'pair', views: ['mid', 'far']},
+  {id: 'vendetta-chase', a: 6, b: 5, seed: 2202, seeds: [2202, 1101, 3303], size: 60, until: {event: 'vendetta'}, after: 2.5, frame: 'pair', views: ['near', 'mid']},
   {id: 'rescue-screen', a: 10, b: 12, seed: 1101, size: 60, until: {event: 'rescueStart'}, after: 4, frame: 'squadAndShip', views: ['mid', 'far']},
   {id: 'rescue-outcome', a: 10, b: 12, seed: 1101, size: 60, until: {event: 'rescue'}, after: .5, frame: 'ship', views: ['mid']},
   // Each plan twice: the title card at 7.5 s, then the posture from above once the fleets move.
@@ -49,7 +49,7 @@ const SCENARIOS = [
   {id: 'terrain-moon', a: 6, b: 5, seed: 1101, size: 60, terrain: 'moon', until: {time: 26}, frame: 'moon', views: ['far']},
   {id: 'ion-005', a: 5, b: 6, seed: 1101, size: 60, until: {event: 'ionStrike'}, after: .05, frame: 'ion', views: ['near', 'far']},
   {id: 'ion-080', a: 5, b: 6, seed: 1101, size: 60, until: {event: 'ionStrike'}, after: .8, frame: 'ion', views: ['near', 'far']},
-  {id: 'debris', a: 5, b: 6, seed: 1101, size: 60, until: {event: 'capitalKill'}, after: 1.2, frame: 'kill', views: ['near', 'mid', 'far']}
+  {id: 'debris', a: 5, b: 6, seed: 1101, seeds: [1101, 2202, 3303, 4404], size: 60, until: {event: 'capitalKill'}, after: 1.2, frame: 'kill', views: ['near', 'mid', 'far']}
 ];
 
 function serve() {
@@ -70,6 +70,11 @@ function seedWithTerrain(kind, from) {
 }
 
 async function capture(browser, base, sc) {
+  // A moment that does not happen in one war is looked for in the next seed.
+  if (sc.seeds && !sc.tried) {
+    for (const seed of sc.seeds) { const r = await capture(browser, base, {...sc, seed, tried: true}); if (!r.missing) return r; }
+    return {id: sc.id, missing: sc.until.event, seeds: sc.seeds};
+  }
   const seed = sc.terrain ? seedWithTerrain(sc.terrain, sc.seed) : sc.seed;
   const page = await browser.newPage({viewport: {width: 1280, height: 720}});
   const errors = [];
@@ -98,35 +103,49 @@ async function capture(browser, base, sc) {
   const shots = [];
   for (const view of sc.views) {
     const info = await page.evaluate(({frame, view, found}) => {
-      const T = battleTime - warT0, live = ships.filter(s => !s.dead && s.vao && T - s.delay >= 0);
-      const pts = []; let subject = null, partner = null;
-      const add = s => { if (s) pts.push([s.x, s.y, s.z, Math.max(20, (s.slen || 40) * .5)]); };
-      const byId = id => id == null ? null : ships[id];
-      const story = battleAI.story;
-      if (frame === 'ship' || frame === 'pair' || frame === 'kill') { subject = byId(found.ship); partner = frame === 'pair' ? byId(found.partner) : null;
-        if (subject) add(subject); if (partner) add(partner); if (!pts.length && found.x != null) pts.push([found.x, found.y, found.z, 200]); }
-      if (frame === 'squad' || frame === 'squadAndShip') { const q = squads[found.squad] || squads[ships[found.ship]?.squad]; for (const id of q ? q.mem : []) if (!ships[id].dead) add(ships[id]); subject = ships[q?.mem.find(id => !ships[id].dead)] || byId(found.ship); if (frame === 'squadAndShip') add(byId(found.ship)); }
-      if (frame === 'ion') { const b = beams.find(b => b.ion) || {a: [found.x, found.y, found.z], b: [found.x, found.y, found.z]}; pts.push([...b.a, 60], [...b.b, 200]); subject = byId(found.ship); }
-      if (frame === 'station' || frame === 'convoy') { const o = story.objective; pts.push([...o.point, 1500]); if (frame === 'convoy') for (const id of o.ids) if (!ships[id].dead) add(ships[id]); }
-      if (frame === 'rocks' || frame === 'nebula' || frame === 'moon') {
-        const f = starSystem.field; if (frame === 'rocks') for (const k of f.rocks) pts.push([...k.p, k.r]); if (frame === 'nebula') pts.push([...f.nebula.p, f.nebula.r]); if (frame === 'moon') pts.push([...f.moon.p, f.moon.r]);
-        const c = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length, a[2] + p[2] / pts.length], [0, 0, 0]);
-        for (const s of live.filter(s => Math.hypot(s.x - c[0], s.z - c[2]) < 2500).slice(0, 30)) add(s);
+      // Frame with the product's own cameras: the cinema director for a
+      // subject, the "All ships" and "Top down" views for whole fleets.
+      const T = battleTime - warT0, live = ships.filter(s => s && !s.dead && s.vao && !s.reliefPending && !s.cloaked && T - s.delay >= 0);
+      const byId = id => id == null || !ships[id] || ships[id].dead ? null : ships[id];
+      const story = battleAI.story, k = {near: .75, mid: 1.4, far: 3, top: 1}[view];
+      let subject = byId(found.ship), partner = null, kind = null;
+      if (frame === 'wide') {
+        watchMode = view === 'top' ? 'top' : 'all'; actionCamera = null; updateWatchCamera(battleTime, 1, true);
+        for (let i = 0; i < 3; i++) updateWatchCamera(battleTime, 1, true);
+        return {distance: null, subject: null, camera: watchMode};
       }
-      // Wide shots frame the fighting fleets, not a 19 km dreadnought parked far behind.
-      if (frame === 'wide' || !pts.length) for (const s of live) if ((s.slen || 0) < 2500) add(s);
+      if (frame === 'squad' || frame === 'squadAndShip') { const q = squads[found.squad] ?? squads[ships[found.ship]?.squad]; subject = q ? byId(q.mem.find(id => byId(id))) : subject; partner = frame === 'squadAndShip' ? byId(found.ship) : null; kind = 'squad'; }
+      else if (frame === 'pair') { partner = byId(found.partner); kind = partner ? 'duel' : null; }
+      else if (frame === 'ship') kind = subject && subject.slen >= 180 ? 'capital' : 'chase';
+      watchMode = 'action';
+      if (kind && subject) {
+        actionCamera = {clock: 0, until: 0, index: 0, subject: null, partner: null, kind: null, history: [], kindAt: {}, lastWide: 0, scanAt: 0};
+        const L = cinemaStart(actionCamera, {kind, subject: subject.id, partner: partner ? partner.id : null}, live.includes(subject) ? live : live.concat([subject]), battleTime);
+        const eye = L.focus.map((f, i) => f + (L.eye[i] - f) * k);
+        cam.ex = eye[0]; cam.ey = eye[1]; cam.ez = eye[2];
+        const dx = L.focus[0] - eye[0], dy = L.focus[1] - eye[1], dz = L.focus[2] - eye[2];
+        cam.yaw = Math.atan2(dz, dx); cam.pitch = Math.atan2(dy, Math.hypot(dx, dz)); watchGoal = {far: L.far * k};
+        bc.caption = null;
+        return {distance: Math.round(Math.hypot(dx, dy, dz)), subject: shipLabel(subject), camera: kind};
+      }
+      // Places, not ships: a kill site, an ion lance, the terrain, the objective.
+      const pts = [];
+      if (frame === 'ion') { const b = beams.find(b => b.ion) || {a: [found.x, found.y, found.z], b: [found.x, found.y, found.z]}; pts.push([...b.a, 60], [...b.b, 200]); }
+      if (frame === 'kill') pts.push([found.x, found.y, found.z, Math.max(120, (ships[found.ship]?.slen || 200) * .6)]);
+      if (frame === 'station' || frame === 'convoy') { const o = story.objective; pts.push([...o.point, 1500]); if (frame === 'convoy') for (const id of o.ids) { const c = byId(id); if (c) pts.push([c.x, c.y, c.z, c.slen]); } }
+      if (frame === 'rocks' || frame === 'nebula' || frame === 'moon') { const f = starSystem.field; if (frame === 'rocks') for (const r of f.rocks) pts.push([...r.p, r.r]); if (frame === 'nebula') pts.push([...f.nebula.p, f.nebula.r]); if (frame === 'moon') pts.push([...f.moon.p, f.moon.r]); }
+      if (!pts.length && found.x != null) pts.push([found.x, found.y, found.z, 300]);
       const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
       for (const p of pts) for (let i = 0; i < 3; i++) { lo[i] = Math.min(lo[i], p[i] - p[3]); hi[i] = Math.max(hi[i], p[i] + p[3]); }
       const look = lo.map((v, i) => (v + hi[i]) / 2), R = Math.max(60, Math.hypot(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) / 2);
-      const k = frame === 'wide' ? {far: 1.05, top: .95, mid: .7}[view] : {near: 1.0, mid: 2.2, far: 5.5, top: 2.2}[view], d = R / Math.sin(.44) * .8 * k;
-      const yaw = .65 + (view === 'far' ? .4 : 0), pitch = view === 'top' ? 1.35 : view === 'far' ? .5 : .28;
+      const d = R / Math.sin(.44) * .9 * {near: .8, mid: 1.5, far: 3.2, top: 1.5}[view], yaw = .65 + (view === 'far' ? .4 : 0), pitch = view === 'top' ? 1.35 : .3;
       const eye = [look[0] - Math.cos(yaw) * Math.cos(pitch) * d, look[1] + Math.sin(pitch) * d, look[2] - Math.sin(yaw) * Math.cos(pitch) * d];
       cam.ex = eye[0]; cam.ey = eye[1]; cam.ez = eye[2];
       const dx = look[0] - eye[0], dy = look[1] - eye[1], dz = look[2] - eye[2];
       cam.yaw = Math.atan2(dz, dx); cam.pitch = Math.atan2(dy, Math.hypot(dx, dz)); watchGoal = {far: Math.hypot(dx, dy, dz) * 30};
-      actionCamera = {subject: subject ? subject.id : null, partner: partner ? partner.id : null, kind: frame === 'squad' ? 'squad' : 'chase', clock: 0, index: 0, history: [], kindAt: {}};
+      actionCamera = {subject: subject ? subject.id : null, partner: null, kind: 'chase', clock: 0, index: 0, history: [], kindAt: {}};
       bc.caption = null;
-      return {distance: Math.round(d), subject: subject ? shipLabel(subject) : null};
+      return {distance: Math.round(d), subject: subject ? shipLabel(subject) : null, camera: 'place'};
     }, {frame: sc.frame, view, found: found || {}});
     await page.waitForTimeout(2200);
     const hud = await page.evaluate(() => ({caption: document.getElementById('bcCaption').textContent, plan: document.getElementById('bcPlan').textContent, objective: document.getElementById('bcObjective').textContent, tags: [...document.querySelectorAll('.bcTag')].filter(e => !e.hidden).map(e => e.textContent)}));

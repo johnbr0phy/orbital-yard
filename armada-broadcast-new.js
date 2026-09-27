@@ -19,7 +19,7 @@
     flagshipDown: 125, ram: 110, lastStand: 88, rout: 64, vendettaSettled: 66, aceDuel: 60, vendetta: 58,
     planSwitch: 55, successor: 52, rescue: 52, planWorked: 50, convoySaved: 50, convoyLost: 50, ace: 48,
     stationTaken: 46, pods: 46, shock: 45, rescueStart: 44, raid: 44, rally: 40, vendettaFailed: 40,
-    escape: 38, podsLost: 34, wreckStrike: 30, podsSaved: 30, warPlan: 0
+    escape: 38, podsLost: 34, contact: 34, wreckStrike: 30, podsSaved: 30, warPlan: 0
   };
   // Seconds an event stays newsworthy (score halves at half this time).
   const SHELF = {ionCharge: 6, capitalDanger: 5, heroDuel: 8, reinforcements: 9, arrival: 8,
@@ -180,11 +180,17 @@
             if (d.phase === 'story' && storyLive && !subjectGone) d.resume = {...d.shot, resumed: true};
             next = {...best, phase: 'climax'};
           } else if (d.phase === 'story') {
-            if ((held >= hold && (!storyLive || held >= ceil)) || (subjectGone && held >= Math.max(1.2, minHold))) next = nextInGrammar(d, candidates, best);
+            // After its floor a story gives way to a clearly better one.
+            const better = candidates.filter(c => c.phase === 'story' && c.story !== d.shot.story && !recentlyShown(d, c)).sort((x, y) => y.score - x.score)[0];
+            if (held >= hold && better && better.score > (d.shot.score || 0) * 1.3) next = better;
+            else if ((held >= hold && (!storyLive || held >= ceil)) || (subjectGone && held >= Math.max(1.2, minHold))) next = nextInGrammar(d, candidates, best);
           } else if ((held >= hold && held >= ceil) || (subjectGone && held >= Math.max(1.2, minHold))) {
             // Come back to the story that was interrupted, if it is still going.
+            // ...unless a clearly better story has started meanwhile.
             const back = d.resume && candidates.find(c => c.story != null && c.story === d.resume.story && alive(c.subject));
-            if (back && (d.phase === 'climax' || d.phase === 'reaction')) { next = {...back, phase: 'story', resumed: true}; d.resume = null; }
+            const rival = candidates.filter(c => c.phase === 'story' && (!back || c.story !== back.story)).sort((x, y) => y.score - x.score)[0];
+            if (back && rival && rival.score > back.score * 1.3) { next = rival; d.resume = null; }
+            else if (back && (d.phase === 'climax' || d.phase === 'reaction')) { next = {...back, phase: 'story', resumed: true}; d.resume = null; }
             else next = nextInGrammar(d, candidates, best);
           }
         }

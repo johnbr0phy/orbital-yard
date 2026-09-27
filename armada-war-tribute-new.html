@@ -315,7 +315,7 @@ body.intro #battleOptions{opacity:0;pointer-events:none}
 #score,#win{display:none!important}
 #bcTop{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:7;width:min(680px,calc(100vw - 32px));display:grid;grid-template-columns:1fr minmax(120px,1.1fr) 1fr;gap:12px;align-items:center;color:#eef3f6;font:12px system-ui;text-shadow:0 1px 3px #000c;pointer-events:none}
 .bcSide{display:flex;align-items:center;gap:4px 7px;min-width:0;flex-wrap:wrap}.bcSide.b{justify-content:flex-end}
-.bcSide b{font:700 17px "Saira Condensed",system-ui;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+.bcSide b{font:700 17px "Saira Condensed",system-ui;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}.bcSide b.long{font-size:14px;letter-spacing:.02em}
 .bcCount{font:700 22px "Saira Condensed",system-ui;font-variant-numeric:tabular-nums}
 .bcShape{font-size:11px;opacity:.9}
 .bcIcons{display:flex;gap:2px;pointer-events:auto;flex-wrap:nowrap;overflow:hidden;flex-basis:100%;order:5}.bcSide.b .bcIcons{justify-content:flex-end}
@@ -12389,7 +12389,7 @@ function buildField(Rr){
     for(let i=0;i<34;i++){
       const u=Math.cbrt(R())*n.r*.72,az=R()*6.283,el=(R()-.5)*2;
       nebulaPuffs.push({x:n.p[0]+Math.cos(el)*Math.cos(az)*u,y:n.p[1]+Math.sin(el)*u*.45,z:n.p[2]+Math.cos(el)*Math.sin(az)*u,r:n.r*(.32+R()*.3),seed:R()*100,
-        col:[c[0]*(.8+R()*.4),c[1]*(.8+R()*.4),c[2]*(.8+R()*.4)],a:.10+R()*.08});
+        col:[c[0]*(.9+R()*.4),c[1]*(.9+R()*.4),c[2]*(.9+R()*.4)],a:.15+R()*.09});
     }
   }
 }
@@ -18089,7 +18089,8 @@ function cinemaStart(a,shot,live,now){
   const old=a.subject;a.history.push({id:old,at:a.clock});a.history=a.history.filter(h=>a.clock-h.at<32);
   Object.assign(a,shot);a.index++;a.started=a.clock;a.payoff=null;a.blocked=0;
   const s=ships[a.subject];a.lastSide=s.side;a.heading=s.yaw||0;
-  a.duration={captain:4,cockpit:5,arrival:2.8,formation:6.5,chase:5.6,duel:6.8,capital:8.5,all:5.5,top:4.8,squad:12}[a.kind];
+  // Ride with a subject long enough to see what it is doing.
+  a.duration={captain:4,cockpit:5,arrival:2.8,formation:8,chase:8,duel:9,capital:10,all:6,top:5.5,squad:13}[a.kind];
   a.until=a.clock+a.duration;a.kindAt[a.kind]=a.clock;
   if(['arrival','all','top'].includes(a.kind))a.lastWide=a.clock;
   a.members=cinemaMembers(a.kind,s,ships[a.partner],live,now);cinemaGroup(a,now);
@@ -18828,8 +18829,8 @@ function bcKill(t,now){
   if(!bc.log)return;
   const by=t.lastHit!=null?ships[t.lastHit]:null;
   const type=isFirstOne(t)?"firstOneKill":t.hero?"heroKill":isCapital(t)?"capitalKill":"kill";
-  const ev=bcEvent(type,{side:t.side,ship:t.id,name:shipName(t),klass:shipClass(t),size:t.slen,hero:!!t.hero,value:BC.shipValue({hp:t.hpMax,hpMax:t.hpMax}),
-    by:by?by.id:null,byName:by?shipName(by):null,x:t.x,y:t.y,z:t.z});
+  const ev=bcEvent(type,{side:t.side,ship:t.id,name:killName(t),klass:shipClass(t),size:t.slen,hero:!!t.hero,value:BC.shipValue({hp:t.hpMax,hpMax:t.hpMax}),
+    by:by?by.id:null,byName:by?killName(by):null,x:t.x,y:t.y,z:t.z});
   if(t.squad>=0&&squads[t.squad]){const q=squads[t.squad];if(q.mem.length>=3&&q.mem.every(id=>ships[id].dead||id===t.id))bcEvent("squadronWipe",{side:t.side,ship:t.id,name:shipClass(t)+" flight",x:t.x,y:t.y,z:t.z,size:t.slen});}
   if(type!=="kill"){const seen=onScreen(t);if(seen)maybeSlowMo(t,ev);else if(watchMode==="broadcast"&&ev.type!=="kill")bc.autoReplay={ev,at:now+2.2};}
 }
@@ -18840,6 +18841,8 @@ function objectiveStrength(str){
   const total=str[0]+str[1];if(!total)return str;
   const share=st.objectiveShare(str[0]/total);return [share*total,(1-share)*total];
 }
+// Names in the feed and ticker match the captions: "Devastator", "Red 4 (“Vane”)", "the Nebulon-B".
+function killName(s){const n=shipLabel(s);return n.charAt(0).toUpperCase()+n.slice(1);}
 function onScreen(t){const m=mat(),cw=m[3]*t.x+m[7]*t.y+m[11]*t.z+m[15];if(cw<1)return false;const cx=(m[0]*t.x+m[4]*t.y+m[8]*t.z+m[12])/cw,cy=(m[1]*t.x+m[5]*t.y+m[9]*t.z+m[13])/cw;return Math.abs(cx)<.9&&Math.abs(cy)<.9;}
 function bcIonCharge(g,lock){if(g)bcEvent("ionCharge",{side:g.side,ship:g.id,name:shipName(g),partner:null,until:lock.fire,x:g.x,y:g.y,z:g.z,size:g.slen,point:lock.point});}
 // The ion lance lights the whole screen for an instant, tinted with the faction's ion colour,
@@ -18868,9 +18871,10 @@ function shipLabel(s){
 }
 function shortName(s){
   const d=s?.meta?.desig||"";
-  // "ISD-AB00012 DEVASTATOR" -> "Devastator"; registries and pennants are dropped.
-  const words=d.split(/\s+/).filter(w=>w&&!/\d/.test(w)&&!/^[A-Z]{1,4}-$/.test(w));
-  const tail=words.length&&!/^(CUBE|SPHERE|DIAMOND|BATTLECRAB|NODE|HULL|OF|SCOUT)$/.test(words[0])?titleCase(words.join(" ")):"";
+  // "ISD-AB00012 DEVASTATOR" -> "Devastator": the name is what follows the last
+  // registry token. A designation that is only a registry ("CUBE 0412 OF 01") has none.
+  const all=d.split(/\s+/).filter(Boolean);let last=-1;all.forEach((w,i)=>{if(/\d/.test(w))last=i;});
+  const words=all.slice(last+1),tail=words.length?titleCase(words.join(" ")):"";
   if(tail&&tail.length<=28&&(s.hero||s.hulls||s.slen>=180))return tail;
   return "the "+titleCase(shipClass(s).replace(/-CLASS.*$/," ").replace(/\s+(STAR DESTROYER|CRUISER|FRIGATE|BATTLESHIP|CARRIER)$/,m=>m)).trim();
 }
@@ -18894,7 +18898,7 @@ function planLine(){
   const p=st.sides.map(x=>x.plan&&x.plan.kind);
   return sideWord(0,true)+" "+planVerb(0,p[0])+". "+sideWord(1,true)+" "+planVerb(1,p[1])+".";
 }
-const SCORE_TYPES={rout:1,rally:1,lastStand:1,ram:1,flagshipDown:1,successor:1,shock:1,ace:1,aceDuel:1,vendetta:1,vendettaSettled:1,vendettaFailed:1,rescueStart:1,rescue:1,pods:1,podsSaved:1,podsLost:1,planSwitch:1,planWorked:1,raid:1,escape:1,convoySaved:1,convoyLost:1,stationTaken:1,wreckStrike:1};
+const SCORE_TYPES={contact:1,rout:1,rally:1,lastStand:1,ram:1,flagshipDown:1,successor:1,shock:1,ace:1,aceDuel:1,vendetta:1,vendettaSettled:1,vendettaFailed:1,rescueStart:1,rescue:1,pods:1,podsSaved:1,podsLost:1,planSwitch:1,planWorked:1,raid:1,escape:1,convoySaved:1,convoyLost:1,stationTaken:1,wreckStrike:1};
 function storyEvent(ev){
   if(ev.type==="warPlan"){bc.plan={lines:[planLine(),objectiveLine()].filter(Boolean),at:battleTime,first:ev.plans.slice()};bcEvent("warPlan",{side:-1,name:planLine(),x:0,y:0,z:0});return;}
   const s=ships[ev.ship],p=ships[ev.partner],sq=ev.squad!=null?squads[ev.squad]:null;
@@ -18909,6 +18913,7 @@ function pct(s){return Math.max(0,Math.round(100*s.hp/Math.max(1,s.hpMax)))+"%";
 function storyText(ev,s,p,sq){
   const n=ev.n,S=shipLabel(s),P=p?shipLabel(p):"",side=ev.side>=0?sideShort(ev.side):"";
   switch(ev.type){
+    case "contact":return "First shots: "+S+" opens fire on "+(p?"the "+klassShort(p):"the enemy")+".";
     case "rout":return sq.name+" squadron is breaking. "+n+" ship"+(n===1?"":"s")+" running for the edge.";
     case "rally":return sq.name+" squadron rallies"+(ships[ev.anchor]?" on the "+shortName(ships[ev.anchor]).replace(/^the /,""):"")+" and turns back into the fight.";
     case "escape":return ev.how==="edge"?sq.name+" squadron slips off the edge of the field.":sq.name+" squadron jumps out. They will live to fight another day.";
@@ -19166,7 +19171,7 @@ function storyCandidates(now){
     if(s.vendetta){const t=ships[s.vendetta.target];if(ok(t))out.push({phase:"story",kind:"chase",subject:s.id,partner:t.id,score:60,story:"v"+s.id});}
     const o=s.ai&&s.ai.order;
     if(o&&o.kind==="RAM"&&now<o.until){const t=ships[o.target];if(ok(t))out.push({phase:"story",kind:"duel",subject:s.id,partner:t.id,score:84,story:"ram"+s.id});}
-    if(s.convoy&&s.ai&&s.ai.action==="CONVOY")out.push({phase:"story",kind:"capital",subject:s.id,partner:null,score:38,story:"conv"+s.id});
+    if(s.convoy&&s.ai&&s.ai.action==="CONVOY"&&!out.some(c=>c.story==="convoy"))out.push({phase:"story",kind:s.slen<180?"chase":"capital",subject:s.id,partner:null,score:34,story:"convoy"});
   }
   for(const e of bc.log?bc.log.since(now-14):[])if(e.type==="aceDuel"&&ok(ships[e.ship])&&ok(ships[e.partner]))out.push({phase:"story",kind:"duel",subject:e.ship,partner:e.partner,score:62,story:"d"+e.ship+":"+e.partner});
   let hot=[];
@@ -19232,9 +19237,10 @@ function updateHud(wall,now){
   const frameKey=sideRace.join("v");
   if(top.dataset.frame!==frameKey||!top.querySelector?.(".bcBar")){
     top.dataset.frame=frameKey;top.dataset.icons="";
-    top.innerHTML="<div class=\"bcSide a\"><span class=\"bcShape\">"+SIDE_SHAPE[0]+"</span><b>"+raceShort(sideRace[0])+"</b><span class=\"bcCount\"></span><span class=\"bcIcons\"></span></div>"+
+    const nm=i=>"<b"+(raceShort(sideRace[i]).length>9?" class=\"long\"":"")+">"+raceShort(sideRace[i])+"</b>";
+    top.innerHTML="<div class=\"bcSide a\"><span class=\"bcShape\">"+SIDE_SHAPE[0]+"</span>"+nm(0)+"<span class=\"bcCount\"></span><span class=\"bcIcons\"></span></div>"+
       "<div class=\"bcBar\" role=\"img\"><i style=\"background:"+raceColour(sideRace[0])+"\"></i><i style=\"background:"+raceColour(sideRace[1])+"\"></i><em></em></div>"+
-      "<div class=\"bcSide b\"><span class=\"bcIcons\"></span><span class=\"bcCount\"></span><b>"+raceShort(sideRace[1])+"</b><span class=\"bcShape\">"+SIDE_SHAPE[1]+"</span></div>";
+      "<div class=\"bcSide b\"><span class=\"bcIcons\"></span><span class=\"bcCount\"></span>"+nm(1)+"<span class=\"bcShape\">"+SIDE_SHAPE[1]+"</span></div>";
   }
   const bar=top.querySelector?.(".bcBar");
   if(bar){
@@ -19356,9 +19362,13 @@ function decisionCaption(now,subject){
   const add=s=>{if(s&&!s.dead&&s.ai&&s.arr&&!seen.has(s.id)){seen.add(s.id);pool.push(s);}};
   if(subject){add(subject);add(ships[actionCamera?.partner]);const sq=squads[subject.squad];if(sq)for(const id of sq.mem)add(ships[id]);}
   let n=0;for(const s of ships){if(n>=48)break;if(s.dead||!s.arr||!s.ai||seen.has(s.id))continue;if(s.ai.action==="SEARCH"||s.ai.action==="ATTACK"&&!s.ai.orderKind)continue;if(!onScreenPoint(s.x,s.y,s.z))continue;n++;add(s);}
-  let best=null;
-  for(const s of pool){const d=decisionFor(s,now);if(d&&(!best||d.weight+(s===subject?8:0)>best.weight))best=d;}
-  return best&&best.weight>=14?best:null;
+  let best=null;const memo=bc.captionSeen||(bc.captionSeen=new Map());
+  for(const s of pool){const d=decisionFor(s,now);if(!d)continue;
+    // The same line about the same ship does not come back for 25 seconds.
+    d.key=s.id+":"+s.ai.action;if(now-(memo.get(d.key)??-99)<25)continue;
+    if(!best||d.weight+(s===subject?8:0)>best.weight)best=d;}
+  if(best&&best.weight>=14){memo.set(best.key,now);return best;}
+  return null;
 }
 function decisionFor(s,now){
   const a=s.ai,act=a.action,N=shipLabel(s),sq=squads[s.squad],hp=pct(s),id=s.id;
@@ -19366,13 +19376,15 @@ function decisionFor(s,now){
   const same=()=>alive()&&ships[id].ai.action===act;
   const Sq=sq&&sq.name?sq.name+" squadron":N;
   const cap=t=>t?shortName(t).replace(/^the /,"the "):"";
+  // A decision has to have held for a moment before it is worth a caption.
+  if(now-(a.since??-99)<.8&&!a.orderKind)return null;
   if(s.vendetta&&ships[s.vendetta.target]&&!ships[s.vendetta.target].dead){
     const t=ships[s.vendetta.target],lost=ships[s.vendetta.lost];
     return {weight:50,subject:id,partner:t.id,text:N+" is hunting the "+klassShort(t)+" that killed "+(lost?shipLabel(lost):"a wingman")+".",check:()=>alive()&&!!ships[id].vendetta};
   }
   const o=a.order;
   switch(act){
-    case "ROUT":return {weight:56,subject:id,text:Sq+" has broken. "+N+" running for the edge, hull "+hp+".",check:same};
+    case "ROUT":return {weight:56,subject:id,text:sq&&sq.name?Sq+" has broken. "+N+" running for the edge"+(s.hp<s.hpMax*.9?", hull "+hp:"")+".":N+" is withdrawing, running for the edge.",check:same};
     case "RAM":{const t=ships[o?.target];return {weight:80,subject:id,partner:t?.id,text:N+" is turning to ram "+(t?shipLabel(t):"the enemy line")+".",check:same};}
     case "RESCUE":{const c=ships[o?.anchor];return c&&!c.dead?{weight:45,subject:id,partner:c.id,text:Sq+" screening "+cap(c)+", hull "+pct(c)+".",check:same}:null;}
     case "TOW":{const q=tows.find(q=>q.tug===id&&!q.done),c=q&&ships[q.cap];return {weight:50,subject:id,text:N+(q&&q.attached!=null?" towing the wreck of "+cap(c)+" out of the fight.":" moving in to tow "+cap(c)+" clear."),check:same};}
@@ -19387,13 +19399,14 @@ function decisionFor(s,now){
     case "RETREAT":{
       if(s.hp/Math.max(1,s.hpMax)>.75&&a.fear<.45)return null;
       const f=ships[a.anchor],capf=f&&!f.dead&&(f.hulls||f.slen>=180);
-      return {weight:38,subject:id,partner:f?.id,text:N+" breaking off, hull "+hp+", "+(f&&!f.dead?capf?"falling back to "+shortName(f).replace(/^the /,"the ")+"’s screen.":"falling back on "+shipLabel(f)+".":"running for open space."),check:same};
+      const why=s.hp<s.hpMax*.9?", hull "+hp+", ":" under heavy fire, ";
+      return {weight:38,subject:id,partner:f?.id,text:N+" breaking off"+why+(a.anchor===-2?"falling back behind cover.":f&&!f.dead?capf?"falling back to "+shortName(f).replace(/^the /,"the ")+"’s screen.":"falling back on "+shipLabel(f)+".":"running for open space."),check:same};
     }
     case "REGROUP":{
       if(sq&&sq.name){const k=sq.mem.filter(q=>ships[q]&&!ships[q].dead&&ships[q].ai?.action==="REGROUP").length;if(k>=2)return {weight:30,subject:id,text:sq.name+" squadron regrouping on their leader.",check:same};}
       const f=ships[a.anchor];return {weight:18,subject:id,text:N+" regrouping on "+(f&&!f.dead?shipLabel(f):"the nearest friendlies")+".",check:same};
     }
-    case "ESCORT":{const w=a.weak;return w&&!w.dead?{weight:26,subject:id,partner:w.id,text:N+" covering "+shipLabel(w)+", hull "+pct(w)+".",check:same}:null;}
+    case "ESCORT":{const w=a.weak;if(!w||w.dead)return null;const W=shipLabel(w);return {weight:26,subject:id,partner:w.id,text:N+" covering "+(W===N?"another "+W.replace(/^the /,""):W)+", hull "+pct(w)+".",check:same};}
     case "EVADE":return now-(s.hurtT??-9)<1.5?{weight:14,subject:id,text:N+" jinking hard, hull "+hp+".",check:same}:null;
     case "FLANK":return sq&&sq.tac==="FLANK"&&sq.name?{weight:16,subject:id,text:sq.name+" squadron coming in off their flank.",check:same}:null;
   }
@@ -19546,7 +19559,7 @@ function setRate(r){warClock.setRate(r);ui("tick");updateHud(0,battleTime);}
 function bcReset(){
   if(!bc.log)return;
   bc.log.clear();bc.feed.clear();bc.momentum.reset();bc.director.reset();bc.ticker.length=0;bc.shownFeed="";bc.duelSeen.clear();bc.cloakSeen.clear();
-  bc.lastBigEvent=null;bc.pendingClips.length=0;bc.flashLog.length=0;bc.endShownAt=null;bc.endDone=false;bc.summary=null;bc.combat=0;
+  bc.lastBigEvent=null;bc.pendingClips.length=0;bc.caption=null;bc.captionQueue=[];bc.captionSeen=new Map();bc.plan=null;bc.flashLog.length=0;bc.endShownAt=null;bc.endDone=false;bc.summary=null;bc.combat=0;
   if(bc.reel)bc.reel.clear();retireMeshes(0,true);
   if(RP){bc.ring=RP.createRing({seconds:20,hz:10,maxShips:Math.max(64,ships.length+64)});}
   if(replayState){replayRestore();replayState=null;document.body.classList.remove("replaying");}

@@ -303,7 +303,7 @@
       if(order&&!(warning&&!['RAM','ROUT','PANIC'].includes(order.kind))){
         const action=ORDER_ACTION[order.kind]||order.kind;
         if(a.action!==action||a.orderKind!==order.kind){this.stats.decisions++;this.stats.actions[action]=(this.stats.actions[action]||0)+1;}
-        a.action=action;a.orderKind=order.kind;a.reason=ORDER_REASON[order.kind]||a.reason;a.weak=weak;a.until=0;
+        if(a.action!==action)a.since=now;a.action=action;a.orderKind=order.kind;a.reason=ORDER_REASON[order.kind]||a.reason;a.weak=weak;a.until=0;
         if(order.kind==='RAM'||order.kind==='STRIKE')a.target=order.target!=null?order.target:a.target;
         return a;
       }
@@ -331,7 +331,7 @@
         }
         reason={ATTACK:'Local advantage. Committing to an attack run',FLANK:'Changing angle to split their attention',ESCORT:weak?'Covering a damaged ally':'Holding an escort position',REGROUP:'Rejoining the nearest friendly group',RETREAT:'Damage and local threat exceed acceptable risk',EVADE:'Incoming fire. Breaking the firing solution'}[action];
       }
-      a.action=action;a.reason=reason;a.weak=weak;
+      if(a.action!==action)a.since=now;a.action=action;a.reason=reason;a.weak=weak;
       a.until=now+(warning?1:1.3+tr.discipline*2.4+a.rng()*1.7)*(s.hulls?1.7:1);
       this.stats.decisions++;this.stats.actions[action]=(this.stats.actions[action]||0)+1;
       return a;
@@ -596,7 +596,7 @@
     6:['Red','Gold','Blue','Green','Grey','Yellow','Tan','Silver','Orange','Purple'],
     7:['Flyer','Crest','Wave','Dawn','Light','Star','Shore','Chime'],8:['Umbra','Hush','Veil','Dusk','Shade','Thorn'],
     9:['Alpha','Beta','Zeta','Delta','Kappa','Omega','Sigma','Tango'],10:['Alpha','Beta','Gamma','Delta','Epsilon','Zeta','Eta','Theta'],
-    11:['Blood','Fang','Talon','Blade','Fire','Claw','Spear','Storm'],12:['Grid 1','Grid 2','Grid 3','Grid 4','Grid 5','Grid 6','Grid 7','Grid 8'],
+    11:['Blood','Fang','Talon','Blade','Fire','Claw','Spear','Storm'],12:['Nexus','Vinculum','Conduit','Adjunct','Tertiary','Subunit','Cortex','Relay'],
     19:['First','Second','Third','Fourth','Fifth','Sixth','Seventh','Eighth'],20:['Storm','Thunder','Iron','Blade','Hammer','Wrath'],
     21:['Brood','Maw','Spine','Claw','Sway','Hunger'],22:['Falcon','Merlin','Raptor','Dragon','Kestrel','Grasshopper']};
   const DEFAULT_SQUADS=['Alpha','Bravo','Cobalt','Delta','Echo','Falcon','Granite','Hammer','Jade','Kestrel','Lancer','Mercury'];
@@ -617,7 +617,7 @@
     reset(seed){
       this.seed=seed;this.rng=random((seed^0x57a3f1)>>>0);this.events=[];this.now=0;this.ready=false;
       this.sides=[0,1].map(side=>({side,race:0,flag:-1,flagHistory:[],leaderless:false,successorAt:0,plan:null,center:null,lostCaps:0,alive0:0}));
-      this.objective=null;this.field=null;this.aceUsed=0;this.rescues=[];this.stands=0;this.nextSecond=0;this.start=null;this.duels=null;
+      this.objective=null;this.field=null;this.aceUsed=0;this.rescues=[];this.stands=0;this.nextSecond=0;this.start=null;this.duels=null;this.contact=false;
     }
     doctrine(s){return DOCTRINE[s&&s.race!=null?s.race:0]||DOCTRINE[0];}
     emit(ev){ev.t=ev.t==null?this.now:ev.t;this.events.push(ev);if(this.events.length>512)this.events.splice(0,this.events.length-512);return ev;}
@@ -640,7 +640,8 @@
         let k=0;
         for(const sq of squads){
           if(sq.side!==side)continue;
-          let name=names[k%names.length]+(k>=names.length?' '+(1+Math.floor(k/names.length)):'');k++;
+          // Overflow squadrons get a Roman numeral: "Red II", never "Red 2 4".
+          let name=names[k%names.length]+(k>=names.length?' '+['','II','III','IV','V','VI','VII','VIII','IX','X'][Math.min(9,Math.floor(k/names.length))]:'');k++;
           while(used.has(name))name+='′';used.add(name);
           sq.name=name;sq.size0=sq.mem.length;sq.state='steady';sq.role='main';sq.lost=0;
           sq.mem.forEach((id,i)=>{const s=ships[id];if(!s)return;s.callsign=s.hero?null:i===0?name+' Leader':name+' '+(i+1);});
@@ -720,6 +721,11 @@
       spread=n?spread/n:0;
       const ratio=clamp(pressure,.5,2);
       let fear=base+d.spread*(spread*.45+a.witness*.07)*ratio;
+      // Encircled: enemies on opposite sides. A closed pincer or a sprung ambush
+      // frightens through this, not through a scripted morale hit.
+      let sx=0,sz=0,k=0;
+      for(const c of a.contacts.values()){if(k>=10)break;if(!c.direct||this.now-c.seen>1.5)continue;const dx=c.x-s.x,dz=c.z-s.z,dd=Math.hypot(dx,dz);if(dd<60||dd>1600)continue;sx+=dx/dd;sz+=dz/dd;k++;}
+      if(k>=4)fear+=.10*(1-Math.hypot(sx,sz)/k)*Math.min(1,d.spread+.3);
       const st=this.sides[s.side];
       if(st.leaderless)fear+=.10*(1-a.traits.courage)+.05;
       else if(st.flag>=0&&this.live(this.ship(st.flag)))fear-=.05;
@@ -765,6 +771,8 @@
         const st=this.sides[side];
         if(st.leaderless&&now>=st.successorAt)this.succeed(side,now);
       }
+      // First shots: the moment the war actually starts is a beat worth telling.
+      if(!this.contact&&frame%15===3)for(const s of ships)if(this.live(s)&&s.arr&&s.lastFire!=null&&now-s.lastFire<.5&&this.minds.byId.get(s.mark)&&this.minds.byId.get(s.mark).side!==s.side){this.contact=true;this.emit({type:'contact',side:s.side,ship:s.id,partner:s.mark,x:s.x,y:s.y,z:s.z,size:s.slen});break;}
       if(now>=this.nextSecond){this.nextSecond=now+1;this.planStep(now,squads);this.planOrders(now,squads);this.objectiveStep(now);this.rescueStep(now);this.aceDuels(now,ships);}
     }
     squadMorale(sq,now){
