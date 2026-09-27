@@ -17492,7 +17492,8 @@ function cinemaChoose(a,live,now){
   for(const r of ranked.filter(r=>r.s.slen>=180).slice(0,6))if(!short.includes(r))short.push(r);
   const candidates=[];
   function offer(kind,s,t,score){
-    score+=Math.min(5,(a.clock-(a.kindAt[kind]??-15))*.16)+(s.side!==a.lastSide?1.2:0)-recent(s.id);
+    // Longer shots saturate a small cap and the rotation collapses; 8 keeps a long-unseen kind rising.
+    score+=Math.min(8,(a.clock-(a.kindAt[kind]??-15))*.16)+(s.side!==a.lastSide?1.2:0)-recent(s.id);
     if(kind===a.kind)score-=7;
     if(kind==='duel'&&a.kind==='chase'&&(a.subject===s.id||a.partner===s.id))score+=3;
     candidates.push({kind,subject:s.id,partner:t?.id??null,score:score+noise(s)*1.5});
@@ -17581,7 +17582,7 @@ function cinemaStart(a,shot,live,now){
   Object.assign(a,shot);a.index++;a.started=a.clock;a.payoff=null;a.blocked=0;
   const s=ships[a.subject];a.lastSide=s.side;a.heading=s.yaw||0;
   // Ride with a subject long enough to see what it is doing.
-  a.duration={captain:4,cockpit:5,arrival:2.8,formation:8,chase:8,duel:9,capital:10,all:6,top:5.5,squad:13}[a.kind];
+  a.duration={captain:4,cockpit:5,arrival:2.8,formation:8,chase:9,duel:10,capital:11,all:8,top:8,squad:13}[a.kind];
   a.until=a.clock+a.duration;a.kindAt[a.kind]=a.clock;
   if(['arrival','all','top'].includes(a.kind))a.lastWide=a.clock;
   a.members=cinemaMembers(a.kind,s,ships[a.partner],live,now);cinemaGroup(a,now);
@@ -17629,10 +17630,10 @@ function updateActionCamera(now,dt){
     if(a.subject!==ancient.id||cinemaInteriorKind(a.kind))cut=true;
     else {a.until=Math.max(a.until,a.clock+1);cut=false;}
   }
-  // Let the shot pay off: stay with either combatant's destruction for 2.4 s.
+  // Let the shot pay off: stay with either combatant's destruction for 3.4 s.
   const death=[s,partner].find(q=>q?.dead&&now-(q.deadT??-100)<3);
   if(cinemaInteriorKind(a.kind)&&death){a.until=a.clock;a.payoff=null;cut=true;}
-  if(death&&!a.payoff&&!cinemaInteriorKind(a.kind)){a.payoff={id:death.id,until:a.clock+2.4};a.until=a.payoff.until;}
+  if(death&&!a.payoff&&!cinemaInteriorKind(a.kind)){a.payoff={id:death.id,until:a.clock+3.4};a.until=a.payoff.until;}
   if(a.payoff)cut=a.clock>=a.payoff.until;
   else if(s?.dead||s?.cloaked||(!s&&a.kind))cut=true;
   if(opening)cut=!a.kind||a.openStage!==stage;
@@ -17645,7 +17646,7 @@ function updateActionCamera(now,dt){
       a.blocked=occluded?a.blocked+.65:0;
       const held=a.clock-a.started,quiet=cinemaHeat(s,now)+(partner?cinemaHeat(partner,now):0)<.1;
       const separated=partner&&Math.hypot(s.x-partner.x,s.y-partner.y,s.z-partner.z)>Math.max(2800,(s.slen+partner.slen)*5);
-      if(!opening&&!a.payoff&&held>3.8&&(a.blocked>1.2||(['chase','duel'].includes(a.kind)&&quiet&&separated)))cut=true;
+      if(!opening&&!a.payoff&&held>6&&(a.blocked>1.2||(['chase','duel'].includes(a.kind)&&quiet&&separated)))cut=true;
     }
     a.scanAt=a.clock+.65;
   }

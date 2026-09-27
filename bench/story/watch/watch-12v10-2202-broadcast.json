@@ -39,12 +39,12 @@
   "bigDeathsOnScreen": 10,
   "bigDeathsReplayed": 4,
   "missed": [],
-  "captions": 55,
+  "captions": 54,
   "decisionCaptions": 22,
   "eventCaptions": 28,
   "captionMedianSeconds": 3.740000000000009,
-  "shortCaptions": 12,
-  "wallSeconds": 120
+  "shortCaptions": 10,
+  "wallSeconds": 116
  },
  "autoReplays": [
   1,
@@ -264,12 +264,12 @@
   },
   {
    "t": 18.42,
-   "text": "the Constitution has lost Alpha 8. Now hunting the Obelisk-Class Carrier that did it.",
+   "text": "The Constitution has lost Alpha 8. Now hunting the Obelisk-Class Carrier that did it.",
    "kind": "event"
   },
   {
    "t": 24.55,
-   "text": "the Constitution is hunting the Obelisk-Class Carrier that killed Alpha 8.",
+   "text": "The Constitution is hunting the Obelisk-Class Carrier that killed Alpha 8.",
    "kind": "decision"
   },
   {
@@ -284,17 +284,17 @@
   },
   {
    "t": 41.92,
-   "text": "Zeta squadron is breaking. 1 ship running for the edge.",
+   "text": "Zeta squadron is breaking. 1 ship running to jump clear.",
    "kind": "event"
   },
   {
    "t": 46.68,
-   "text": "the Obelisk is going down firing everything it has.",
+   "text": "The Obelisk is going down firing everything it has.",
    "kind": "event"
   },
   {
-   "t": 51.15,
-   "text": "The screen could not save Enterprise.",
+   "t": 50.75,
+   "text": "Zeta squadron is breaking. 1 ship running to jump clear.",
    "kind": "event"
   },
   {
@@ -304,57 +304,52 @@
   },
   {
    "t": 53.02,
-   "text": "The screen could not save Enterprise.",
+   "text": "Zeta squadron is breaking. 1 ship running to jump clear.",
    "kind": "event"
   },
   {
-   "t": 54.88,
+   "t": 55.55,
    "text": "Zeta squadron jumps out. They will live to fight another day.",
    "kind": "event"
   },
   {
-   "t": 59.95,
-   "text": "the Steamrunner picking up escape pods.",
+   "t": 60.62,
+   "text": "The Steamrunner picking up escape pods.",
    "kind": "decision"
   },
   {
-   "t": 63.68,
+   "t": 64.35,
    "text": "The Borg plan has failed: they would not come to the line. Switching to the charge.",
    "kind": "event"
   },
   {
-   "t": 70.48,
-   "text": "the Akira covering Enterprise, hull 42%.",
+   "t": 71.15,
+   "text": "Gamma 3 covering Epsilon 3, hull 1%.",
    "kind": "decision"
   },
   {
-   "t": 74.22,
-   "text": "the Steamrunner covering Epsilon 3, hull 1%.",
+   "t": 74.88,
+   "text": "The Obelisk jinking hard, hull 88%.",
    "kind": "decision"
   },
   {
-   "t": 76.48,
-   "text": "Epsilon squadron is breaking. 1 ship running for the edge.",
+   "t": 76.22,
+   "text": "Epsilon squadron is breaking. 1 ship running to jump clear.",
    "kind": "event"
   },
   {
-   "t": 81.28,
-   "text": "Delta squadron is breaking. 1 ship running for the edge.",
+   "t": 81.02,
+   "text": "Delta squadron is breaking. 1 ship running to jump clear.",
    "kind": "event"
   },
   {
-   "t": 86.08,
-   "text": "Relay 4 clips the wreck of Enterprise. Gone.",
+   "t": 85.82,
+   "text": "Gamma squadron is breaking. 2 ships running to jump clear.",
    "kind": "event"
   },
   {
-   "t": 88.35,
-   "text": "the Obelisk is doomed and turning to ram Farragut.",
-   "kind": "event"
-  },
-  {
-   "t": 92.75,
-   "text": "the Obelisk rams Farragut at 29 metres a second.",
+   "t": 90.62,
+   "text": "The Obelisk is doomed and turning to ram Farragut.",
    "kind": "event"
   },
   {
@@ -364,16 +359,21 @@
   },
   {
    "t": 94.02,
-   "text": "the Obelisk rams Farragut at 29 metres a second.",
+   "text": "The Obelisk is doomed and turning to ram Farragut.",
    "kind": "event"
   },
   {
-   "t": 97.22,
-   "text": "the Constitution is doomed and turning to ram the Obelisk.",
+   "t": 95.08,
+   "text": "The Obelisk rams Farragut at 29 metres a second.",
    "kind": "event"
   },
   {
-   "t": 102.02,
+   "t": 99.48,
+   "text": "The Constitution is doomed and turning to ram the Obelisk.",
+   "kind": "event"
+  },
+  {
+   "t": 104.28,
    "text": "Queen's Diamond has lost Nexus 8. Now hunting the Constitution-Class Heavy that did it.",
    "kind": "event"
   },
@@ -389,7 +389,7 @@
   },
   {
    "t": 108.15,
-   "text": "the Steamrunner breaking off, hull 12%, falling back to Enterprise’s screen.",
+   "text": "The Steamrunner breaking off, hull 12%, falling back to Enterprise’s screen.",
    "kind": "decision"
   },
   {
@@ -404,7 +404,7 @@
   },
   {
    "t": 114.42,
-   "text": "the Akira covering Constellation, hull 4%.",
+   "text": "The Akira covering Constellation, hull 4%.",
    "kind": "decision"
   },
   {
@@ -449,7 +449,7 @@
   },
   {
    "t": 143.35,
-   "text": "the Akira breaking off, hull 25%, falling back to Enterprise’s screen.",
+   "text": "The Akira breaking off, hull 25%, falling back to Enterprise’s screen.",
    "kind": "decision"
   },
   {
@@ -484,56 +484,51 @@
   },
   {
    "t": 167.75,
+   "text": "Queen's Diamond has lost Nexus 2. Now hunting the Sovereign-Class Flagship that did it.",
+   "kind": "event"
+  },
+  {
+   "t": 173.88,
    "text": "Queen's Diamond is hunting the Sovereign-Class Flagship that killed Nexus 2.",
    "kind": "decision"
   },
   {
-   "t": 172.82,
-   "text": "Nexus 4 covering Subunit 4, hull 17%.",
+   "t": 178.95,
+   "text": "Enterprise jinking hard, hull 49%.",
    "kind": "decision"
   },
   {
-   "t": 175.62,
-   "text": "Enterprise jinking hard, hull 58%.",
-   "kind": "decision"
-  },
-  {
-   "t": 179.35,
-   "text": "“Hunting the screen. SOVEREIGN-CLASS FLAGSHIP is marked. flight of 3.” — Queen's Diamond",
-   "kind": "thought"
-  },
-  {
-   "t": 181.62,
+   "t": 180.95,
    "text": "Enterprise is lost. Abandon ship.",
    "kind": "event"
   },
   {
-   "t": 185.35,
+   "t": 184.42,
    "text": "The Federation flagship Enterprise is gone. Command is silent.",
    "kind": "event"
   },
   {
-   "t": 189.75,
-   "text": "Constellation takes command of the Federation fleet.",
-   "kind": "event"
-  },
-  {
-   "t": 193.48,
-   "text": "Nexus 4 clips the wreck of Enterprise. Gone.",
-   "kind": "event"
-  },
-  {
-   "t": 197.62,
-   "text": "Nexus 6 clips the wreck of Enterprise. Gone.",
-   "kind": "event"
-  },
-  {
-   "t": 201.75,
+   "t": 188.82,
    "text": "Constellation picking up escape pods.",
    "kind": "decision"
   },
   {
-   "t": 205.48,
+   "t": 192.55,
+   "text": "Constellation takes command of the Federation fleet.",
+   "kind": "event"
+  },
+  {
+   "t": 196.28,
+   "text": "Nexus 6 clips the wreck of Enterprise. Gone.",
+   "kind": "event"
+  },
+  {
+   "t": 200.42,
+   "text": "Vinculum Leader covering Subunit 4, hull 17%.",
+   "kind": "decision"
+  },
+  {
+   "t": 204.15,
    "text": "“Patrolling the lane. guns on LONG-RANGE PROBE. covering the screen.” — Constellation",
    "kind": "thought"
   },
@@ -716,7 +711,7 @@
   {
    "t": 15.7,
    "type": "vendetta",
-   "text": "the Constitution has lost Alpha 8. Now hunting the Obelisk-Class Carrier that did it."
+   "text": "The Constitution has lost Alpha 8. Now hunting the Obelisk-Class Carrier that did it."
   },
   {
    "t": 28,
@@ -741,7 +736,7 @@
   {
    "t": 37.8,
    "type": "rout",
-   "text": "Zeta squadron is breaking. 1 ship running for the edge."
+   "text": "Zeta squadron is breaking. 1 ship running to jump clear."
   },
   {
    "t": 42.5,
@@ -751,7 +746,7 @@
   {
    "t": 44,
    "type": "lastStand",
-   "text": "the Obelisk is going down firing everything it has."
+   "text": "The Obelisk is going down firing everything it has."
   },
   {
    "t": 44.4,
@@ -766,7 +761,7 @@
   {
    "t": 45.8,
    "type": "rout",
-   "text": "Zeta squadron is breaking. 1 ship running for the edge."
+   "text": "Zeta squadron is breaking. 1 ship running to jump clear."
   },
   {
    "t": 45.8,
@@ -831,7 +826,7 @@
   {
    "t": 75.3,
    "type": "rout",
-   "text": "Epsilon squadron is breaking. 1 ship running for the edge."
+   "text": "Epsilon squadron is breaking. 1 ship running to jump clear."
   },
   {
    "t": 75.9,
@@ -846,12 +841,12 @@
   {
    "t": 78.3,
    "type": "rout",
-   "text": "Delta squadron is breaking. 1 ship running for the edge."
+   "text": "Delta squadron is breaking. 1 ship running to jump clear."
   },
   {
    "t": 78.9,
    "type": "rout",
-   "text": "Gamma squadron is breaking. 2 ships running for the edge."
+   "text": "Gamma squadron is breaking. 2 ships running to jump clear."
   },
   {
    "t": 79.8,
@@ -861,7 +856,7 @@
   {
    "t": 80.4,
    "type": "rout",
-   "text": "Beta squadron is breaking. 1 ship running for the edge."
+   "text": "Beta squadron is breaking. 1 ship running to jump clear."
   },
   {
    "t": 81.4,
@@ -886,7 +881,7 @@
   {
    "t": 87.4,
    "type": "lastStand",
-   "text": "the Obelisk is doomed and turning to ram Farragut."
+   "text": "The Obelisk is doomed and turning to ram Farragut."
   },
   {
    "t": 87.5,
@@ -926,7 +921,7 @@
   {
    "t": 91.7,
    "type": "ram",
-   "text": "the Obelisk rams Farragut at 29 metres a second."
+   "text": "The Obelisk rams Farragut at 29 metres a second."
   },
   {
    "t": 92.8,
@@ -941,7 +936,7 @@
   {
    "t": 94.7,
    "type": "lastStand",
-   "text": "the Constitution is doomed and turning to ram the Obelisk."
+   "text": "The Constitution is doomed and turning to ram the Obelisk."
   },
   {
    "t": 94.9,
@@ -984,6 +979,16 @@
    "text": "Adjunct 4 clips the wreck of the Obelisk. Gone."
   },
   {
+   "t": 106.2,
+   "type": "ace",
+   "text": "Nexus 5 makes ace with 2 kills. Callsign: Vane."
+  },
+  {
+   "t": 107.7,
+   "type": "aceDuel",
+   "text": "Aces meet: Nexus 5 (“Vane”) against the Constitution."
+  },
+  {
    "t": 108.1,
    "type": "heroKill",
    "text": "The Constitution"
@@ -991,7 +996,7 @@
   {
    "t": 110.9,
    "type": "wreckStrike",
-   "text": "Nexus 5 clips the wreck of the Akira. Gone."
+   "text": "Nexus 5 (“Vane”) clips the wreck of the Akira. Gone."
   },
   {
    "t": 115.8,

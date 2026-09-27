@@ -39,12 +39,12 @@
   "bigDeathsOnScreen": 5,
   "bigDeathsReplayed": 0,
   "missed": [],
-  "captions": 36,
+  "captions": 37,
   "decisionCaptions": 14,
-  "eventCaptions": 20,
-  "captionMedianSeconds": 3.84,
-  "shortCaptions": 7,
-  "wallSeconds": 102
+  "eventCaptions": 21,
+  "captionMedianSeconds": 3.740000000000002,
+  "shortCaptions": 6,
+  "wallSeconds": 97
  },
  "autoReplays": [],
  "cuts": [
@@ -249,16 +249,21 @@
   },
   {
    "t": 38.18,
-   "text": "Shore squadron peels off to screen Shore 3, hull 34%.",
+   "text": "",
+   "kind": null
+  },
+  {
+   "t": 38.48,
+   "text": "The screen could not save Shore 3.",
    "kind": "event"
   },
   {
-   "t": 43.02,
+   "t": 42.22,
    "text": "Dusk Leader clips the wreck of Shantavi. Gone.",
    "kind": "event"
   },
   {
-   "t": 47.15,
+   "t": 46.35,
    "text": "Dukhat's Blade is hunting the Shadow Scout that killed Dawn 5.",
    "kind": "decision"
   },
@@ -269,51 +274,56 @@
   },
   {
    "t": 53.55,
-   "text": "Umbra squadron has broken. Umbra 2 running for the edge, hull 22%.",
-   "kind": "decision"
+   "text": "Umbra squadron is breaking. 7 ships running to jump clear.",
+   "kind": "event"
   },
   {
-   "t": 59.02,
+   "t": 58.35,
    "text": "Dukhat's Blade is down. The hunt for the Shadow Scout ends there.",
    "kind": "event"
   },
   {
-   "t": 64.48,
+   "t": 63.82,
    "text": "Crest squadron coming in off their flank.",
    "kind": "decision"
   },
   {
-   "t": 68.22,
+   "t": 67.55,
    "text": "The Shadows plan has failed: the strike was shot down. Switching to the pincer.",
    "kind": "event"
   },
   {
-   "t": 74.35,
+   "t": 73.68,
    "text": "Marai survives. Light squadron held.",
    "kind": "event"
   },
   {
-   "t": 78.08,
-   "text": "Hush 9 breaking off, hull 40%, falling back on Hush 5.",
+   "t": 77.42,
+   "text": "Hush 5 breaking off, hull 70%, falling back on Hush 2.",
    "kind": "decision"
   },
   {
-   "t": 79.42,
+   "t": 78.75,
+   "text": "Hush 2 breaking off, hull 84%, falling back on Hush 5.",
+   "kind": "decision"
+  },
+  {
+   "t": 80.08,
    "text": "Veil Leader covering Veil 3, hull 39%.",
    "kind": "decision"
   },
   {
-   "t": 83.15,
+   "t": 83.82,
    "text": "Flyer 7 covering Marai, hull 15%.",
    "kind": "decision"
   },
   {
-   "t": 86.48,
+   "t": 86.88,
    "text": "Shore 2 is going down firing everything it has.",
    "kind": "event"
   },
   {
-   "t": 90.88,
+   "t": 91.28,
    "text": "",
    "kind": null
   },
@@ -368,22 +378,22 @@
    "kind": "event"
   },
   {
-   "t": 134.62,
+   "t": 134.22,
    "text": "The Ghost is down. The hunt for the Tinashi-Class War ends there.",
    "kind": "event"
   },
   {
    "t": 137.68,
-   "text": "Shade squadron is breaking. 1 ship running for the edge.",
+   "text": "Shade squadron is breaking. 1 ship running to jump clear.",
    "kind": "event"
   },
   {
    "t": 142.48,
-   "text": "Star 4 survives. Shore squadron held.",
+   "text": "The Shadows plan has failed: the wings never met. Switching to the decapitation strike.",
    "kind": "event"
   },
   {
-   "t": 144.75,
+   "t": 145.55,
    "text": "Star 4 is going down firing everything it has.",
    "kind": "event"
   }
@@ -498,7 +508,7 @@
   {
    "t": 47.2,
    "type": "rout",
-   "text": "Umbra squadron is breaking. 7 ships running for the edge."
+   "text": "Umbra squadron is breaking. 7 ships running to jump clear."
   },
   {
    "t": 48.3,
@@ -514,6 +524,11 @@
    "t": 52,
    "type": "ionCharge",
    "text": "WC-VALEN 68888 VALTAYN"
+  },
+  {
+   "t": 52.3,
+   "type": "ace",
+   "text": "Umbra 7 makes ace with 2 kills. Callsign: Vane."
   },
   {
    "t": 54.5,
@@ -568,7 +583,7 @@
   {
    "t": 88.5,
    "type": "ace",
-   "text": "Hush 5 makes ace with 3 kills. Callsign: Vane."
+   "text": "Hush 5 makes ace with 3 kills. Callsign: Kestrel."
   },
   {
    "t": 92.2,
@@ -648,7 +663,7 @@
   {
    "t": 137.6,
    "type": "rout",
-   "text": "Shade squadron is breaking. 1 ship running for the edge."
+   "text": "Shade squadron is breaking. 1 ship running to jump clear."
   },
   {
    "t": 137.7,
@@ -698,7 +713,7 @@
   {
    "t": 144.7,
    "type": "rout",
-   "text": "Veil squadron is breaking. 1 ship running for the edge."
+   "text": "Veil squadron is breaking. 1 ship running to jump clear."
   }
  ],
  "kills": [
