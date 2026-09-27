@@ -12,7 +12,7 @@
   // squadron wipe > dogfight, as the broadcast brief orders them.
   const WEIGHTS = {
     firstOneKill: 130, capitalKill: 100, heroKill: 92, capitalBreakup: 96,
-    heroDuel: 70, ionStrike: 62, ionCharge: 56, capitalDanger: 58,
+    heroDuel: 70, ancientStrike: 96, ionStrike: 62, ionCharge: 56, capitalDanger: 58,
     squadronWipe: 42, reinforcements: 36, cloakReveal: 26, arrival: 22,
     dogfight: 12, kill: 7, victory: 150,
     // The war's story: decisions that became events.
@@ -179,9 +179,11 @@
           // flagship or a First One still may); a death the camera misses is replayed, not chased.
           const settled = held >= (d.phase === 'climax' || d.phase === 'reaction' ? 7 : d.phase === 'story' ? 6 : 0) || (best && best.score >= 125);
           const outranks = d.phase === 'story' && best && best.phase !== 'story' && best.score >= Math.max(62, (d.shot.score || 0) * 1.15) && best.subject !== d.shot.subject;
-          if ((urgent || outranks) && held >= minHold && settled) {
+          // The aftermath of the shot on screen (an ancient's blast) follows it straight away.
+          const follows = best && best.after != null && best.after === d.shot?.subject && best.subject !== d.shot.subject;
+          if (((urgent || outranks) && held >= minHold && settled) || (follows && held >= 1)) {
             if (d.phase === 'story' && storyLive && !subjectGone) d.resume = {...d.shot, resumed: true};
-            next = {...best, phase: 'climax'};
+            next = {...best, phase: follows ? 'reaction' : 'climax'};
           } else if (d.phase === 'story') {
             // After its floor a story gives way to a clearly better one.
             const better = candidates.filter(c => c.phase === 'story' && c.story !== d.shot.story && !recentlyShown(d, c)).sort((x, y) => y.score - x.score)[0];

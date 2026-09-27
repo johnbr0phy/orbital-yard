@@ -82,7 +82,7 @@ test('story is factual: three to five lines built only from logged ships',()=>{
 
 test('real battle: every death is logged once, MVP and losses match the simulation',()=>{
   const b=loadBattle({modules:true});b.start(12,10,5,24);
-  b.run('endIntro();lastT=1;for(let i=1;i<=60*120&&winner==null;i++)frame(1000+i*1000/60);');
+  b.run('endIntro();lastT=1;for(let i=1;i<=60*240&&winner==null;i++)frame(1000+i*1000/60);');
   // A ship that jumped out alive is not a death: only the destroyed are logged as kills.
   const r=JSON.parse(b.run(`JSON.stringify({dead:ships.filter(s=>s.dead&&!s.jumped).length,kills:bc.log.events.filter(e=>/kill|Kill/.test(e.type)).map(e=>e.ship),winner,sum:(()=>{const x=battleSummary();x.mvp=x.mvp?x.mvp.id:null;return x;})()})`));
   assert.equal(r.kills.length,r.dead);assert.equal(new Set(r.kills).size,r.kills.length);

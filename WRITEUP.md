@@ -110,6 +110,27 @@ Those are my next three things to fix.
   It also covers screens and tows that save, probe-based sizes, fracture-edge glow, and convoy and station wins.
 - **Browser against headless.** The Node harness forges box meshes, so its wars differ from the browser's; that was already true on main. The browser against itself is identical across frame rate, time scale, camera, slow motion and forge-worker count (`scripts/determinism-browser.cjs`).
 
+
+## After you watched it
+
+You watched and saw four things my metrics hadn't caught. Each was real, and each is measured before and after in DECISIONS.md.
+
+- **"They all seem to go at the same speed."**
+  - The numbers said speeds varied (each ship's speed swings by about 60% over a war), so I measured what a viewer sees instead: time spent on 5-second plateaus. Fighters sat on one speed 22–42% of the time, and mid-size ships up to 49%. The wanted speed was a step function of mood, and it snapped into place in under a second.
+  - Now the throttle answers the fight: chasing, turning, damage, formation and a pilot's own hand. Engines spool by size. Plateaus fell to 6–10%.
+- **"The asteroids look like giant floating potatoes."**
+  - They did. The shader lit them as perfect spheres, so no bump ever caught the light, and the mesh was a smooth squashed ball.
+  - They're now fractured, elongated, cratered, tumbling rocks lit by their real facets, in four tones.
+- **"The scoreboard should name the reinforcements."**
+  - Reinforcements now get their own line in their colour, with arrived and inbound counts. Their ships no longer inflate the main fleet's number.
+- **"The First Ones jump in, sit still and do nothing."**
+  - Measured, it was worse than that. They arrived over 86 s, my own battle plans parked them on a hold line, only one ancient in the battle could fire at a time, and they fired 4 times in two minutes.
+  - Now the host is present by 17 s. Each ancient fires on its own cycle at whatever cluster its blast will unmake, and the camera cuts to the charge and follows the beam to the shockwave.
+  - The same war that used to crawl ends in 60 s: 61 ships unmade by 10 strikes, none of the ancients lost.
+  - Their simulated odds in the picker went from 1,795 to 2,137 Elo, top of the table. That is the point.
+
+The lesson I'm taking: my story metrics measured what the minds decided, not what the eye sees. Plateau time and "does the camera see the blast" are now measured and tested.
+
 ## Where to look
 
 - **Story gallery:** `design/tribute-new/review/story/index.html`. Every moment in it came from the simulation; only the camera was placed. It includes a top-down plot of each plan.

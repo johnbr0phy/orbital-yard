@@ -772,39 +772,6 @@
   "errors": []
  },
  {
-  "id": "terrain-rocks",
-  "seed": 1107,
-  "event": null,
-  "shots": [
-   {
-    "name": "terrain-rocks-mid.jpg",
-    "distance": 8003,
-    "subject": null,
-    "camera": "place",
-    "caption": "“Broadside on the line. A/SF-01 B-WING is in the battery.” — Dominator",
-    "plan": "",
-    "objective": "Objective · last fleet flying",
-    "tags": [
-     "⚑ Independence"
-    ]
-   },
-   {
-    "name": "terrain-rocks-far.jpg",
-    "distance": 17074,
-    "subject": null,
-    "camera": "place",
-    "caption": "“Broadside on the line. A/SF-01 B-WING is in the battery.” — Dominator",
-    "plan": "",
-    "objective": "Objective · last fleet flying",
-    "tags": [
-     "⚑ Tyrant",
-     "⚑ Independence"
-    ]
-   }
-  ],
-  "errors": []
- },
- {
   "id": "terrain-nebula",
   "seed": 1101,
   "event": null,
@@ -1093,6 +1060,39 @@
      "⚑ Defender",
      "» Obsidian breaking (2)",
      "» Gold breaking (8)"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "terrain-rocks",
+  "seed": 1107,
+  "event": null,
+  "shots": [
+   {
+    "name": "terrain-rocks-mid.jpg",
+    "distance": 8003,
+    "subject": null,
+    "camera": "place",
+    "caption": "“Broadside on the line. T-65 X-WING is in the battery.” — Dominator",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Independence"
+    ]
+   },
+   {
+    "name": "terrain-rocks-far.jpg",
+    "distance": 17074,
+    "subject": null,
+    "camera": "place",
+    "caption": "“Broadside on the line. T-65 X-WING is in the battery.” — Dominator",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Tyrant",
+     "⚑ Independence"
     ]
    }
   ],

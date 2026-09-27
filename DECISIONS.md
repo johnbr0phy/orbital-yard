@@ -80,7 +80,7 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 ## Picker
 
 - **Emblems are original and procedural**: a seeded frame and motif per fleet in its own colours, with no logos.
-- **Odds come from a real headless round-robin**: all 253 pairings at 20 ships a side, 100 simulated seconds each, sides alternating by pairing. An undecided battle scores by remaining strength share. Results are fitted as Bradley–Terry ratings on an Elo scale by `scripts/fleet-ratings.cjs` and stored in `bench/ratings/ratings.json`. At this size the Borg (1851) and First Ones (1795) lead, and the Dominion (1379) and Rebels (1383) trail. The picker labels them "simulated odds"; they aren't canon.
+- **Odds come from a real headless round-robin**: all 253 pairings at 20 ships a side, 100 simulated seconds each, sides alternating by pairing. An undecided battle scores by remaining strength share. Results are fitted as Bradley–Terry ratings on an Elo scale by `scripts/fleet-ratings.cjs` and stored in `bench/ratings/ratings.json`. At this size the First Ones (2137) and the Borg (1751) lead, and the Choir (1374), the Empire (1394) and the Dominion (1395) trail. (Re-fitted after the throttle and First Ones changes; before them the Borg (1851) and First Ones (1795) led.) The picker labels them "simulated odds"; they aren't canon.
 - **No live turning hero ship per card.** Twenty-three forged hero meshes and viewports on a phone menu contradicts the performance targets. The live war behind the menu does that job.
 
 ## Audio
@@ -139,7 +139,7 @@ Each fleet gets one row. **These are my readings of how each fleet is portrayed,
 | USCM | 1.33 | yes | 0.6 | 20% / 20% | 4 s | sometimes | jump | 40% | 90% | 0.3 / 0.5 / 0.3 | no | pincer, hold, raid | Marines leave nobody behind and hold together under pressure. |
 | Engineers | 1.52 | yes | 0.3 | 10% / 30% | 6 s | yes | the edge | 10% | 10% | 0.5 / 0.5 / 0 | yes | siege, ambush, decapitate | The Engineers are indifferent to loss and merciless to the fleeing. |
 | Yautja | 1.61 | yes | 0.2 | 5% / 40% | 5 s | yes | jump | 20% | 0% | 0.5 / 0.5 / 0 | no | ambush, raid, decapitate | Hunters: they ambush, they hunt the strongest, and they do not surrender a ship. |
-| First Ones | 1.71 | yes | 0.1 | 0% / 0% | 1 s | sometimes | jump | 0% | 0% | 0 / 1 / 0 | no | siege, hold, decapitate | The First Ones do not panic. When the age turns they simply withdraw. |
+| First Ones | 1.71 | yes | 0.1 | 0% / 0% | 1 s | sometimes | jump | 0% | 0% | 0 / 1 / 0 | yes | decapitate | The First Ones do not plan around anyone. They go where they please and unmake what they choose. |
 | Romulans | 1.14 | yes | 0.6 | 20% / 10% | 5 s | sometimes | jump | 40% | 30% | 0.2 / 0.3 / 0.4 | no | ambush, raid, decapitate | Romulans strike from the cloak and leave when the odds turn. |
 | Dominion | never | no | 0.1 | 0% / 50% | 3 s | yes | jump | 0% | 0% | 0.9 / 0.1 / 0 | yes | pincer, decapitate, ambush | The Jem'Hadar never retreat. Losing command only makes them charge. |
 | Space Marines | never | yes | 0.1 | 0% / 20% | 3 s | yes | jump | 50% | 60% | 0.5 / 0.5 / 0 | no | hold, decapitate, pincer | Space Marines do not break, though a lone ship may fall back to its brothers. |
@@ -219,3 +219,64 @@ Each fleet gets one row. **These are my readings of how each fleet is portrayed,
 - **Setting a quality tier no longer changes fleet size.** Size now comes from simulation speed; tiers only change rendering.
 - **The browser and the Node harness don't produce the same war**, by design and already so on main: the harness forges box meshes, so a ship's own hull obstructs its weapons differently. Browser against browser is identical across everything a viewer can change.
 - **Metrics caps.** Story metrics cap wars at 180 simulated seconds at 60 a side and 120 at 300 a side, as the baseline did, so before and after are compared on the same terms.
+
+# Owner feedback: speed, asteroids, reinforcements, the First Ones
+
+Four things the owner saw by watching, each measured before it was changed.
+
+## Ships now speed up and slow down with the fight
+
+- **What was wrong.** A small craft's wanted speed came from a handful of fixed multiples of cruise speed chosen by mood: a dash above 500 m in attack, flank or search, ×1.25 fleeing, ×0.92 defending, ×0.65 inside 45 m. So every fighter attacking from over 500 m flew at the same 93% of its dash. Speed then snapped to that value within a second. Measured over a war, ships spent 22–42% (fighters) and 31–49% (mid-size) of their time on 5-second plateaus within ±2% of one speed. Capitals were the same, with a plain exponential approach to a mode speed.
+- **What it does now** (`throttle()` and `approachSpeed()` in the page, the capital path in `moveCapital`):
+  - **Chasing:** close at up to full burn from far off; inside the firing pocket (160 m for fighters, 260 m otherwise), sit on the target's own speed. Closing speed is 0.35 m/s per metre of gap beyond the pocket.
+  - **Turning:** a hard turn costs up to 28% of the wanted speed (25% for capitals).
+  - **Damage:** the top end falls with hull, to 62% at zero (65% for capitals).
+  - **Formation:** a wingman behind the squadron's centre along its heading opens up by up to 25%; one ahead eases off by up to 18%.
+  - **Pilot's hand:** each pilot feathers the throttle to 84–100% on two slow waves of their own, even at full burn.
+  - **Engines have limits:** a fighter reaches full burn in about 1.5 s, a mid-size ship in 4 s, a capital in 8–30 s by length. Braking is 1.5× quicker. Transit burns and rams keep their old behaviour.
+- **Result, same two wars:** plateau time fell to 6–8% for fighters and 7–10% for mid-size ships; capitals went 14→7% and 31→19%. The 99th-percentile speed change per tick fell from 7.5 to 4.2 m/s, so changes are smoother as well as more frequent.
+- **Deterministic:** every input is simulation state; there is no randomness and nothing reads the clock.
+- **It changes every war.** The metrics, plan experiment, watch logs, trace and fleet ratings were re-run on this code. BEHAVIOUR.md and PERFORMANCE.md have the new numbers.
+
+## Asteroids, not potatoes
+
+- **What was wrong.** Two things.
+  - The celestial shader lit every body with a perfect sphere normal, so no bump on a rock ever caught the light.
+  - The mesh was a coarse 9×14 squashed sphere with seven soft bumps, and every rock was the same grey-brown.
+- **What it does now:**
+  - **Shape:** each rock is an elongated lump (up to 2.3:1), broken by 5–9 flat fracture planes, roughened by ridged noise and pitted with 3–7 rimmed craters.
+  - **Tumble:** it is tilted off its spin axis, so the spin reads as a tumble, and small rocks spin faster.
+  - **Lighting:** rocks are lit by their real faceted surface (`uRock`; planets are unchanged).
+  - **Colour:** each rock takes one of four tones: charcoal, basalt, rust-brown or pale regolith.
+  - **Night side:** it gets a fleet-style fill and a faint rim, so the dark side keeps its outline.
+- **Collision is unchanged:** the mesh is scaled so its farthest point is the rock's collision radius.
+
+## Reinforcements on the scoreboard
+
+- The top bar was built once per matchup from the two main fleets. Reinforcements got no name, and their ships were silently added to the main fleet's count.
+- Now a side with an ally shows a second line in the ally's colour: "+ FEDERATION 12 (+19 inbound)" while they arrive, then "+ FEDERATION 31". The main count shows the main fleet only.
+- The ticker moves down a line so the two don't overlap.
+
+## The First Ones unmake fleets
+
+The owner's words: they "jump in, sit still and do nothing", and should "utterly annihilate the opponents at their whim".
+
+- **Measured before** (First Ones vs Empire, 60 a side):
+  - they arrived one at a time, 11.5 s apart, over 86 s;
+  - the battle plan I had added in this pass (siege or hold) parked each arrival on a line;
+  - only one ancient in the whole battle could charge or fire at a time, with a 20–28 s cooldown each;
+  - a blast took at most 24% of a capital's hull;
+  - first shot at 88 s; 4 shots and 2 kills by 120 s.
+- **Now:**
+  - **Arrival:** the host arrives in a quick sequence, all eight present by about 17 s.
+  - **Plans:** the First Ones' doctrine has one plan, decapitation (they don't plan around anyone). No hold or siege line parks them.
+  - **Firing:** each ancient fires on its own cycle: about a 2 s charge, a 6–9 s rest, reach 8 km measured to the target's hull. Only two may release within the same half-second, so each strike still reads on its own.
+  - **Targeting:** they see the whole field, not their sensor contacts, and aim where the blast unmakes the most (body count first, capitals weighing a little more).
+  - **Blast:** 600–1,620 m depending on the weapon, about 2.5× the old radius. Anything smaller than a capital inside it is unmade; a capital near the centre loses up to 78% of its hull. Another ancient takes 8–20%.
+  - **Presentation:**
+    - the weapon's own shape (cascades, collapses, rings of rays) at the new scale, and a shockwave that keeps growing for two seconds;
+    - a screen flash in the weapon's colour, a camera kick, and the end-of-an-age sound;
+    - a ticker line naming the weapon and how many ships it unmade;
+    - Broadcast cuts to a charging ancient at once, then follows it to the blast site.
+- **Measured after:** the same war ends at 60 s, all 61 Imperial ships unmade by 10 strikes, with no First One lost. A 20-a-side war ends inside 90 s; the test checks it.
+- **Balance.** This makes the First Ones overwhelming on purpose. The picker's simulated odds were re-fitted on the new code (`bench/ratings/ratings.json`).

@@ -473,7 +473,15 @@
       if(s.trafficGoal&&now<s.trafficUntil)velocity*=s.trafficBrake;
       if(now<(s.trafficBrakeUntil||0))velocity*=.65;
       if(s.stunT&&now<s.stunT)velocity*=.62;
-      s.v=(s.v||0)+(velocity-(s.v||0))*Math.min(1,dt*(p.mode==='RAM'?1.4:.65));
+      // A capital answers the fight too: hard turns and engine damage cost speed,
+      // and a big hull takes 8 to 30 s to reach full burn (a ram spends everything).
+      if(p.mode!=='DRIFT'&&!transit&&p.mode!=='RAM'){
+        const hp=clamp((s.hp||1)/Math.max(1,s.hpMax||1),0,1),turnUse=Math.min(1,Math.abs(s.yawV||0)/Math.max(.01,turn));
+        velocity*=(1-.25*turnUse)*(.65+.35*hp);
+      }
+      {const spool=p.mode==='RAM'?4:Math.min(30,8+(s.slen||300)/200),acc=Math.max(dash,s.spd)/spool,v=s.v||0;
+       const dv=(velocity-v)*Math.min(1,dt*(p.mode==='RAM'?1.4:.65));
+       s.v=transit?v+dv:v+clamp(dv,-acc*1.5*dt,acc*dt);}
       s.vy=(s.vy||0)+(clamp(dy*.15,-s.spd*.42,s.spd*.42)-(s.vy||0))*Math.min(1,dt*.8);
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
       if(s.steadyCapital){
@@ -586,7 +594,7 @@
     D(.70,true,.6,.20,.20,4,.6,'jump',.4,.9,[.3,.5,.3],false,[2,1,2,2,2,1],'Marines leave nobody behind and hold together under pressure.'),
     D(.80,true,.3,.10,.30,6,.8,'edge',.1,.1,[.5,.5,0],true,[1,2,1,0,2,3],'The Engineers are indifferent to loss and merciless to the fleeing.'),
     D(.85,true,.2,.05,.40,5,.8,'jump',.2,0,[.5,.5,0],false,[0,4,0,3,2,0],'Hunters: they ambush, they hunt the strongest, and they do not surrender a ship.'),
-    D(.90,true,.1,0,0,1,.5,'jump',0,0,[0,1,0],false,[0,0,2,0,1,3],'The First Ones do not panic. When the age turns they simply withdraw.'),
+    D(.90,true,.1,0,0,1,.5,'jump',0,0,[0,1,0],true,[0,0,0,0,1,0],'The First Ones do not plan around anyone. They go where they please and unmake what they choose.'),
     D(.60,true,.6,.20,.10,5,.5,'jump',.4,.3,[.2,.3,.4],false,[1,4,0,3,2,0],'Romulans strike from the cloak and leave when the odds turn.'),
     D(null,false,.1,0,.50,3,1,'jump',0,0,[.9,.1,0],true,[3,1,0,1,3,0],'The Jem\'Hadar never retreat. Losing command only makes them charge.'),
     D(null,true,.1,0,.20,3,.7,'jump',.5,.6,[.5,.5,0],false,[1,0,3,1,3,1],'Space Marines do not break, though a lone ship may fall back to its brothers.'),
@@ -933,7 +941,7 @@
       }
       for(const s of this.ships())if(s.vendetta&&(s.vendetta.target===t.id&&s.vendetta.lost!==undefined&&killer!==s)){s.vendetta=null;}
       if(t.vendetta){this.emit({type:'vendettaFailed',side:t.side,ship:t.id,partner:t.vendetta.target,x:t.x,y:t.y,z:t.z,size:t.slen});t.vendetta=null;}
-      if(t.convoy&&this.objective&&this.objective.kind==='CONVOY'&&!this.objective.done){this.objective.lost++;this.emit({type:'convoyLost',side:t.side,ship:t.id,x:t.x,y:t.y,z:t.z,size:t.slen});}
+      if(t.convoy&&this.objective&&this.objective.kind==='CONVOY'&&!this.objective.done){this.objective.lost++;this.emit({type:'convoyLost',side:t.side,ship:t.id,lost:this.objective.lost,x:t.x,y:t.y,z:t.z,size:t.slen});}
     }
     onLeave(s,now){
       if(s.convoy&&this.objective&&this.objective.kind==='CONVOY'&&!this.objective.done&&s.convoyHome){this.objective.saved++;this.emit({type:'convoySaved',side:s.side,ship:s.id,x:s.x,y:s.y,z:s.z,size:s.slen});}
