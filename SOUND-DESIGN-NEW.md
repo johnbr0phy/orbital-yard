@@ -1,5 +1,14 @@
 # Tribute New sound design
 
+## Hearing
+
+You hear the fight the camera is in. Each sound has a hearing radius set by its source: a gun
+reaches 900 + 110·√(ship length) units, deaths reach 2.2k, 4k, 9k or the whole sky by size, an
+engine 250 + 4·length and a fly-by 400 + 2.5·length. Level and brightness fall to silence at the
+radius. Beyond it, fire feeds the distant battle bed, and big deaths arrive as late, low thunder.
+Ships passing close to the camera get a fly-by: their own engine with a Doppler drop, plus a whoosh.
+Details and measurements are in `DECISIONS.md`, under Audio.
+
 Generated with ElevenLabs Sound Effects v2 on fal.ai by `scripts/gen-sfx-fal.py`,
 built by `scripts/build-audio.py`. A role with samples plays them; anything else falls
 back to the synth in `armada-audio-new.js`. Prompts describe sounds and never name a franchise.
@@ -59,6 +68,8 @@ back to the synth in `armada-audio-new.js`. Prompts describe sounds and never na
 | explosion2 | Large warship exploding, massive deep explosion with rolling secondary detonations and groaning, collapsing metal | 5.5s |
 | explosion3 | Colossal capital ship destroyed, enormous reactor detonation, earth-shaking blast, long rolling rumble and raining debris | 8.0s |
 | stinger | Epic cinematic braam, deep brass hit swelling and decaying, dramatic trailer impact | 5.0s |
+| whoosh-0 | Starfighter streaking past the camera very close, fast doppler whoosh with a screaming engine, one pass from left to right | 1.6s |
+| whoosh-1 | Massive warship sliding past the camera close overhead, deep rumbling roar swelling and fading away, huge doppler pass-by | 3.5s |
 | ambience | Distant space battle ambience, far-off muffled explosions and weapon fire over a low rumble | 20.0s |
 
 Every prompt ends with: "Hollywood blockbuster sci-fi sound design, cinematic, high fidelity, punchy, no music, no speech".

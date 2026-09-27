@@ -27,6 +27,7 @@ fetch('manifest.json').then(r=>r.json()).then(({roles})=>{
  sec('Fleets',FLEETS.map((n,i)=>card(n,[row('gun',roles['shot-'+i]),row('beam',roles['beam-'+i]),row('engine',roles['engine-'+i],true)])));
  sec('Explosions',[0,1,2,3].map(t=>card(['Fighter','Frigate','Capital','First One'][t],[row('blast',roles['explosion'+t])])));
  sec('Death styles',Object.keys(roles).filter(k=>k.startsWith('boom-')).map(k=>card(k.slice(5),[row('layer',roles[k])])));
+ sec('Fly-bys',[card('Fighter pass',[row('whoosh',roles['whoosh-0'])]),card('Capital pass',[row('whoosh',roles['whoosh-1'])])]);
  sec('Shared hardware',['arc','rail','ion-charge','ion-fire'].map(k=>card(k,[row('shot',roles[k])])));
 });
 </script></body></html>

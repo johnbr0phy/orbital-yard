@@ -29,6 +29,7 @@ def spec(role):
     if role.startswith('explosion') or role in ('ion-fire', 'stinger'): return -1.0, 8.0
     if role == 'ion-charge': return -4.0, 5.0
     if role.startswith('boom-'): return -2.0, 3.5
+    if role.startswith('whoosh-'): return -2.0, 4.0
     return -4.0, 1.5
 
 def read_wav(path):
@@ -72,7 +73,11 @@ def process(x, rate, role, start=None, end=None):
     # Zero-phase high-pass (2nd-order Butterworth magnitude). Guns and beams lose everything
     # under 120 Hz: stacked, their sub made a 25 s Minbari v Shadows capture 61% sub-120 Hz,
     # the mud the synth was rebuilt to escape. Explosions, engines and beds keep their weight.
-    fc = 120 if role.startswith(('shot-', 'beam')) or role in ('arc', 'rail', 'ion-charge') else 45
+    # Engine loops, fly-by whooshes and the distant bed sit at 80 Hz: they play for long stretches
+    # and, left full-range, pulled a Minbari v Shadows capture back up to 53% sub. Fighter deaths
+    # come by the dozen in a swarm fight, so their pops lose everything under 100 Hz; frigates
+    # and death-style layers under 70. Capital and First One deaths keep their full weight.
+    fc = 120 if role.startswith(('shot-', 'beam')) or role in ('arc', 'rail', 'ion-charge') else 80 if role.startswith(('engine-', 'whoosh-')) or role == 'ambience' else {'explosion0': 100, 'explosion1': 70}.get(role, 70 if role.startswith('boom-') else 45)
     X = np.fft.rfft(x, axis=0); f = np.fft.rfftfreq(len(x), 1 / RATE); f[0] = 1e-3
     x = np.fft.irfft(X / np.sqrt(1 + (fc / f) ** 4)[:, None], len(x), axis=0)
     if not is_loop(role):
@@ -95,7 +100,7 @@ def process(x, rate, role, start=None, end=None):
     if p > 0: x = x * (10 ** (peak_db / 20) / p)
     # Weapons play side by side, so match them by loudness, not by peak: RMS over the
     # sounding part (frames within 40 dB of the loudest) aims at -17 dBFS, peaks capped at -1.
-    if not is_loop(role) and not role.startswith(('explosion', 'boom-')) and role != 'stinger':
+    if not is_loop(role) and not role.startswith(('explosion', 'boom-', 'whoosh-')) and role != 'stinger':
         f = x[:len(x) // 320 * 320].reshape(-1, 320 * x.shape[1]); r = np.sqrt((f ** 2).mean(axis=1))
         act = r[r > r.max() * 10 ** (-40 / 20)]
         if len(act):
