@@ -26,7 +26,7 @@ code=code[:a]+'''  let alive=0;
 # Old renderer-only helpers remain dormant for compatibility with stored mesh
 # handles. No native GPU API is used by the engine on this page.
 insert='''
-function threeState(){return {ships,wrecks,boneyard,beams,tracers,plasmas,missiles,mines,dusts,flashes,ionState,worldBodies,starSystem,celes,cam,now:battleTime,warT0,sceneR,palI,selected:sel,pilotId,genId,height:cvs.height,viewportHeight:cvs.height,SLIDE,width:cvs.width,RACE_DEFS,BEAMCOL,watchMode,counts,forged,total};}
+function threeState(){return {ships,wrecks,boneyard,beams,tracers,plasmas,missiles,mines,dusts,flashes,ionState,worldBodies:sceneBodies,starSystem,celes,cam,now:battleTime,warT0,sceneR,palI,selected:sel,pilotId,genId,height:cvs.height,viewportHeight:cvs.height,SLIDE,width:cvs.width,RACE_DEFS,BEAMCOL,watchMode,counts,forged,total};}
 window.ArmadaThree.runtime={geometry:window.ArmadaThree.geometryStore.geometry,xPose,xQAA,gunWorld,hullFinish,shipBarrels,barrelFrame,weaponMuzzle,weaponProfile,raceDefs:RACE_DEFS,slide:SLIDE,state:threeState,
  start(a,b,size=150,seed=42){pickMain=[a,b];pickAlly=[-1,-1];perFleet=size;warSeed=seed;document.getElementById('pick').classList.remove('on');startWar(false)},select,view:setWatchView,
  debug: {get ships(){return ships},get battleAI(){return battleAI},step(seconds){for(let i=0;i<Math.round(seconds*30);i++){battleTime+=1/30;simStep(battleTime,1/30)}}}};

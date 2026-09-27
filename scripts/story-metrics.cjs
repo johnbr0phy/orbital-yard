@@ -56,6 +56,7 @@ function warSet(sizes, seedCount) {
 function runWar(w) {
   const {loadBattle} = require('../tests/tribute-new/headless-battle.cjs');
   const b = loadBattle({cores: 1, modules: true});
+  if (w.force) b.run(`storyForce=${JSON.stringify(w.force)}`);
   const ships = b.start(w.a, w.b, w.seed, w.size);
   const names = b.run('SIDE_NAME.slice()');
   b.run(`globalThis.__sm={fled:new Set(),sq:new Map(),coh:[],broken:0,reformed:0,maxT:0};
@@ -96,8 +97,9 @@ function runWar(w) {
       momentum:bc.momentum.samples.map(s=>[+s.t.toFixed(1),+s.share.toFixed(4)]),
       events:bc.log.events.filter(e=>e.type!=='kill').map(e=>[e.type,+(e.t-warT0).toFixed(2),e.side??-1]),
       kills:bc.log.events.filter(e=>e.type==='kill').length,
-      plans:typeof warStory!=='undefined'&&warStory?warStory.planNames?.():null,
-      objective:typeof warStory!=='undefined'&&warStory?warStory.objectiveName?.():null};
+      deaths:bc.log.events.filter(e=>/kill|Kill/.test(e.type)).map(e=>[+(e.t-warT0).toFixed(1),e.side,Math.round(e.x),Math.round(e.z)]),
+      plans:battleAI.story&&battleAI.story.planNames?battleAI.story.planNames():null,
+      objective:battleAI.story&&battleAI.story.objectiveName?battleAI.story.objectiveName():null};
   })()`);
   const cohesion = thirds(r.coh.map(c => c[1]));
   const momentum = r.momentum;
@@ -119,9 +121,21 @@ function runWar(w) {
     decisions, fled: r.fled, fledSurvived: r.fledSurvived,
     cohesion, squadsBroken: r.broken, squadsReformed: r.reformed,
     moments, leadChanges: changes, eventTypes: new Set(r.events.map(e => e[0]).concat(r.kills ? ['kill'] : [])).size,
-    timeline: r.events, momentum, plans: r.plans, objective: r.objective,
+    timeline: r.events, momentum, plans: r.plans, objective: r.objective, shape: warShape(r, T),
     msCpuPerSimSecond: Math.round((cpu.user + cpu.system) / 1000 / Math.max(1, T))
   };
+}
+// Where and when the war was fought: first blood, when a side had lost a
+// quarter, losses by minute, how wide the fighting spread and where it sat.
+function warShape(r, T) {
+  const d = r.deaths, first = d.length ? d[0][0] : null;
+  const lostBy = (side, t) => d.filter(x => x[1] === side && x[0] <= t).length;
+  let t25 = null;
+  for (const x of d) { const s = x[1]; if (lostBy(s, x[0]) >= r.spawned[s] * .25) { t25 = x[0]; break; } }
+  const mean = a => a.length ? Math.round(a.reduce((p, q) => p + q, 0) / a.length) : null;
+  return {firstBlood: first, quarterLost: t25,
+    losses60: [lostBy(0, 60), lostBy(1, 60)], losses120: [lostBy(0, 120), lostBy(1, 120)],
+    killX: mean(d.map(x => x[2])), killSpreadZ: mean(d.map(x => Math.abs(x[3]))), end: +T.toFixed(1)};
 }
 function thirds(values) {
   if (!values.length) return {mean: null, early: null, mid: null, late: null};
@@ -210,6 +224,7 @@ function compare(beforeFile, afterFile) {
 async function main() {
   if (has('child')) { process.stdout.write(JSON.stringify(runWar(JSON.parse(arg('child'))))); return; }
   if (has('compare')) { const i = process.argv.indexOf('--compare'); return compare(process.argv[i + 1], process.argv[i + 2]); }
+  if (has('plans')) return planExperiment();
   const sizes = has('quick') ? [60] : arg('sizes', '60,300').split(',').map(Number);
   const wars = warSet(sizes, +arg('seeds', 3));
   const only = arg('only'); const list = only ? wars.filter(w => w.name.startsWith(only)) : wars;
@@ -238,6 +253,43 @@ async function main() {
   fs.writeFileSync(file, JSON.stringify({label, date: new Date().toISOString(), summary, wars: results}, null, 1));
   console.log(table(summary));
   console.log(`\nwrote ${file}`);
+}
+/* Plans change the shape of a war, not just its label: the same matchup and
+   seeds with side 0 forced to each plan in turn (side 1 holds the line, the
+   objective is annihilation so only the plan differs). */
+async function planExperiment() {
+  const PLANS = ['PINCER', 'AMBUSH', 'HOLD', 'RAID', 'DECAPITATE', 'SIEGE'];
+  const [a, b] = arg('matchup', '5,6').split(',').map(Number), size = +arg('size', 60);
+  const list = [];
+  for (const plan of PLANS) for (const seed of [1101, 2202, 3303]) list.push({name: plan, a, b, size, seed, cap: 150, force: {plans: [plan, 'HOLD'], objective: 'ANNIHILATE'}});
+  const results = await pool(list, +arg('jobs', os.cpus().length));
+  const rows = ['| plan (side 0) | first blood s | a side 25% lost s | losses at 60 s (0 / 1) | losses at 120 s (0 / 1) | fight centre x m | fight spread abs z m | lead changes | winner 0 / 1 / none |', '|---|---|---|---|---|---|---|---|---|'];
+  const out = {};
+  for (const plan of PLANS) {
+    const w = results.filter(r => r.name === plan), m = f => { const v = w.map(f).filter(x => x != null); return v.length ? +(v.reduce((p, q) => p + q, 0) / v.length).toFixed(1) : '-'; };
+    out[plan] = w;
+    rows.push(`| ${plan} | ${m(x => x.shape.firstBlood)} | ${m(x => x.shape.quarterLost)} | ${m(x => x.shape.losses60[0])} / ${m(x => x.shape.losses60[1])} | ${m(x => x.shape.losses120[0])} / ${m(x => x.shape.losses120[1])} | ${m(x => x.shape.killX)} | ${m(x => x.shape.killSpreadZ)} | ${m(x => x.leadChanges)} | ${w.filter(x => x.winner === 0).length} / ${w.filter(x => x.winner === 1).length} / ${w.filter(x => x.winner == null).length} |`);
+  }
+  const file = arg('out', path.join('bench', 'story', 'plans.json'));
+  fs.mkdirSync(path.dirname(file), {recursive: true});
+  fs.writeFileSync(file, JSON.stringify({matchup: [a, b], size, rows, wars: results.map(r => ({plan: r.name, seed: r.seed, shape: r.shape, leadChanges: r.leadChanges, winner: r.winner, plans: r.plans, duration: r.duration}))}, null, 1));
+  console.log(rows.join('\n'));
+  console.log(`\nwrote ${file}`);
+}
+async function pool(list, jobs) {
+  const results = [];let i = 0;
+  await Promise.all(Array.from({length: jobs}, async () => {
+    while (i < list.length) {
+      const w = list[i++];
+      const text = await new Promise((res, rej) => {
+        const p = spawn(process.execPath, ['--max-old-space-size=2048', __filename, '--child', JSON.stringify(w)], {stdio: ['ignore', 'pipe', 'inherit']});
+        let o = ''; p.stdout.on('data', d => o += d); p.on('close', c => c ? rej(new Error(`war ${w.name} exit ${c}`)) : res(o));
+      });
+      results.push(JSON.parse(text));
+      process.stderr.write(`[${results.length}/${list.length}] ${w.name} ${w.seed}\n`);
+    }
+  }));
+  return results;
 }
 if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });
 module.exports = {warSet, uniqueness, histogram, cosineDistance, shapeDistance};

@@ -11305,11 +11305,12 @@ function compile(vs,fs){
 /* one ship, one draw: local mesh, a heading and a berth as uniforms */
 const shipProg=compile(`#version 300 es
 layout(location=0) in vec3 aP;
+layout(location=1) in float aEdge;
 uniform mat4 uVP;uniform vec3 uPos;uniform vec2 uYaw;uniform vec4 uRot;
 uniform vec4 uAnim;uniform float uT;uniform float uCloak;
-out vec3 vW;out vec3 vLocal;out float vGrain;
+out vec3 vW;out vec3 vLocal;out float vGrain;out float vEdge;
 void main(){
-  vec3 p=aP;vLocal=aP;
+  vec3 p=aP;vLocal=aP;vEdge=aEdge;
   /* the shoal is alive in the flesh: wings beat hardest at the tips, the
      body swims a travelling wave nose to tail, and the whole hide
      breathes — the yard's machines stay rigid, which is the point */
@@ -11379,10 +11380,10 @@ void main(){
   gl_Position=uVP*vec4(w,1.0);
 }`,`#version 300 es
 precision highp float;
-in vec3 vW;in vec3 vLocal;in float vGrain;
+in vec3 vW;in vec3 vLocal;in float vGrain;in float vEdge;
 uniform vec3 uEye,uInk,uBg,uTrim,uAccent,uPaintOffset;
 uniform vec4 uMaterial,uPaint;
-uniform float uFog,uIn,uHurt,uTone,uCloak,uT;
+uniform float uFog,uIn,uHurt,uTone,uCloak,uT,uHeat;
 // One sun for every fleet: key from the system's star, cool fill from the
 // nebula / planet bounce, eclipses by worlds, one explosion light.
 uniform vec3 uSunDir,uSunCol,uFillDir,uFillCol,uFogCol,uPtCol;uniform vec4 uOcc[4],uPt;uniform float uOccN;
@@ -11490,6 +11491,16 @@ void main(){
   float dark=1.0-smoothstep(.18,.45,dot(uInk,vec3(.2126,.7152,.0722)));
   col+=uFillCol*vec3(.55,.65,.85)*pow(1.0-max(dot(N,Vd),0.0),2.5)*(.10+.24*dark)*(1.0-uMaterial.w*.6);
   if(uPt.w>0.0){vec3 L=uPt.xyz-vW;float dl=length(L),fall=max(0.0,1.0-dl/uPt.w);col+=uInk*uPtCol*max(dot(N,L/max(dl,1e-3)),0.0)*fall*fall;}
+  // Wreckage stays readable against space under the tone curve: a cool edge lift.
+  if(uMaterial.w>0.5){float wr=pow(1.0-max(dot(N,Vd),0.0),1.8);col+=vec3(.20,.22,.27)*(.05+wr*.30)*(uHeat>0.0?1.0:.8);}
+  // Fresh wreckage: the fracture edges glow and cool from orange-white to
+  // dark red over several seconds. Breach cells glow on disabled hulls.
+  if(uHeat>0.002){
+    float cell=step(.93,fract(sin(dot(floor(vLocal*.30),vec3(12.99,78.23,37.72)))*43758.55));
+    float glow=max(smoothstep(.2,1.0,vEdge),cell*.45)*uHeat;
+    vec3 hot=mix(vec3(.42,.05,.01),vec3(1.35,.60,.16),uHeat*uHeat);
+    col+=hot*glow*(.86+.14*sin(uT*7.0+vGrain*25.0));
+  }
   float fog=1.0-exp(-length(uEye-vW)*uFog);
   float a=1.0;
   if(uCloak>0.001){
@@ -11508,10 +11519,10 @@ void main(){
   o=vec4(mix(col,uFogCol,fog*0.85),a);
 }`);
 const SU={trim:0,accent:0,paint:0,paintOffset:0,material:0,vp:0,pos:0,yaw:0,rot:0,anim:0,t:0,eye:0,ink:0,bg:0,fog:0,inz:0,hurt:0,tone:0,cloak:0,
-  sunDir:0,sunCol:0,fillDir:0,fillCol:0,fogCol:0,occ:0,occN:0,pt:0,ptCol:0};
+  sunDir:0,sunCol:0,fillDir:0,fillCol:0,fogCol:0,occ:0,occN:0,pt:0,ptCol:0,heat:0};
 for(const k of Object.keys(SU))SU[k]=gl.getUniformLocation(shipProg,
   {trim:"uTrim",accent:"uAccent",paint:"uPaint",paintOffset:"uPaintOffset",material:"uMaterial",vp:"uVP",pos:"uPos",yaw:"uYaw",rot:"uRot",anim:"uAnim",t:"uT",eye:"uEye",ink:"uInk",
-   bg:"uBg",fog:"uFog",inz:"uIn",hurt:"uHurt",tone:"uTone",cloak:"uCloak",sunDir:"uSunDir",sunCol:"uSunCol",fillDir:"uFillDir",fillCol:"uFillCol",fogCol:"uFogCol",occ:"uOcc",occN:"uOccN",pt:"uPt",ptCol:"uPtCol"}[k]);
+   bg:"uBg",fog:"uFog",inz:"uIn",hurt:"uHurt",tone:"uTone",cloak:"uCloak",sunDir:"uSunDir",sunCol:"uSunCol",fillDir:"uFillDir",fillCol:"uFillCol",fogCol:"uFogCol",occ:"uOcc",occN:"uOccN",pt:"uPt",ptCol:"uPtCol",heat:"uHeat"}[k]);
 const beamProg=compile(`#version 300 es
 layout(location=0) in vec3 aP;
 uniform mat4 uVP;
@@ -11681,6 +11692,23 @@ void main(){
   float b=0.25+0.6*clamp((vS-0.8)/3.0,0.0,1.0);
   o=vec4(uInk,b*(1.0-r*1.4));
 }`);
+// Fresh dust glows: soft world-sized embers that cool from orange-white to
+// dark red. Drawn with MAX blending so a dense cloud saturates at its own
+// hottest mote instead of summing past white into a bloom disc.
+const emberProg=compile(`#version 300 es
+layout(location=0) in vec4 aS;
+uniform mat4 uVP;uniform float uPx;
+out float vHeat;
+void main(){gl_Position=uVP*vec4(aS.xyz,1.0);float size=6.0+10.0*aS.w;gl_PointSize=clamp(size*uPx/max(gl_Position.w,1.0),1.5,28.0);vHeat=aS.w;}`,`#version 300 es
+precision highp float;
+in float vHeat;out vec4 o;
+void main(){
+  float r=length(gl_PointCoord-0.5);if(r>0.5)discard;
+  float soft=exp(-r*r*14.0);
+  vec3 hot=mix(vec3(.30,.05,.02),vec3(1.25,.66,.26),vHeat*vHeat);
+  o=vec4(hot*soft*(.35+.65*vHeat),1.0);
+}`);
+const UEvp=gl.getUniformLocation(emberProg,"uVP"),UEpx=gl.getUniformLocation(emberProg,"uPx");
 const USorigin=gl.getUniformLocation(starProg,"uOrigin"),USpx=gl.getUniformLocation(starProg,"uPx");
 const USvp=gl.getUniformLocation(starProg,"uVP"),USink=gl.getUniformLocation(starProg,"uInk");
 /* ===================== the sky sometimes has company =====================
@@ -11817,6 +11845,7 @@ function makeCelestial(Rr){
   disposeCeles();
   starSystem=window.ArmadaSystems?window.ArmadaSystems.generate((warSeed^0xC0FFEE)>>>0):null;
   worldBodies=starSystem?window.ArmadaSystems.worlds(starSystem,sceneR):[];
+  fieldBodies=[];nebulaPuffs=[];sceneBodies=worldBodies;
   if(!starSystem)return;
   for(const b of worldBodies){
     const p=b.center,radius=b.radius;
@@ -11824,8 +11853,71 @@ function makeCelestial(Rr){
     if(b.kind===5)addCel(celSphere(radius*1.11,0,Rr),...p,0,.3,0,Rr,{...b,kind:6});
     if(b.rings)addCel(celRing(radius*1.22,radius*(1.7+Rr()*.5),.35+Rr()*.7,b.tilt,Rr),...p,.001,.58,.04,Rr,b);
   }
+  buildField(Rr);sceneBodies=fieldBodies.length?worldBodies.concat(fieldBodies):worldBodies;
   celes.sort((a,b)=>(a.alpha<.99)-(b.alpha<.99));
   makeStars();
+}
+// The battlefield's own terrain, seeded with the system: solid rocks and a
+// flanking moon drawn by the world shader, and a nebula of soft billboards.
+function rockMesh(rad,seed){
+  const R=mulberry32(seed>>>0),LA=9,LO=14,V2=[],T2=[],I2=[],bumps=[];
+  for(let i=0;i<7;i++){const az=R()*6.283,el=(R()-.5)*3.1;bumps.push([Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az),.25+R()*.5,(R()-.4)*.28]);}
+  const squash=[.75+R()*.5,.6+R()*.35,.75+R()*.5];
+  for(let la=0;la<=LA;la++){const th=la/LA*Math.PI;for(let lo=0;lo<=LO;lo++){const ph=lo/LO*6.283;
+    const x=Math.sin(th)*Math.cos(ph),y=Math.cos(th),z=Math.sin(th)*Math.sin(ph);let k=1,t=.85;
+    for(const b of bumps){const d=x*b[0]+y*b[1]+z*b[2];if(d>1-b[3]){const u=(d-(1-b[3]))/b[3];k+=b[4]*u*u;t*=b[4]<0?.8:1;}}
+    V2.push(x*rad*k*squash[0],y*rad*k*squash[1],z*rad*k*squash[2]);T2.push(t);}}
+  for(let la=0;la<LA;la++)for(let lo=0;lo<LO;lo++){const a2=la*(LO+1)+lo,b2=a2+LO+1;I2.push(a2,b2,a2+1,a2+1,b2,b2+1);}
+  return {v:V2,t:T2,i:I2};
+}
+let nebulaPuffs=[];
+function buildField(Rr){
+  fieldBodies=[];nebulaPuffs=[];
+  const f=starSystem?.field;if(!f)return;
+  if(f.moon){const b={kind:f.moon.kind,center:f.moon.p.slice(),radius:f.moon.r,name:"Moon",base:[.36,.35,.33],accent:[.50,.48,.44],phase:Rr()*6.283,bands:4,p:f.moon.p.map(v=>v/sceneR),field:true};
+    fieldBodies.push(b);addCel(celSphere(b.radius,1,Rr),...b.center,.0004,1,.02,Rr,b);}
+  for(const k of f.rocks||[]){const b={kind:1,center:k.p.slice(),radius:k.r,name:"Asteroid",base:[.31,.29,.27],accent:[.44,.40,.35],phase:(k.seed%628)/100,bands:3,p:k.p.map(v=>v/sceneR),field:true};
+    fieldBodies.push(b);addCel(rockMesh(k.r,k.seed),...k.p,.004+(k.seed%7)*.002,1,.02,Rr,b);}
+  if(f.nebula){
+    const R=mulberry32((starSystem.seed^0x4EB)>>>0),n=f.nebula,c=n.tint;
+    for(let i=0;i<34;i++){
+      const u=Math.cbrt(R())*n.r*.72,az=R()*6.283,el=(R()-.5)*2;
+      nebulaPuffs.push({x:n.p[0]+Math.cos(el)*Math.cos(az)*u,y:n.p[1]+Math.sin(el)*u*.45,z:n.p[2]+Math.cos(el)*Math.sin(az)*u,r:n.r*(.32+R()*.3),seed:R()*100,
+        col:[c[0]*(.8+R()*.4),c[1]*(.8+R()*.4),c[2]*(.8+R()*.4)],a:.10+R()*.08});
+    }
+  }
+}
+let nebulaProg=null,nebulaVao=null,NU=null;
+function drawNebula(m){
+  if(!nebulaPuffs.length)return;
+  if(!nebulaProg){
+    nebulaProg=compile(`#version 300 es
+layout(location=0) in vec2 aC;
+uniform mat4 uVP;uniform vec3 uCenter,uRight,uUp;uniform float uR;out vec2 vUV;
+void main(){vUV=aC;gl_Position=uVP*vec4(uCenter+(uRight*aC.x+uUp*aC.y)*uR,1.0);}`,`#version 300 es
+precision highp float;
+in vec2 vUV;uniform vec4 uCol;uniform float uSeed,uFade;out vec4 o;
+float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7))+uSeed)*43758.5453);}
+float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+1.0),f.x),f.y);}
+void main(){float r=length(vUV);if(r>1.0)discard;
+  float q=n(vUV*2.3+uSeed)*.55+n(vUV*5.1+3.0)*.30+n(vUV*11.0+7.0)*.15;
+  float a=smoothstep(1.0,.10,r)*smoothstep(.22,.78,q)*uCol.a*uFade;
+  o=vec4(uCol.rgb*(.75+.5*q),a);}`);
+    NU={vp:gl.getUniformLocation(nebulaProg,"uVP"),center:gl.getUniformLocation(nebulaProg,"uCenter"),right:gl.getUniformLocation(nebulaProg,"uRight"),up:gl.getUniformLocation(nebulaProg,"uUp"),r:gl.getUniformLocation(nebulaProg,"uR"),col:gl.getUniformLocation(nebulaProg,"uCol"),seed:gl.getUniformLocation(nebulaProg,"uSeed"),fade:gl.getUniformLocation(nebulaProg,"uFade")};
+    nebulaVao=gl.createVertexArray();const vb=gl.createBuffer();gl.bindVertexArray(nebulaVao);gl.bindBuffer(gl.ARRAY_BUFFER,vb);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,8,0);gl.bindVertexArray(null);
+  }
+  const [f,r,u]=camBasis();
+  const list=nebulaPuffs.map(p=>({p,d:Math.hypot(p.x-cam.ex,p.y-cam.ey,p.z-cam.ez)})).sort((a,b)=>b.d-a.d);
+  gl.useProgram(nebulaProg);gl.uniformMatrix4fv(NU.vp,false,m);gl.uniform3fv(NU.right,r);gl.uniform3fv(NU.up,u);
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.bindVertexArray(nebulaVao);
+  for(const {p,d} of list){
+    gl.uniform3f(NU.center,p.x,p.y,p.z);gl.uniform1f(NU.r,p.r);gl.uniform4f(NU.col,p.col[0],p.col[1],p.col[2],p.a);gl.uniform1f(NU.seed,p.seed);
+    // Inside a puff the camera would be blinded; thin it as the lens enters.
+    gl.uniform1f(NU.fade,Math.max(.12,Math.min(1,(d-p.r*.2)/(p.r*.9))));
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  }
+  gl.depthMask(true);gl.disable(gl.BLEND);gl.bindVertexArray(null);
 }
 function drawWorlds(m,now,transparent){
 
@@ -11850,7 +11942,37 @@ function drawWorlds(m,now,transparent){
 }
 function worldMove(start,end,margin=0){return worldBodies.length?window.ArmadaSystems.move(worldBodies,start,end,margin):{position:end,hit:null};}
 function worldClearance(p){return worldBodies.length?window.ArmadaSystems.nearest(worldBodies,p):null;}
+// Battlefield terrain: asteroids and a flanking moon, in battle metres. Solid
+// for ships and rounds, separate from the distant worlds of the sky.
+let fieldBodies=[],sceneBodies=[]; // sceneBodies: sky worlds plus terrain, for renderers that draw both
+function fieldHit(a,b){
+  if(!fieldBodies.length)return Infinity;
+  const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2],dd=dx*dx+dy*dy+dz*dz;if(dd<1e-9)return Infinity;
+  let best=Infinity;
+  for(const o of fieldBodies){
+    const ox=a[0]-o.center[0],oy=a[1]-o.center[1],oz=a[2]-o.center[2],r=o.radius*.94;
+    const bq=ox*dx+oy*dy+oz*dz,c=ox*ox+oy*oy+oz*oz-r*r;if(c>0&&bq>0)continue;
+    const disc=bq*bq-dd*c;if(disc<0)continue;
+    const u=(-bq-Math.sqrt(disc))/dd;if(u>=0&&u<=1&&u<best)best=u;
+  }
+  return best;
+}
+function fieldContacts(){
+  if(!fieldBodies.length)return;
+  for(const s of ships){
+    if(s.dead||!s.arr||s.grace)continue;
+    const margin=Math.min(900,Math.max(6,Math.min(s.exY||s.slen*.2,s.exZ||s.slen*.25)*1.2,(s.slen||20)*.35));
+    for(const o of fieldBodies){
+      const r=o.radius+margin,dx=s.x-o.center[0];if(dx>r||dx<-r)continue;
+      const dy=s.y-o.center[1];if(dy>r||dy<-r)continue;const dz=s.z-o.center[2];if(dz>r||dz<-r)continue;
+      const d=Math.sqrt(dx*dx+dy*dy+dz*dz);if(d>=r)continue;
+      const k=d>1e-6?(r-d)/d:0;if(d<=1e-6){s.y+=r;continue;}
+      s.x+=dx*k;s.y+=dy*k;s.z+=dz*k;s.v=(s.v||0)*.6;s.vy=(s.vy||0)*.5;s.trafficBrakeUntil=battleTime+.6;
+    }
+  }
+}
 function planetContacts(){
+  fieldContacts();
   if(!worldBodies.length)return;
   for(const s of ships){if(s.dead||!s.arr||s.grace)continue;const margin=Math.max(s.nose||0,(s.slen||20)*.6)+4;
     for(const body of worldBodies){const r=body.radius+margin,dx=s.x-body.center[0];if(Math.abs(dx)>r)continue;const dy=s.y-body.center[1];if(Math.abs(dy)>r)continue;const dz=s.z-body.center[2];if(Math.abs(dz)>r||dx*dx+dy*dy+dz*dz>=r*r)continue;
@@ -12234,7 +12356,7 @@ let ships=[],beams=[],flashes=[],squads=[],wrecks=[];
    instead of reallocated; nothing off-screen costs a draw call. */
 let foeCache=[[],[]],simFrame=0,plasmas=[];
 const flPool=new Float32Array(1600*7);
-const duPool=new Float32Array(8192*4);
+const duPool=new Float32Array(8192*4),emPool=new Float32Array(4096*4);
 /* the graveyard is forever. A fresh piece tumbles on her own for a few
    seconds; once her drift is spent she is baked, at whatever attitude she
    died in, into merged static bone — so a whole war's wreckage stays in
@@ -12375,7 +12497,9 @@ function uploadDebris(now){
     const w=debrisQueue.shift();integrateDebris(w,Math.max(0,now-w.t0));
     w.integratedAt=now;w.vao=gl.createVertexArray();w.vbo=gl.createBuffer();w.ibo=gl.createBuffer();gl.bindVertexArray(w.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER,w.vbo);gl.bufferData(gl.ARRAY_BUFFER,w.v,gl.STATIC_DRAW);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,w.ibo);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,w.i,gl.STATIC_DRAW);gl.bindVertexArray(null);wrecks.push(w);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,w.ibo);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,w.i,gl.STATIC_DRAW);
+    if(w.e&&w.e.length*3===w.v.length){w.ebo=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,w.ebo);gl.bufferData(gl.ARRAY_BUFFER,w.e,gl.STATIC_DRAW);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,1,gl.FLOAT,false,4,0);}
+    gl.bindVertexArray(null);wrecks.push(w);
   }
 }
 function disableHull(s,now){
@@ -12532,9 +12656,29 @@ function resolveTraffic(a,b,now){
   const da=V.sub([a.o.x,a.o.y,a.o.z],pa),db=V.sub([b.o.x,b.o.y,b.o.z],pb),hit=trafficContact(a,b,da,db);
   if(!hit)return false;
   const x=a.o,y=b.o,n=hit.normal,mx=debrisMass(x),my=debrisMass(y),total=mx+my;
+  // Wrecks stay dangerous: a small craft that clips a real piece of hull dies.
+  // Contact is the same oriented-box test as every other collision, so it is deterministic.
+  const scrape=V.len(V.sub(trafficVelocity(ship),[w.vx||0,w.vy||0,w.vz||0]));
+  if(w.uid!=null&&ship.uid==null&&!ship.dead&&!ship.hulls&&ship.slen<120&&(w.disabled||(w.rad||0)>=30)&&!w.shatter&&scrape>15){
+    if(ship.hero)wound(ship,ship.hpMax*.35,null,now);
+    else{ship.lastHit=null;ship.wreckedBy=w.src;battleAI.story.emit({type:"wreckStrike",side:ship.side,ship:ship.id,partner:w.src,x:ship.x,y:ship.y,z:ship.z,size:ship.slen});wound(ship,ship.hp+ship.hpMax,null,now);}
+  }
   const shift=hit.depth+.15;
   for(let i=0;i<3;i++){const key=['x','y','z'][i];x[key]+=n[i]*shift*my/total;y[key]-=n[i]*shift*mx/total;}
   const vx=trafficVelocity(x),vy=trafficVelocity(y),closing=-V.dot(V.sub(vx,vy),n);
+  // A ram: one of the two hulls chose this collision. Damage comes from the
+  // impact itself (closing speed and the other hull's share of the mass).
+  if(x.uid==null&&y.uid==null&&(x.ramming===y.id||y.ramming===x.id)&&closing>6&&!x.dead&&!y.dead){
+    const key=Math.min(x.id,y.id)+":"+Math.max(x.id,y.id);
+    if(!ramHits.has(key)){
+      ramHits.add(key);const rammer=x.ramming===y.id?x:y,victim=rammer===x?y:x;
+      const mr=rammer===x?mx:my,mv=rammer===x?my:mx,k=Math.min(1,(closing/22)**2);
+      battleAI.story.emit({type:"ram",side:rammer.side,ship:rammer.id,partner:victim.id,x:(x.x+y.x)/2,y:(x.y+y.y)/2,z:(x.z+y.z)/2,size:Math.max(x.slen,y.slen),closing:Math.round(closing)});
+      flash((x.x+y.x)/2,(x.y+y.y)/2,(x.z+y.z)/2,now,Math.min(600,Math.max(x.slen,y.slen)*.35),2);
+      wound(victim,victim.hpMax*Math.min(.95,k*1.1*mr/(mr+mv)+.08),rammer,now);
+      wound(rammer,rammer.hpMax*Math.min(.95,k*1.1*mv/(mr+mv)+.08),victim,now);
+    }
+  }
   if(closing>0){
     const impulse=closing/(1/mx+1/my);
     for(const [o,v,m,sign]of[[x,vx,mx,1],[y,vy,my,-1]]){
@@ -12547,7 +12691,7 @@ function resolveTraffic(a,b,now){
   }
   return true;
 }
-let trafficIndex=null,trafficBodies=new Map(),trafficSpeed=0,trafficObjects=[];
+let trafficIndex=null,trafficBodies=new Map(),trafficSpeed=0,trafficObjects=[],ramHits=new Set();
 // Broad phase for path prediction: every body's box swept along its velocity
 // over the look-ahead horizon, padded by its radius plus half the 20 m
 // prediction margin. Two paths whose swept boxes do not overlap cannot pass
@@ -12565,7 +12709,7 @@ class SweptIndex{
       const e={o,lo,hi,order:this.items.length,seen:0};this.items.push(e);
       const ax=Math.floor(lo[0]/512),bx=Math.floor(hi[0]/512),ay=Math.floor(lo[1]/512),by=Math.floor(hi[1]/512),az=Math.floor(lo[2]/512),bz=Math.floor(hi[2]/512);
       if((bx-ax+1)*(by-ay+1)*(bz-az+1)>96){this.large.push(e);continue;}
-      for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const key=((x+4096)*8192+(y+4096))*8192+(z+4096);let cell=this.cells.get(key);if(!cell)this.cells.set(key,cell=[]);cell.push(e);}
+      for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const key=((x&1023)<<20)|((y&1023)<<10)|(z&1023);let cell=this.cells.get(key);if(!cell)this.cells.set(key,cell=[]);cell.push(e);}
     }
   }
   query(lo,hi){
@@ -12573,7 +12717,7 @@ class SweptIndex{
     const add=e=>{if(e.seen===stamp)return;e.seen=stamp;if(e.hi[0]>=lo[0]&&e.lo[0]<=hi[0]&&e.hi[1]>=lo[1]&&e.lo[1]<=hi[1]&&e.hi[2]>=lo[2]&&e.lo[2]<=hi[2])out.push(e);};
     const ax=Math.floor(lo[0]/512),bx=Math.floor(hi[0]/512),ay=Math.floor(lo[1]/512),by=Math.floor(hi[1]/512),az=Math.floor(lo[2]/512),bz=Math.floor(hi[2]/512);
     if((bx-ax+1)*(by-ay+1)*(bz-az+1)>512){for(const e of this.items)add(e);}
-    else{for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const cell=this.cells.get(((x+4096)*8192+(y+4096))*8192+(z+4096));if(cell)for(const e of cell)add(e);}for(const e of this.large)add(e);}
+    else{for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const cell=this.cells.get(((x&1023)<<20)|((y&1023)<<10)|(z&1023));if(cell)for(const e of cell)add(e);}for(const e of this.large)add(e);}
     out.sort((a,b)=>a.order-b.order);for(let i=0;i<out.length;i++)out[i]=out[i].o;return out;
   }
 }
@@ -12595,6 +12739,7 @@ function prepareTraffic(now){
   trafficObjects=objects;sweptBuilt[5]=sweptBuilt[16]=-1;
 }
 function trafficPilot(s,now){
+  if(s.ramming!=null){s.trafficGoal=null;return;}
   if(!trafficIndex||now<(s.trafficScan||0))return;s.trafficScan=now+.2+(s.trafficScan==null?(s.id%6)/30:0);
   const vel=trafficVelocity(s),horizon=fightsAsCrown(s)?16:5,start=[s.x,s.y,s.z],end=V.add(start,V.mul(vel,horizon));
   const own=trafficBodies.get(s.id)||trafficBox(s,now),reach=own.radius+10;let threat=null,soon=Infinity;
@@ -12759,7 +12904,7 @@ function bakeBoneyard(){
     t0:battleTime,dvx:ax,dvy:ay,dvz:az});
   pendV=[];pendI=[];pendBase=0;pendVX=0;pendVY=0;pendVZ=0;pendN=0;
   for(const w2 of wrecks)if(w2.pending){
-    gl.deleteVertexArray(w2.vao);gl.deleteBuffer(w2.vbo);gl.deleteBuffer(w2.ibo);
+    gl.deleteVertexArray(w2.vao);gl.deleteBuffer(w2.vbo);gl.deleteBuffer(w2.ibo);if(w2.ebo)gl.deleteBuffer(w2.ebo);
     w2.gone=true;
   }
   wrecks=wrecks.filter(w2=>!w2.gone);
@@ -13125,9 +13270,10 @@ function leakHullDust(s,now){
   const port=s.leakPort||[-s.slen*.2,0,(s.exZ||s.slen*.12)*.7],p=gunWorld(s,port,now),speed=(s.v||0)*.65;
   dusts.push({x:p[0],y:p[1],z:p[2],vx:Math.cos(s.yaw)*speed,vy:(s.vy||0)+1,vz:Math.sin(s.yaw)*speed,t0:now,leak:true});
 }
+const CRAFT_MOOD={RETREAT:"FLEE",ROUT:"FLEE",PANIC:"FLEE",EVADE:"EVADE",ESCORT:"DEFEND",RESCUE:"DEFEND",RECOVER:"DEFEND",TOW:"DEFEND",FLANK:"FLANK",MANEUVER:"FLANK",REGROUP:"REGROUP",HIDE:"REGROUP",HOLD:"REGROUP",DRIFT:"REGROUP",SEARCH:"SEARCH",CONVOY:"SEARCH"};
 function craftMood(s,now){
   const a=battleAI.think(s,now);
-  return {RETREAT:"FLEE",EVADE:"EVADE",ESCORT:"DEFEND",FLANK:"FLANK",REGROUP:"REGROUP",SEARCH:"SEARCH"}[a.action]||"ATTACK";
+  return CRAFT_MOOD[a.action]||"ATTACK";
 }
 const PACE=1.10;
 function setShipPace(s){
@@ -14227,7 +14373,7 @@ function musterFleet(rd,side,R,nCap,nEsc,nFtr){
 function disposeShips(){
   disposeDistantHulls();
   for(const s of ships)if(s.vao){gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);}
-  for(const w of wrecks){gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);}
+  for(const w of wrecks){gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);if(w.ebo)gl.deleteBuffer(w.ebo);}
   wrecks=[];debrisQueue=[];
   for(const b of boneyard){gl.deleteVertexArray(b.vao);gl.deleteBuffer(b.vbo);gl.deleteBuffer(b.ibo);}
   boneyard=[];pendV=[];pendI=[];pendBase=0;lastBake=0;boneGrid=new Map();pendVX=0;pendVY=0;pendVZ=0;pendN=0;
@@ -14287,6 +14433,7 @@ function startWar(fresh){
   if(fresh)warSeed=(Math.random()*4294967296)|0;
   const R=mulberry32(warSeed|0);
   battleAI.reset(warSeed);combatRandom=ArmadaBattleAI.random(warSeed^0xC0BA7);debrisRandom=ArmadaBattleAI.random(warSeed^0xDEB215);
+  storyRandom=ArmadaBattleAI.random(warSeed^0x5709E);escaped=[0,0];pods=[];tows=[];winReason=null;ramHits.clear();battleAI.story.host=STORY_HOST;
   /* the deal: whatever the muster chose stands; wherever it left fate a
      say, two fleets are dealt — and fate never deals a mirror match */
   let ra=pickMain[0],rb=pickMain[1];
@@ -14300,9 +14447,10 @@ function startWar(fresh){
   BEAMCOL=[RACE_DEFS[ra].beam,RACE_DEFS[rb].beam];
   IONCOL=[RACE_DEFS[ra].ion,RACE_DEFS[rb].ion];
   makeCelestial(mulberry32((warSeed^0xC0FFEE)>>>0));
+  battleAI.setField(starSystem?.field||null);
   setupWarLight();
   cam.ex=0;cam.ey=420;cam.ez=1100;cam.yaw=-Math.PI/2;cam.pitch=-0.22;
-  leaveHelm();watchMode="broadcast";actionCamera=null;if(bc.director)bc.director.reset();forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
+  leaveHelm();watchMode="action";actionCamera=null;if(bc.director)bc.director.reset();forged=0;total=0;warT0=Infinity;winner=null;sel=null;orb=null;card(null);
   intro=null;updateWatchDock();document.body.classList.remove("intro");
   const bH=document.getElementById("bHero");if(bH){bH.classList.remove("on");bH.textContent="HEROES";}
   document.getElementById("win").style.display="none";
@@ -14414,6 +14562,7 @@ function startWar(fresh){
   }
   counts=[built[0],built[1]];
   spawned=[built[0],built[1]];
+  battleAI.story.setup({ships,squads,sideRace,field:starSystem?.field||null,force:storyForce});
   ensureWorkers();
   postForgeJobs(jobs);
   roster();
@@ -15614,6 +15763,9 @@ function pinBeams(now){
 }
 // Conservative broad phase for dense battles: one index build per tick,
 // then only nearby hulls receive the full rotating-volume projectile test.
+// Cell keys wrap every 1,024 cells (524 km) so they stay small integers, which
+// V8's Map hashes far faster than the old heap-number keys. Aliased cells can
+// only add far-away candidates, and every candidate is bounds-checked anyway.
 class WeaponSpatialIndex{
   constructor(){this.cells=new Map();this.large=[];this.items=[];this.stamp=0;}
   build(items,radiusOf=null){
@@ -15621,11 +15773,11 @@ class WeaponSpatialIndex{
     for(const ship of items){
       if(ship.dead||ship.grace)continue;
       const r=radiusOf?radiusOf(ship):Math.max(4,ship.exL||ship.slen*.5,2,ship.exY||ship.slen*.14,ship.exZ||ship.slen*.14);
-      const ext=Array.isArray(r)?r:[r,r,r],e={ship,r:Math.max(...ext),ext,order:this.items.length,seen:0};this.items.push(e);
+      const ext=Array.isArray(r)?r:[r,r,r],e={ship,r:Math.max(ext[0],ext[1],ext[2]),ext,order:this.items.length,seen:0};this.items.push(e);
       const ax=Math.floor((ship.x-ext[0])/512),bx=Math.floor((ship.x+ext[0])/512),ay=Math.floor((ship.y-ext[1])/512),by=Math.floor((ship.y+ext[1])/512),az=Math.floor((ship.z-ext[2])/512),bz=Math.floor((ship.z+ext[2])/512);
       if((bx-ax+1)*(by-ay+1)*(bz-az+1)>64){this.large.push(e);continue;}
       for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){
-        const key=((x+4096)*8192+(y+4096))*8192+(z+4096);let cell=this.cells.get(key);if(!cell)this.cells.set(key,cell=[]);cell.push(e);
+        const key=((x&1023)<<20)|((y&1023)<<10)|(z&1023);let cell=this.cells.get(key);if(!cell)this.cells.set(key,cell=[]);cell.push(e);
       }
     }
   }
@@ -15636,7 +15788,7 @@ class WeaponSpatialIndex{
     const add=e=>{if(e.seen===stamp)return;e.seen=stamp;const t=e.ship,r=e.ext;if(t.x+r[0]>=minX&&t.x-r[0]<=maxX&&t.y+r[1]>=minY&&t.y-r[1]<=maxY&&t.z+r[2]>=minZ&&t.z-r[2]<=maxZ)out.push(e);};
     const ax=Math.floor(minX/512),bx=Math.floor(maxX/512),ay=Math.floor(minY/512),by=Math.floor(maxY/512),az=Math.floor(minZ/512),bz=Math.floor(maxZ/512);
     if((bx-ax+1)*(by-ay+1)*(bz-az+1)>128){for(const e of this.items)add(e);}
-    else{for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const cell=this.cells.get(((x+4096)*8192+(y+4096))*8192+(z+4096));if(cell)for(const e of cell)add(e);}for(const e of this.large)add(e);}
+    else{for(let x=ax;x<=bx;x++)for(let y=ay;y<=by;y++)for(let z=az;z<=bz;z++){const cell=this.cells.get(((x&1023)<<20)|((y&1023)<<10)|(z&1023));if(cell)for(const e of cell)add(e);}for(const e of this.large)add(e);}
     out.sort((a,b)=>a.order-b.order);for(let i=0;i<out.length;i++)out[i]=out[i].ship;return out;
   }
 }
@@ -16032,19 +16184,30 @@ function foSpeak(s,now,dt){
  const t=foPick(s,5200);if(!t)return;
  s.mark=t.id;s.foCharge={at:now,target:t.id,drawAt:now};
 }
+// Fracture edges: a vertex whose position also belongs to another piece of the
+// same breakup lies on a break. Those vertices glow while the wreck is hot.
+function markFractureEdges(parts){
+  if(!parts||parts.length<2)return;
+  const seen=new Map(),key=(f,j)=>Math.round((f.v[j]+(f.ox||0))*8)+","+Math.round((f.v[j+1]+(f.oy||0))*8)+","+Math.round((f.v[j+2]+(f.oz||0))*8);
+  parts.forEach((f,k)=>{if(!f.v)return;for(let j=0;j<f.v.length;j+=3){const q=key(f,j),o=seen.get(q);if(o===undefined)seen.set(q,k);else if(o!==k)seen.set(q,-1);}});
+  for(const f of parts){if(!f.v)continue;const e=new Float32Array(f.v.length/3);for(let j=0;j<f.v.length;j+=3)if(seen.get(key(f,j))===-1)e[j/3]=1;f.e=e;}
+}
 function spawnBreakup(s,now){
   const fr=s.fragData;if(!fr||!fr.length)return;
   s.fragData=null;
   const room=Math.max(0,Math.min(64-debrisQueue.length,DEBRIS_LIMIT-wrecks.length-debrisQueue.length));
   const cat=s.destruction==='catastrophic',target=Math.min(room,cat&&s.slen>=180?DEBRIS_BREAKUP:6);
   if(target<1){dustBurst(s.x,s.y,s.z,s.dvx||0,s.dvy||0,s.dvz||0,12,now);return;}
-  for(const f of (s.fragReady?fr.slice(0,target):fractureMesh(fr,target)))debrisQueue.push(wreckRecord(s,f,now,cat));
+  const parts=s.fragReady?fr.slice(0,target):fractureMesh(fr,target);
+  markFractureEdges(parts);
+  for(const f of parts){const w=wreckRecord(s,f,now,cat);w.e=f.e||null;debrisQueue.push(w);}
 }
 function kill(t,now){
   if(t.dead)return;      /* a tracer already in flight cannot kill her twice */
   t.dead=true;
   if(t.lastHit!=null&&ships[t.lastHit]&&!ships[t.lastHit].dead)
     ships[t.lastHit].kills=(ships[t.lastHit].kills||0)+1;
+  const killer=t.lastHit!=null?ships[t.lastHit]:null;
   const dv=t.v??((t.spd||0)*.5);
   t.dvx=Math.cos(t.yaw)*dv;t.dvy=t.vy||0;t.dvz=Math.sin(t.yaw)*dv;
   const dp=xPose(t,now);t.dax=dp.ax;t.dang=dp.ang;
@@ -16054,23 +16217,183 @@ function kill(t,now){
     t.destruction='catastrophic';boom(t,now);deathFlourish(t,now);spawnBreakup(t,now);
   }
   t.hullMesh=null;
+  if(t.disabled)storyTowFor(t,now);
+  battleAI.story.onDeath(t,killer&&!killer.dead?killer:null,now);
   bcKill(t,now);
   // Keep the hull's mesh for the replay window; the buffers are freed later.
   if(t.vao){if(bc.ring)retireMesh(t,now);else{gl.deleteVertexArray(t.vao);gl.deleteBuffer(t.vbo);gl.deleteBuffer(t.ibo);}t.vao=null;}
   counts[t.side]--;
   if(sel===t.id)select(null);
-  if(counts[t.side]<=0&&winner==null){
-    winner=1-t.side;
-    const w=document.getElementById("win");
-    const an=side2=>allyRace[side2]>=0?" (WITH "+RACE_DEFS[allyRace[side2]].name+")":"";
-    w.innerHTML=SIDE_NAME[winner]+an(winner)+" HOLDS THE SKY"+
-      "<div class=\"sub\">"+SIDE_NAME[0]+an(0)+" LOST "+(spawned[0]-Math.max(0,counts[0]))+
-      " \u00b7 "+SIDE_NAME[1]+an(1)+" LOST "+(spawned[1]-Math.max(0,counts[1]))+
-      " \u00b7 "+Math.max(0,(now-warT0)|0)+" SECONDS \u00b7 N FOR THE NEXT WAR</div>";
-    w.style.display="block";
-    toast(SIDE_NAME[winner]+" HOLDS THE SKY");bcVictory(winner);
-  }
+  if(counts[t.side]<=0&&winner==null)declareWinner(1-t.side,escaped[t.side]?"withdrawal":"annihilation",now);
   roster();
+}
+/* ---------- war story: what the page does for the minds ----------
+   The story engine (armada-battle-ai-new.js) decides; these carry it out.
+   Everything here is simulation: seeded, stepped with the war clock. */
+let escaped=[0,0],pods=[],tows=[],storyRandom=ArmadaBattleAI.random(3),winReason=null;
+// Forced plans / objective for review and tests: ?plan=PINCER,HOLD&objective=STATION
+let storyForce=(()=>{try{const q=new URLSearchParams(location.search),p=q.get("plan"),o=q.get("objective");return p||o?{plans:p?p.toUpperCase().split(","):null,objective:o?o.toUpperCase():null}:null;}catch(e){return null;}})();
+const VICTORY_LINE={annihilation:"HOLDS THE SKY",withdrawal:"HOLDS THE SKY",flagship:"TAKES THE FLAGSHIP",convoy:"WINS THE CONVOY RUN",station:"HOLDS THE STATION"};
+function declareWinner(side,reason,now){
+  if(winner!=null)return;
+  winner=side;winReason=reason;
+  const w=document.getElementById("win");
+  const an=side2=>allyRace[side2]>=0?" (WITH "+RACE_DEFS[allyRace[side2]].name+")":"";
+  const lost=side2=>spawned[side2]-Math.max(0,counts[side2])-escaped[side2];
+  const fled=side2=>escaped[side2]?" \u00b7 "+escaped[side2]+" WITHDREW":"";
+  w.innerHTML=SIDE_NAME[winner]+an(winner)+" "+(VICTORY_LINE[reason]||VICTORY_LINE.annihilation)+
+    "<div class=\"sub\">"+SIDE_NAME[0]+an(0)+" LOST "+lost(0)+fled(0)+
+    " \u00b7 "+SIDE_NAME[1]+an(1)+" LOST "+lost(1)+fled(1)+
+    " \u00b7 "+Math.max(0,(now-warT0)|0)+" SECONDS \u00b7 N FOR THE NEXT WAR</div>";
+  w.style.display="block";
+  toast(SIDE_NAME[winner]+" "+(VICTORY_LINE[reason]||VICTORY_LINE.annihilation));bcVictory(winner,reason);
+  // An objective decides the war before the guns do: the losers' survivors withdraw.
+  if(reason!=="annihilation"&&reason!=="withdrawal")
+    for(const s of ships)if(s.side!==side&&!s.dead&&s.ai&&s.arr){battleAI.story.setOrder(s,"ROUT",{until:now+60});s.routing=true;s.leaveAt=now+6+storyRandom()*8;}
+}
+// Leave the battle alive: the fleet's arrival effect in reverse, or off the edge.
+function leaveBattle(s,now,how){
+  if(!s||s.dead||!s.vao||s.id===pilotId)return false;
+  // Fleets without a jump drive have to actually reach the edge of the field.
+  if(how==="edge"&&Math.hypot(s.x,s.z)<6500)return false;
+  departureEffect(s,now,how);
+  s.dead=true;s.jumped=true;s.deadT=now;s.dvx=s.dvy=s.dvz=0;s.routing=false;
+  if(s.vao){if(bc.ring)retireMesh(s,now);else{gl.deleteVertexArray(s.vao);gl.deleteBuffer(s.vbo);gl.deleteBuffer(s.ibo);}s.vao=null;}
+  counts[s.side]--;escaped[s.side]++;
+  if(sel===s.id)select(null);
+  battleAI.story.onLeave(s,now);
+  if(counts[s.side]<=0&&winner==null)declareWinner(1-s.side,"withdrawal",now);
+  roster();return true;
+}
+function departureEffect(s,now,how){
+  const style=how==="edge"?null:ARRIVAL_STYLE[s.race];
+  const c=Math.cos(s.yaw||0),n=Math.sin(s.yaw||0),L=Math.max(260,s.slen*(style==="hyper"?7:3.5)),size=Math.max(60,s.slen*2.4);
+  // The arrival streak runs forward out of the ship instead of in to it.
+  const streak=col=>{if(streaks.length<256)streaks.push({a:[s.x,s.y,s.z],b:[s.x+c*L,s.y,s.z+n*L],t0:now,life:style==="hyper"?.45:.3,col,id:s.id});};
+  if(style==="hyper")streak([.75,.88,1]);
+  else if(style==="warp"){streak([.8,.9,1]);flash(s.x,s.y,s.z,now,Math.max(30,s.slen*.8),4);}
+  else if(style==="jump")flash(s.x+c*s.slen*.4,s.y,s.z+n*s.slen*.4,now,size,34);
+  else if(style==="conduit")flash(s.x,s.y,s.z,now,size,32);
+  else if(style==="rift")flash(s.x,s.y,s.z,now,size,33);
+  else if(style==="rocket"){streak([1,.62,.28]);flash(s.x-c*s.slen*.5,s.y,s.z-n*s.slen*.5,now,Math.max(24,s.slen*.9),2);}
+  else flash(s.x,s.y,s.z,now,Math.max(20,s.slen*.6),4);
+}
+// A raid: out through hyperspace, back in behind them a few seconds later.
+function rejumpShip(s,now,point,gap){
+  if(!s||s.dead||!s.vao||!s.arr||s.id===pilotId||s.hulls)return false;
+  departureEffect(s,now,"jump");
+  const T=now-warT0;s.arr=false;s.delay=T+gap;s.shed=.6;
+  s.x=point[0]+(storyRandom()-.5)*260;s.y=point[1]+(storyRandom()-.5)*160;s.z=point[2]+(storyRandom()-.5)*260;
+  s.yaw=Math.atan2(-(point[2]),-(point[0]))+(storyRandom()-.5)*.3;s.v=0;s.vy=0;s.pitch=0;s.roll=0;
+  return true;
+}
+function storyVolley(s,now,target){
+  s.volleyUntil=now+2.2;if(s.damageK0==null)s.damageK0=s.damageK||1;s.damageK=s.damageK0*1.8;
+  s.cool=0;s.mslT=0;for(const la of s.lances||[])la.cool=0;for(const tu of s.turrets||[])tu.cool=0;
+  if(target&&s.ai){s.ai.target=target.id;s.mark=target.id;}
+  flash(s.x,s.y,s.z,now,Math.max(40,s.slen*.35),4);
+}
+function storyAbandon(s,now){
+  s.abandoned=true;s.abandonAt=now+3.5;battleAI.story.setOrder(s,"DRIFT",{until:now+120});
+  const n=Math.max(3,Math.min(10,Math.round(s.slen/140)));
+  for(let i=0;i<n;i++){
+    const a=storyRandom()*6.283,e=(storyRandom()-.5)*1.2,sp=14+storyRandom()*12,r=(s.exZ||s.slen*.2)*.8;
+    const dir=[Math.cos(e)*Math.cos(a),Math.sin(e),Math.cos(e)*Math.sin(a)];
+    pods.push({id:pods.length,side:s.side,from:s.id,x:s.x+dir[0]*r,y:s.y+dir[1]*r,z:s.z+dir[2]*r,vx:dir[0]*sp+(s.dvx||Math.cos(s.yaw)*(s.v||0)),vy:dir[1]*sp,vz:dir[2]*sp+(s.dvz||Math.sin(s.yaw)*(s.v||0)),t0:now,state:"drift",rescuer:-1});
+  }
+  battleAI.story.emit({type:"pods",side:s.side,ship:s.id,n,x:s.x,y:s.y,z:s.z,size:s.slen});
+}
+function podStep(now,dt){
+  if(!pods.length)return;
+  const frame=Math.round(now*30);
+  let saved=new Map(),lost=new Map();
+  for(const p of pods){
+    if(p.state!=="drift")continue;
+    const k=Math.exp(-dt*.35);p.vx*=k;p.vy*=k;p.vz*=k;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;
+    if((frame+p.id)%15)continue;
+    // Friendly pickup: the nearest free escort or shuttle within reach answers the beacon.
+    const doc=ArmadaBattleAI.DOCTRINE[ships[p.from]?.race??sideRace[p.side]];
+    let r=ships[p.rescuer];
+    if(p.rescuer>=0&&(!r||r.dead)){p.rescuer=-1;r=null;}
+    if(!r&&doc&&doc.rescue>0){
+      let best=null,bd=3200;
+      for(const s of ships){if(s.side!==p.side||s.dead||!s.arr||s.grace||s.hulls||s.slen<22||s.slen>400||s.abandoned||s.routing||!s.ai)continue;
+        const o=s.ai.order;if(o&&o.kind!=="RECOVER"&&now<o.until)continue;
+        const d=Math.hypot(s.x-p.x,s.y-p.y,s.z-p.z);if(d<bd){bd=d;best=s;}}
+      if(best){p.rescuer=best.id;r=best;}
+    }
+    if(r){
+      battleAI.story.setOrder(r,"RECOVER",{point:[p.x,p.y,p.z],until:now+1.2});
+      if(Math.hypot(r.x-p.x,r.y-p.y,r.z-p.z)<Math.max(45,r.slen*.8)){p.state="saved";saved.set(p.from,(saved.get(p.from)||0)+1);flash(p.x,p.y,p.z,now,14,4);continue;}
+    }
+    // Ruthless doctrines fire on pods that drift into their guns.
+    for(const s of foeCache[1-p.side]){
+      if(s.dead||!ArmadaBattleAI.DOCTRINE[s.race]?.ruthless||Math.abs(s.x-p.x)>380||Math.hypot(s.x-p.x,s.y-p.y,s.z-p.z)>380)continue;
+      p.state="lost";lost.set(p.from,(lost.get(p.from)||0)+1);
+      beams.push({a:[s.x,s.y,s.z],b:[p.x,p.y,p.z],t0:now,race:s.race,side:s.side,wid:2});flash(p.x,p.y,p.z,now,18,2);break;
+    }
+  }
+  for(const [from,n] of saved){const s=ships[from];battleAI.story.emit({type:"podsSaved",side:s.side,ship:from,n,x:s.x,y:s.y,z:s.z,size:s.slen});}
+  for(const [from,n] of lost){const s=ships[from];battleAI.story.emit({type:"podsLost",side:s.side,ship:from,n,x:s.x,y:s.y,z:s.z,size:s.slen});}
+  if(pods.length>120)pods=pods.filter(p=>p.state==="drift"||now-p.t0<30);
+}
+// Tugs and shuttles try to tow a disabled capital out of the fight.
+const TOW_RE=/SHUTTLE|RUNABOUT|DROPSHIP|U-WING|THUNDERHAWK|TUG/;
+function storyTowFor(t,now){
+  const w=wrecks.find(q=>q.disabled&&q.src===t.id&&!q.gone);if(!w||!(t.hulls||t.slen>=180))return;
+  if((ArmadaBattleAI.DOCTRINE[t.race]?.rescue||0)<=0)return;
+  let best=null,bd=6000;
+  for(const s of ships){if(s.side!==t.side||s.dead||!s.arr||s.grace||s.routing||!TOW_RE.test(s.meta?.klass||"")||tows.some(q=>q.tug===s.id&&!q.done))continue;
+    const d=Math.hypot(s.x-w.x,s.y-w.y,s.z-w.z);if(d<bd){bd=d;best=s;}}
+  if(!best)return;
+  tows.push({tug:best.id,wreck:w.uid,cap:t.id,side:t.side,t0:now,attached:null,done:false});
+  battleAI.story.emit({type:"rescueStart",side:t.side,ship:t.id,partner:best.id,kind:"tow",x:w.x,y:w.y,z:w.z,size:t.slen});
+}
+function towStep(now,dt){
+  for(const q of tows){
+    if(q.done)continue;
+    const s=ships[q.tug],w=wrecks.find(x=>x.uid===q.wreck),cap=ships[q.cap];
+    const end=outcome=>{q.done=true;battleAI.story.emit({type:"rescue",side:q.side,ship:q.cap,partner:q.tug,kind:"tow",outcome,x:w?w.x:s?.x||0,y:w?w.y:s?.y||0,z:w?w.z:s?.z||0,size:cap?.slen||200});};
+    if(!w||w.gone||w.shatter||w.dustT){end("lost");continue;}
+    if(!s||s.dead){if(w)w.towedBy=null;end("lost");continue;}
+    const home=[(q.side?1:-1)*9000,w.y,w.z];
+    if(q.attached==null){
+      battleAI.story.setOrder(s,"TOW",{point:[w.x,w.y+(w.rad||60)*.4,w.z],until:now+1.2});
+      if(Math.hypot(s.x-w.x,s.y-w.y,s.z-w.z)<(w.rad||60)+Math.max(80,s.slen*2)){q.attached=now;w.towedBy=s.id;}
+      else if(now-q.t0>45)end("lost");
+      continue;
+    }
+    battleAI.story.setOrder(s,"TOW",{point:home,until:now+1.2});
+    // The hull follows its tug on a stiff line, slowly: a capital does not tow like a fighter.
+    const off=[s.x-Math.cos(s.yaw)*((w.rad||60)+60)-w.x,s.y-w.y,s.z-Math.sin(s.yaw)*((w.rad||60)+60)-w.z],k=Math.min(1,dt*.6);
+    const cap2=Math.min(28,(s.v||0)*.6+4);
+    w.vx+=(Math.max(-cap2,Math.min(cap2,off[0]*.25))-w.vx)*k;w.vy+=(Math.max(-cap2,Math.min(cap2,off[1]*.25))-w.vy)*k;w.vz+=(Math.max(-cap2,Math.min(cap2,off[2]*.25))-w.vz)*k;
+    if(now-q.attached>28||Math.abs(w.x)>7200&&Math.sign(w.x)===(q.side?1:-1)){
+      departureEffect({x:w.x,y:w.y,z:w.z,yaw:s.yaw,slen:(w.rad||60)*2,race:s.race},now,"jump");
+      gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);if(w.ebo)gl.deleteBuffer(w.ebo);w.vao=null;w.gone=true;wrecks=wrecks.filter(x=>x!==w);
+      end("saved");
+    }
+  }
+}
+const STORY_HOST={leave:leaveBattle,rejump:rejumpShip,volley:storyVolley,abandon:storyAbandon,declare:declareWinner};
+function storyStep(now,dt){
+  const story=battleAI.story;if(!story.ready)return;
+  for(const q of squads)if(!q.name)storyNameSquad(q);
+  story.step(now,ships,squads);
+  podStep(now,dt);towStep(now,dt);
+  for(const s of ships){
+    if(s.dead)continue;
+    if(s.volleyUntil&&now>=s.volleyUntil){s.damageK=s.damageK0??s.damageK;s.volleyUntil=0;}
+    if(s.abandoned&&now>=s.abandonAt){s.destroyMode="disabled";kill(s,now);continue;}
+    if(s.leaveAt&&now>=s.leaveAt){leaveBattle(s,now,ArmadaBattleAI.DOCTRINE[s.race]?.escape||"jump");continue;}
+    if(s.ramming!=null&&(!ships[s.ramming]||ships[s.ramming].dead)){s.ramming=null;if(s.ai&&s.ai.order&&s.ai.order.kind==="RAM")s.ai.order=null;}
+  }
+  for(const ev of story.drain())storyEvent(ev);
+}
+function storyNameSquad(q){
+  const own=squads.filter(x=>x.side===q.side&&x.name).length,base=["Relief","Vanguard","Lancer","Harrier"][own%4];
+  q.name=base+" "+(1+Math.floor(own/4));q.size0=q.mem.length;q.state="steady";q.role="main";q.lost=0;
+  q.mem.forEach((id,i)=>{const s=ships[id];if(s&&!s.hero)s.callsign=i===0?q.name+" Leader":q.name+" "+(i+1);});
 }
 let ionNext=[Infinity,Infinity];
 function ionBarrel(lock,g,now){
@@ -16139,6 +16462,7 @@ function appendIonCharges(now,offset){
 }
 function megaStep(s,now,dt){
   battleAI.moveCapital(s,now,dt);
+  if(s.abandoned)return;
   if(now<(s.clearingUntil||0))return;
   const RD=RACE_DEFS[s.race]||RACE_DEFS[0];
   const slicer=RD.fire==="slicer",borgGun=RD.fire==="cutter"&&!!s.hulls;
@@ -16495,6 +16819,7 @@ function simStep(now,dt){
   if((simFrame&31)===0&&!(intro&&!intro.done))maybeCallAlly(now);
   prepareTraffic(now);
   battleAI.index(ships,now,squads,ionState);
+  storyStep(now,dt);
   squadThink(now);
   trackBarrels(now);
   for(const side of [0,1]){
@@ -16661,7 +16986,7 @@ function simStep(now,dt){
     }
     /* fire at the squadron's mark first, else whatever crosses the sights.
        Range is to the skin, so a White Star on a First One can actually shoot. */
-    if(s.cool<=0&&now>=(s.clearingUntil||0)){
+    if(s.cool<=0&&now>=(s.clearingUntil||0)&&!s.abandoned){
       let rng=s.hero?Math.max(250,Math.min(400,(s.slen||40)*.7+210)):isGunboat(s)?340:s.slen>90?280:210;
       if(weaponProfile(s).fixed)rng=Math.max(rng,850);
       const fx0=(RACE_DEFS[s.race]||{}).fire;
@@ -16715,6 +17040,7 @@ function simStep(now,dt){
     const a=[pl.x,pl.y,pl.z],b=[pl.x+pl.vx*dt,pl.y+pl.vy*dt,pl.z+pl.vz*dt];
     let hit=null,u=Infinity;
     for(const t of projectileIndex[1-pl.side].query(a,b,3)){if(t.dead||t.grace)continue;const h=weaponSegmentHit(a,b,t,now,3);if(h!==null&&h<u){hit=t;u=h;}}
+    const rock=fieldHit(a,b);if(rock<u){const p=lerp3(a,b,rock);[pl.x,pl.y,pl.z]=p;flash(...p,now,40,2);pl.dead=true;continue;}
     const obstacle=firstDebrisHit(a,b,now,3,pl.from);
     if(obstacle&&obstacle.u<u){const p=lerp3(a,b,obstacle.u);[pl.x,pl.y,pl.z]=p;damageDebris(obstacle.w,2,now,p);pl.dead=true;continue;}
     const point=hit?lerp3(a,b,u):b;[pl.x,pl.y,pl.z]=point;
@@ -16736,6 +17062,7 @@ function simStep(now,dt){
       const h=weaponSegmentHit(a,b,t,now,tr.energy?tr.width:1);
       if(h!==null&&h<u){u=h;hit=t;}
     }
+    const rock=fieldHit(a,b);if(rock<u){const p=lerp3(a,b,rock);[tr.x,tr.y,tr.z]=p;flash(...p,now,tr.energy?12:6,2);tr.dead=true;continue;}
     const obstacle=firstDebrisHit(a,b,now,tr.energy?tr.width:1,tr.from);
     if(obstacle&&obstacle.u<u){const p=lerp3(a,b,obstacle.u);[tr.x,tr.y,tr.z]=p;damageDebris(obstacle.w,tr.damage||.3,now,p);tr.dead=true;continue;}
     const point=hit?lerp3(a,b,u):b;[tr.x,tr.y,tr.z]=point;
@@ -16836,7 +17163,7 @@ function stepBattleWrecks(now,dt){
           w.dustNext=now+0.06+k*0.14;
         }
         if(k>=1){
-          gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);
+          gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);if(w.ebo)gl.deleteBuffer(w.ebo);
           w.gone=true;anyGone=true;continue;
         }
       }
@@ -17095,7 +17422,7 @@ function cinemaFit(points,center,out){
 // spheres that incorrectly block the empty space beside long capital ships.
 function cinemaBlocked(eye,focus,subject,partner,live){
   const delta=V.sub(focus,eye),dd=V.dot(delta,delta)||1;
-  for(const b of worldBodies){
+  for(const b of fieldBodies.length?worldBodies.concat(fieldBodies):worldBodies){
     const offset=V.sub(b.center,eye),t=Math.max(0,Math.min(.97,V.dot(offset,delta)/dd));
     if(V.len(V.sub(offset,V.mul(delta,t)))<b.radius+6)return true;
   }
@@ -17186,6 +17513,12 @@ function cinemaChoose(a,live,now){
       if(s.slen>=180)offer('capital',s,t,exchange+2.5);
     }else if(s.slen>=180&&heat>0)offer('capital',s,null,heat);
   }
+  // Ride with squadrons and follow the war's stories, not only its heat.
+  for(const c of storyCandidates(now)){
+    const s=ships[c.subject];if(!s)continue;
+    const kind=c.kind==='capital'&&s.slen<180?'chase':c.kind;
+    candidates.push({kind,subject:c.subject,partner:c.partner??null,score:c.score/7+(kind===a.kind?-7:0)-recent(c.subject)+noise(s)*1.5+Math.min(5,(a.clock-(a.kindAt[kind]??-15))*.16)});
+  }
   const best=candidates.sort((x,y)=>y.score-x.score)[0];
   // A short geographical reset between runs of close shots. Stragglers do not
   // pull this view away from the fighting; the manual All ships view still fits everyone.
@@ -17196,6 +17529,7 @@ function cinemaChoose(a,live,now){
 }
 function cinemaMembers(kind,subject,partner,live,now){
   if(kind==='arrival')return live.map(s=>s.id);
+  if(kind==='squad'){const sq=squads[subject.squad],ids=sq?sq.mem.filter(id=>ships[id]&&!ships[id].dead&&ships[id].vao):[subject.id];if(partner&&!partner.dead)ids.push(partner.id);return ids.slice(0,24);}
   if(!['formation','all','top'].includes(kind))return [];
   const p=cinemaPosition(subject,now),q=partner?cinemaPosition(partner,now):p,c=V.mul(V.add(p,q),.5);
   if(kind==='formation')return live.filter(s=>s.side===subject.side&&s.slen<Math.max(250,subject.slen*2.5)).sort((a,b)=>V.len(V.sub(cinemaPosition(a,now),p))-V.len(V.sub(cinemaPosition(b,now),p))).slice(0,12).map(s=>s.id);
@@ -17212,10 +17546,10 @@ function cinemaGroup(a,now){
 function cinemaLayout(a,now,dt,reset=false){
   if(cinemaInteriorKind(a.kind))return cinemaInteriorLayout(a,now,dt,reset);
   const s=ships[a.subject],partner=ships[a.partner],u=Math.min(1,(a.clock-a.started)/Math.max(1,a.duration)),ease=u*u*(3-2*u);
-  const group=['arrival','all','top','formation'].includes(a.kind),p=cinemaPosition(s,now);
+  const group=['arrival','all','top','formation','squad'].includes(a.kind),p=cinemaPosition(s,now);
   let center=p,points=cinemaCorners(s,now),angle=a.bearing+a.angleOffset+(ease-.5)*(a.kind==='capital'?.24:.12),height=a.height;
   if(group){center=a.groupCenter||p;points=a.groupPoints||points;}
-  if(a.kind==='formation'&&a.groupAnchor){const shift=V.sub(p,a.groupAnchor);center=V.add(center,shift);points=points.map(q=>V.add(q,shift));}
+  if((a.kind==='formation'||a.kind==='squad')&&a.groupAnchor){const shift=V.sub(p,a.groupAnchor);center=V.add(center,shift);points=points.map(q=>V.add(q,shift));}
   if(a.kind==='duel'&&partner){const q=cinemaPosition(partner,now);center=V.mul(V.add(p,q),.5);points=points.concat(cinemaCorners(partner,now));}
   if(a.kind==='chase'){
     const desired=s.yaw||0,delta=Math.atan2(Math.sin(desired-a.heading),Math.cos(desired-a.heading));
@@ -17234,7 +17568,7 @@ function cinemaLayout(a,now,dt,reset=false){
   const offset=V.mul(out,distance);
   for(let i=0;i<3;i++){
     const ck=['cx','cy','cz'][i],ok=['ox','oy','oz'][i],lk=['lx','ly','lz'][i];
-    if(a.kind==='formation'&&!reset&&a.anchorLast)a[ck]+=p[i]-a.anchorLast[i];
+    if((a.kind==='formation'||a.kind==='squad')&&!reset&&a.anchorLast)a[ck]+=p[i]-a.anchorLast[i];
     if(reset){a[ck]=center[i];a[ok]=offset[i];a[lk]=aim[i];a[ck+'V']=a[ok+'V']=a[lk+'V']=0;}
     else{if(group)cinemaSpring(a,ck,center[i],dt,3);else a[ck]=center[i];cinemaSpring(a,ok,offset[i],dt,a.kind==='chase'?5:2.8);cinemaSpring(a,lk,aim[i],dt,5);}
   }
@@ -17246,7 +17580,7 @@ function cinemaStart(a,shot,live,now){
   const old=a.subject;a.history.push({id:old,at:a.clock});a.history=a.history.filter(h=>a.clock-h.at<32);
   Object.assign(a,shot);a.index++;a.started=a.clock;a.payoff=null;a.blocked=0;
   const s=ships[a.subject];a.lastSide=s.side;a.heading=s.yaw||0;
-  a.duration={captain:4,cockpit:5,arrival:2.8,formation:6.5,chase:5.6,duel:6.8,capital:8.5,all:5.5,top:4.8}[a.kind];
+  a.duration={captain:4,cockpit:5,arrival:2.8,formation:6.5,chase:5.6,duel:6.8,capital:8.5,all:5.5,top:4.8,squad:12}[a.kind];
   a.until=a.clock+a.duration;a.kindAt[a.kind]=a.clock;
   if(['arrival','all','top'].includes(a.kind))a.lastWide=a.clock;
   a.members=cinemaMembers(a.kind,s,ships[a.partner],live,now);cinemaGroup(a,now);
@@ -17254,7 +17588,7 @@ function cinemaStart(a,shot,live,now){
   // wider two-ship shot instead of whipping the camera around a turning nose.
   const side=(warSeed&1)?1:-1;
   a.bearing=a.kind==='chase'?a.heading+Math.PI+.22:a.kind==='capital'?a.heading+side*1.12:Math.PI/2*side+.12;
-  a.height=a.kind==='top'?3.8:a.kind==='capital'?.24:a.kind==='chase'?.26:a.kind==='formation'?.32:.55;
+  a.height=a.kind==='top'?3.8:a.kind==='capital'?.24:a.kind==='chase'?.26:a.kind==='formation'||a.kind==='squad'?.32:.55;
   if(a.kind==='duel'&&ships[a.partner]){
     const t=ships[a.partner],dx=s.x-t.x,dz=s.z-t.z,d=Math.hypot(dx,dz);
     // Long-range exchanges need depth, not two unreadable specks on opposite
@@ -17277,7 +17611,8 @@ function cinemaCaption(){
   if(s.foCharge)return (s.meta?.desig||'First One')+' · '+FO_WEAPONS[s.fo??s.meta.fo][0]+' charging';
   if(s.foEvent?.until>battleTime)return (s.meta?.desig||'First One')+' · '+FO_WEAPONS[s.fo??s.meta.fo][0];
   if(arriving)return 'Arriving · '+arriving.meta.desig;
-  const title={captain:'Captain',cockpit:'Cockpit',arrival:'Fleet arrivals',formation:'Fleet approach',chase:'Pursuit',duel:'Crossfire',capital:'Capital ship',all:'Battlefield',top:'Battle from above'}[a.kind];
+  if(a.kind==='squad'){const sq=squads[s.squad];if(sq&&sq.name)return sq.name+' squadron'+(sq.state==='routing'?' · breaking':sq.rescue?' · on the screen':'');}
+  const title={captain:'Captain',cockpit:'Cockpit',arrival:'Fleet arrivals',formation:'Fleet approach',chase:'Pursuit',duel:'Crossfire',capital:'Capital ship',all:'Battlefield',top:'Battle from above',squad:'Squadron'}[a.kind];
   return ['arrival','all','top'].includes(a.kind)?title:title+' · '+raceShort(s.race);
 }
 function updateActionCamera(now,dt){
@@ -17506,7 +17841,7 @@ addEventListener("keydown",e=>{
   if(k==="n")openPicker();
   if(k==="g")randomWar();
   if(k==="r"&&pilotId==null&&!e.repeat)instantReplay();
-  if(k==="b"&&pilotId==null)setWatchView("broadcast");
+  if(k==="b"&&pilotId==null)setWatchView(watchMode==="broadcast"?"action":"broadcast");
   if(k==="m"&&!e.repeat){const A=audio();if(A){const v=A.volumes().master;A.setVolume("master",v>0?0:.8);syncAudioSliders();toast(v>0?"SOUND OFF":"SOUND ON");}}
   if((k==="?"||(e.key==="/"&&e.shiftKey))&&!e.repeat){const h=document.getElementById("bcHelp");h.hidden=!h.hidden;}
   if(pilotId==null&&!e.repeat){
@@ -17551,6 +17886,58 @@ const wasdHint=(()=>{
     wHide=setTimeout(()=>wEl.classList.remove("on"),28000);
   }};
 })();
+/* ---------- battle size: as big as this machine can run in real time ----------
+   Measured, never guessed from the GPU tier. A short probe of the real minds
+   on first visit scales the simulation costs measured on the reference
+   machine; every war then times the real simulation and refines the
+   estimate. Thresholds and method: DECISIONS.md, PERFORMANCE.md. */
+// CPU ms per simulated second on the reference machine (4-core Xeon 2.1 GHz,
+// Node 22), by total ships in combat, and that machine's probe score.
+const SIM_REF={probe:.1,cost:{100:575,192:978,287:1691,572:3639,1142:9000}}; // PROVISIONAL: remeasure
+// Real time needs 1,000 ms of simulation per second; keep 45% for rendering.
+const SIM_BUDGET=550,FLEET_SIZES=[50,100,150,200,300,450,600];
+const shipsFor=perSide=>Math.round(perSide*1.91);
+function refCost(n){
+  const pts=Object.entries(SIM_REF.cost).map(([k,v])=>[+k,v]).sort((a,b)=>a[0]-b[0]);
+  if(n<=pts[0][0])return pts[0][1]*n/pts[0][0];
+  for(let i=1;i<pts.length;i++)if(n<=pts[i][0]){const [x0,y0]=pts[i-1],[x1,y1]=pts[i],u=Math.log(n/x0)/Math.log(x1/x0);return y0*Math.pow(y1/y0,u);}
+  const [x0,y0]=pts[pts.length-2],[x1,y1]=pts[pts.length-1];return y1*Math.pow(n/x1,Math.log(y1/y0)/Math.log(x1/x0));
+}
+// This machine's speed relative to the reference: measured wars first, else the probe.
+let simSpeed=(()=>{try{const v=JSON.parse(localStorage.getItem("tributeSimSpeed")||"null");if(v&&v.f>0&&v.f<50)return v;}catch(e){}return null;})();
+function measureSimSpeed(){
+  if(simSpeed&&simSpeed.source==="war")return simSpeed.f;
+  const now=()=>performance.now();
+  try{ArmadaBattleAI.probe(now,40);const a=ArmadaBattleAI.probe(now,90),b=ArmadaBattleAI.probe(now,90);
+    const f=Math.max(a,b)/SIM_REF.probe;simSpeed={f,source:"probe",at:Date.now()};
+    try{localStorage.setItem("tributeSimSpeed",JSON.stringify(simSpeed));}catch(e){}
+    return f;}catch(e){return 1;}
+}
+function realtimeSize(f){let best=FLEET_SIZES[0];for(const n of FLEET_SIZES)if(refCost(shipsFor(n))/f<=SIM_BUDGET)best=n;return best;}
+function describeSizes(f){
+  document.querySelectorAll("#bar [data-n], #pick .sizes [data-n]").forEach(b=>{
+    const n=+b.dataset.n,speed=Math.min(1,SIM_BUDGET/(refCost(shipsFor(n))/f));
+    b.title="About "+shipsFor(n).toLocaleString()+" ships · "+(speed>=.999?"real time on this machine":"about "+speed.toFixed(speed<.3?2:1)+"× real time on this machine (measured)");
+    b.classList.toggle("slow",speed<.999);
+  });
+}
+// Every war times its real simulation: ms of CPU per simulated second at the
+// ships actually alive, folded into this machine's factor for the next war.
+const simClock={ms:0,steps:0,ships:0,from:0};
+function noteSimCost(ms,steps){
+  if(!Number.isFinite(warT0)||battleTime-warT0<20||warClock.rate!==1||replayState)return;
+  let alive=0;for(const s of ships)if(!s.dead&&s.arr)alive++;
+  simClock.ms+=ms;simClock.steps+=steps;simClock.ships+=alive*steps;
+  if(simClock.steps<30*15)return;
+  const perSimSecond=simClock.ms/(simClock.steps/30),n=simClock.ships/simClock.steps;
+  simClock.ms=simClock.steps=simClock.ships=0;
+  if(n<40||!(perSimSecond>0))return;
+  const f=refCost(n)/perSimSecond,prev=simSpeed&&simSpeed.source==="war"?simSpeed.f:f;
+  simSpeed={f:prev*.6+f*.4,source:"war",at:Date.now(),ships:Math.round(n),cost:Math.round(perSimSecond)};
+  try{localStorage.setItem("tributeSimSpeed",JSON.stringify(simSpeed));}catch(e){}
+  describeSizes(simSpeed.f);
+}
+let sizeChosen=false;
 function setFleetSize(n,restart){
   perFleet=n;
   document.querySelectorAll("#bar [data-n], #pick .sizes [data-n]").forEach(b=>{
@@ -17559,7 +17946,7 @@ function setFleetSize(n,restart){
   if(restart){toast("FLEETS INBOUND");startWar(true);}
 }
 document.querySelectorAll("#bar [data-n], #pick .sizes [data-n]").forEach(b=>{
-  b.addEventListener("click",()=>setFleetSize(+b.dataset.n,b.closest("#bar")!=null));
+  b.addEventListener("click",()=>{sizeChosen=true;setFleetSize(+b.dataset.n,b.closest("#bar")!=null);});
 });
 let camGear=2,camLook=0.28;
 function setCamGear(n){
@@ -17803,7 +18190,7 @@ function setQuality(tier,remember=true){
   qualityTier=tier;quality=PX.TIERS[tier];renderScale=1;dprCap=quality.dprCap;
   if(remember)try{localStorage.setItem("tributeQuality",JSON.stringify({tier,auto:false}));}catch(e){}
   dpr=renderPixelRatio(innerWidth,innerHeight,devicePixelRatio);resize();
-  if(image)image.settings.tier=tier;setFleetSize(quality.fleet,false);
+  if(image)image.settings.tier=tier;
   const sel2=document.getElementById("qualitySel");if(sel2)sel2.value=tier;
 }
 function finishQualityProbe(wall){
@@ -17900,6 +18287,8 @@ function shipName(s){return s?.meta?.desig||(s?.meta?.klass)||raceShort(s?.race)
 function shipClass(s){return (s?.meta?.klass||"").replace(/\s+/g," ").trim()||raceShort(s?.race);}
 function isCapital(s){return !!s&&((s.hulls||0)>=10||(s.slen||0)>=180);}
 function isFirstOne(s){return !!s&&!!(RACE_DEFS[s.race]||{}).unique;}
+// Story moments worth a highlight even below the clip score: a rescue's outcome, an ace, a rout.
+const CLIP_STORY={rescue:1,ace:1,rout:1,vendettaSettled:1,aceDuel:1,successor:1};
 function bcEvent(type,data){
   if(!bc.log)return null;
   const ev=bc.log.push({t:battleTime,type,...data});
@@ -17907,7 +18296,7 @@ function bcEvent(type,data){
   const w=BC.WEIGHTS[type]||0;
   if(w>=26){bc.ticker.unshift({t:ev.t,text:tickerText(ev),side:ev.side,until:performance.now()/1000+(w>=90?6:4.5)});if(bc.ticker.length>4)bc.ticker.length=4;}
   if(w>=90&&type!=="victory"){bc.lastBigEvent=ev;bc.replayChipUntil=performance.now()/1000+12;bc.pendingClips.push({ev,at:ev.t+3.4});}
-  else if(w>=56&&type!=="ionCharge"&&type!=="victory")bc.pendingClips.push({ev,at:ev.t+3.4});
+  else if((w>=56||CLIP_STORY[type])&&type!=="ionCharge"&&type!=="victory"&&!(type==="rescue"&&!data.outcome))bc.pendingClips.push({ev,at:ev.t+3.4});
   audioForEvent(ev);
   return ev;
 }
@@ -17921,8 +18310,8 @@ function tickerText(ev){
     case "heroDuel":return "Hero duel · "+ev.name+" vs "+ev.byName;
     case "squadronWipe":return SIDE_SHAPE[ev.side]+" Squadron lost · "+ev.name;
     case "arrival":return SIDE_SHAPE[ev.side]+" Arriving · "+ev.name;
-    case "victory":return ev.name+" holds the sky";
-    default:return ev.name;
+    case "victory":return fleetTitle(ev.name)+" "+(VICTORY_LINE[ev.reason]||VICTORY_LINE.annihilation).toLowerCase();
+    default:return (ev.side>=0?SIDE_SHAPE[ev.side]+" ":"")+(ev.text||ev.name);
   }
 }
 // Called from kill() before the hull is released.
@@ -17934,6 +18323,13 @@ function bcKill(t,now){
     by:by?by.id:null,byName:by?shipName(by):null,x:t.x,y:t.y,z:t.z});
   if(t.squad>=0&&squads[t.squad]){const q=squads[t.squad];if(q.mem.length>=3&&q.mem.every(id=>ships[id].dead||id===t.id))bcEvent("squadronWipe",{side:t.side,ship:t.id,name:shipClass(t)+" flight",x:t.x,y:t.y,z:t.z,size:t.slen});}
   if(type!=="kill"){const seen=onScreen(t);if(seen)maybeSlowMo(t,ev);else if(watchMode==="broadcast"&&ev.type!=="kill")bc.autoReplay={ev,at:now+2.2};}
+}
+// The bar and the momentum model carry the objective: a quarter of the share
+// is the objective's state (flagship hull, convoy runs, station hold).
+function objectiveStrength(str){
+  const st=battleAI.story;if(!st||!st.ready)return str;
+  const total=str[0]+str[1];if(!total)return str;
+  const share=st.objectiveShare(str[0]/total);return [share*total,(1-share)*total];
 }
 function onScreen(t){const m=mat(),cw=m[3]*t.x+m[7]*t.y+m[11]*t.z+m[15];if(cw<1)return false;const cx=(m[0]*t.x+m[4]*t.y+m[8]*t.z+m[12])/cw,cy=(m[1]*t.x+m[5]*t.y+m[9]*t.z+m[13])/cw;return Math.abs(cx)<.9&&Math.abs(cy)<.9;}
 function bcIonCharge(g,lock){if(g)bcEvent("ionCharge",{side:g.side,ship:g.id,name:shipName(g),partner:null,until:lock.fire,x:g.x,y:g.y,z:g.z,size:g.slen,point:lock.point});}
@@ -17948,7 +18344,91 @@ function ionScreenFlash(g,p){
 }
 function bcIonStrike(g,lock){if(g)ionScreenFlash(g,lock.point);if(g)bcEvent("ionStrike",{side:g.side,ship:g.id,name:shipName(g),by:g.id,byName:shipName(g),x:lock.point[0],y:lock.point[1],z:lock.point[2],size:g.slen});}
 function bcReinforce(side,race){bcEvent("reinforcements",{side,name:RACE_DEFS[race].name,x:0,y:0,z:0});}
-function bcVictory(side){bcEvent("victory",{side,name:SIDE_NAME[side]});}
+function bcVictory(side,reason){bcEvent("victory",{side,name:SIDE_NAME[side],reason:reason||"annihilation"});}
+
+/* ---------- the war's story, as the broadcast tells it ----------
+   Story events arrive from the simulation already decided; this only names
+   the ships involved and hands them to the log, the ticker and the captions. */
+function titleCase(t){return String(t).toLowerCase().replace(/(^|[\s-])([a-z])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\bOf\b/g,"of");}
+// A name a viewer can say out loud: callsign, ace name, or the ship's own name.
+function shipLabel(s){
+  if(!s)return "a ship";
+  if(s.ace)return (s.callsign||shortName(s))+" (“"+s.ace+"”)";
+  if(s.callsign)return s.callsign;
+  return shortName(s);
+}
+function shortName(s){
+  const d=s?.meta?.desig||"";
+  // "ISD-AB00012 DEVASTATOR" -> "Devastator"; registries and pennants are dropped.
+  const words=d.split(/\s+/).filter(w=>w&&!/\d/.test(w)&&!/^[A-Z]{1,4}-$/.test(w));
+  const tail=words.length&&!/^(CUBE|SPHERE|DIAMOND|BATTLECRAB|NODE|HULL|OF|SCOUT)$/.test(words[0])?titleCase(words.join(" ")):"";
+  if(tail&&tail.length<=28&&(s.hero||s.hulls||s.slen>=180))return tail;
+  return "the "+titleCase(shipClass(s).replace(/-CLASS.*$/," ").replace(/\s+(STAR DESTROYER|CRUISER|FRIGATE|BATTLESHIP|CARRIER)$/,m=>m)).trim();
+}
+function klassShort(s){const k=titleCase(shipClass(s));return k.length>22?k.split(" ").slice(0,2).join(" "):k;}
+function sideTitle(side){return fleetTitle(SIDE_NAME[side]||"");}
+function sideShort(side){return titleCase(raceShort(sideRace[side]));}
+const PLAN_TEXT={PINCER:["attempt{s} a pincer","the pincer"],AMBUSH:["lay{s} an ambush","the ambush"],HOLD:["will hold the line","holding the line"],RAID:["will raid and run","hit and run"],DECAPITATE:["will try to decapitate","the decapitation strike"],SIEGE:["will screen and siege","the siege"],CHARGE:["charge{s}","the charge"]};
+// What a commentator calls each side, and whether it takes a plural verb.
+const SIDE_WORD=[["the Yard",0],["the Shoal",0],["the Lattice",0],["the Drift",0],["the Choir",0],["the Empire",0],["the Rebels",1],["the Minbari",1],["the Shadows",1],["EarthForce",0],["the Federation",0],["the Klingons",1],["the Borg",1],["the Mondoshawan",1],["the Marines",1],["the Engineers",1],["the Yautja",1],["the First Ones",1],["the Romulans",1],["the Dominion",0],["the Space Marines",1],["the Tyranids",1],["Tesla",0]];
+function sideWord(side,cap){const w=(SIDE_WORD[sideRace[side]]||["the fleet"])[0];return cap?w.charAt(0).toUpperCase()+w.slice(1):w;}
+function planVerb(side,kind){return PLAN_TEXT[kind][0].replace("{s}",(SIDE_WORD[sideRace[side]]||[0,0])[1]?"":"s");}
+const OBJECTIVE_TEXT={ANNIHILATE:"Last fleet flying wins.",FLAGSHIP:"First to kill the enemy flagship wins.",CONVOY:"",STATION:"Hold the station to win."};
+function objectiveLine(){
+  const o=battleAI.story.objective;if(!o)return "";
+  if(o.kind==="CONVOY")return sideWord(o.side,true)+" must run "+o.ids.length+" convoy ships through the fight. "+o.need+" must make the jump.";
+  if(o.kind==="FLAGSHIP"){const f=[0,1].map(i=>ships[battleAI.story.sides[i].flag]);return "First to kill the enemy flagship wins"+(f[0]&&f[1]&&f[0].meta&&f[1].meta?": "+shortName(f[0])+" or "+shortName(f[1])+".":".");}
+  return OBJECTIVE_TEXT[o.kind]||"";
+}
+function planLine(){
+  const st=battleAI.story;if(!st.ready)return "";
+  const p=st.sides.map(x=>x.plan&&x.plan.kind);
+  return sideWord(0,true)+" "+planVerb(0,p[0])+". "+sideWord(1,true)+" "+planVerb(1,p[1])+".";
+}
+const SCORE_TYPES={rout:1,rally:1,lastStand:1,ram:1,flagshipDown:1,successor:1,shock:1,ace:1,aceDuel:1,vendetta:1,vendettaSettled:1,vendettaFailed:1,rescueStart:1,rescue:1,pods:1,podsSaved:1,podsLost:1,planSwitch:1,planWorked:1,raid:1,escape:1,convoySaved:1,convoyLost:1,stationTaken:1,wreckStrike:1};
+function storyEvent(ev){
+  if(ev.type==="warPlan"){bc.plan={lines:[planLine(),objectiveLine()].filter(Boolean),at:battleTime,first:ev.plans.slice()};bcEvent("warPlan",{side:-1,name:planLine(),x:0,y:0,z:0});return;}
+  const s=ships[ev.ship],p=ships[ev.partner],sq=ev.squad!=null?squads[ev.squad]:null;
+  const data={...ev,name:sq&&["rout","rally","escape","raid"].includes(ev.type)?sq.name+" squadron":shipLabel(s),byName:p?shipLabel(p):null,t:undefined};
+  delete data.t;delete data.type;
+  if(!Number.isFinite(data.x)&&s){data.x=s.x;data.y=s.y;data.z=s.z;}
+  data.text=storyText(ev,s,p,sq);
+  const e=bcEvent(ev.type,data);
+  if(e&&SCORE_TYPES[ev.type])offerCaption({text:data.text,subject:ev.ship??null,partner:ev.partner??null,event:e,weight:BC.WEIGHTS[ev.type]||20,until:battleTime+captionHold(data.text)});
+}
+function pct(s){return Math.max(0,Math.round(100*s.hp/Math.max(1,s.hpMax)))+"%";}
+function storyText(ev,s,p,sq){
+  const n=ev.n,S=shipLabel(s),P=p?shipLabel(p):"",side=ev.side>=0?sideShort(ev.side):"";
+  switch(ev.type){
+    case "rout":return sq.name+" squadron is breaking. "+n+" ship"+(n===1?"":"s")+" running for the edge.";
+    case "rally":return sq.name+" squadron rallies"+(ships[ev.anchor]?" on the "+shortName(ships[ev.anchor]).replace(/^the /,""):"")+" and turns back into the fight.";
+    case "escape":return ev.how==="edge"?sq.name+" squadron slips off the edge of the field.":sq.name+" squadron jumps out. They will live to fight another day.";
+    case "raid":return sq.name+" squadron jumps out mid-raid. They'll be back behind "+sideWord(1-ev.side)+".";
+    case "lastStand":return ev.kind==="RAM"?S+" is doomed and turning to ram "+(P||"the nearest capital")+".":ev.kind==="VOLLEY"?S+" is going down firing everything it has.":S+" is lost. Abandon ship.";
+    case "ram":return S+" rams "+P+" at "+(ev.closing||0)+" metres a second.";
+    case "flagshipDown":return "The "+side+" flagship "+S.replace(/^the /,"")+" is gone. Command is silent.";
+    case "successor":return S.charAt(0).toUpperCase()+S.slice(1)+" takes command of the "+side+" fleet.";
+    case "shock":return "No orders from the flagship. "+(ev.panic?ev.panic+" pilot"+(ev.panic===1?"":"s")+" scatter":"")+(ev.panic&&ev.berserk?", ":"")+(ev.berserk?ev.berserk+" charge":"")+".";
+    case "ace":return (s.callsign||S)+" makes ace with "+ev.kills+" kills. Callsign: "+s.ace+".";
+    case "aceDuel":return "Aces meet: "+S+" against "+P+".";
+    case "vendetta":{const lost=ships[ev.lost];return S+" has lost "+(lost?shipLabel(lost):"a wingman")+". Now hunting the "+(p?klassShort(p):"ship")+" that did it.";}
+    case "vendettaSettled":{const lost=ships[ev.lost];return S+" got the "+(p?klassShort(p):"killer")+". "+(lost?shipLabel(lost):"The wingman")+" is avenged.";}
+    case "vendettaFailed":return S+" is down. The hunt for the "+(p?klassShort(p):"killer")+" ends there.";
+    case "rescueStart":return ev.kind==="tow"?P+" is moving in to tow the crippled "+S.replace(/^the /,"")+" clear.":(sq?sq.name+" squadron":"A squadron")+" peels off to screen "+S+", hull "+(s?pct(s):"failing")+".";
+    case "rescue":return ev.outcome==="saved"?(ev.kind==="tow"?P+" drags "+S+" out of the fight.":S.charAt(0).toUpperCase()+S.slice(1)+" survives. "+(sq?sq.name+" squadron":"The screen")+" held."):(ev.kind==="tow"?"The tow fails. "+S.charAt(0).toUpperCase()+S.slice(1)+" is lost.":"The screen could not save "+S+".");
+    case "pods":return n+" escape pods away from "+S+".";
+    case "podsSaved":return n+" escape pod"+(n===1?"":"s")+" from "+S+" picked up.";
+    case "podsLost":return n+" escape pod"+(n===1?"":"s")+" from "+S+" fired on.";
+    case "planSwitch":return "The "+side+" plan has failed: "+ev.why+". Switching to "+PLAN_TEXT[ev.to][1]+".";
+    case "planWorked":return ev.plan==="PINCER"?"The pincer closes on "+sideWord(1-ev.side)+".":ev.plan==="AMBUSH"?"Ambush! "+side+" squadrons come out of cover.":ev.plan==="RAID"?"The "+side+" raiders have hit and run twice.":"The "+side+" line holds.";
+    case "convoySaved":{const o=battleAI.story.objective;return "A convoy ship makes the jump: "+o.saved+" of "+o.need+" needed.";}
+    case "convoyLost":{const o=battleAI.story.objective;return "Convoy ship down. "+o.lost+" lost of "+o.ids.length+".";}
+    case "stationTaken":return sideWord(ev.side,true)+" "+((SIDE_WORD[sideRace[ev.side]]||[0,0])[1]?"take":"takes")+" the station.";
+    case "wreckStrike":return S+" clips the wreck of "+(p?shortName(p):"a capital")+". Gone.";
+    default:return "";
+  }
+}
+function captionHold(text){const w=String(text).split(/\s+/).length;return Math.max(3.6,Math.min(7.5,1.4+w*.33));}
 // Slow motion for big kills the viewer can actually see.
 function maybeSlowMo(t,ev){
   if(reducedMotion||replayState||pilotId!=null)return;
@@ -17960,7 +18440,7 @@ function maybeSlowMo(t,ev){
 function broadcastTick(now,dt){
   if(!bc.log||warT0===Infinity)return;
   const T=now-warT0;
-  if(bc.momentum.sample(T,BC.strength(ships,s=>s.vao&&T-s.delay>=0)))drawMomentum();
+  if(bc.momentum.sample(T,objectiveStrength(BC.strength(ships,s=>s.vao&&T-s.delay>=0))))drawMomentum();
   // Heroes meeting head to head.
   if(((now*30)|0)%15===0){
     const heroes=ships.filter(s=>s.hero&&!s.dead&&s.vao&&s.arr&&!s.grace);
@@ -18160,8 +18640,38 @@ function broadcastCandidates(now,live){
   }
   const pairs=live.filter(s=>isCapital(s)&&s.arr&&!s.grace).slice(0,24);
   for(const p of pairs)for(const q of pairs)if(p.side===0&&q.side===1){const d=Math.hypot(p.x-q.x,p.y-q.y,p.z-q.z);if(d<Math.max(2500,(p.slen+q.slen)*2.5))out.push({phase:"build",kind:"duel",subject:p.id,partner:q.id,score:40+Math.min(20,(p.slen+q.slen)/200)});}
+  for(const c of storyCandidates(now))out.push(c);
   // Dogfights from the existing action camera's heat ranking.
   if(a){const shot=cinemaChoose(a,live,now);if(shot)out.push({phase:shot.kind==="captain"||shot.kind==="cockpit"?"reaction":"build",kind:shot.kind,subject:shot.subject,partner:shot.partner,score:BC.WEIGHTS.dogfight+(shot.kind==="chase"?6:0)});}
+  return out;
+}
+// Stories the camera can follow while they develop: a vendetta chase, an ace
+// duel, a squadron routing or screening a cripple, a tow, a ram, a pincer
+// wing swinging wide, an ambush waiting, a convoy run, the hottest squadrons.
+function storyCandidates(now){
+  const out=[],st=battleAI.story,ok=s=>s&&!s.dead&&s.vao&&s.arr&&!s.grace&&!s.cloaked;
+  if(!st||!st.ready)return out;
+  const lead=q=>q.mem.map(id=>ships[id]).find(ok);
+  for(const s of ships){
+    if(!ok(s))continue;
+    if(s.vendetta){const t=ships[s.vendetta.target];if(ok(t))out.push({phase:"story",kind:"chase",subject:s.id,partner:t.id,score:60,story:"v"+s.id});}
+    const o=s.ai&&s.ai.order;
+    if(o&&o.kind==="RAM"&&now<o.until){const t=ships[o.target];if(ok(t))out.push({phase:"story",kind:"duel",subject:s.id,partner:t.id,score:84,story:"ram"+s.id});}
+    if(s.convoy&&s.ai&&s.ai.action==="CONVOY")out.push({phase:"story",kind:"capital",subject:s.id,partner:null,score:38,story:"conv"+s.id});
+  }
+  for(const e of bc.log?bc.log.since(now-14):[])if(e.type==="aceDuel"&&ok(ships[e.ship])&&ok(ships[e.partner]))out.push({phase:"story",kind:"duel",subject:e.ship,partner:e.partner,score:62,story:"d"+e.ship+":"+e.partner});
+  let hot=[];
+  for(const q of squads){
+    const l=lead(q);if(!l)continue;
+    if(q.state==="routing")out.push({phase:"story",kind:"squad",subject:l.id,partner:null,score:56,story:"r"+q.id});
+    else if(q.rescue&&ok(ships[q.rescue.cap]))out.push({phase:"story",kind:"squad",subject:l.id,partner:q.rescue.cap,score:50,story:"res"+q.id});
+    else if((q.role==="left"||q.role==="right")&&l.ai?.action==="MANEUVER")out.push({phase:"story",kind:"squad",subject:l.id,partner:null,score:36,story:"pin"+q.id});
+    else if(q.role==="ambush"&&l.ai?.action==="HIDE")out.push({phase:"story",kind:"squad",subject:l.id,partner:null,score:32,story:"amb"+q.id});
+    else if(q.state==="steady"){let h=0;for(const id of q.mem){const m=ships[id];if(ok(m))h+=cinemaHeat(m,now);}if(h>0)hot.push({q,l,h});}
+  }
+  for(const t of tows)if(!t.done&&t.attached!=null&&ok(ships[t.tug]))out.push({phase:"story",kind:"chase",subject:t.tug,partner:null,score:52,story:"tow"+t.tug});
+  hot.sort((x,y)=>y.h-x.h);
+  for(const {q,l,h} of hot.slice(0,2))out.push({phase:"story",kind:"squad",subject:l.id,partner:null,score:26+Math.min(14,h*.6),story:"sq"+q.id});
   return out;
 }
 function updateBroadcastCamera(now,dt){
@@ -18182,7 +18692,7 @@ function updateBroadcastCamera(now,dt){
   const [dx,dy,dz]=V.sub(layout.focus,layout.eye);
   [cam.ex,cam.ey,cam.ez]=layout.eye;cam.yaw=Math.atan2(dz,dx);cam.pitch=Math.atan2(dy,Math.hypot(dx,dz));
   watchGoal={far:layout.far};
-  const label=document.getElementById("watchLabel"),caption="Broadcast · "+({establish:"The field",build:"Building",climax:"Now",reaction:"Aftermath"}[a.phase]||"Live")+" · "+cinemaCaption();
+  const label=document.getElementById("watchLabel"),caption="Broadcast · "+({establish:"The field",build:"Building",climax:"Now",reaction:"Aftermath",story:"Story"}[a.phase]||"Live")+" · "+cinemaCaption();
   if(label.textContent!==caption)label.textContent=caption;
 }
 
@@ -18201,10 +18711,13 @@ function drawMomentum(){
 function updateHud(wall,now){
   if(!bc.log||wall-bc.hudAt<.12)return;bc.hudAt=wall;
   const top=document.getElementById("bcTop");if(!top)return;
-  const T=now-warT0,str=BC.strength(ships,s=>s.vao&&T-s.delay>=0),total=str[0]+str[1],share=total?str[0]/total:.5;
+  const T=now-warT0,str=objectiveStrength(BC.strength(ships,s=>s.vao&&T-s.delay>=0)),total=str[0]+str[1],share=total?str[0]/total:.5;
   const alive=[0,0],caps=[[],[]];
   for(const s of ships){if(s.dead||!s.vao)continue;alive[s.side]++;if((isCapital(s)||s.hero)&&caps[s.side].length<8)caps[s.side].push(s);}
-  const icons=side=>caps[side].map(s=>"<button type=\"button\" class=\"bcIcon"+(s.hero?" hero":"")+(sel===s.id?" on":"")+"\" data-hid=\""+s.id+"\" title=\""+shipName(s)+"\" aria-label=\"Follow "+shipName(s)+"\">"+(s.hero?"★":SIDE_SHAPE[side])+"</button>").join("");
+  // The flagship always has an icon, first in its row.
+  if(battleAI.story.ready)for(const side of [0,1]){const f=ships[battleAI.story.sides[side].flag];if(f&&!f.dead&&f.vao){const i=caps[side].indexOf(f);if(i>0)caps[side].splice(i,1);if(i!==0){caps[side].unshift(f);caps[side].length=Math.min(8,caps[side].length);}}}
+  const flags=battleAI.story.ready?battleAI.story.sides.map(x=>x.flag):[-1,-1];
+  const icons=side=>caps[side].map(s=>"<button type=\"button\" class=\"bcIcon"+(s.hero?" hero":"")+(flags[side]===s.id?" flag":"")+(sel===s.id?" on":"")+"\" data-hid=\""+s.id+"\" title=\""+shipName(s)+(flags[side]===s.id?" · flagship":"")+"\" aria-label=\"Follow "+shipName(s)+"\">"+(s.hero?"★":SIDE_SHAPE[side])+"</button>").join("");
   // Build the frame once per matchup; update numbers and widths in place so
   // the ship buttons are not recreated under the pointer.
   const frameKey=sideRace.join("v");
@@ -18219,7 +18732,7 @@ function updateHud(wall,now){
     const pct=(share*100).toFixed(1),parts=bar.children;parts[0].style.width=pct+"%";parts[1].style.width=(100-share*100).toFixed(1)+"%";parts[2].style.left=pct+"%";
     bar.setAttribute("aria-label","Strength "+Math.round(share*100)+" to "+Math.round(100-share*100));
     const counts=top.querySelectorAll(".bcCount");counts[0].textContent=alive[0];counts[1].textContent=alive[1];
-    const iconKey=caps.map(c=>c.map(s=>s.id+(sel===s.id?"*":"")).join()).join("|");
+    const iconKey=caps.map(c=>c.map(s=>s.id+(sel===s.id?"*":"")).join()).join("|")+"/"+flags.join();
     if(top.dataset.icons!==iconKey){top.dataset.icons=iconKey;const slots=top.querySelectorAll(".bcIcons");slots[0].innerHTML=icons(0);slots[1].innerHTML=icons(1);}
   }
   const feed=bc.feed.visible(now),fh=feed.map(l=>"<div class=\"bcFeedLine"+(l.major?" major":"")+"\" style=\"--c:"+raceColour(sideRace[l.side]??0)+"\"><span class=\"bcShape\">"+SIDE_SHAPE[l.side]+"</span>"+escapeHtml(l.text)+"</div>").join("");
@@ -18228,14 +18741,57 @@ function updateHud(wall,now){
   const tEl=document.getElementById("bcTicker");if(tEl.dataset.h!==th){tEl.dataset.h=th;tEl.innerHTML=th;}
   // The followed pilot's thoughts, as broadcast captions.
   const cap=document.getElementById("bcCaption"),subject=pilotId??sel??(["action","broadcast"].includes(watchMode)?actionCamera?.subject:null),s=ships[subject];
-  let text="";if(s&&!s.dead&&s.meta&&!replayState){const th2=captionThought(s,now);if(th2)text="“"+th2+"” — "+shipName(s);}
-  if(cap.textContent!==text){cap.textContent=text;cap.classList.toggle("on",!!text);}
+  let text="";if(!replayState){const c=tickCaption(now,s);if(c)text=c.text;}
+  if(cap.textContent!==text){cap.textContent=text;cap.classList.toggle("on",!!text);cap.classList.toggle("story",!!bc.caption&&bc.caption.kind!=="thought");}
   const chip=document.getElementById("bcReplayChip");chip.hidden=!(wall<bc.replayChipUntil&&!replayState&&bc.lastBigEvent);
   if(!chip.hidden)chip.textContent="↺ Replay · "+bc.lastBigEvent.name;
   const rp=document.getElementById("bcReplayBar");rp.hidden=!replayState;
   if(replayState){const r=replayState,lab=rp.querySelector("b"),bar=rp.querySelector("i");if(lab)lab.textContent=r.label;if(bar)bar.style.width=(100*(r.t-r.t0)/Math.max(.01,r.t1-r.t0)).toFixed(1)+"%";}
   const clock=document.getElementById("bcClock");if(clock)clock.textContent=BC.fmt(Math.max(0,now-warT0))+(warClock.slowing?" · SLOW MOTION":"");
+  updatePlanCard(now);updateObjectiveChip(now);
   for(const b of document.querySelectorAll("#bcSpeed [data-rate]"))b.setAttribute("aria-pressed",String(+b.dataset.rate===warClock.rate));
+}
+// The title card: both plans, then the objective, for the first seconds of the war.
+function updatePlanCard(now){
+  const el=document.getElementById("bcPlan");if(!el)return;
+  const p=bc.plan,T=now-warT0,show=p&&T>=0&&T<9&&!replayState;
+  const html=show?"<b>The plans</b>"+p.lines.map(l=>"<p>"+escapeHtml(l)+"</p>").join(""):"";
+  if(el.dataset.h!==html){el.dataset.h=html;el.innerHTML=html;}
+  el.classList.toggle("on",!!show&&T>.4&&T<8.2);
+}
+function updateObjectiveChip(now){
+  const el=document.getElementById("bcObjective"),st=battleAI.story;if(!el||!st.ready)return;
+  const o=st.objective;let t="";
+  if(o&&!replayState){
+    if(o.kind==="FLAGSHIP"){const f=[0,1].map(i=>ships[st.sides[i].flag]);t="Objective · kill the flagship"+(f[0]&&f[1]&&!f[0].dead&&!f[1].dead?" · "+SIDE_SHAPE[0]+" "+pct(f[0])+" "+SIDE_SHAPE[1]+" "+pct(f[1]):"");}
+    else if(o.kind==="CONVOY")t="Objective · convoy "+SIDE_SHAPE[o.side]+" · "+o.saved+"/"+o.need+" through · "+o.lost+" lost";
+    else if(o.kind==="STATION")t="Objective · hold the station · "+SIDE_SHAPE[0]+" "+Math.round(o.progress[0])+" "+SIDE_SHAPE[1]+" "+Math.round(o.progress[1])+" / 90";
+    else t="Objective · last fleet flying";
+  }
+  if(el.textContent!==t)el.textContent=t;
+}
+// Floating tags over what the viewer should be able to find: aces, the two
+// flagships, the station and the convoy's jump point. At most a dozen.
+const tagEls=[];
+function updateTags(now){
+  const host=document.getElementById("bcTags");if(!host)return;
+  const st=battleAI.story,want=[];
+  if(st.ready&&Number.isFinite(warT0)&&!replayState){
+    for(const side of [0,1]){const f=ships[st.sides[side].flag];if(f&&!f.dead&&f.vao&&f.arr)want.push({x:f.x,y:f.y+(f.exY||f.slen*.2)*1.4,z:f.z,t:"⚑ "+shortName(f).replace(/^the /,""),c:raceColour(f.race),flag:true});}
+    for(const s of ships)if(s.ace&&!s.dead&&s.vao&&s.arr&&!s.cloaked&&want.length<12)want.push({x:s.x,y:s.y+s.slen,z:s.z,t:"✦ "+s.ace,c:raceColour(s.race)});
+    const o=st.objective;
+    if(o&&o.kind==="STATION")want.push({x:o.point[0],y:o.point[1],z:o.point[2],t:"◎ STATION",c:"#e8eef2"});
+    if(o&&o.kind==="CONVOY")want.push({x:o.point[0],y:o.point[1],z:o.point[2],t:"⇥ JUMP POINT",c:raceColour(sideRace[o.side])});
+  }
+  const m=mat(),w=cvs.clientWidth||innerWidth,h=cvs.clientHeight||innerHeight;let n=0;
+  for(const q of want){
+    const cw=m[3]*q.x+m[7]*q.y+m[11]*q.z+m[15];if(cw<1)continue;
+    const cx=(m[0]*q.x+m[4]*q.y+m[8]*q.z+m[12])/cw,cy=(m[1]*q.x+m[5]*q.y+m[9]*q.z+m[13])/cw;if(Math.abs(cx)>.98||Math.abs(cy)>.98)continue;
+    let el=tagEls[n];if(!el){el=document.createElement("div");el.className="bcTag";host.appendChild?.(el);tagEls[n]=el;}
+    if(el.textContent!==q.t)el.textContent=q.t;el.style.setProperty?.("--c",q.c);el.classList.toggle("flag",!!q.flag);el.hidden=false;
+    el.style.transform="translate("+((cx*.5+.5)*w).toFixed(0)+"px,"+((.5-cy*.5)*h).toFixed(0)+"px) translate(-50%,-100%)";n++;
+  }
+  for(let i=n;i<tagEls.length;i++)tagEls[i].hidden=true;
 }
 function fleetTitle(n){return String(n).split(" ").map(w=>({USCM:"USCM",EARTHFORCE:"EarthForce",OF:"of"}[w]||w.charAt(0)+w.slice(1).toLowerCase())).join(" ");}
 // The pilot's voice, not the sensor log: the older flavour lines, held long
@@ -18248,6 +18804,92 @@ function captionThought(s,now){
   line=line.charAt(0).toUpperCase()+line.slice(1);
   s.capLine=line;s.capId=s.id;s.capAt=now;return line;
 }
+/* ---------- captions: what the minds are doing, and why ----------
+   One caption at a time. Story events and live decisions are read straight
+   from the simulation's state; a decision caption carries a check and is
+   dropped as soon as the state it describes stops being true. The pilots'
+   flavour lines remain the fallback when nothing notable is happening. */
+function offerCaption(c){
+  const q=bc.captionQueue||(bc.captionQueue=[]);
+  c.offered=battleTime;q.push(c);q.sort((a,b)=>b.weight-a.weight);if(q.length>6)q.length=6;
+}
+function captionRelevant(c,subject){
+  if(c.weight>=90)return true;
+  if(subject!=null&&(c.subject===subject||c.partner===subject))return true;
+  const e=c.event;if(e&&Number.isFinite(e.x)&&onScreenPoint(e.x,e.y,e.z))return true;
+  return c.weight>=55;
+}
+function onScreenPoint(x,y,z){const m=mat(),cw=m[3]*x+m[7]*y+m[11]*z+m[15];if(cw<1)return false;const cx=(m[0]*x+m[4]*y+m[8]*z+m[12])/cw,cy=(m[1]*x+m[5]*y+m[9]*z+m[13])/cw;return Math.abs(cx)<.95&&Math.abs(cy)<.95;}
+function tickCaption(now,subjectShip){
+  const cur=bc.caption,subject=subjectShip&&!subjectShip.dead?subjectShip.id:null;
+  const q=(bc.captionQueue||(bc.captionQueue=[])).filter(c=>now-c.offered<4.5&&now>=c.offered-.01);bc.captionQueue=q;
+  if(cur){
+    const held=now-cur.at,valid=!cur.check||cur.check();
+    const bigger=q.find(c=>c.weight>=Math.max(60,cur.weight*1.5)&&captionRelevant(c,subject));
+    if(!valid&&held>1.2)bc.caption=null;
+    else if(bigger&&held>2.2)bc.caption=null;
+    else if(held<cur.hold)return cur;
+    else bc.caption=null;
+  }
+  const pick=q.find(c=>captionRelevant(c,subject));
+  if(pick){q.splice(q.indexOf(pick),1);bc.caption={...pick,at:now,hold:captionHold(pick.text),kind:"event"};return bc.caption;}
+  const d=decisionCaption(now,subjectShip);
+  if(d){bc.caption={...d,at:now,hold:captionHold(d.text),kind:"decision"};return bc.caption;}
+  if(subjectShip&&!subjectShip.dead&&subjectShip.meta){
+    const th=captionThought(subjectShip,now);
+    if(th){const id=subjectShip.id;bc.caption={text:"“"+th+"” — "+shipLabel(subjectShip),weight:1,at:now,hold:4.5,kind:"thought",check:()=>ships[id]&&!ships[id].dead};return bc.caption;}
+  }
+  return null;
+}
+// The most notable live decision on or near the shot.
+function decisionCaption(now,subject){
+  const seen=new Set(),pool=[];
+  const add=s=>{if(s&&!s.dead&&s.ai&&s.arr&&!seen.has(s.id)){seen.add(s.id);pool.push(s);}};
+  if(subject){add(subject);add(ships[actionCamera?.partner]);const sq=squads[subject.squad];if(sq)for(const id of sq.mem)add(ships[id]);}
+  let n=0;for(const s of ships){if(n>=48)break;if(s.dead||!s.arr||!s.ai||seen.has(s.id))continue;if(s.ai.action==="SEARCH"||s.ai.action==="ATTACK"&&!s.ai.orderKind)continue;if(!onScreenPoint(s.x,s.y,s.z))continue;n++;add(s);}
+  let best=null;
+  for(const s of pool){const d=decisionFor(s,now);if(d&&(!best||d.weight+(s===subject?8:0)>best.weight))best=d;}
+  return best&&best.weight>=14?best:null;
+}
+function decisionFor(s,now){
+  const a=s.ai,act=a.action,N=shipLabel(s),sq=squads[s.squad],hp=pct(s),id=s.id;
+  const alive=()=>ships[id]&&!ships[id].dead;
+  const same=()=>alive()&&ships[id].ai.action===act;
+  const Sq=sq&&sq.name?sq.name+" squadron":N;
+  const cap=t=>t?shortName(t).replace(/^the /,"the "):"";
+  if(s.vendetta&&ships[s.vendetta.target]&&!ships[s.vendetta.target].dead){
+    const t=ships[s.vendetta.target],lost=ships[s.vendetta.lost];
+    return {weight:50,subject:id,partner:t.id,text:N+" is hunting the "+klassShort(t)+" that killed "+(lost?shipLabel(lost):"a wingman")+".",check:()=>alive()&&!!ships[id].vendetta};
+  }
+  const o=a.order;
+  switch(act){
+    case "ROUT":return {weight:56,subject:id,text:Sq+" has broken. "+N+" running for the edge, hull "+hp+".",check:same};
+    case "RAM":{const t=ships[o?.target];return {weight:80,subject:id,partner:t?.id,text:N+" is turning to ram "+(t?shipLabel(t):"the enemy line")+".",check:same};}
+    case "RESCUE":{const c=ships[o?.anchor];return c&&!c.dead?{weight:45,subject:id,partner:c.id,text:Sq+" screening "+cap(c)+", hull "+pct(c)+".",check:same}:null;}
+    case "TOW":{const q=tows.find(q=>q.tug===id&&!q.done),c=q&&ships[q.cap];return {weight:50,subject:id,text:N+(q&&q.attached!=null?" towing the wreck of "+cap(c)+" out of the fight.":" moving in to tow "+cap(c)+" clear."),check:same};}
+    case "RECOVER":return {weight:40,subject:id,text:N+" picking up escape pods.",check:same};
+    case "STRIKE":return {weight:42,subject:id,text:Sq+" going for the "+sideShort(1-s.side)+" flagship.",check:same};
+    case "HIDE":{const c=battleAI.story.sides[s.side].plan?.cover;return {weight:36,subject:id,text:Sq+" holding "+(c?.kind==="nebula"?"inside the nebula":c?.kind==="moon"?"behind the moon":"in the rocks")+", waiting to spring the ambush.",check:same};}
+    case "MANEUVER":return {weight:30,subject:id,text:Sq+" swinging wide on the "+(sq&&sq.role==="left"?"left":"right")+" flank for the pincer.",check:same};
+    case "PANIC":return {weight:44,subject:id,text:N+" has lost its nerve. No orders, scattering.",check:same};
+    case "CONVOY":{const p=o?.point;const km=p?(Math.hypot(s.x-p[0],s.z-p[2])/1000).toFixed(1):"?";return {weight:36,subject:id,text:N+" running the convoy lane, "+km+" km to the jump point.",check:same};}
+    case "DRIFT":return {weight:30,subject:id,text:N+" is abandoned and adrift.",check:same};
+    case "ATTACK":if(a.orderKind==="BERSERK")return {weight:44,subject:id,text:N+" charging alone. Command is gone.",check:()=>alive()&&ships[id].ai.orderKind==="BERSERK"};return null;
+    case "RETREAT":{
+      if(s.hp/Math.max(1,s.hpMax)>.75&&a.fear<.45)return null;
+      const f=ships[a.anchor],capf=f&&!f.dead&&(f.hulls||f.slen>=180);
+      return {weight:38,subject:id,partner:f?.id,text:N+" breaking off, hull "+hp+", "+(f&&!f.dead?capf?"falling back to "+shortName(f).replace(/^the /,"the ")+"’s screen.":"falling back on "+shipLabel(f)+".":"running for open space."),check:same};
+    }
+    case "REGROUP":{
+      if(sq&&sq.name){const k=sq.mem.filter(q=>ships[q]&&!ships[q].dead&&ships[q].ai?.action==="REGROUP").length;if(k>=2)return {weight:30,subject:id,text:sq.name+" squadron regrouping on their leader.",check:same};}
+      const f=ships[a.anchor];return {weight:18,subject:id,text:N+" regrouping on "+(f&&!f.dead?shipLabel(f):"the nearest friendlies")+".",check:same};
+    }
+    case "ESCORT":{const w=a.weak;return w&&!w.dead?{weight:26,subject:id,partner:w.id,text:N+" covering "+shipLabel(w)+", hull "+pct(w)+".",check:same}:null;}
+    case "EVADE":return now-(s.hurtT??-9)<1.5?{weight:14,subject:id,text:N+" jinking hard, hull "+hp+".",check:same}:null;
+    case "FLANK":return sq&&sq.tac==="FLANK"&&sq.name?{weight:16,subject:id,text:sq.name+" squadron coming in off their flank.",check:same}:null;
+  }
+  return null;
+}
 function escapeHtml(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));}
 
 /* ---------- end of battle ---------- */
@@ -18255,7 +18897,11 @@ function battleSummary(){
   const alive=[0,0];for(const s of ships)if(!s.dead&&s.vao)alive[s.side]++;
   const m=BC.mvp(ships,bc.log),ms=m?ships[m.id]:null;
   const place=starSystem?.name||null;
-  return {names:[SIDE_NAME[0],SIDE_NAME[1]].map(fleetTitle),place,duration:Math.max(0,battleTime-warT0),winner,alive,spawned:spawned.slice(),lost:[spawned[0]-alive[0],spawned[1]-alive[1]],mvp:ms,mvpName:ms?shipName(ms):null,mvpKills:m?m.kills:0};
+  const st=battleAI.story,o=st.ready?st.objective:null;
+  return {names:[SIDE_NAME[0],SIDE_NAME[1]].map(fleetTitle),place,duration:Math.max(0,battleTime-warT0),winner,alive,spawned:spawned.slice(),
+    lost:[spawned[0]-alive[0]-escaped[0],spawned[1]-alive[1]-escaped[1]],escaped:escaped.slice(),mvp:ms,mvpName:ms?(ms.callsign||shortName(ms)):null,mvpKills:m?m.kills:0,
+    mvpAce:ms&&ms.ace?ms.ace:null,sides:[0,1].map(i=>sideWord(i,true)),plans:st.ready?st.sides.map(x=>x.plan&&x.plan.kind):null,
+    firstPlans:bc.plan?bc.plan.first:null,objective:o?o.kind:null,reason:winReason};
 }
 function hideEndCard(){const el=document.getElementById("bcEnd");if(el)el.hidden=true;document.body.classList.remove("ending");}
 function showEndCard(){
@@ -18264,9 +18910,9 @@ function showEndCard(){
   const lines=BC.story(bc.log,S,bc.momentum);
   const called=bc.prediction==null?"":bc.prediction===winner?"<p class=\"bcCall ok\">You called it.</p>":"<p class=\"bcCall\">You called "+escapeHtml(S.names[bc.prediction])+". Not this time.</p>";
   const mvp=S.mvp,crew=mvp&&window.ArmadaCrew?.profile(mvp.seed??mvp.id,mvp.race,mvp.meta?.klass||"");
-  el.innerHTML="<div class=\"bcEndPanel\"><div class=\"eyebrow\">"+BC.fmt(S.duration)+(S.place?" · "+escapeHtml(S.place):"")+"</div><h2>"+escapeHtml(S.names[winner])+" holds the sky</h2>"+called+
-    "<div class=\"bcLosses\"><span>"+SIDE_SHAPE[0]+" "+escapeHtml(S.names[0])+" lost "+S.lost[0]+" of "+S.spawned[0]+"</span><span>"+SIDE_SHAPE[1]+" "+escapeHtml(S.names[1])+" lost "+S.lost[1]+" of "+S.spawned[1]+"</span></div>"+
-    (mvp?"<div class=\"bcMvp\"><canvas id=\"bcMvpPortrait\" width=\"260\" height=\"150\" aria-label=\"MVP captain\"></canvas><div><div class=\"eyebrow\">MVP</div><b>"+escapeHtml(shipName(mvp))+"</b><div>"+escapeHtml(shipClass(mvp))+" · "+S.mvpKills+" kill"+(S.mvpKills===1?"":"s")+"</div>"+(crew?"<div>"+escapeHtml(crew.role+" "+crew.name)+"</div>":"")+"<div class=\"bcRecord\">"+escapeHtml(BC.serviceRecord(mvp.seed??mvp.id,mvp.meta?.klass))+"</div></div></div>":"")+
+  el.innerHTML="<div class=\"bcEndPanel\"><div class=\"eyebrow\">"+BC.fmt(S.duration)+(S.place?" · "+escapeHtml(S.place):"")+"</div><h2>"+escapeHtml(S.names[winner])+" "+escapeHtml((VICTORY_LINE[S.reason]||VICTORY_LINE.annihilation).toLowerCase())+"</h2>"+called+
+    "<div class=\"bcLosses\"><span>"+SIDE_SHAPE[0]+" "+escapeHtml(S.names[0])+" lost "+S.lost[0]+" of "+S.spawned[0]+(S.escaped[0]?", "+S.escaped[0]+" withdrew":"")+"</span><span>"+SIDE_SHAPE[1]+" "+escapeHtml(S.names[1])+" lost "+S.lost[1]+" of "+S.spawned[1]+(S.escaped[1]?", "+S.escaped[1]+" withdrew":"")+"</span></div>"+
+    (mvp?"<div class=\"bcMvp\"><canvas id=\"bcMvpPortrait\" width=\"260\" height=\"150\" aria-label=\"MVP captain\"></canvas><div><div class=\"eyebrow\">MVP"+(S.mvpAce?" · ace":"")+"</div><b>"+escapeHtml(S.mvpName+(S.mvpAce?" “"+S.mvpAce+"”":""))+"</b><div>"+escapeHtml(shipClass(mvp))+" · "+S.mvpKills+" kill"+(S.mvpKills===1?"":"s")+"</div>"+(crew?"<div>"+escapeHtml(crew.role+" "+crew.name)+"</div>":"")+"<div class=\"bcRecord\">"+escapeHtml(BC.serviceRecord(mvp.seed??mvp.id,mvp.meta?.klass))+"</div></div></div>":"")+
     "<ol class=\"bcStory\">"+lines.map(l=>"<li>"+escapeHtml(l)+"</li>").join("")+"</ol>"+
     "<div class=\"bcEndButtons\"><button type=\"button\" data-end=\"highlights\">▶ Highlights</button><button type=\"button\" data-end=\"replay\">↺ Last moment</button><button type=\"button\" data-end=\"png\">Save card</button>"+(typeof MediaRecorder!=="undefined"?"<button type=\"button\" data-end=\"webm\">Record clip</button>":"")+
     "<button type=\"button\" data-end=\"next\" class=\"primary\">Next war</button><button type=\"button\" data-end=\"choose\">Choose fleets</button></div></div>";
@@ -18366,6 +19012,7 @@ function afterFrame(wall,dt){
   if(recorder&&recorder.frame)recorder.frame();
   if(!Number.isFinite(warT0))return;
   updateHud(wall,replayState?replayState.t:battleTime);
+  updateTags(battleTime);
   updateAudio(wall,dt);
   if(winner!=null&&bc.endShownAt==null){bc.endShownAt=wall+4.5;}
   if(bc.endShownAt!=null&&wall>=bc.endShownAt&&!replayState&&document.getElementById("bcEnd").hidden&&!bc.endDone){bc.endDone=true;showEndCard();}
@@ -18405,7 +19052,7 @@ function spectacleWar(fresh){
   pickMain=flip?[pair[1],pair[0]]:pair.slice();pickAlly=[-1,-1];
   buildPicker();
   document.getElementById("pick").classList.remove("on");
-  watchMode="broadcast";startWar(fresh);watchMode="broadcast";updateWatchDock();
+  watchMode="action";startWar(fresh);watchMode="action";updateWatchDock();
 }
 
 /* ===================== frame ===================== */
@@ -18554,6 +19201,7 @@ function frame(nowMs){
   }
   battleAccumulator=Math.min(battleAccumulator,1/30);
   if(perf.on)perf.acc.sim+=performance.now()-simulationStarted;
+  if(stepped)noteSimCost(performance.now()-simulationStarted,stepped);
   if(stepped)broadcastTick(battleTime,stepped/30);
   const now=replayState?replayState.t:battleTime,dt=stepped/30;
   try{
@@ -18701,9 +19349,10 @@ document.getElementById("qualitySel").value=qualityTier;
 document.getElementById("qualitySel").addEventListener("change",e=>{setQuality(e.target.value);toast("QUALITY · "+quality.name.toUpperCase());});
 for(const k of ["master","music","sfx"])document.getElementById("vol_"+k).addEventListener("input",e=>{const A=audio();if(A)A.setVolume(k,+e.target.value/100);});
 document.addEventListener?.("click",e=>{if(e.target.closest&&e.target.closest("button,summary"))ui("click");},{capture:true});
-setFleetSize(quality.fleet||150,false);
+// Default battle size: measured simulation speed, never the GPU tier.
+{const f=measureSimSpeed(),n=/[?&]size=\d+/.test(location.search)?+location.search.match(/[?&]size=(\d+)/)[1]:realtimeSize(f);setFleetSize(n,false);describeSizes(f);}
 
-function threeState(){return {ships,wrecks,boneyard,beams,tracers,plasmas,missiles,mines,dusts,flashes,ionState,worldBodies,starSystem,celes,cam,now:battleTime,warT0,sceneR,palI,selected:sel,pilotId,genId,height:cvs.height,viewportHeight:cvs.height,SLIDE,width:cvs.width,RACE_DEFS,BEAMCOL,watchMode,counts,forged,total};}
+function threeState(){return {ships,wrecks,boneyard,beams,tracers,plasmas,missiles,mines,dusts,flashes,ionState,worldBodies:sceneBodies,starSystem,celes,cam,now:battleTime,warT0,sceneR,palI,selected:sel,pilotId,genId,height:cvs.height,viewportHeight:cvs.height,SLIDE,width:cvs.width,RACE_DEFS,BEAMCOL,watchMode,counts,forged,total};}
 window.ArmadaThree.runtime={geometry:window.ArmadaThree.geometryStore.geometry,xPose,xQAA,gunWorld,hullFinish,shipBarrels,barrelFrame,weaponMuzzle,weaponProfile,raceDefs:RACE_DEFS,slide:SLIDE,state:threeState,
  start(a,b,size=150,seed=42){pickMain=[a,b];pickAlly=[-1,-1];perFleet=size;warSeed=seed;document.getElementById('pick').classList.remove('on');startWar(false)},select,view:setWatchView,
  debug: {get ships(){return ships},get battleAI(){return battleAI},step(seconds){for(let i=0;i<Math.round(seconds*30);i++){battleTime+=1/30;simStep(battleTime,1/30)}}}};
