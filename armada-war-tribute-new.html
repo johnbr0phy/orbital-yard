@@ -513,7 +513,7 @@ body:not(.menu-start) #brand{display:none}
 <script src="armada-post-new.js?v=tribute-polish-1"></script>
 <script src="armada-broadcast-new.js?v=tribute-polish-1"></script>
 <script src="armada-replay-new.js?v=tribute-polish-1"></script>
-<script src="armada-audio-new.js?v=tribute-polish-4"></script>
+<script src="armada-audio-new.js?v=tribute-sfx-1"></script>
 <script>
 "use strict";
 /* ===================== vector ===================== */
@@ -18962,7 +18962,7 @@ function bcKill(t,now){
   if(!bc.log)return;
   const by=t.lastHit!=null?ships[t.lastHit]:null;
   const type=isFirstOne(t)?"firstOneKill":t.hero?"heroKill":isCapital(t)?"capitalKill":"kill";
-  const ev=bcEvent(type,{side:t.side,ship:t.id,name:killName(t),klass:shipClass(t),size:t.slen,hero:!!t.hero,value:BC.shipValue({hp:t.hpMax,hpMax:t.hpMax}),
+  const ev=bcEvent(type,{side:t.side,race:t.race,ship:t.id,name:killName(t),klass:shipClass(t),size:t.slen,hero:!!t.hero,value:BC.shipValue({hp:t.hpMax,hpMax:t.hpMax}),
     by:by?by.id:null,byName:by?killName(by):null,x:t.x,y:t.y,z:t.z});
   if(t.squad>=0&&squads[t.squad]){const q=squads[t.squad];if(q.mem.length>=3&&q.mem.every(id=>ships[id].dead||id===t.id))bcEvent("squadronWipe",{side:t.side,ship:t.id,name:shipClass(t)+" flight",x:t.x,y:t.y,z:t.z,size:t.slen});}
   // A big death the camera missed is queued for "let's see that again"; deaths that land close together replay together.
@@ -19690,22 +19690,22 @@ function audioForEvent(ev){
     const tier=ev.type==="firstOneKill"?3:ev.type==="kill"?(ev.size>60?1:0):2;
     // Fighters die by the dozen: at most about four small pops a second.
     if(tier===0){const w=performance.now();if(w-(bc.popAt||0)<250)return;bc.popAt=w;}
-    A.explosion(tier,ev.x,ev.y,ev.z);if(tier>=2)A.stinger();}
+    A.explosion(tier,ev.x,ev.y,ev.z,RACE_DEFS[ev.race]?.boom);if(tier>=2)A.stinger();}
   else if(ev.type==="ionCharge"){if(bc.ionHandle)bc.ionHandle.cancel?.();const h=A.weapon("ion-charge",ev.x,ev.y,ev.z,1);bc.ionHandle=h||null;}
   else if(ev.type==="ionStrike"){if(bc.ionHandle)bc.ionHandle.cancel?.();bc.ionHandle=null;A.weapon("ion-fire",ev.x,ev.y,ev.z,1);}
 }
 // A war fires hundreds of shots a second. Voicing them all is a wall of chirps, so only
 // the nearest shot of each step can speak, within a budget of about seven a second; the
 // rest are heard as the battle bed, whose level follows how much is firing.
-const shotPick={d:0,style:"",x:0,y:0,z:0,g:0};
+const shotPick={d:0,style:"",x:0,y:0,z:0,g:0,race:null};
 function audioShots(now){
   const A=audio();if(!A||!A.unlocked)return;
   let n=0;shotPick.d=Infinity;
-  const offer=(style,x,y,z,g)=>{n++;const d=(x-cam.ex)**2+(y-cam.ey)**2+(z-cam.ez)**2;if(d<shotPick.d)Object.assign(shotPick,{d,style,x,y,z,g});};
-  for(const b of beams){if(b.t0!==now||b.spark||b.ion||!b.a)continue;offer(b.coherent?AUDIO_STYLE[b.race]==="phaser"?"phaser":"beam":b.arc?"arc":b.rail?"rail":AUDIO_STYLE[b.race]||"laser",b.a[0],b.a[1],b.a[2],.8);}
-  for(const t of tracers){if(t.t0!==now)continue;offer(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7);}
+  const offer=(style,x,y,z,g,race)=>{n++;const d=(x-cam.ex)**2+(y-cam.ey)**2+(z-cam.ez)**2;if(d<shotPick.d)Object.assign(shotPick,{d,style,x,y,z,g,race});};
+  for(const b of beams){if(b.t0!==now||b.spark||b.ion||!b.a)continue;offer(b.coherent?AUDIO_STYLE[b.race]==="phaser"?"phaser":"beam":b.arc?"arc":b.rail?"rail":AUDIO_STYLE[b.race]||"laser",b.a[0],b.a[1],b.a[2],.8,b.race);}
+  for(const t of tracers){if(t.t0!==now)continue;offer(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7,t.race);}
   bc.shotBudget=Math.min(1.5,(bc.shotBudget||0)+7/30);
-  if(n&&bc.shotBudget>=1&&A.weapon(shotPick.style,shotPick.x,shotPick.y,shotPick.z,shotPick.g))bc.shotBudget-=1;
+  if(n&&bc.shotBudget>=1&&A.weapon(shotPick.style,shotPick.x,shotPick.y,shotPick.z,shotPick.g,shotPick.race))bc.shotBudget-=1;
   bc.combat=bc.combat*.97+Math.min(n,10)*.03;
 }
 function updateAudio(wall,dt){
@@ -19713,7 +19713,7 @@ function updateAudio(wall,dt){
   const [f]=camBasis();A.setListener(cam.ex,cam.ey,cam.ez,f[0],f[1],f[2]);
   A.setSlowMo(warClock.slowing||(!!replayState&&replayState.slowAt!=null&&Math.abs(replayState.t-replayState.slowAt)<1.8));
   A.setIntensity(winner!=null||warT0===Infinity?.08:Math.min(1,bc.combat/3));
-  const s=ships[pilotId??sel];A.engine(s&&!s.dead?s.id:null,ENGINE_STYLE[s?.race]||"turbine",s?Math.min(1,(s.v||0)/Math.max(1,s.spdMax||s.spd||20)):0);
+  const s=ships[pilotId??sel];A.engine(s&&!s.dead?s.id:null,ENGINE_STYLE[s?.race]||"turbine",s?Math.min(1,(s.v||0)/Math.max(1,s.spdMax||s.spd||20)):0,s?.race);
   A.update(dt);
 }
 function unlockAudio(){const A=audio();if(A&&!A.unlocked){A.unlock();syncAudioSliders();A.loadSamples?.("audio/manifest.json");}}

@@ -169,7 +169,13 @@
   // ---- recorded samples (optional) ----
   // audio/manifest.json maps roles (weapon styles, explosion0-3, stinger, music, ambience) to
   // one or more files; a role with recordings plays them, anything else uses the synth above.
-  const SMP={},pick=a=>a[Math.floor(Math.random()*a.length)];
+  // Per-fleet roles: shot-N, beam-N (N = race index) and engine-N loops. Engine loops are
+  // long, so they are fetched only when a ship of that fleet is first followed.
+  const SMP={},LAZY={},pick=a=>a[Math.floor(Math.random()*a.length)];let loadFile=null;
+  function want(role){
+   const l=LAZY[role];if(!l||l.p||!loadFile)return;
+   l.p=Promise.all(l.files.map(loadFile)).then(b=>{b=b.filter(Boolean);if(b.length)SMP[role]=b;});
+  }
   const B={music:null,musicG:null,amb:null,ambG:null};
   function useSamples(map){
    for(const k in map||{}){const a=[].concat(map[k]).filter(Boolean);if(a.length)SMP[k]=a;}
@@ -180,8 +186,9 @@
    try{
     const r=await fetch(url);if(!r.ok)return[];
     const man=await r.json(),base=url.replace(/[^/]*$/,''),out={},cache={};
-    const load=f=>cache[f]||(cache[f]=fetch(base+f).then(x=>x.arrayBuffer()).then(b=>ctx.decodeAudioData(b)).catch(()=>null));
-    await Promise.all(Object.entries(man.roles||{}).map(async([role,files])=>{out[role]=(await Promise.all([].concat(files).map(load))).filter(Boolean);}));
+    const load=loadFile=f=>cache[f]||(cache[f]=fetch(base+f).then(x=>x.arrayBuffer()).then(b=>ctx.decodeAudioData(b)).catch(()=>null));
+    await Promise.all(Object.entries(man.roles||{}).map(async([role,files])=>{
+     if(/^engine-/.test(role)){LAZY[role]={files:[].concat(files)};return;}out[role]=(await Promise.all([].concat(files).map(load))).filter(Boolean);}));
     return useSamples(out);
    }catch(e){return[];}
   }
@@ -199,12 +206,16 @@
   // Big hits push the score down for a moment, the way a film mix makes room for them.
   function duckFor(t,depth,hold){if(!graph||slow)return;const p=graph.duck.gain;call(p,'cancelScheduledValues',t);aim(p,depth,t,.03);aim(p,1,t+hold,.6);}
 
-  function weapon(style,x,y,z,g=1){
+  // `fleet` (race index) picks that fleet's own gun or beam recording when one exists; shared
+  // hardware (arc, rail, ion) keeps its own role, and anything unrecorded falls back to the synth.
+  function weapon(style,x,y,z,g=1,fleet){
    if(!unlocked)return false;
    style=R[style]?style:'laser';
+   const kind=style==='beam'||style==='phaser'?'beam':/^(arc|rail|ion-)/.test(style)?null:'shot';
+   const own=fleet!=null&&kind?kind+'-'+fleet:null,role=own&&SMP[own]?own:SMP[style]?style:null;
    const pos=place(x,y,z);if(pos.d>20000){stats.dropped++;return false;}
    const big=style==='ion-fire',base=big?3:1,prio=base+closeness(pos.d)*.9;
-   const build=SMP[style]?(t,o)=>{const r=sample(style,t,o,jit(1,.06),jit(1,.12));return r?{src:[r.src],dur:r.dur}:R[style](t,o);}:R[style];
+   const build=role?(t,o)=>{const r=sample(role,t,o,jit(1,.06),jit(1,.12));return r?{src:[r.src],dur:r.dur}:R[style](t,o);}:R[style];
    const v=voice(style,prio,pos,clamp(num(g,1),0,2)*(big?1:.8)*loudness(pos.d/.85),pos.cutoff,build);
    if(!v)return false;
    if(style!=='ion-charge')return true;
@@ -213,13 +224,16 @@
 
   // An explosion is shaped noise: a crack (near only), then a body whose lowpass closes as it
   // fades ("kssshh"), and rolling secondary bursts for big hulls. No pitched sub drop.
-  function explosion(tier,x,y,z){
+  // `boom` is the dying fleet's death style (warp, shatter, burst...): a recording of it rides on
+  // top of the generic blast, so a warp-core breach and a shattering crystal hull sound different.
+  function explosion(tier,x,y,z,boom){
    if(!unlocked)return false;
    tier=clamp(Math.round(num(tier,0)),0,3);
    const pos=place(x,y,z),d=pos.d,delay=Math.min(1.6,d/12000),cutoff=pos.cutoff*TIER.tone[tier],g=TIER.gain[tier]*loudness(d);
    const prio=(tier>=2?3:2)+closeness(d)*.9,dur=TIER.dur[tier];
    const rec=SMP['explosion'+tier];
-   const v=voice('explosion'+tier,prio,pos,g,cutoff,rec?(t0,o)=>{
+   const sig=boom&&SMP['boom-'+boom]?'boom-'+boom:null;
+   const base=rec?(t0,o)=>{
     const t=t0+delay,r=sample('explosion'+tier,t,o,jit(tier>=2?.94:1,.05),1),src=r?[r.src]:[];
     if(tier>=2&&SMP.explosion1)for(const k of [.35,.8]){const r2=sample('explosion1',t+k*(.8+Math.random()*.4),o,jit(.9,.08),.45);if(r2)src.push(r2.src);}
     if(tier>=2)duckFor(t,.35,1.2);
@@ -240,7 +254,11 @@
      for(const f of [311,317.5,466]){const s2=osc('sine',f,t+.4,t+dur),g2=gain();set(P(g2,'gain'),0,t+.4);ramp(P(g2,'gain'),.05,t+2.4);ramp(P(g2,'gain'),0,t+dur);link(s2,g2,o);src.push(s2);}
      const r=noiseSrc(t+1,t+dur,1),rl=filter('lowpass',700,.5),rg=gain();set(P(rg,'gain'),0,t+1);ramp(P(rg,'gain'),.35,t+2.5);ramp(P(rg,'gain'),0,t+dur);link(r,rl,rg,o);src.push(r);}
     return{src,dur:delay+dur};
-   },false);
+   };
+   const v=voice('explosion'+tier,prio,pos,g,cutoff,sig?(t0,o)=>{
+    const r=base(t0,o),s2=sample(sig,t0+delay,o,jit(1,.05),[.55,.7,.85,.9][tier]);
+    if(s2){r.src.push(s2.src);r.dur=Math.max(r.dur,delay+s2.dur);}return r;
+   }:base,false);
    return v?{delay,cutoff,gain:g,tier,distance:d}:false;
   }
 
@@ -258,19 +276,31 @@
    else {d.style='hum';add('sine',174,.2);add('sine',261,.08);}
    aim(out.gain,.06,t,.3);droneSpeed(d,sp);return d;
   }
+  // A recorded engine loop: speed lifts its pitch a little, opens its filter and its level.
+  function droneSample(role,sp){
+   const t=now(),out=gain(0),lp=filter('lowpass',2000,.5);
+   if(!out)return null;link(lp,out,graph.sfxIn);
+   const r=sample(role,t,lp,1,1,true);if(!r)return null;
+   const d={out,lp,src:[r.src],style:role,oscs:[],smp:r.src,noise:null,ng:null};
+   droneSpeed(d,sp);return d;
+  }
   function droneSpeed(d,sp){
+   if(d.smp){glide(P(d.smp,'playbackRate'),.88+sp*.3,.4);if(d.lp)glide(d.lp.frequency,1400+sp*7000,.3);glide(d.out.gain,.1+sp*.08,.3);return;}
    const k=d.style==='turbine'?1+sp*.6:d.style==='roar'?1+sp*.4:1+sp*.25;
    d.oscs.forEach(({o,f})=>glide(o.frequency,f*k,.3));
    if(d.lp)glide(d.lp.frequency,700+sp*(d.style==='turbine'?1800:900),.3);
    if(d.noise&&d.style==='turbine')glide(d.noise.frequency,1000+sp*1600,.3);
    if(d.ng)glide(d.ng.gain,(d.style==='roar'?.2:.1)+sp*.12,.3);
   }
-  function engineDrone(key,style,speed01){
+  function engineDrone(key,style,speed01,fleet){
    if(!unlocked||!graph)return false;
-   if(drone&&key!=null&&drone.key===key&&drone.style===style){droneSpeed(drone,clamp(num(speed01,.5),0,1));return true;}
+   const own=fleet!=null?'engine-'+fleet:null;if(own&&!SMP[own])want(own);
+   const kind=own&&SMP[own]?own:style;
+   if(drone&&key!=null&&drone.key===key&&drone.kind===kind){droneSpeed(drone,clamp(num(speed01,.5),0,1));return true;}
    if(drone){const d=drone,t=now();call(d.out.gain,'cancelScheduledValues',t);aim(d.out.gain,0,t,.15);ramp(d.out.gain,0,t+.6);d.src.forEach(s=>stop(s,t+.65));drone=null;}
    if(key==null)return true;
-   const d=droneBuild(style,speed01);if(!d)return false;d.key=key;d.style=style;drone=d;return true;
+   const d=kind===own?droneSample(own,clamp(num(speed01,.5),0,1)):droneBuild(style,speed01);if(!d)return false;
+   d.key=key;d.kind=kind;if(!d.smp)d.style=style;drone=d;return true;
   }
 
   // ---- UI blips (not spatial, not capped) ----

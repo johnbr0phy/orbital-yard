@@ -135,3 +135,21 @@ test('recorded samples replace the synth per role and fall back where a role has
  assert.equal(a.stinger(),true);assert.equal(srcs.at(-1).buffer.duration,3);
  for(let i=0;i<120;i++){ctx.currentTime+=1/60;a.update(1/60);}
 });
+
+test('each fleet plays its own gun, beam and engine recordings, with shared and synth fallbacks',()=>{
+ const ctx=fakeContext(),srcs=[],make=ctx.createBufferSource;ctx.createBufferSource=()=>{const s=make();srcs.push(s);return s;};
+ const a=ArmadaAudio.create({context:ctx,maxVoices:64});a.unlock();
+ const buf=n=>({duration:n,length:n*8000,sampleRate:8000});
+ const shot5=buf(.21),beam5=buf(.51),rail=buf(.61),eng5=buf(6.5);
+ a.useSamples({'shot-5':shot5,'beam-5':beam5,rail,'engine-5':eng5});
+ const last=()=>srcs.at(-1).buffer;
+ ctx.currentTime+=.1;assert.equal(a.weapon('laser',0,0,-300,.8,5),true);assert.equal(last(),shot5,'fleet 5 gun');
+ ctx.currentTime+=.1;assert.equal(a.weapon('phaser',0,0,-300,.8,5),true);assert.equal(last(),beam5,'coherent beams use the fleet beam');
+ ctx.currentTime+=.1;assert.equal(a.weapon('rail',0,0,-300,.8,5),true);assert.equal(last(),rail,'shared hardware keeps its own role');
+ const n=srcs.length,osc0=ctx.created.osc;ctx.currentTime+=.1;
+ assert.equal(a.weapon('laser',0,0,-300,.8,6),true);assert.equal(srcs.length,n,'fleet 6 has no gun recording');assert.ok(ctx.created.osc>osc0,'synth fallback');
+ assert.equal(a.engine('s1','hum',.5,5),true);const e=srcs.at(-1);assert.equal(e.buffer,eng5);assert.equal(e.loop,true,'engine recording loops');
+ assert.equal(a.engine('s1','hum',.9,5),true);assert.equal(srcs.at(-1),e,'same ship keeps its loop');
+ const osc1=ctx.created.osc;assert.equal(a.engine('s2','hum',.5,6),true);assert.ok(ctx.created.osc>osc1,'unrecorded fleet: synth drone');
+ for(let i=0;i<60;i++){ctx.currentTime+=1/60;a.update(1/60);}
+});
