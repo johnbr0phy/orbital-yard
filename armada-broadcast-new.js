@@ -14,10 +14,16 @@
     firstOneKill: 130, capitalKill: 100, heroKill: 92, capitalBreakup: 96,
     heroDuel: 70, ionStrike: 62, ionCharge: 56, capitalDanger: 58,
     squadronWipe: 42, reinforcements: 36, cloakReveal: 26, arrival: 22,
-    dogfight: 12, kill: 7, victory: 150
+    dogfight: 12, kill: 7, victory: 150,
+    // The war's story: decisions that became events.
+    flagshipDown: 125, ram: 110, lastStand: 88, rout: 64, vendettaSettled: 66, aceDuel: 60, vendetta: 58,
+    planSwitch: 55, successor: 52, rescue: 52, planWorked: 50, convoySaved: 50, convoyLost: 50, ace: 48,
+    stationTaken: 46, pods: 46, shock: 45, rescueStart: 44, raid: 44, rally: 40, vendettaFailed: 40,
+    escape: 38, podsLost: 34, wreckStrike: 30, podsSaved: 30, warPlan: 0
   };
   // Seconds an event stays newsworthy (score halves at half this time).
-  const SHELF = {ionCharge: 6, capitalDanger: 5, heroDuel: 8, reinforcements: 9, arrival: 8};
+  const SHELF = {ionCharge: 6, capitalDanger: 5, heroDuel: 8, reinforcements: 9, arrival: 8,
+    rout: 10, vendetta: 20, rescueStart: 16, lastStand: 12, aceDuel: 12, pods: 10, raid: 8};
 
   function scoreEvent(ev, now) {
     const base = WEIGHTS[ev.type] ?? 5;
@@ -146,26 +152,41 @@
   // Candidates are {kind, subject, partner, score, phase?, event?}. The page
   // supplies them from live events and forecasts; this decides when to cut.
   const PHASE_ORDER = ['establish', 'build', 'climax', 'reaction'];
-  const HOLD = {establish: [4.5, 7], build: [4, 9], climax: [3, 7], reaction: [3.2, 5]};
+  // Longer holds than a sports cut: a war is followed, not flicked through.
+  // A story shot follows one squadron, duel or pursuit while it develops.
+  const HOLD = {establish: [6, 9], build: [8, 12], climax: [6, 9], reaction: [5, 7.5], story: [10, 25]};
   function createDirector({minHold = 3.2} = {}) {
     const d = {
-      phase: null, shot: null, started: -Infinity, clock: 0, history: [],
-      reset() { d.phase = null; d.shot = null; d.started = -Infinity; d.clock = 0; d.history.length = 0; },
+      phase: null, shot: null, started: -Infinity, clock: 0, history: [], resume: null,
+      reset() { d.phase = null; d.shot = null; d.started = -Infinity; d.clock = 0; d.history.length = 0; d.resume = null; },
       // dt is wall time; returns a new shot when the director cuts, else null.
       update(dt, candidates, alive = () => true) {
         d.clock += dt;
         const held = d.clock - d.started, [floor, ceil] = d.phase ? HOLD[d.phase] : [0, 0];
-        const hold = Math.max(minHold, floor);
+        const hold = Math.max(minHold, d.shot && d.shot.resumed ? 5 : floor);
         const best = pickBest(candidates, d);
         const subjectGone = d.shot && d.shot.subject != null && !alive(d.shot.subject) && !d.shot.payoff;
+        const storyLive = d.phase === 'story' && d.shot && candidates.some(c => c.story != null && c.story === d.shot.story);
         let next = null;
         if (!d.phase) next = candidates.find(c => c.phase === 'establish') || best;
         else {
           // A far more important event may interrupt any shot once the global
           // floor has passed; otherwise each phase holds for its own floor.
+          // A story is interrupted only by something that outscores it
+          // (a capital kill, an ion strike, a flagship falling), then resumed.
           const urgent = best && best.score >= 90 && (!d.shot || best.score > (d.shot.score || 0) * 1.25) && best.subject !== d.shot?.subject;
-          if (urgent && held >= minHold) next = {...best, phase: 'climax'};
-          else if ((held >= hold && held >= ceil) || (subjectGone && held >= Math.max(1.2, minHold))) next = nextInGrammar(d, candidates, best);
+          const outranks = d.phase === 'story' && best && best.phase !== 'story' && best.score >= Math.max(62, (d.shot.score || 0) * 1.15) && best.subject !== d.shot.subject;
+          if ((urgent || outranks) && held >= minHold) {
+            if (d.phase === 'story' && storyLive && !subjectGone) d.resume = {...d.shot, resumed: true};
+            next = {...best, phase: 'climax'};
+          } else if (d.phase === 'story') {
+            if ((held >= hold && (!storyLive || held >= ceil)) || (subjectGone && held >= Math.max(1.2, minHold))) next = nextInGrammar(d, candidates, best);
+          } else if ((held >= hold && held >= ceil) || (subjectGone && held >= Math.max(1.2, minHold))) {
+            // Come back to the story that was interrupted, if it is still going.
+            const back = d.resume && candidates.find(c => c.story != null && c.story === d.resume.story && alive(c.subject));
+            if (back && (d.phase === 'climax' || d.phase === 'reaction')) { next = {...back, phase: 'story', resumed: true}; d.resume = null; }
+            else next = nextInGrammar(d, candidates, best);
+          }
         }
         if (!next) return null;
         d.history.push({subject: d.shot?.subject, kind: d.shot?.kind, phase: d.phase, at: d.clock});
@@ -186,7 +207,10 @@
     return best;
   }
   function nextInGrammar(d, candidates, best) {
-    let want = PHASE_ORDER[(PHASE_ORDER.indexOf(d.phase) + 1) % PHASE_ORDER.length];
+    // A developing story takes the place of a build or a reset.
+    const stories = candidates.filter(c => c.phase === 'story' && c.score >= 30).map(c => ({...c, adj: c.score - (recentlyShown(d, c) ? 14 : 0)})).sort((a, b) => b.adj - a.adj);
+    if (stories.length && d.phase !== 'story' && d.phase !== 'climax') return stories[0];
+    let want = PHASE_ORDER[(PHASE_ORDER.indexOf(d.phase === 'story' ? 'build' : d.phase) + 1) % PHASE_ORDER.length];
     // Re-establish the geography at most every 25 s; otherwise keep building.
     const lastWide = d.history.filter(h => h.phase === 'establish').pop();
     if (want === 'establish' && lastWide && d.clock - lastWide.at < 25 && candidates.some(c => c.phase === 'build')) want = 'build';
@@ -222,18 +246,30 @@
     let best = null;
     for (const [id, v] of score) {
       const s = ships[id]; if (!s) continue;
-      const total = v.score * (s.dead ? .85 : 1) * (s.hero ? 1.05 : 1);
+      const total = v.score * (s.dead ? .85 : 1) * (s.hero ? 1.05 : 1) * (s.ace ? 1.08 : 1);
       if (!best || total > best.total || (total === best.total && id < best.id)) best = {id, score: v.score, kills: v.kills, total};
     }
     return best;
   }
 
   // Three to five factual lines built only from logged events and totals.
+  const PLAN_WORDS = {PINCER: 'a pincer', AMBUSH: 'an ambush', HOLD: 'to hold the line', RAID: 'hit-and-run raids', DECAPITATE: 'to decapitate', SIEGE: 'a siege', CHARGE: 'a straight charge'};
+  const OBJECTIVE_WORDS = {FLAGSHIP: ' for the enemy flagship', CONVOY: ' over a convoy run', STATION: ' for the station'};
   function story(log, summary, momentum) {
     const lines = [], E = log.events, names = summary.names;
-    lines.push(`${names[0]} met ${names[1]}${summary.place ? ' over ' + summary.place : ''}. The battle lasted ${fmt(summary.duration)}.`);
+    lines.push(`${names[0]} met ${names[1]}${summary.place ? ' over ' + summary.place : ''}${OBJECTIVE_WORDS[summary.objective] || ''}. The battle lasted ${fmt(summary.duration)}.`);
+    // The plans, and what became of them.
+    const plans = summary.firstPlans;
+    if (plans && summary.sides) {
+      const fate = side => { const sw = E.find(e => e.type === 'planSwitch' && e.side === side), ok = E.find(e => e.type === 'planWorked' && e.side === side);
+        return sw ? `, abandoned it at ${fmt(sw.t)} because ${sw.why}` : ok ? `, and it worked at ${fmt(ok.t)}` : ''; };
+      lines.push(`${summary.sides[0]} tried ${PLAN_WORDS[plans[0]] || 'a plan'}${fate(0)}; ${summary.sides[1].charAt(0).toLowerCase() + summary.sides[1].slice(1)} tried ${PLAN_WORDS[plans[1]] || 'a plan'}${fate(1)}.`);
+    }
     const first = E.find(e => /kill|Kill/.test(e.type) && e.byName);
-    if (first) lines.push(`First blood at ${fmt(first.t)}: ${first.name} destroyed by ${first.byName}.`);
+    if (first && !plans) lines.push(`First blood at ${fmt(first.t)}: ${first.name} destroyed by ${first.byName}.`);
+    // The war's biggest named moment, told from the log.
+    const moment = E.filter(e => ['flagshipDown', 'ram', 'rout', 'rescue', 'vendettaSettled', 'lastStand'].includes(e.type) && e.text).sort((a, b) => (WEIGHTS[b.type] || 0) - (WEIGHTS[a.type] || 0) || a.t - b.t)[0];
+    if (moment) lines.push(`At ${fmt(moment.t)}: ${moment.text}`);
     const tp = momentum && momentum.turningPoint();
     if (tp) {
       // Only report what the log shows in that window; never claim a cause.
@@ -245,9 +281,13 @@
     if (big && big !== first) lines.push(`The biggest loss: ${big.name} at ${fmt(big.t)}${big.byName ? ', to ' + big.byName : ''}.`);
     if (summary.winner != null) {
       const w = summary.winner, left = summary.alive[w], had = summary.spawned[w];
-      lines.push(`${names[w]} held the sky with ${left} of ${had} ships still flying${summary.mvpName ? '; ' + summary.mvpName + ' led with ' + summary.mvpKills + ' kill' + (summary.mvpKills === 1 ? '' : 's') : ''}.`);
+      const how = {flagship: 'won by killing the flagship', convoy: 'won the convoy run', station: 'took the station'}[summary.reason] || 'held the sky';
+      const mvp = summary.mvpName ? '; ' + summary.mvpName + (summary.mvpAce ? ', the ace called “' + summary.mvpAce + '”,' : '') + ' led with ' + summary.mvpKills + ' kill' + (summary.mvpKills === 1 ? '' : 's') : '';
+      lines.push(`${names[w]} ${how} with ${left} of ${had} ships still flying${mvp}.`);
     }
-    return lines.slice(0, 5);
+    // Keep it to five: the opening and the ending always stay.
+    while (lines.length > 5) lines.splice(lines.length - 2, 1);
+    return lines;
   }
   function describe(e) {
     switch (e.type) {
