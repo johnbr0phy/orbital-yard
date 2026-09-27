@@ -23,10 +23,15 @@ function cost() {
   stepTo(b, from);
   const alive0 = b.run('ships.filter(s=>!s.dead).length');
   const c0 = process.cpuUsage(), w0 = Date.now(), t0 = warTime(b);
-  stepTo(b, to);
+  // Mean live ships over the window, sampled each simulated second (the
+  // sampling costs a few ms, not counted separately), so wars that engage
+  // at different times can be compared per ship.
+  let aliveSum = 0, samples = 0;
+  for (let t = Math.floor(from) + 1; t <= to; t++) { stepTo(b, t); aliveSum += b.run('ships.filter(s=>!s.dead&&!s.jumped).length'); samples++; }
   const cpu = process.cpuUsage(c0), sim = warTime(b) - t0;
   const out = {matchup: [a, c], size, seed, ships: n, aliveAtStart: alive0, window: [from, to], simSeconds: +sim.toFixed(2),
-    msCpuPerSimSecond: Math.round((cpu.user + cpu.system) / 1000 / Math.max(.001, sim)), wallMs: Date.now() - w0};
+    msCpuPerSimSecond: Math.round((cpu.user + cpu.system) / 1000 / Math.max(.001, sim)),
+    meanAlive: Math.round(aliveSum / Math.max(1, samples)), goneAtEnd: n - b.run('ships.filter(s=>!s.dead).length'), wallMs: Date.now() - w0};
   console.log(JSON.stringify(out));
   return out;
 }

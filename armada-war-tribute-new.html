@@ -18403,7 +18403,9 @@ const wasdHint=(()=>{
    estimate. Thresholds and method: DECISIONS.md, PERFORMANCE.md. */
 // CPU ms per simulated second on the reference machine (4-core Xeon 2.1 GHz,
 // Node 22), by total ships in combat, and that machine's probe score.
-const SIM_REF={probe:.1,cost:{100:575,192:978,287:1691,572:3639,1142:9000}}; // PROVISIONAL: remeasure
+// Measured idle with scripts/sim-bench.cjs (seed 1234, Empire vs Rebels, war
+// seconds 38-48) and the probe exactly as measureSimSpeed runs it.
+const SIM_REF={probe:.30,cost:{100:419,192:660,287:1301,382:1620,572:2587,857:4325,1142:5862}};
 // Real time needs 1,000 ms of simulation per second; keep 45% for rendering.
 const SIM_BUDGET=550,FLEET_SIZES=[50,100,150,200,300,450,600];
 const shipsFor=perSide=>Math.round(perSide*1.91);
@@ -18418,7 +18420,8 @@ let simSpeed=(()=>{try{const v=JSON.parse(localStorage.getItem("tributeSimSpeed"
 function measureSimSpeed(){
   if(simSpeed&&simSpeed.source==="war")return simSpeed.f;
   const now=()=>performance.now();
-  try{ArmadaBattleAI.probe(now,40);const a=ArmadaBattleAI.probe(now,90),b=ArmadaBattleAI.probe(now,90);
+  // Warm the JIT first: cold runs read up to 2x slow.
+  try{ArmadaBattleAI.probe(now,150);const a=ArmadaBattleAI.probe(now,90),b=ArmadaBattleAI.probe(now,90);
     const f=Math.max(a,b)/SIM_REF.probe;simSpeed={f,source:"probe",at:Date.now()};
     try{localStorage.setItem("tributeSimSpeed",JSON.stringify(simSpeed));}catch(e){}
     return f;}catch(e){return 1;}
