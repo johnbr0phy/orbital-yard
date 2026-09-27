@@ -17894,7 +17894,9 @@ const wasdHint=(()=>{
    estimate. Thresholds and method: DECISIONS.md, PERFORMANCE.md. */
 // CPU ms per simulated second on the reference machine (4-core Xeon 2.1 GHz,
 // Node 22), by total ships in combat, and that machine's probe score.
-const SIM_REF={probe:.1,cost:{100:575,192:978,287:1691,572:3639,1142:9000}}; // PROVISIONAL: remeasure
+// Measured idle with scripts/sim-bench.cjs (seed 1234, Empire vs Rebels, war
+// seconds 38-48) and the probe exactly as measureSimSpeed runs it.
+const SIM_REF={probe:.30,cost:{100:419,192:660,287:1301,382:1620,572:2587,857:4325,1142:5862}};
 // Real time needs 1,000 ms of simulation per second; keep 45% for rendering.
 const SIM_BUDGET=550,FLEET_SIZES=[50,100,150,200,300,450,600];
 const shipsFor=perSide=>Math.round(perSide*1.91);
@@ -17909,7 +17911,8 @@ let simSpeed=(()=>{try{const v=JSON.parse(localStorage.getItem("tributeSimSpeed"
 function measureSimSpeed(){
   if(simSpeed&&simSpeed.source==="war")return simSpeed.f;
   const now=()=>performance.now();
-  try{ArmadaBattleAI.probe(now,40);const a=ArmadaBattleAI.probe(now,90),b=ArmadaBattleAI.probe(now,90);
+  // Warm the JIT first: cold runs read up to 2x slow.
+  try{ArmadaBattleAI.probe(now,150);const a=ArmadaBattleAI.probe(now,90),b=ArmadaBattleAI.probe(now,90);
     const f=Math.max(a,b)/SIM_REF.probe;simSpeed={f,source:"probe",at:Date.now()};
     try{localStorage.setItem("tributeSimSpeed",JSON.stringify(simSpeed));}catch(e){}
     return f;}catch(e){return 1;}
@@ -18401,12 +18404,14 @@ function storyEvent(ev){
   const e=bcEvent(ev.type,data);
   if(e&&SCORE_TYPES[ev.type])offerCaption({text:data.text,subject:ev.ship??null,partner:ev.partner??null,event:e,weight:BC.WEIGHTS[ev.type]||20,until:battleTime+captionHold(data.text)});
 }
+// Fleets with a jump drive run to get clear and jump; the rest run for the edge.
+function fleeWord(s){return s&&ArmadaBattleAI.DOCTRINE[s.race]?.escape==="edge"?"running for the edge":"running to jump clear";}
 function pct(s){return Math.max(0,Math.round(100*s.hp/Math.max(1,s.hpMax)))+"%";}
 function storyText(ev,s,p,sq){
   const n=ev.n,S=shipLabel(s),P=p?shipLabel(p):"",side=ev.side>=0?sideShort(ev.side):"";
   switch(ev.type){
     case "contact":return "First shots: "+S+" opens fire on "+(p?"the "+klassShort(p):"the enemy")+".";
-    case "rout":return sq.name+" squadron is breaking. "+n+" ship"+(n===1?"":"s")+" running for the edge.";
+    case "rout":return sq.name+" squadron is breaking. "+n+" ship"+(n===1?"":"s")+" "+fleeWord(s)+".";
     case "rally":return sq.name+" squadron rallies"+(ships[ev.anchor]?" on the "+shortName(ships[ev.anchor]).replace(/^the /,""):"")+" and turns back into the fight.";
     case "escape":return ev.how==="edge"?sq.name+" squadron slips off the edge of the field.":sq.name+" squadron jumps out. They will live to fight another day.";
     case "raid":return sq.name+" squadron jumps out mid-raid. They'll be back behind "+sideWord(1-ev.side)+".";
@@ -18790,6 +18795,12 @@ function updateTags(now){
   if(st.ready&&Number.isFinite(warT0)&&!replayState){
     for(const side of [0,1]){const f=ships[st.sides[side].flag];if(f&&!f.dead&&f.vao&&f.arr)want.push({x:f.x,y:f.y+(f.exY||f.slen*.2)*1.4,z:f.z,t:"⚑ "+shortName(f).replace(/^the /,""),c:raceColour(f.race),flag:true});}
     for(const s of ships)if(s.ace&&!s.dead&&s.vao&&s.arr&&!s.cloaked&&want.length<12)want.push({x:s.x,y:s.y+s.slen,z:s.z,t:"✦ "+s.ace,c:raceColour(s.race)});
+    // A breaking squadron is marked over its live members, so a rout reads at any distance.
+    for(const sq of battleAI.squads||[]){
+      if(!sq||sq.state!=="routing"||!sq.name||want.length>=14)continue;
+      let x=0,y=0,z=0,n=0,top=0;for(const id of sq.mem){const m=ships[id];if(!m||m.dead||!m.vao)continue;x+=m.x;y+=m.y;z+=m.z;top=Math.max(top,m.slen);n++;}
+      if(n)want.push({x:x/n,y:y/n+top*2+40,z:z/n,t:"» "+sq.name+" breaking ("+n+")",c:raceColour(sideRace[sq.side])});
+    }
     const o=st.objective;
     if(o&&o.kind==="STATION")want.push({x:o.point[0],y:o.point[1],z:o.point[2],t:"◎ STATION",c:"#e8eef2"});
     if(o&&o.kind==="CONVOY")want.push({x:o.point[0],y:o.point[1],z:o.point[2],t:"⇥ JUMP POINT",c:raceColour(sideRace[o.side])});
@@ -18833,7 +18844,8 @@ function captionRelevant(c,subject){
 function onScreenPoint(x,y,z){const m=mat(),cw=m[3]*x+m[7]*y+m[11]*z+m[15];if(cw<1)return false;const cx=(m[0]*x+m[4]*y+m[8]*z+m[12])/cw,cy=(m[1]*x+m[5]*y+m[9]*z+m[13])/cw;return Math.abs(cx)<.95&&Math.abs(cy)<.95;}
 function tickCaption(now,subjectShip){
   const cur=bc.caption,subject=subjectShip&&!subjectShip.dead?subjectShip.id:null;
-  const q=(bc.captionQueue||(bc.captionQueue=[])).filter(c=>now-c.offered<4.5&&now>=c.offered-.01);bc.captionQueue=q;
+  // Weighty lines (a successor, a plan switch) wait longer for their turn than small ones.
+  const q=(bc.captionQueue||(bc.captionQueue=[])).filter(c=>now-c.offered<(c.weight>=50?8:4.5)&&now>=c.offered-.01);bc.captionQueue=q;
   if(cur){
     const held=now-cur.at,valid=!cur.check||cur.check();
     const bigger=q.find(c=>c.weight>=Math.max(60,cur.weight*1.5)&&captionRelevant(c,subject));
@@ -18880,7 +18892,7 @@ function decisionFor(s,now){
   }
   const o=a.order;
   switch(act){
-    case "ROUT":return {weight:56,subject:id,text:sq&&sq.name?Sq+" has broken. "+N+" running for the edge"+(s.hp<s.hpMax*.9?", hull "+hp:"")+".":N+" is withdrawing, running for the edge.",check:same};
+    case "ROUT":return {weight:56,subject:id,text:sq&&sq.name?Sq+" has broken. "+N+" "+fleeWord(s)+(s.hp<s.hpMax*.9?", hull "+hp:"")+".":N+" is withdrawing, "+fleeWord(s)+".",check:same};
     case "RAM":{const t=ships[o?.target];return {weight:80,subject:id,partner:t?.id,text:N+" is turning to ram "+(t?shipLabel(t):"the enemy line")+".",check:same};}
     case "RESCUE":{const c=ships[o?.anchor];return c&&!c.dead?{weight:45,subject:id,partner:c.id,text:Sq+" screening "+cap(c)+", hull "+pct(c)+".",check:same}:null;}
     case "TOW":{const q=tows.find(q=>q.tug===id&&!q.done),c=q&&ships[q.cap];return {weight:50,subject:id,text:N+(q&&q.attached!=null?" towing the wreck of "+cap(c)+" out of the fight.":" moving in to tow "+cap(c)+" clear."),check:same};}

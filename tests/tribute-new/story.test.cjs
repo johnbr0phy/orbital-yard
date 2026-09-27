@@ -96,7 +96,7 @@ test('abandon ship: pods launch, a friendly picks them up or a ruthless enemy fi
 });
 
 test('an ace earns a callsign at three kills and a vendetta starts when a wingman dies',()=>{
-  const w=war(5,6,1101,30,30);
+  const w=war(5,6,1101,30,30,{objective:'ANNIHILATE'});
   const r=w.run(`(()=>{const q=squads.find(q=>q.side===0&&q.mem.filter(id=>!ships[id].dead&&ships[id].arr).length>=3&&!q.hero);
     const [aceId,wingId]=q.mem.filter(id=>!ships[id].dead);const ace=ships[aceId],wing=ships[wingId];
     const foe=ships.find(s=>s.side===1&&!s.dead&&s.arr&&!s.hulls&&s.slen<80),foe2=ships.filter(s=>s.side===1&&!s.dead&&s.arr&&!s.hulls&&s.slen<80)[1];

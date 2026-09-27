@@ -263,7 +263,7 @@
 
   // Three to five factual lines built only from logged events and totals.
   const PLAN_WORDS = {PINCER: 'a pincer', AMBUSH: 'an ambush', HOLD: 'to hold the line', RAID: 'hit-and-run raids', DECAPITATE: 'to decapitate', SIEGE: 'a siege', CHARGE: 'a straight charge'};
-  const OBJECTIVE_WORDS = {FLAGSHIP: ' for the enemy flagship', CONVOY: ' over a convoy run', STATION: ' for the station'};
+  const OBJECTIVE_WORDS = {FLAGSHIP: ' for the enemy flagship', CONVOY: ' in a convoy run', STATION: ' for the station'};
   function story(log, summary, momentum) {
     const lines = [], E = log.events, names = summary.names;
     lines.push(`${names[0]} met ${names[1]}${summary.place ? ' over ' + summary.place : ''}${OBJECTIVE_WORDS[summary.objective] || ''}. The battle lasted ${fmt(summary.duration)}.`);
@@ -282,9 +282,10 @@
     const tp = momentum && momentum.turningPoint();
     if (tp) {
       // Only report what the log shows in that window; never claim a cause.
+      // A swing with nothing notable in it (the opening seconds, say) is noise, not a story.
       const favoured = tp.delta > 0 ? names[0] : names[1];
       const inWindow = E.filter(e => e.t >= tp.from && e.t <= tp.t && /Kill|ionStrike/.test(e.type)).sort((a, b) => (WEIGHTS[b.type] || 0) - (WEIGHTS[a.type] || 0) || (b.value || 0) - (a.value || 0))[0];
-      lines.push(`Momentum swung toward ${favoured} between ${fmt(tp.from)} and ${fmt(tp.t)}${inWindow ? '; in that stretch ' + describe(inWindow) : ''}.`);
+      if (inWindow) lines.push(`Momentum swung toward ${favoured} between ${fmt(tp.from)} and ${fmt(tp.t)}; in that stretch ${describe(inWindow)}.`);
     }
     const big = E.filter(e => ['firstOneKill', 'capitalKill', 'heroKill'].includes(e.type)).sort((a, b) => (b.value || 0) - (a.value || 0))[0];
     if (big && big !== first) lines.push(`The biggest loss: ${big.name} at ${fmt(big.t)}${big.byName ? ', to ' + big.byName : ''}.`);

@@ -676,8 +676,11 @@
       const w=d.plans.slice();
       if(!squads.length){w.fill(0);w[5]=1;} // no squadrons: siege is the only plan
       if(exclude)for(const k of exclude)w[PLANS.indexOf(k)]=0;
+      // Against a convoy run, waiting is losing: the side that must stop it cannot hold or siege.
+      const hunter=this.objective&&this.objective.kind==='CONVOY'&&this.objective.side===1-side;
+      if(hunter){w[2]=w[5]=0;}
       if(!first)w[1]=w[3]=0; // ambushes and raids are set before the fight, not mid-war
-      if(w.every(x=>x<=0))w[2]=1;
+      if(w.every(x=>x<=0))w[hunter?0:2]=1;
       let kind=PLANS[pickWeighted(r,w)];
       const env2=env||this.env,forced=first&&env2&&env2.force&&env2.force.plans&&env2.force.plans[side];
       if(forced&&PLANS.includes(forced))kind=forced;

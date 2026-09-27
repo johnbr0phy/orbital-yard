@@ -5,7 +5,7 @@
    Each scenario starts a fixed seed (optionally with forced plans or an
    objective), runs the real simulation until the named moment happens,
    freezes time right there, frames the subject near, mid or far with the
-   HUD visible (captions, tags, title card), and saves a PNG. The simulation
+   HUD visible (captions, tags, title card), and saves a JPEG (quality 85). The simulation
    decides when the moment happens; nothing is staged except the camera.
    Chromium here renders with SwiftShader (software): these are look checks,
    not performance numbers. */
@@ -17,16 +17,16 @@ const quality = arg('quality', 'high');
 
 // until: event type to wait for (or a time in war seconds); frame: who to look at.
 const SCENARIOS = [
-  {id: 'rout', a: 6, b: 5, seed: 2202, size: 60, until: {event: 'rout'}, after: 3, frame: 'squad', views: ['mid', 'far']},
+  {id: 'rout', a: 6, b: 5, seed: 2202, size: 60, until: {event: 'rout'}, after: 4, frame: 'squad', views: ['near', 'mid', 'far']},
   {id: 'flagship-death', a: 6, b: 5, seed: 1101, seeds: [1101, 2202, 3303, 81, 82], size: 60, force: {plans: ['DECAPITATE', 'DECAPITATE'], objective: 'ANNIHILATE'}, until: {event: 'flagshipDown'}, after: .35, frame: 'kill', views: ['near', 'mid']},
-  {id: 'successor', a: 6, b: 5, seed: 1101, seeds: [1101, 2202, 3303, 81, 82], size: 60, force: {plans: ['DECAPITATE', 'DECAPITATE'], objective: 'ANNIHILATE'}, until: {event: 'successor'}, after: .5, frame: 'ship', views: ['mid', 'far']},
+  {id: 'successor', a: 6, b: 5, seed: 1101, seeds: [1101, 2202, 3303, 81, 82], size: 60, force: {plans: ['DECAPITATE', 'DECAPITATE'], objective: 'ANNIHILATE'}, until: {event: 'successor'}, after: 3, frame: 'ship', views: ['mid', 'far']},
   {id: 'ram-turn', a: 12, b: 10, seed: 1101, size: 60, until: {event: 'lastStand', kind: 'RAM'}, after: 1, frame: 'pair', views: ['mid', 'far']},
   {id: 'ram-impact', a: 12, b: 10, seed: 1101, size: 60, until: {event: 'ram'}, after: .3, frame: 'pair', views: ['near', 'mid']},
   {id: 'last-stand-volley', a: 12, b: 10, seed: 2202, seeds: [2202, 1101, 3303, 4404], size: 60, until: {event: 'lastStand', kind: 'VOLLEY'}, after: .6, frame: 'ship', views: ['mid']},
   {id: 'abandon-ship', a: 12, b: 10, seed: 3303, size: 60, until: {event: 'pods'}, after: 2.5, frame: 'ship', views: ['near', 'mid']},
   {id: 'ace', a: 6, b: 5, seed: 2202, size: 60, until: {event: 'ace'}, after: .5, frame: 'ship', views: ['near', 'mid']},
-  {id: 'ace-duel', a: 5, b: 6, seed: 1101, seeds: [1101, 2202, 3303, 4404, 5505], size: 60, until: {event: 'aceDuel'}, after: .5, frame: 'pair', views: ['mid', 'far']},
-  {id: 'vendetta-chase', a: 6, b: 5, seed: 2202, seeds: [2202, 1101, 3303], size: 60, until: {event: 'vendetta'}, after: 2.5, frame: 'pair', views: ['near', 'mid']},
+  {id: 'ace-duel', a: 5, b: 6, seed: 1101, seeds: [1101, 2202, 3303, 4404, 5505], size: 60, until: {event: 'aceDuel'}, after: .5, frame: 'pair', views: ['near', 'mid']},
+  {id: 'vendetta-chase', a: 6, b: 5, seed: 2202, seeds: [2202, 1101, 3303], size: 60, until: {event: 'vendetta'}, after: 1, frame: 'pair', views: ['near', 'mid']},
   {id: 'rescue-screen', a: 10, b: 12, seed: 1101, size: 60, until: {event: 'rescueStart'}, after: 4, frame: 'squadAndShip', views: ['mid', 'far']},
   {id: 'rescue-outcome', a: 10, b: 12, seed: 1101, size: 60, until: {event: 'rescue'}, after: .5, frame: 'ship', views: ['mid']},
   // Each plan twice: the title card at 7.5 s, then the posture from above once the fleets move.
@@ -148,8 +148,8 @@ async function capture(browser, base, sc) {
     }, {frame: sc.frame, view, found: found || {}});
     await page.waitForTimeout(2200);
     const hud = await page.evaluate(() => ({caption: document.getElementById('bcCaption').textContent, plan: document.getElementById('bcPlan').textContent, objective: document.getElementById('bcObjective').textContent, tags: [...document.querySelectorAll('.bcTag')].filter(e => !e.hidden).map(e => e.textContent)}));
-    const name = `${sc.id}-${view}.png`;
-    await page.screenshot({path: path.join(out, name)});
+    const name = `${sc.id}-${view}.jpg`;
+    await page.screenshot({path: path.join(out, name), type: 'jpeg', quality: 85});
     shots.push({name, ...info, ...hud});
   }
   await page.close();
