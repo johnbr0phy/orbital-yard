@@ -100,6 +100,14 @@ Those are my next three things to fix.
   - After softening the crack and body and lowering the laser: 9.1% harsh overall, against 21%.
   - I only found this because I compared recordings. My first fix, the laser, alone changed nothing, and the split showed why.
 - **The debris screenshot showed an intact hull** with embers, because it caught a disabled capital. The debris shots now wait for a hull that breaks apart. They show the fracture edges orange-hot at 1.5 s and dark, readable chunks at 9 s.
+- **Tows were scored as saved without towing anything.** When I wrote a test that a tug saves a disabled capital (`tests/tribute-new/story-guarantees.test.cjs`), the tug latched and then flew home at 85 m/s. The hull could follow at only 28 m/s, so after 28 s it was scored "saved" with the hull 2 km behind. An attached tug now crawls, the hull keeps pace, and a save needs the hull on the line.
+- **The same file pins the no-regressions list to tests:**
+  - the ion lance keeps its 22 px floor, white-tinted core and 0.3 s flare;
+  - the dust and ember MAX blend and the lance's overlap dimming stay in place;
+  - replays still borrow a disabled capital's wreck mesh;
+  - fragments of a shattered capital show no single-tick positional snap (largest measured: 1.4e-12 units over 8 s).
+
+  It also covers screens and tows that save, probe-based sizes, fracture-edge glow, and convoy and station wins.
 - **Browser against headless.** The Node harness forges box meshes, so its wars differ from the browser's; that was already true on main. The browser against itself is identical across frame rate, time scale, camera, slow motion and forge-worker count (`scripts/determinism-browser.cjs`).
 
 ## Where to look

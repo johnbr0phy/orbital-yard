@@ -1,6 +1,6 @@
 {
  "label": "after",
- "date": "2026-09-27T07:22:37.967Z",
+ "date": "2026-09-27T09:47:14.238Z",
  "summary": [
   {
    "key": "Borg vs Federation @60",
@@ -46,7 +46,7 @@
    },
    "leadChanges": 0,
    "eventTypes": 18.3,
-   "msCpuPerSimSecond": 381
+   "msCpuPerSimSecond": 387
   },
   {
    "key": "Borg vs Federation @300",
@@ -92,7 +92,7 @@
    },
    "leadChanges": 0.7,
    "eventTypes": 17,
-   "msCpuPerSimSecond": 816
+   "msCpuPerSimSecond": 831.7
   },
   {
    "key": "Empire vs Rebels @60",
@@ -138,7 +138,7 @@
    },
    "leadChanges": 0,
    "eventTypes": 18.7,
-   "msCpuPerSimSecond": 510.3
+   "msCpuPerSimSecond": 519.3
   },
   {
    "key": "Empire vs Rebels @300",
@@ -158,25 +158,25 @@
    "duration": 96,
    "decided": 2,
    "decisions": {
-    "RETREAT": 419.7,
+    "RETREAT": 416,
     "REGROUP": 36,
-    "EVADE": 3037.7,
-    "FLANK": 754.3,
-    "ESCORT": 724,
-    "ATTACK": 1968.7
+    "EVADE": 2847.3,
+    "FLANK": 756.7,
+    "ESCORT": 744.7,
+    "ATTACK": 1961.7
    },
-   "fledSurvived": 361,
-   "cohesion": 451,
+   "fledSurvived": 364.3,
+   "cohesion": 452,
    "squadsBroken": 20,
    "squadsReformed": 2.7,
    "moments": {
-    "routs": 42,
-    "rallies": 5,
+    "routs": 43,
+    "rallies": 5.7,
     "lastStands": 0.7,
     "rams": 0,
     "rescues": 0.7,
     "aces": 1.3,
-    "vendettas": 2.3,
+    "vendettas": 2.7,
     "flagshipsLost": 0,
     "successions": 0,
     "planSwitches": 2,
@@ -184,7 +184,7 @@
    },
    "leadChanges": 0.7,
    "eventTypes": 18.3,
-   "msCpuPerSimSecond": 2253
+   "msCpuPerSimSecond": 2278
   },
   {
    "key": "Random 1 @60",
@@ -197,40 +197,40 @@
     3303
    ],
    "uniqueness": {
-    "score": 32,
-    "timeline": 59,
+    "score": 33,
+    "timeline": 62,
     "shape": 5
    },
    "duration": 159.3,
    "decided": 1,
    "decisions": {
-    "RETREAT": 111.3,
+    "RETREAT": 111,
     "REGROUP": 1.3,
-    "EVADE": 4934,
-    "FLANK": 505.7,
-    "ESCORT": 492.7,
-    "ATTACK": 284.7
+    "EVADE": 5295.7,
+    "FLANK": 501,
+    "ESCORT": 496.7,
+    "ATTACK": 289.7
    },
-   "fledSurvived": 26.7,
-   "cohesion": 729,
-   "squadsBroken": 3,
-   "squadsReformed": 1.3,
+   "fledSurvived": 27,
+   "cohesion": 721.3,
+   "squadsBroken": 2.3,
+   "squadsReformed": 1,
    "moments": {
     "routs": 4.3,
     "rallies": 0,
-    "lastStands": 7.3,
+    "lastStands": 7,
     "rams": 1,
-    "rescues": 5,
+    "rescues": 5.3,
     "aces": 0.3,
     "vendettas": 2,
     "flagshipsLost": 0,
     "successions": 0,
-    "planSwitches": 2,
+    "planSwitches": 2.3,
     "podsLaunched": 1.7
    },
    "leadChanges": 0.3,
    "eventTypes": 20.7,
-   "msCpuPerSimSecond": 468.3
+   "msCpuPerSimSecond": 470.7
   },
   {
    "key": "Random 1 @300",
@@ -276,7 +276,7 @@
    },
    "leadChanges": 1,
    "eventTypes": 20,
-   "msCpuPerSimSecond": 1932.3
+   "msCpuPerSimSecond": 1945.3
   },
   {
    "key": "Random 2 @60",
@@ -322,7 +322,7 @@
    },
    "leadChanges": 1.3,
    "eventTypes": 13.7,
-   "msCpuPerSimSecond": 410.7
+   "msCpuPerSimSecond": 414
   },
   {
    "key": "Random 2 @300",
@@ -368,7 +368,7 @@
    },
    "leadChanges": 0.7,
    "eventTypes": 12.7,
-   "msCpuPerSimSecond": 2114.7
+   "msCpuPerSimSecond": 2148
   },
   {
    "key": "Shadows vs Minbari @60",
@@ -414,7 +414,7 @@
    },
    "leadChanges": 0.7,
    "eventTypes": 19.7,
-   "msCpuPerSimSecond": 377.3
+   "msCpuPerSimSecond": 374.3
   },
   {
    "key": "Shadows vs Minbari @300",
@@ -460,7 +460,7 @@
    },
    "leadChanges": 0,
    "eventTypes": 22,
-   "msCpuPerSimSecond": 1094
+   "msCpuPerSimSecond": 1113.7
   }
  ],
  "wars": [
@@ -1375,7 +1375,7 @@
     "killSpreadZ": 917,
     "end": 126.8
    },
-   "msCpuPerSimSecond": 367
+   "msCpuPerSimSecond": 379
   },
   {
    "name": "Borg vs Federation",
@@ -2537,7 +2537,7 @@
     "killSpreadZ": 436,
     "end": 180
    },
-   "msCpuPerSimSecond": 396
+   "msCpuPerSimSecond": 399
   },
   {
    "name": "Borg vs Federation",
@@ -3031,7 +3031,7 @@
     "killSpreadZ": 792,
     "end": 59.1
    },
-   "msCpuPerSimSecond": 380
+   "msCpuPerSimSecond": 383
   },
   {
    "name": "Borg vs Federation",
@@ -3871,7 +3871,7 @@
     "killSpreadZ": 1944,
     "end": 120
    },
-   "msCpuPerSimSecond": 846
+   "msCpuPerSimSecond": 860
   },
   {
    "name": "Borg vs Federation",
@@ -5111,7 +5111,7 @@
     "killSpreadZ": 671,
     "end": 120
    },
-   "msCpuPerSimSecond": 918
+   "msCpuPerSimSecond": 940
   },
   {
    "name": "Borg vs Federation",
@@ -5508,7 +5508,7 @@
     "killSpreadZ": 3446,
     "end": 56
    },
-   "msCpuPerSimSecond": 684
+   "msCpuPerSimSecond": 695
   },
   {
    "name": "Empire vs Rebels",
@@ -6071,7 +6071,7 @@
     "killSpreadZ": 1150,
     "end": 75.7
    },
-   "msCpuPerSimSecond": 505
+   "msCpuPerSimSecond": 512
   },
   {
    "name": "Empire vs Rebels",
@@ -7283,7 +7283,7 @@
     "killSpreadZ": 478,
     "end": 180
    },
-   "msCpuPerSimSecond": 489
+   "msCpuPerSimSecond": 498
   },
   {
    "name": "Empire vs Rebels",
@@ -7871,7 +7871,7 @@
     "killSpreadZ": 969,
     "end": 96.3
    },
-   "msCpuPerSimSecond": 537
+   "msCpuPerSimSecond": 548
   },
   {
    "name": "Empire vs Rebels",
@@ -8595,7 +8595,7 @@
     "killSpreadZ": 1687,
     "end": 69.5
    },
-   "msCpuPerSimSecond": 2457
+   "msCpuPerSimSecond": 2463
   },
   {
    "name": "Empire vs Rebels",
@@ -8613,39 +8613,39 @@
    "decided": false,
    "winner": null,
    "losses": [
-    205,
-    226
+    210,
+    212
    ],
    "spawned": [
     301,
     271
    ],
    "decisions": {
-    "RETREAT": 545,
+    "RETREAT": 534,
     "REGROUP": 48,
-    "EVADE": 5521,
-    "FLANK": 870,
-    "ESCORT": 1243,
-    "ATTACK": 2581
+    "EVADE": 4950,
+    "FLANK": 877,
+    "ESCORT": 1305,
+    "ATTACK": 2560
    },
-   "fled": 396,
-   "fledSurvived": 323,
+   "fled": 409,
+   "fledSurvived": 333,
    "cohesion": {
-    "mean": 524,
+    "mean": 527,
     "early": 438,
     "mid": 525,
-    "late": 610
+    "late": 619
    },
    "squadsBroken": 22,
    "squadsReformed": 2,
    "moments": {
-    "routs": 62,
-    "rallies": 4,
+    "routs": 65,
+    "rallies": 6,
     "lastStands": 2,
     "rams": 0,
     "rescues": 2,
     "aces": 1,
-    "vendettas": 2,
+    "vendettas": 3,
     "flagshipsLost": 0,
     "successions": 0,
     "planSwitches": 1,
@@ -9140,29 +9140,29 @@
      1
     ],
     [
-     "wreckStrike",
-     98.42,
-     0
-    ],
-    [
-     "rescue",
-     98.42,
-     0
-    ],
-    [
      "rout",
      98.75,
      1
     ],
     [
-     "rout",
-     98.85,
+     "wreckStrike",
+     99.15,
      0
     ],
     [
-     "wreckStrike",
-     104.68,
+     "rescue",
+     99.15,
      0
+    ],
+    [
+     "rout",
+     99.35,
+     0
+    ],
+    [
+     "lastStand",
+     102.55,
+     1
     ],
     [
      "rout",
@@ -9171,13 +9171,8 @@
     ],
     [
      "wreckStrike",
-     104.85,
+     104.88,
      0
-    ],
-    [
-     "capitalKill",
-     104.95,
-     1
     ],
     [
      "rout",
@@ -9186,23 +9181,18 @@
     ],
     [
      "rout",
-     105.32,
-     0
-    ],
-    [
-     "rout",
      105.42,
      0
     ],
     [
-     "rout",
-     105.58,
-     0
+     "capitalKill",
+     105.48,
+     1
     ],
     [
-     "rout",
-     105.72,
-     0
+     "rescueStart",
+     105.52,
+     1
     ],
     [
      "escape",
@@ -9211,33 +9201,13 @@
     ],
     [
      "wreckStrike",
-     105.95,
+     105.85,
      0
     ],
     [
-     "rout",
-     106.12,
-     0
-    ],
-    [
-     "capitalKill",
-     106.35,
+     "rally",
+     106.25,
      1
-    ],
-    [
-     "rout",
-     106.45,
-     0
-    ],
-    [
-     "rout",
-     106.65,
-     0
-    ],
-    [
-     "rout",
-     106.68,
-     0
     ],
     [
      "escape",
@@ -9245,14 +9215,24 @@
      1
     ],
     [
-     "rout",
-     107.02,
-     0
-    ],
-    [
      "escape",
      107.28,
      1
+    ],
+    [
+     "rout",
+     107.32,
+     0
+    ],
+    [
+     "rout",
+     107.45,
+     0
+    ],
+    [
+     "rout",
+     107.62,
+     0
     ],
     [
      "ionCharge",
@@ -9260,8 +9240,43 @@
      1
     ],
     [
+     "rout",
+     107.72,
+     0
+    ],
+    [
+     "capitalKill",
+     107.78,
+     1
+    ],
+    [
+     "rout",
+     108.08,
+     0
+    ],
+    [
+     "rout",
+     108.15,
+     0
+    ],
+    [
+     "rout",
+     108.18,
+     0
+    ],
+    [
      "escape",
-     107.85,
+     108.35,
+     0
+    ],
+    [
+     "rout",
+     108.52,
+     0
+    ],
+    [
+     "rout",
+     108.55,
      0
     ],
     [
@@ -9270,39 +9285,64 @@
      1
     ],
     [
-     "lastStand",
-     108.85,
-     1
-    ],
-    [
-     "wreckStrike",
-     109.35,
-     0
-    ],
-    [
-     "escape",
-     110.75,
-     1
-    ],
-    [
-     "wreckStrike",
-     111.08,
+     "rout",
+     109.02,
      0
     ],
     [
      "rout",
-     111.52,
+     109.58,
+     0
+    ],
+    [
+     "rally",
+     109.62,
+     1
+    ],
+    [
+     "rout",
+     109.65,
      0
     ],
     [
      "rout",
-     111.55,
+     109.98,
      0
     ],
     [
-     "escape",
-     111.62,
+     "rout",
+     110.12,
+     0
+    ],
+    [
+     "rout",
+     110.12,
      1
+    ],
+    [
+     "rout",
+     110.18,
+     0
+    ],
+    [
+     "rout",
+     110.38,
+     0
+    ],
+    [
+     "rout",
+     110.45,
+     0
+    ],
+    [
+     "rout",
+     110.68,
+     0
+    ],
+    [
+     "rout",
+     110.72,
+     0
     ],
     [
      "escape",
@@ -9310,13 +9350,8 @@
      1
     ],
     [
-     "rout",
-     112.12,
-     0
-    ],
-    [
      "wreckStrike",
-     112.92,
+     112.75,
      0
     ],
     [
@@ -9325,43 +9360,8 @@
      1
     ],
     [
-     "rout",
-     113.48,
-     0
-    ],
-    [
-     "rout",
-     113.65,
-     0
-    ],
-    [
-     "rout",
-     113.68,
-     0
-    ],
-    [
-     "rout",
-     113.95,
-     0
-    ],
-    [
-     "rout",
-     114.08,
-     0
-    ],
-    [
      "wreckStrike",
-     114.88,
-     0
-    ],
-    [
-     "escape",
-     114.92,
-     0
-    ],
-    [
-     "escape",
-     115.08,
+     114.38,
      0
     ],
     [
@@ -9370,18 +9370,8 @@
      0
     ],
     [
-     "escape",
-     115.45,
-     0
-    ],
-    [
      "wreckStrike",
-     115.65,
-     0
-    ],
-    [
-     "escape",
-     115.72,
+     115.85,
      0
     ],
     [
@@ -9391,32 +9381,57 @@
     ],
     [
      "escape",
-     117.02,
+     116.82,
      0
     ],
     [
      "escape",
-     117.15,
+     117.08,
      0
     ],
     [
      "escape",
-     117.32,
-     0
-    ],
-    [
-     "ionCharge",
-     118.98,
+     117.42,
      0
     ],
     [
      "escape",
-     119.12,
+     117.45,
      0
     ],
     [
-     "rout",
-     119.38,
+     "escape",
+     118.52,
+     0
+    ],
+    [
+     "escape",
+     118.65,
+     0
+    ],
+    [
+     "vendetta",
+     118.95,
+     0
+    ],
+    [
+     "wreckStrike",
+     119.28,
+     0
+    ],
+    [
+     "escape",
+     119.45,
+     0
+    ],
+    [
+     "escape",
+     119.88,
+     0
+    ],
+    [
+     "escape",
+     120.02,
      0
     ]
    ],
@@ -9807,19 +9822,19 @@
     ],
     [
      98.6,
-     0.6612
+     0.6617
     ],
     [
      99.6,
-     0.6615
+     0.6614
     ],
     [
      100.7,
-     0.6595
+     0.6594
     ],
     [
      101.7,
-     0.659
+     0.6594
     ],
     [
      102.7,
@@ -9827,67 +9842,67 @@
     ],
     [
      103.8,
-     0.6595
+     0.6584
     ],
     [
      104.8,
-     0.6595
+     0.6588
     ],
     [
      105.8,
-     0.6649
+     0.6641
     ],
     [
      106.9,
-     0.6712
+     0.6711
     ],
     [
      107.9,
-     0.6768
+     0.682
     ],
     [
      108.9,
-     0.6874
+     0.6876
     ],
     [
      110,
-     0.6853
+     0.6864
     ],
     [
      111,
-     0.6955
+     0.6859
     ],
     [
      112,
-     0.7149
+     0.6956
     ],
     [
      113.1,
-     0.7123
+     0.6965
     ],
     [
      114.1,
-     0.7126
+     0.6966
     ],
     [
      115.1,
-     0.707
+     0.6973
     ],
     [
      116.2,
-     0.6986
+     0.6939
     ],
     [
      117.2,
-     0.6868
+     0.6841
     ],
     [
      118.2,
-     0.6827
+     0.6789
     ],
     [
      119.3,
-     0.6792
+     0.6725
     ]
    ],
    "plans": [
@@ -9903,14 +9918,14 @@
      16
     ],
     "losses120": [
-     125,
-     39
+     124,
+     41
     ],
-    "killX": -1692,
-    "killSpreadZ": 1460,
+    "killX": -1694,
+    "killSpreadZ": 1458,
     "end": 120
    },
-   "msCpuPerSimSecond": 2165
+   "msCpuPerSimSecond": 2229
   },
   {
    "name": "Empire vs Rebels",
@@ -10881,7 +10896,7 @@
     "killSpreadZ": 1003,
     "end": 98.4
    },
-   "msCpuPerSimSecond": 2137
+   "msCpuPerSimSecond": 2142
   },
   {
    "name": "Random 1",
@@ -10899,7 +10914,7 @@
    "decided": true,
    "winner": 1,
    "losses": [
-    11,
+    12,
     37
    ],
    "spawned": [
@@ -10911,11 +10926,11 @@
     "REGROUP": 3,
     "EVADE": 2645,
     "FLANK": 304,
-    "ESCORT": 378,
+    "ESCORT": 376,
     "ATTACK": 144
    },
-   "fled": 74,
-   "fledSurvived": 53,
+   "fled": 73,
+   "fledSurvived": 52,
    "cohesion": {
     "mean": 514,
     "early": 389,
@@ -10929,12 +10944,12 @@
     "rallies": 0,
     "lastStands": 7,
     "rams": 1,
-    "rescues": 2,
+    "rescues": 3,
     "aces": 0,
     "vendettas": 2,
     "flagshipsLost": 0,
     "successions": 0,
-    "planSwitches": 2,
+    "planSwitches": 3,
     "podsLaunched": 1
    },
    "leadChanges": 1,
@@ -11221,6 +11236,11 @@
      1
     ],
     [
+     "rescue",
+     117.48,
+     0
+    ],
+    [
      "wreckStrike",
      117.68,
      0
@@ -11229,6 +11249,11 @@
      "victory",
      118.05,
      1
+    ],
+    [
+     "planSwitch",
+     118.05,
+     0
     ],
     [
      "convoySaved",
@@ -11687,11 +11712,11 @@
     ],
     [
      115.1,
-     0.5256
+     0.5259
     ],
     [
      116.2,
-     0.5265
+     0.5264
     ],
     [
      117.2,
@@ -11699,7 +11724,7 @@
     ]
    ],
    "plans": [
-    "DECAPITATE",
+    "PINCER",
     "PINCER"
    ],
    "objective": "CONVOY",
@@ -11711,14 +11736,14 @@
      14
     ],
     "losses120": [
-     11,
+     12,
      22
     ],
-    "killX": -839,
-    "killSpreadZ": 878,
+    "killX": -804,
+    "killSpreadZ": 898,
     "end": 118
    },
-   "msCpuPerSimSecond": 460
+   "msCpuPerSimSecond": 461
   },
   {
    "name": "Random 1",
@@ -11736,7 +11761,7 @@
    "decided": false,
    "winner": null,
    "losses": [
-    27,
+    23,
     37
    ],
    "spawned": [
@@ -11744,27 +11769,27 @@
     52
    ],
    "decisions": {
-    "RETREAT": 133,
+    "RETREAT": 132,
     "REGROUP": 0,
-    "EVADE": 7376,
-    "FLANK": 629,
-    "ESCORT": 607,
-    "ATTACK": 368
+    "EVADE": 8461,
+    "FLANK": 615,
+    "ESCORT": 621,
+    "ATTACK": 383
    },
-   "fled": 40,
-   "fledSurvived": 11,
+   "fled": 43,
+   "fledSurvived": 13,
    "cohesion": {
-    "mean": 901,
+    "mean": 878,
     "early": 798,
-    "mid": 924,
-    "late": 984
+    "mid": 921,
+    "late": 916
    },
-   "squadsBroken": 3,
-   "squadsReformed": 1,
+   "squadsBroken": 1,
+   "squadsReformed": 0,
    "moments": {
     "routs": 3,
     "rallies": 0,
-    "lastStands": 5,
+    "lastStands": 4,
     "rams": 0,
     "rescues": 7,
     "aces": 1,
@@ -11958,28 +11983,33 @@
      0
     ],
     [
-     "vendetta",
-     89.52,
-     1
-    ],
-    [
      "rescue",
      94.28,
      1
     ],
     [
      "wreckStrike",
-     96.85,
+     96.82,
      0
     ],
     [
-     "heroDuel",
-     101.28,
-     0
+     "vendetta",
+     103.42,
+     1
     ],
     [
      "rescue",
      104.35,
+     0
+    ],
+    [
+     "ace",
+     106.88,
+     1
+    ],
+    [
+     "rescue",
+     106.88,
      0
     ],
     [
@@ -11988,23 +12018,33 @@
      1
     ],
     [
+     "heroDuel",
+     112.78,
+     0
+    ],
+    [
      "ionStrike",
      115.68,
      1
     ],
     [
-     "capitalKill",
-     116.88,
-     1
-    ],
-    [
-     "wreckStrike",
-     117.38,
+     "pods",
+     120.38,
      0
     ],
     [
-     "rescue",
-     117.38,
+     "lastStand",
+     120.38,
+     0
+    ],
+    [
+     "capitalKill",
+     123.92,
+     0
+    ],
+    [
+     "rescueStart",
+     123.92,
      0
     ],
     [
@@ -12013,49 +12053,34 @@
      0
     ],
     [
-     "wreckStrike",
-     124.18,
-     1
-    ],
-    [
-     "lastStand",
-     124.85,
-     1
-    ],
-    [
      "heroKill",
-     125.42,
-     1
-    ],
-    [
-     "vendettaFailed",
-     125.45,
-     1
-    ],
-    [
-     "wreckStrike",
-     126.22,
+     127.05,
      1
     ],
     [
      "capitalKill",
-     126.82,
-     0
+     127.05,
+     1
+    ],
+    [
+     "vendettaFailed",
+     127.08,
+     1
     ],
     [
      "wreckStrike",
-     127.32,
+     127.72,
      1
     ],
     [
-     "rout",
-     127.55,
-     1
+     "capitalKill",
+     127.95,
+     0
     ],
     [
-     "ace",
-     128.25,
-     1
+     "rescueStart",
+     127.98,
+     0
     ],
     [
      "ionStrike",
@@ -12064,133 +12089,88 @@
     ],
     [
      "wreckStrike",
-     131.22,
-     1
-    ],
-    [
-     "capitalKill",
-     133.55,
+     128.45,
      1
     ],
     [
      "wreckStrike",
-     134.75,
+     131.58,
+     1
+    ],
+    [
+     "capitalKill",
+     133.12,
+     1
+    ],
+    [
+     "wreckStrike",
+     134.45,
      1
     ],
     [
      "rout",
-     136.02,
+     134.52,
+     1
+    ],
+    [
+     "wreckStrike",
+     134.82,
+     1
+    ],
+    [
+     "rout",
+     135.05,
+     1
+    ],
+    [
+     "wreckStrike",
+     144.52,
      1
     ],
     [
      "escape",
-     138.55,
+     145.52,
      1
-    ],
-    [
-     "wreckStrike",
-     139.45,
-     1
-    ],
-    [
-     "rescueStart",
-     140.25,
-     0
-    ],
-    [
-     "pods",
-     141.75,
-     0
-    ],
-    [
-     "lastStand",
-     141.75,
-     0
-    ],
-    [
-     "wreckStrike",
-     144.58,
-     0
-    ],
-    [
-     "wreckStrike",
-     144.82,
-     0
-    ],
-    [
-     "capitalKill",
-     145.28,
-     0
-    ],
-    [
-     "rescueStart",
-     145.28,
-     0
-    ],
-    [
-     "rescue",
-     145.95,
-     0
-    ],
-    [
-     "wreckStrike",
-     146.88,
-     0
-    ],
-    [
-     "wreckStrike",
-     147.22,
-     0
-    ],
-    [
-     "wreckStrike",
-     147.55,
-     0
     ],
     [
      "escape",
-     150.02,
+     149.05,
      1
     ],
     [
      "wreckStrike",
-     151.65,
+     154.65,
      0
     ],
     [
-     "wreckStrike",
-     158.58,
-     0
-    ],
-    [
-     "wreckStrike",
-     159.78,
+     "rescue",
+     154.75,
      0
     ],
     [
      "ionCharge",
-     168.25,
-     1
-    ],
-    [
-     "ionCharge",
-     172.72,
-     0
-    ],
-    [
-     "ionStrike",
-     173.05,
+     157.25,
      1
     ],
     [
      "rescue",
-     173.35,
+     157.78,
      0
     ],
     [
      "ionStrike",
-     177.18,
+     162.45,
+     1
+    ],
+    [
+     "ionCharge",
+     177.75,
      0
+    ],
+    [
+     "rescueStart",
+     179.75,
+     1
     ]
    ],
    "momentum": [
@@ -12540,359 +12520,359 @@
     ],
     [
      88.3,
-     0.5245
-    ],
-    [
-     89.3,
-     0.5262
-    ],
-    [
-     90.3,
-     0.5264
-    ],
-    [
-     91.4,
-     0.5264
-    ],
-    [
-     92.4,
-     0.5256
-    ],
-    [
-     93.4,
-     0.5256
-    ],
-    [
-     94.5,
-     0.5251
-    ],
-    [
-     95.5,
-     0.5249
-    ],
-    [
-     96.5,
-     0.5249
-    ],
-    [
-     97.6,
-     0.5216
-    ],
-    [
-     98.6,
-     0.5216
-    ],
-    [
-     99.6,
-     0.5216
-    ],
-    [
-     100.7,
-     0.5216
-    ],
-    [
-     101.7,
-     0.5217
-    ],
-    [
-     102.7,
-     0.5219
-    ],
-    [
-     103.8,
-     0.5226
-    ],
-    [
-     104.8,
-     0.5226
-    ],
-    [
-     105.8,
-     0.5223
-    ],
-    [
-     106.9,
-     0.5221
-    ],
-    [
-     107.9,
-     0.5235
-    ],
-    [
-     108.9,
-     0.5238
-    ],
-    [
-     110,
-     0.5246
-    ],
-    [
-     111,
-     0.5245
-    ],
-    [
-     112,
-     0.5235
-    ],
-    [
-     113.1,
-     0.525
-    ],
-    [
-     114.1,
-     0.526
-    ],
-    [
-     115.1,
-     0.526
-    ],
-    [
-     116.2,
-     0.5246
-    ],
-    [
-     117.2,
-     0.5238
-    ],
-    [
-     118.2,
-     0.5222
-    ],
-    [
-     119.3,
-     0.5219
-    ],
-    [
-     120.3,
-     0.5221
-    ],
-    [
-     121.3,
-     0.5217
-    ],
-    [
-     122.4,
-     0.5215
-    ],
-    [
-     123.4,
-     0.5217
-    ],
-    [
-     124.4,
-     0.5232
-    ],
-    [
-     125.5,
-     0.5236
-    ],
-    [
-     126.5,
-     0.5247
-    ],
-    [
-     127.5,
-     0.5279
-    ],
-    [
-     128.6,
-     0.5278
-    ],
-    [
-     129.6,
-     0.5281
-    ],
-    [
-     130.6,
-     0.5294
-    ],
-    [
-     131.7,
-     0.5312
-    ],
-    [
-     132.7,
-     0.5317
-    ],
-    [
-     133.7,
-     0.5337
-    ],
-    [
-     134.8,
-     0.5343
-    ],
-    [
-     135.8,
-     0.5343
-    ],
-    [
-     136.8,
-     0.535
-    ],
-    [
-     137.9,
-     0.5335
-    ],
-    [
-     138.9,
-     0.5337
-    ],
-    [
-     139.9,
-     0.5337
-    ],
-    [
-     141,
-     0.5331
-    ],
-    [
-     142,
-     0.5325
-    ],
-    [
-     143,
-     0.5317
-    ],
-    [
-     144.1,
-     0.5321
-    ],
-    [
-     145.1,
-     0.5266
-    ],
-    [
-     146.1,
-     0.5224
-    ],
-    [
-     147.2,
-     0.5174
-    ],
-    [
-     148.2,
-     0.5166
-    ],
-    [
-     149.2,
-     0.5169
-    ],
-    [
-     150.3,
-     0.5173
-    ],
-    [
-     151.3,
-     0.518
-    ],
-    [
-     152.3,
-     0.515
-    ],
-    [
-     153.4,
-     0.516
-    ],
-    [
-     154.4,
-     0.5158
-    ],
-    [
-     155.4,
-     0.5159
-    ],
-    [
-     156.5,
-     0.5164
-    ],
-    [
-     157.5,
-     0.5155
-    ],
-    [
-     158.5,
-     0.5122
-    ],
-    [
-     159.6,
-     0.5111
-    ],
-    [
-     160.6,
-     0.5087
-    ],
-    [
-     161.6,
-     0.5079
-    ],
-    [
-     162.7,
-     0.5077
-    ],
-    [
-     163.7,
-     0.5072
-    ],
-    [
-     164.7,
-     0.5075
-    ],
-    [
-     165.8,
-     0.5069
-    ],
-    [
-     166.8,
-     0.5077
-    ],
-    [
-     167.8,
-     0.5092
-    ],
-    [
-     168.9,
-     0.5098
-    ],
-    [
-     169.9,
-     0.5114
-    ],
-    [
-     170.9,
-     0.5141
-    ],
-    [
-     172,
-     0.5165
-    ],
-    [
-     173,
-     0.5186
-    ],
-    [
-     174,
-     0.517
-    ],
-    [
-     175.1,
-     0.5189
-    ],
-    [
-     176.1,
-     0.5192
-    ],
-    [
-     177.1,
-     0.5219
-    ],
-    [
-     178.2,
      0.5244
     ],
     [
+     89.3,
+     0.524
+    ],
+    [
+     90.3,
+     0.5251
+    ],
+    [
+     91.4,
+     0.5243
+    ],
+    [
+     92.4,
+     0.5242
+    ],
+    [
+     93.4,
+     0.5241
+    ],
+    [
+     94.5,
+     0.5238
+    ],
+    [
+     95.5,
+     0.5232
+    ],
+    [
+     96.5,
+     0.5232
+    ],
+    [
+     97.6,
+     0.5194
+    ],
+    [
+     98.6,
+     0.5195
+    ],
+    [
+     99.6,
+     0.5193
+    ],
+    [
+     100.7,
+     0.5196
+    ],
+    [
+     101.7,
+     0.5201
+    ],
+    [
+     102.7,
+     0.521
+    ],
+    [
+     103.8,
+     0.5216
+    ],
+    [
+     104.8,
+     0.5202
+    ],
+    [
+     105.8,
+     0.5204
+    ],
+    [
+     106.9,
+     0.5205
+    ],
+    [
+     107.9,
+     0.5197
+    ],
+    [
+     108.9,
+     0.5195
+    ],
+    [
+     110,
+     0.5198
+    ],
+    [
+     111,
+     0.52
+    ],
+    [
+     112,
+     0.5195
+    ],
+    [
+     113.1,
+     0.5182
+    ],
+    [
+     114.1,
+     0.5176
+    ],
+    [
+     115.1,
+     0.5164
+    ],
+    [
+     116.2,
+     0.5151
+    ],
+    [
+     117.2,
+     0.5136
+    ],
+    [
+     118.2,
+     0.5136
+    ],
+    [
+     119.3,
+     0.5125
+    ],
+    [
+     120.3,
+     0.5117
+    ],
+    [
+     121.3,
+     0.5097
+    ],
+    [
+     122.4,
+     0.5069
+    ],
+    [
+     123.4,
+     0.5068
+    ],
+    [
+     124.4,
+     0.506
+    ],
+    [
+     125.5,
+     0.5073
+    ],
+    [
+     126.5,
+     0.5079
+    ],
+    [
+     127.5,
+     0.5081
+    ],
+    [
+     128.6,
+     0.5118
+    ],
+    [
+     129.6,
+     0.512
+    ],
+    [
+     130.6,
+     0.5103
+    ],
+    [
+     131.7,
+     0.512
+    ],
+    [
+     132.7,
+     0.512
+    ],
+    [
+     133.7,
+     0.5119
+    ],
+    [
+     134.8,
+     0.514
+    ],
+    [
+     135.8,
+     0.5154
+    ],
+    [
+     136.8,
+     0.5151
+    ],
+    [
+     137.9,
+     0.5153
+    ],
+    [
+     138.9,
+     0.5152
+    ],
+    [
+     139.9,
+     0.5159
+    ],
+    [
+     141,
+     0.5166
+    ],
+    [
+     142,
+     0.5163
+    ],
+    [
+     143,
+     0.5161
+    ],
+    [
+     144.1,
+     0.5167
+    ],
+    [
+     145.1,
+     0.5186
+    ],
+    [
+     146.1,
+     0.5223
+    ],
+    [
+     147.2,
+     0.5226
+    ],
+    [
+     148.2,
+     0.5241
+    ],
+    [
+     149.2,
+     0.5292
+    ],
+    [
+     150.3,
+     0.5293
+    ],
+    [
+     151.3,
+     0.5311
+    ],
+    [
+     152.3,
+     0.5317
+    ],
+    [
+     153.4,
+     0.5311
+    ],
+    [
+     154.4,
+     0.5326
+    ],
+    [
+     155.4,
+     0.5278
+    ],
+    [
+     156.5,
+     0.5294
+    ],
+    [
+     157.5,
+     0.5304
+    ],
+    [
+     158.5,
+     0.5318
+    ],
+    [
+     159.6,
+     0.5342
+    ],
+    [
+     160.6,
+     0.5345
+    ],
+    [
+     161.6,
+     0.5349
+    ],
+    [
+     162.7,
+     0.5364
+    ],
+    [
+     163.7,
+     0.535
+    ],
+    [
+     164.7,
+     0.5352
+    ],
+    [
+     165.8,
+     0.5365
+    ],
+    [
+     166.8,
+     0.5369
+    ],
+    [
+     167.8,
+     0.538
+    ],
+    [
+     168.9,
+     0.5394
+    ],
+    [
+     169.9,
+     0.5383
+    ],
+    [
+     170.9,
+     0.54
+    ],
+    [
+     172,
+     0.5414
+    ],
+    [
+     173,
+     0.541
+    ],
+    [
+     174,
+     0.5438
+    ],
+    [
+     175.1,
+     0.5443
+    ],
+    [
+     176.1,
+     0.5439
+    ],
+    [
+     177.1,
+     0.5451
+    ],
+    [
+     178.2,
+     0.5457
+    ],
+    [
      179.2,
-     0.5263
+     0.5483
     ]
    ],
    "plans": [
@@ -12902,20 +12882,20 @@
    "objective": "ANNIHILATE",
    "shape": {
     "firstBlood": 29.6,
-    "quarterLost": 116.9,
+    "quarterLost": 96.8,
     "losses60": [
      1,
      3
     ],
     "losses120": [
-     14,
-     13
+     15,
+     10
     ],
-    "killX": 521,
-    "killSpreadZ": 1644,
+    "killX": 501,
+    "killSpreadZ": 1728,
     "end": 180
    },
-   "msCpuPerSimSecond": 499
+   "msCpuPerSimSecond": 500
   },
   {
    "name": "Random 1",
@@ -14202,7 +14182,7 @@
     "killSpreadZ": 1376,
     "end": 180
    },
-   "msCpuPerSimSecond": 446
+   "msCpuPerSimSecond": 451
   },
   {
    "name": "Random 1",
@@ -15392,7 +15372,7 @@
     "killSpreadZ": 1594,
     "end": 120
    },
-   "msCpuPerSimSecond": 1925
+   "msCpuPerSimSecond": 1951
   },
   {
    "name": "Random 1",
@@ -16372,7 +16352,7 @@
     "killSpreadZ": 1757,
     "end": 120
    },
-   "msCpuPerSimSecond": 2011
+   "msCpuPerSimSecond": 2028
   },
   {
    "name": "Random 1",
@@ -17302,7 +17282,7 @@
     "killSpreadZ": 1725,
     "end": 120
    },
-   "msCpuPerSimSecond": 1861
+   "msCpuPerSimSecond": 1857
   },
   {
    "name": "Random 2",
@@ -17668,7 +17648,7 @@
     "killSpreadZ": 1282,
     "end": 57.1
    },
-   "msCpuPerSimSecond": 323
+   "msCpuPerSimSecond": 334
   },
   {
    "name": "Random 2",
@@ -18698,31 +18678,31 @@
     ],
     [
      173,
-     0.3429
+     0.3428
     ],
     [
      174,
-     0.3432
+     0.3428
     ],
     [
      175.1,
-     0.3326
+     0.3322
     ],
     [
      176.1,
-     0.3288
+     0.327
     ],
     [
      177.1,
-     0.325
+     0.3225
     ],
     [
      178.2,
-     0.3199
+     0.3178
     ],
     [
      179.2,
-     0.3143
+     0.3124
     ]
    ],
    "plans": [
@@ -18745,7 +18725,7 @@
     "killSpreadZ": 499,
     "end": 180
    },
-   "msCpuPerSimSecond": 449
+   "msCpuPerSimSecond": 445
   },
   {
    "name": "Random 2",
@@ -19172,7 +19152,7 @@
     "killSpreadZ": 1214,
     "end": 61.2
    },
-   "msCpuPerSimSecond": 460
+   "msCpuPerSimSecond": 463
   },
   {
    "name": "Random 2",
@@ -19470,7 +19450,7 @@
     "killSpreadZ": 1813,
     "end": 44.7
    },
-   "msCpuPerSimSecond": 1331
+   "msCpuPerSimSecond": 1348
   },
   {
    "name": "Random 2",
@@ -20505,7 +20485,7 @@
     "killSpreadZ": 983,
     "end": 120
    },
-   "msCpuPerSimSecond": 2623
+   "msCpuPerSimSecond": 2661
   },
   {
    "name": "Random 2",
@@ -21316,7 +21296,7 @@
     "killSpreadZ": 1483,
     "end": 88.1
    },
-   "msCpuPerSimSecond": 2390
+   "msCpuPerSimSecond": 2435
   },
   {
    "name": "Shadows vs Minbari",
@@ -22473,7 +22453,7 @@
     "killSpreadZ": 2100,
     "end": 180
    },
-   "msCpuPerSimSecond": 336
+   "msCpuPerSimSecond": 337
   },
   {
    "name": "Shadows vs Minbari",
@@ -23575,7 +23555,7 @@
     "killSpreadZ": 401,
     "end": 180
    },
-   "msCpuPerSimSecond": 413
+   "msCpuPerSimSecond": 402
   },
   {
    "name": "Shadows vs Minbari",
@@ -24458,7 +24438,7 @@
     "killSpreadZ": 495,
     "end": 142.8
    },
-   "msCpuPerSimSecond": 383
+   "msCpuPerSimSecond": 384
   },
   {
    "name": "Shadows vs Minbari",
@@ -25513,7 +25493,7 @@
     "killSpreadZ": 844,
     "end": 120
    },
-   "msCpuPerSimSecond": 1039
+   "msCpuPerSimSecond": 1048
   },
   {
    "name": "Shadows vs Minbari",
@@ -26393,7 +26373,7 @@
     "killSpreadZ": 564,
     "end": 120
    },
-   "msCpuPerSimSecond": 1125
+   "msCpuPerSimSecond": 1147
   },
   {
    "name": "Shadows vs Minbari",
@@ -27123,7 +27103,7 @@
     "killSpreadZ": 394,
     "end": 94.3
    },
-   "msCpuPerSimSecond": 1118
+   "msCpuPerSimSecond": 1146
   }
  ]
 }

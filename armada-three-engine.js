@@ -16363,16 +16363,18 @@ function towStep(now,dt){
       else if(now-q.t0>45)end("lost");
       continue;
     }
-    battleAI.story.setOrder(s,"TOW",{point:home,until:now+1.2});
+    battleAI.story.setOrder(s,"TOW",{point:home,until:now+1.2,slow:true});
     // The hull follows its tug on a stiff line, slowly: a capital does not tow like a fighter.
     const off=[s.x-Math.cos(s.yaw)*((w.rad||60)+60)-w.x,s.y-w.y,s.z-Math.sin(s.yaw)*((w.rad||60)+60)-w.z],k=Math.min(1,dt*.6);
-    const cap2=Math.min(28,(s.v||0)*.6+4);
+    const cap2=Math.min(30,(s.v||0)+4);
     w.vx+=(Math.max(-cap2,Math.min(cap2,off[0]*.25))-w.vx)*k;w.vy+=(Math.max(-cap2,Math.min(cap2,off[1]*.25))-w.vy)*k;w.vz+=(Math.max(-cap2,Math.min(cap2,off[2]*.25))-w.vz)*k;
-    if(now-q.attached>28||Math.abs(w.x)>7200&&Math.sign(w.x)===(q.side?1:-1)){
+    // Saved only with the hull still on the line when they jump.
+    const onLine=Math.hypot(s.x-w.x,s.y-w.y,s.z-w.z)<(w.rad||60)+900;
+    if(onLine&&(now-q.attached>28||Math.abs(w.x)>7200&&Math.sign(w.x)===(q.side?1:-1))){
       departureEffect({x:w.x,y:w.y,z:w.z,yaw:s.yaw,slen:(w.rad||60)*2,race:s.race},now,"jump");
       gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);if(w.ebo)gl.deleteBuffer(w.ebo);w.vao=null;w.gone=true;wrecks=wrecks.filter(x=>x!==w);
       end("saved");
-    }
+    }else if(now-q.attached>60)end("lost"); // the line parted
   }
 }
 const STORY_HOST={leave:leaveBattle,rejump:rejumpShip,volley:storyVolley,abandon:storyAbandon,declare:declareWinner};

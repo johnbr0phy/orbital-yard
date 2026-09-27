@@ -358,7 +358,8 @@
           }else goal=[s.x,s.y,s.z];
           boost=1.1;mode='ESCORT';
         }else if(order.point){goal=order.point.slice();if(order.spread){goal[0]+=a.lane*order.spread;goal[1]+=a.vertical*order.spread*.3;goal[2]+=a.orbit*a.lane*order.spread;}
-          boost=kind==='HIDE'?.9:kind==='HOLD'?.8:kind==='CONVOY'?1:1.15;mode=kind==='CONVOY'?'SEARCH':kind;}
+          // A tug with a hull on the line crawls: a capital does not tow like a fighter.
+          boost=kind==='HIDE'?.9:kind==='HOLD'?.8:kind==='CONVOY'?1:kind==='TOW'&&order.slow?.3:1.15;mode=kind==='CONVOY'?'SEARCH':kind;}
         else if(kind==='STRIKE'){const t=this.byId.get(order.target);goal=t&&alive(t)?[t.x,t.y+a.vertical*80,t.z]:[s.x,s.y,s.z];boost=1.2;mode='ATTACK';}
         else if(kind==='BERSERK'){mode='ATTACK';}
         if(kind==='BERSERK'&&c){const n=distance(s,c)||1;goal=[c.x+(s.x-c.x)/n*60,c.y,c.z+(s.z-c.z)/n*60];boost=1.35;}

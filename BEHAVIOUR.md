@@ -66,8 +66,8 @@ Same 30 wars, same caps, same script, on the final code. Full data: `bench/story
 | Borg vs Federation (THE BORG COLLECTIVE vs THE FEDERATION) | 60 | 122 (2/3) | 15.7 | 0 | 1911.3 | 61.7 | 132.7 | 17 | 547.3 | 2.3 / 0 | 3.7 | 4.7 | 0.3 | 3.7 | 0.3 | 1.7 | 0 | 18.3 | 40 (67 / 12) |
 | Borg vs Federation (THE BORG COLLECTIVE vs THE FEDERATION) | 300 | 98.7 (1/3) | 38.7 | 0 | 1831.3 | 413.3 | 381.7 | 62 | 556.7 | 5 / 0.3 | 7.7 | 6 | 0.3 | 4.3 | 0.7 | 1.3 | 0.7 | 17 | 39 (72 / 6) |
 | Empire vs Rebels (THE IMPERIAL STARFLEET vs THE REBEL ALLIANCE) | 60 | 117.3 (2/3) | 179.7 | 5 | 4001.3 | 165.3 | 291.7 | 59.3 | 413 | 5.7 / 1.3 | 8 | 2 | 0 | 1 | 1 | 2.3 | 0 | 18.7 | 38 (66 / 10) |
-| Empire vs Rebels (THE IMPERIAL STARFLEET vs THE REBEL ALLIANCE) | 300 | 96 (2/3) | 419.7 | 36 | 3037.7 | 754.3 | 724 | 361 | 451 | 20 / 2.7 | 42 | 0.7 | 0 | 0.7 | 1.3 | 2.3 | 0.7 | 18.3 | 31 (52 / 10) |
-| Random 1 (THE FEDERATION vs THE MINBARI FEDERATION) | 60 | 159.3 (1/3) | 111.3 | 1.3 | 4934 | 505.7 | 492.7 | 26.7 | 729 | 3 / 1.3 | 4.3 | 7.3 | 1 | 5 | 0.3 | 2 | 0.3 | 20.7 | 32 (59 / 5) |
+| Empire vs Rebels (THE IMPERIAL STARFLEET vs THE REBEL ALLIANCE) | 300 | 96 (2/3) | 416 | 36 | 2847.3 | 756.7 | 744.7 | 364.3 | 452 | 20 / 2.7 | 43 | 0.7 | 0 | 0.7 | 1.3 | 2.7 | 0.7 | 18.3 | 31 (52 / 10) |
+| Random 1 (THE FEDERATION vs THE MINBARI FEDERATION) | 60 | 159.3 (1/3) | 111 | 1.3 | 5295.7 | 501 | 496.7 | 27 | 721.3 | 2.3 / 1 | 4.3 | 7 | 1 | 5.3 | 0.3 | 2 | 0.3 | 20.7 | 33 (62 / 5) |
 | Random 1 (THE FEDERATION vs THE MINBARI FEDERATION) | 300 | 120 (0/3) | 397.3 | 9 | 8379.3 | 2499.3 | 1190.7 | 120 | 1036 | 19 / 1 | 17 | 12 | 1.7 | 4 | 2 | 2 | 1 | 20 | 18 (31 / 6) |
 | Random 2 (THE ENGINEERS vs THE USCM TASK FORCE) | 60 | 99.4 (2/3) | 103 | 0 | 4785.7 | 213.7 | 171.3 | 32.3 | 567 | 0.7 / 0.3 | 2.3 | 1.3 | 0 | 0.7 | 0 | 1.3 | 1.3 | 13.7 | 35 (65 / 5) |
 | Random 2 (THE ENGINEERS vs THE USCM TASK FORCE) | 300 | 84.3 (2/3) | 433.7 | 0.7 | 1155 | 1404 | 815 | 270.3 | 574.7 | 9.3 / 1.7 | 29 | 0 | 0 | 0 | 0.7 | 1.3 | 0.7 | 12.7 | 36 (67 / 5) |
@@ -81,8 +81,8 @@ Same 30 wars, same caps, same script, on the final code. Full data: `bench/story
 | Borg vs Federation | 60 | 33 → 40 | 0 → 0 | 7 → 18.3 | 0 → 3.7 | 0 → 3.7 | 0 → 0.3 | 8.3 → 17 | 730.7 → 547.3 | 114 → 122 |
 | Borg vs Federation | 300 | 18 → 39 | 1 → 0.7 | 5.7 → 17 | 0 → 7.7 | 0 → 4.3 | 0 → 0.7 | 29.7 → 62 | 789 → 556.7 | 120 → 98.7 |
 | Empire vs Rebels | 60 | 23 → 38 | 0.3 → 0 | 5.3 → 18.7 | 0 → 8 | 0 → 1 | 0 → 1 | 9 → 59.3 | 344 → 413 | 180 → 117.3 |
-| Empire vs Rebels | 300 | 28 → 31 | 0.7 → 0.7 | 5.3 → 18.3 | 0 → 42 | 0 → 0.7 | 0 → 1.3 | 45.7 → 361 | 569.3 → 451 | 120 → 96 |
-| Random 1 | 60 | 17 → 32 | 1 → 0.3 | 5.7 → 20.7 | 0 → 4.3 | 0 → 5 | 0 → 0.3 | 4 → 26.7 | 761.3 → 729 | 180 → 159.3 |
+| Empire vs Rebels | 300 | 28 → 31 | 0.7 → 0.7 | 5.3 → 18.3 | 0 → 43 | 0 → 0.7 | 0 → 1.3 | 45.7 → 364.3 | 569.3 → 452 | 120 → 96 |
+| Random 1 | 60 | 17 → 33 | 1 → 0.3 | 5.7 → 20.7 | 0 → 4.3 | 0 → 5.3 | 0 → 0.3 | 4 → 27 | 761.3 → 721.3 | 180 → 159.3 |
 | Random 1 | 300 | 20 → 18 | 1 → 1 | 5.3 → 20 | 0 → 17 | 0 → 4 | 0 → 2 | 64.3 → 120 | 1209.7 → 1036 | 120 → 120 |
 | Random 2 | 60 | 26 → 35 | 1.3 → 1.3 | 6.3 → 13.7 | 0 → 2.3 | 0 → 0.7 | 0 → 0 | 1.7 → 32.3 | 422.3 → 567 | 175.1 → 99.4 |
 | Random 2 | 300 | 22 → 36 | 1 → 0.7 | 5.7 → 12.7 | 0 → 29 | 0 → 0 | 0 → 0.7 | 75.3 → 270.3 | 588.3 → 574.7 | 120 → 84.3 |
@@ -92,8 +92,8 @@ Same 30 wars, same caps, same script, on the final code. Full data: `bench/story
 What the numbers say:
 
 - **More wars end.** 14 of 30 reach a result inside the cap, against 4 of 30. But 13 of those 14 had a convoy or station objective. A war of annihilation still usually runs to the cap (1 of 10 ended), and neither flagship war ended inside it.
-- **The log tells a story.** Distinct event types went from 5–7 to 12.7–22 (means over seeds). Across the 30 wars the log holds 396 routs, 27 rallies, 129 last stands, 12 rams, 72 rescue outcomes, 33 aces, 67 vendettas, 5 flagship losses with 4 successions, 47 plan switches and 33 abandon-ship launches. Before, every one of those was 0.
-- **Running away now means living.** Ships that fled and survived: 1.7–75 per war before, 10.7–361 after.
+- **The log tells a story.** Distinct event types went from 5–7 to 12.7–22 (means over seeds). Across the 30 wars the log holds 399 routs, 29 rallies, 128 last stands, 12 rams, 73 rescue outcomes, 33 aces, 68 vendettas, 5 flagship losses with 4 successions, 48 plan switches and 33 abandon-ship launches. Before, every one of those was 0.
+- **Running away now means living.** Ships that fled and survived: 1.7–75 per war before, 10.7–364.3 after.
 - **Seeds of a matchup differ more, mostly.** Uniqueness rose in 9 of 10 cells (12–33 → 18–43). It fell in one: Random 1 at 300 a side, 20 → 18.
 - **Honest caveat on uniqueness.** The rise comes mostly from the timeline part, and new event types raise that part just by existing. The shape part (how differently the momentum curves run) is mixed: up in 5 cells, down in 5 (for example Shadows vs Minbari at 60 a side 10 → 22, Random 2 at 60 a side 14 → 5). Wars that end sooner and more decisively have less room to run differently.
 - **Lead changes did not rise** (0–2.3 before, 0–1.3 after). Morale that cascades makes wars decisive: once a side starts to break, contagion and routs finish it. I've left that as it is and say so here, rather than adding a comeback mechanic the brief didn't ask for.
