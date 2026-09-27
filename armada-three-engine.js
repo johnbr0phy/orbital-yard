@@ -11729,7 +11729,7 @@ void main(){
 }`,`#version 300 es
 precision highp float;
 in vec3 vW;in vec3 vLocal;in vec3 vNormal;in float vT;
-uniform vec3 uInk,uBg,uAccent,uLight,uEye;uniform float uAlpha,uHaze,uKind,uPhase,uBands;
+uniform vec3 uInk,uBg,uAccent,uLight,uEye,uPos;uniform float uAlpha,uHaze,uKind,uPhase,uBands,uRock;
 out vec4 o;
 float hash3(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
 float noise3(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(hash3(i),hash3(i+vec3(1,0,0)),f.x),mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),f.x),mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),f.x),f.y),f.z);}
@@ -11742,6 +11742,12 @@ void main(){
   bool ocean=uKind>1.5&&uKind<2.5;float sea=0.,cloud=0.;
   if(uAlpha<.99&&uKind<5.5){N=normalize(cross(dFdx(vW),dFdy(vW)));day=abs(dot(N,L));surface=mix(uInk,uAccent,clamp(vT,0.,1.));alpha=uAlpha*clamp(vT,0.,1.);}
   else if(uKind<.5){float bands=.5+.5*sin(q.y*(12.+uBands*2.)+(n-.5)*4.);surface=mix(uInk,uAccent,.30+bands*.22);surface*=.96+.04*noise3(q*28.+uPhase);}
+  else if(uRock>.5){
+    // Faceted: light the real surface, not a sphere, so fracture planes and craters read.
+    N=normalize(cross(dFdx(vW),dFdy(vW)));if(dot(N,vW-uPos)<0.)N=-N;day=max(dot(N,L),0.);
+    float spots=smoothstep(.55,.75,terrain(vLocal*.02+uPhase*3.));
+    surface=mix(uInk,uAccent,.15+n*.55)*(.55+.55*clamp(vT,0.,1.4))*(1.-.25*spots);
+  }
   else if(uKind<1.5){surface=mix(uInk,uAccent,.2+n*.4);surface*=.90+.10*clamp(vT,0.,1.);}
   else if(ocean){float land=smoothstep(.49,.54,n);sea=1.-land;vec3 ground=mix(vec3(.23,.27,.23),vec3(.34,.32,.27),smoothstep(.56,.72,n));ground=mix(ground,vec3(.47,.47,.43),smoothstep(.76,.88,n));surface=mix(uInk,ground,land);float ice=smoothstep(.76,.94,abs(q.y)+(n-.5)*.15);surface=mix(surface,vec3(.53,.58,.59),ice*.75);cloud=smoothstep(.51,.79,terrain(q*11.+vec3(uPhase,0.,3.)));surface=mix(surface,vec3(.65,.68,.69),cloud*.42);}
   else if(uKind<3.5){surface=mix(uInk,uAccent,.25+.45*smoothstep(.22,.82,n));}
@@ -11749,6 +11755,8 @@ void main(){
   else surface=mix(uInk,uAccent,.65+.3*n);
   surface*=1.+(grain-.5)*detail*(ocean?(.10*(1.-sea)): .12);
   vec3 col=surface*(.025+.975*day);
+  // Rocks sit among the fleets, so they get the fleets' fill and a faint rim: the night side keeps its shape.
+  if(uRock>.5)col=surface*(.16+.84*day)+surface*.35*pow(1.-max(dot(N,E),0.),3.)+vec3(.030,.034,.042)*(1.-day)*(.6+.4*clamp(vT,0.,1.4));
   if(ocean){float shine=pow(max(dot(reflect(-L,N),E),0.),65.);col+=vec3(.6,.7,.8)*shine*sea*(1.-cloud)*.28;float rim=pow(1.-max(dot(N,E),0.),4.);col+=vec3(.17,.26,.33)*rim*smoothstep(-.15,.35,dot(N,L))*.5;}
   if(uKind>3.5&&uKind<4.5)col+=uAccent*pow(smoothstep(.65,.82,n),3.)*.45;
   if(uKind>4.5)col=surface;
@@ -11756,7 +11764,7 @@ void main(){
   o=vec4(col,alpha);
 
 }`);
-const CU={vp:gl.getUniformLocation(celProg,"uVP"),pos:gl.getUniformLocation(celProg,"uPos"),
+const CU={rock:gl.getUniformLocation(celProg,"uRock"),vp:gl.getUniformLocation(celProg,"uVP"),pos:gl.getUniformLocation(celProg,"uPos"),
   spin:gl.getUniformLocation(celProg,"uSpin"),ink:gl.getUniformLocation(celProg,"uInk"),
   bg:gl.getUniformLocation(celProg,"uBg"),alpha:gl.getUniformLocation(celProg,"uAlpha"),
   haze:gl.getUniformLocation(celProg,"uHaze"),accent:gl.getUniformLocation(celProg,"uAccent"),light:gl.getUniformLocation(celProg,"uLight"),kind:gl.getUniformLocation(celProg,"uKind"),phase:gl.getUniformLocation(celProg,"uPhase"),bands:gl.getUniformLocation(celProg,"uBands"),eye:gl.getUniformLocation(celProg,"uEye")};
@@ -11859,25 +11867,47 @@ function makeCelestial(Rr){
 }
 // The battlefield's own terrain, seeded with the system: solid rocks and a
 // flanking moon drawn by the world shader, and a nebula of soft billboards.
+/* An asteroid, not a potato: an elongated lump broken by flat fracture planes,
+   roughened by ridged noise and pitted with rimmed craters, tilted on its own
+   axis so its spin reads as a tumble. Its farthest point is its collision radius. */
 function rockMesh(rad,seed){
-  const R=mulberry32(seed>>>0),LA=9,LO=14,V2=[],T2=[],I2=[],bumps=[];
-  for(let i=0;i<7;i++){const az=R()*6.283,el=(R()-.5)*3.1;bumps.push([Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az),.25+R()*.5,(R()-.4)*.28]);}
-  const squash=[.75+R()*.5,.6+R()*.35,.75+R()*.5];
+  const R=mulberry32(seed>>>0),LA=18,LO=30,V2=[],T2=[],I2=[];
+  const h=(x,y,z)=>{const v=Math.sin(x*127.1+y*311.7+z*74.7+seed%997)*43758.5453;return v-Math.floor(v);};
+  const vn=(x,y,z)=>{const X=Math.floor(x),Y=Math.floor(y),Z=Math.floor(z),fx=x-X,fy=y-Y,fz=z-Z,u=fx*fx*(3-2*fx),w=fy*fy*(3-2*fy),q=fz*fz*(3-2*fz),L=(a,b,t)=>a+(b-a)*t;
+    return L(L(L(h(X,Y,Z),h(X+1,Y,Z),u),L(h(X,Y+1,Z),h(X+1,Y+1,Z),u),w),L(L(h(X,Y,Z+1),h(X+1,Y,Z+1),u),L(h(X,Y+1,Z+1),h(X+1,Y+1,Z+1),u),w),q);};
+  const ridged=(x,y,z)=>{let a=0,f=1.6,amp=.5;for(let o=0;o<4;o++){a+=(1-Math.abs(vn(x*f,y*f,z*f)*2-1))*amp;f*=2.1;amp*=.5;}return a;};
+  // Proportions: from a knobbly ball to a long shard.
+  const stretch=1+R()*1.3,axes=[stretch,.62+R()*.38,.55+R()*.35];
+  const unit=()=>{const a=R()*6.283,e=Math.asin(R()*2-1);return [Math.cos(e)*Math.cos(a),Math.sin(e),Math.cos(e)*Math.sin(a)];};
+  const cuts=Array.from({length:5+((R()*5)|0)},()=>[...unit(),.55+R()*.35]);
+  const craters=Array.from({length:3+((R()*5)|0)},()=>[...unit(),.12+R()*.22,.05+R()*.08]);
+  const tilt=[R()*6.283,(R()-.5)*1.6],ca=Math.cos(tilt[0]),sa=Math.sin(tilt[0]),cb=Math.cos(tilt[1]),sb=Math.sin(tilt[1]);
+  let far=0;
   for(let la=0;la<=LA;la++){const th=la/LA*Math.PI;for(let lo=0;lo<=LO;lo++){const ph=lo/LO*6.283;
-    const x=Math.sin(th)*Math.cos(ph),y=Math.cos(th),z=Math.sin(th)*Math.sin(ph);let k=1,t=.85;
-    for(const b of bumps){const d=x*b[0]+y*b[1]+z*b[2];if(d>1-b[3]){const u=(d-(1-b[3]))/b[3];k+=b[4]*u*u;t*=b[4]<0?.8:1;}}
-    V2.push(x*rad*k*squash[0],y*rad*k*squash[1],z*rad*k*squash[2]);T2.push(t);}}
+    const d=[Math.sin(th)*Math.cos(ph),Math.cos(th),Math.sin(th)*Math.sin(ph)];
+    let k=.82+.30*ridged(d[0]*1.7,d[1]*1.7,d[2]*1.7),tone=.9;
+    for(const c of craters){const dot=d[0]*c[0]+d[1]*c[1]+d[2]*c[2],g=Math.acos(Math.min(1,dot))/c[3];
+      if(g<1){k-=c[4]*(1-g*g);tone*=.78+.22*g;}else if(g<1.35){k+=c[4]*.35*(1-(g-1)/.35);tone*=1.06;}}
+    let p=[d[0]*k*axes[0],d[1]*k*axes[1],d[2]*k*axes[2]];
+    for(const c of cuts){const e=p[0]*c[0]+p[1]*c[1]+p[2]*c[2];if(e>c[3]){p=[p[0]-c[0]*(e-c[3]),p[1]-c[1]*(e-c[3]),p[2]-c[2]*(e-c[3])];tone*=.96;}}
+    // Tilt the long axis off the spin axis so the spin reads as a tumble.
+    let [x,y,z]=p;[x,y]=[x*cb-y*sb,x*sb+y*cb];[x,z]=[x*ca-z*sa,x*sa+z*ca];
+    far=Math.max(far,Math.hypot(x,y,z));V2.push(x,y,z);T2.push(tone*(.85+.3*h(d[0]*9,d[1]*9,d[2]*9)));}}
+  for(let i=0;i<V2.length;i++)V2[i]*=rad/far;
   for(let la=0;la<LA;la++)for(let lo=0;lo<LO;lo++){const a2=la*(LO+1)+lo,b2=a2+LO+1;I2.push(a2,b2,a2+1,a2+1,b2,b2+1);}
   return {v:V2,t:T2,i:I2};
 }
+// Rock colours: charcoal, basalt, rust-brown, pale regolith.
+const ROCK_TONES=[[[.20,.19,.18],[.34,.32,.29]],[[.16,.16,.17],[.30,.29,.29]],[[.27,.21,.16],[.42,.33,.25]],[[.33,.31,.28],[.48,.45,.40]]];
 let nebulaPuffs=[];
 function buildField(Rr){
   fieldBodies=[];nebulaPuffs=[];
   const f=starSystem?.field;if(!f)return;
   if(f.moon){const b={kind:f.moon.kind,center:f.moon.p.slice(),radius:f.moon.r,name:"Moon",base:[.36,.35,.33],accent:[.50,.48,.44],phase:Rr()*6.283,bands:4,p:f.moon.p.map(v=>v/sceneR),field:true};
     fieldBodies.push(b);addCel(celSphere(b.radius,1,Rr),...b.center,.0004,1,.02,Rr,b);}
-  for(const k of f.rocks||[]){const b={kind:1,center:k.p.slice(),radius:k.r,name:"Asteroid",base:[.31,.29,.27],accent:[.44,.40,.35],phase:(k.seed%628)/100,bands:3,p:k.p.map(v=>v/sceneR),field:true};
-    fieldBodies.push(b);addCel(rockMesh(k.r,k.seed),...k.p,.004+(k.seed%7)*.002,1,.02,Rr,b);}
+  for(const k of f.rocks||[]){const tone=ROCK_TONES[k.seed%ROCK_TONES.length];
+    const b={kind:1,rock:true,center:k.p.slice(),radius:k.r,name:"Asteroid",base:tone[0],accent:tone[1],phase:(k.seed%628)/100,bands:3,p:k.p.map(v=>v/sceneR),field:true};
+    fieldBodies.push(b);addCel(rockMesh(k.r,k.seed),...k.p,(.02+(k.seed%11)*.006)*((k.seed>>4)%2?1:-1)*Math.min(1,160/k.r),1,.02,Rr,b);}
   if(f.nebula){
     const R=mulberry32((starSystem.seed^0x4EB)>>>0),n=f.nebula,c=n.tint;
     for(let i=0;i<34;i++){
@@ -11930,7 +11960,7 @@ function drawWorlds(m,now,transparent){
       const an=now*c3.rate+c3.ph;
       gl.uniform3f(CU.pos,c3.x,c3.y,c3.z);
       const body=c3.body;
-      gl.uniform3fv(CU.ink,body?.base||inkc);gl.uniform3fv(CU.accent,body?.accent||inkc);gl.uniform3fv(CU.light,body?.kind>=5?[0,1,0]:(starSystem?.light||[-3,5,1]).map((v,i)=>v-(body?.p?.[i]||0)));gl.uniform1f(CU.kind,body?.kind||0);gl.uniform1f(CU.phase,body?.phase||0);gl.uniform1f(CU.bands,body?.bands||5);
+      gl.uniform3fv(CU.ink,body?.base||inkc);gl.uniform3fv(CU.accent,body?.accent||inkc);gl.uniform3fv(CU.light,body?.kind>=5?[0,1,0]:(starSystem?.light||[-3,5,1]).map((v,i)=>v-(body?.p?.[i]||0)));gl.uniform1f(CU.kind,body?.kind||0);gl.uniform1f(CU.phase,body?.phase||0);gl.uniform1f(CU.bands,body?.bands||5);gl.uniform1f(CU.rock,body?.rock?1:0);
       gl.uniform2f(CU.spin,Math.cos(an),Math.sin(an));
       gl.uniform1f(CU.alpha,c3.alpha);
       gl.uniform1f(CU.haze,c3.haze);
@@ -13353,6 +13383,47 @@ function craftWant(s,now,sq,mood,dist,boost){
   if(dist<45)k*=.65;
   return Math.max(cruise*.42,Math.min(dash,cruise*k));
 }
+/* ---------- throttle: speed that answers the fight ----------
+   craftWant picks a pace from the pilot's mood. This shapes it from what is
+   actually happening, so no two ships hold the same number for long:
+   - chasing: close fast from far off, settle to the target's own speed in
+     the firing pocket (no overshooting the mark);
+   - a hard turn bleeds speed, a straight run lets it build;
+   - engine damage lowers the top end;
+   - each pilot's hand drifts the throttle a few percent, slowly.
+   All inputs are simulation state: deterministic, no randomness. */
+const THROTTLE_MOODS={ATTACK:1,FLANK:1,STRIKE:1,SEARCH:1};
+function throttle(s,now,want,prefer,mood){
+  const cruise=s.spd||20,dash=s.spdMax||cruise*1.3,t=prefer>=0?ships[prefer]:null;
+  if(t&&!t.dead&&THROTTLE_MOODS[mood]&&!(s.ai&&s.ai.order&&['ROUT','PANIC','RAM','TOW','RESCUE'].includes(s.ai.order.kind))){
+    const gap=gapTo(s,t),pocket=s.slen<60?160:260,tv=Math.abs(t.v||0);
+    // Close at up to dash from far off; inside the pocket, sit on the target's own speed.
+    const chase=tv+(gap-pocket)*.35;
+    want=gap>pocket*6?Math.max(want,Math.min(dash,chase)):Math.max(cruise*.45,Math.min(dash,chase));
+  }
+  const hp=Math.max(0,Math.min(1,(s.hp||1)/Math.max(1,s.hpMax||1)));
+  const turnUse=Math.min(1,Math.abs(s.yawV||0)/Math.max(.05,s.turn||1));
+  want*=1-.28*turnUse;
+  // Holding station in a squadron: a wingman who has fallen behind the squadron's
+  // centre (along his heading) opens up, one who has run ahead eases off.
+  const sq=s.squad>=0?squads[s.squad]:null;
+  if(sq&&sq.cx!=null&&(mood==='SEARCH'||!THROTTLE_MOODS[mood])){
+    const along=(s.x-sq.cx)*Math.cos(s.yaw)+(s.z-sq.cz)*Math.sin(s.yaw);
+    want*=1+Math.max(-.18,Math.min(.25,-along/500));
+  }
+  // The pilot's hand feathers the throttle, even at full burn: 84-100% of the
+  // wanted speed, on two slow waves of his own.
+  const hand=.92+.05*Math.sin(now*(.23+.1*(s.wfx||.9))+(s.wf||0)*3.1)+.03*Math.sin(now*(.61+.2*(s.wfy||.7))+(s.wf2||s.wf||0));
+  return Math.max(cruise*.3,Math.min(dash*(.62+.38*hp),want))*hand;
+}
+/* Engines have limits: a fighter reaches full burn in about 1.5 s, a frigate
+   in about 4 s, and braking is a little quicker than accelerating. */
+function approachSpeed(s,want,dt,k=1){
+  const dash=s.spdMax||(s.spd||20)*1.3,spool=s.slen<60?1.5:s.slen<180?4:Math.min(30,8+s.slen/200);
+  const acc=dash/spool*k,dec=acc*1.5,v=s.v||0;
+  const dv=(want-v)*Math.min(1,dt*3);
+  return v+Math.max(-dec*dt,Math.min(acc*dt,dv));
+}
 function skinOf(t){
   /* the hittable hull, not the origin buried in a 2 km body */
   return Math.max(t.rad||8,t.exL||0,(t.slen||20)*0.32);
@@ -14483,7 +14554,8 @@ function startWar(fresh){
     const rd=RACE_DEFS[sideRace[side]];
     if(rd.unique){
       /* they do not dump into the merge. Each ancient holds her own
-         jump, far on her own side, and they arrive ONE AT A TIME. */
+         jump, far on her own side, and they arrive one after another in a
+         short, deliberate sequence: the whole host is present by about 17 s. */
       const sx=side?1:-1,J=k=>(R()-0.5)*k;
       for(let i=0;i<8;i++){
         const L=(FO_KLASS[i]&&FO_KLASS[i].L)||2000;
@@ -14491,7 +14563,7 @@ function startWar(fresh){
           sx*(3800+L*0.58+(i%4)*140)+J(40),
           ((i%4)-1.5)*820+J(40),
           ((i>>2)-0.5)*2600+J(40),
-          6.0+i*11.5
+          6.0+i*1.6
         ]);
         ships[id].fo=i;ships[id].shed=3.2;
       }
@@ -16097,27 +16169,36 @@ function raceFire(s,t,now,nx,ny,nz){
   fireBeam(s,t,now,nx,ny,nz,1,s.slen>80);
   s.cool=(0.7+s.slen*0.005)*(0.7+combatRandom()*0.55);
 }
+// The First Ones see the whole field. Each picks the point where its blast
+// unmakes the most: enemies within its radius of a candidate, capitals weighing
+// more, nearer a little better. Candidates are thinned by id so the cost stays small.
 function foPick(s,rng){
-  let best=null,bs=-1;
-  const arr=battleAI.targets(s,battleTime);
-  const r2=rng*rng;
-  for(let i=0;i<arr.length;i++){
-    const t=arr[i];
-    const d=(t.x-s.x)*(t.x-s.x)+(t.y-s.y)*(t.y-s.y)+(t.z-s.z)*(t.z-s.z);
-    if(d>r2)continue;
-    const sc=t.slen+(t.hulls?500:0)-Math.sqrt(d)*0.04;
+  const w=s.fo??s.meta?.fo,R=(FO_WEAPONS[w]||FO_WEAPONS[0])[4],r2=rng*rng,R2=R*R;
+  const foes=[];for(const t of ships)if(!t.dead&&t.arr&&!t.grace&&!t.cloaked&&t.side!==s.side)foes.push(t);
+  let best=null,bs=-1;const step=Math.max(1,Math.floor(foes.length/60));
+  for(let i=(s.id%step);i<foes.length;i+=step){
+    // Reach is to the hull, not the centre: a 19 km hull is in reach long before its middle is.
+    const t=foes[i],d=Math.max(0,Math.hypot(t.x-s.x,t.y-s.y,t.z-s.z)-(t.slen||0)*.45)**2;if(d>r2)continue;
+    // Body count first: every ship in the blast counts, a capital a little more.
+    let sc=0;for(const u of foes){const e=(u.x-t.x)**2+(u.y-t.y)**2+(u.z-t.z)**2;if(e<R2)sc+=u.hulls||u.slen>=180?1.6:1;}
+    sc+=(t.hulls?.5:0)-Math.sqrt(d)*.0002;
     if(sc>bs){bs=sc;best=t;}
   }
   return best;
 }
-// One ancient discharge at a time: anticipation and aftermath, never a storm
+// Ancient discharges: anticipation and aftermath, never a storm
 // of independent per-frame ray objects. These are gameplay interpretations.
+// [name, colour, charge s, cooldown s, blast radius m]. Each ancient fires on its
+// own cycle: a short charge, a few seconds' rest, and a blast that clears a
+// squadron. Anything smaller than a capital inside the blast is unmade; a
+// capital near the centre loses most of its hull.
 const FO_WEAPONS=[
- ['Rift cascade',[.72,.88,1],3.8,21,410],['Gravity collapse',[1,.72,.38],4.2,25,520],
- ['Thought wave',[.83,.72,1],3.6,24,600],['Convergence',[.48,1,.68],4,22,450],
- ['Dark incision',[.65,1,.84],3,20,240],['First light',[.91,1,.72],4.6,28,650],
- ['Living lightning',[.3,1,.83],3.7,23,440],['Crystal fracture',[.7,.85,1],4,24,500]
+ ['Rift cascade',[.72,.88,1],2.1,7,1030],['Gravity collapse',[1,.72,.38],2.3,8,1300],
+ ['Thought wave',[.83,.72,1],2,7.5,1500],['Convergence',[.48,1,.68],2.2,7,1130],
+ ['Dark incision',[.65,1,.84],1.7,6,600],['First light',[.91,1,.72],2.5,9,1620],
+ ['Living lightning',[.3,1,.83],2,7,1100],['Crystal fracture',[.7,.85,1],2.2,7.5,1250]
 ];
+const FO_REACH=8000;
 function foMuz(s,now){return gunWorld(s,[s.slen*.36,0,0],now,true);}
 function foRibbon(s,a,b,now,col,wid,life=1.6){
   beams.push({a,b,t0:now,side:s.side,race:17,coherent:true,ancient:true,col,wid,life});
@@ -16127,20 +16208,20 @@ function foRelease(s,c,now,w){
  const ray=(a,b,width,life=1.6)=>foRibbon(s,a,b,now,spec[1],width,life);
  const radial=(a,r,z=0)=>V.add(c,V.add(V.mul(u,Math.cos(a)*r),V.add(V.mul(v,Math.sin(a)*r),V.mul(dir,z))));
  if(w===2){ // Expanding shock-front, built from a bounded set of radial cuts.
-  for(let i=0;i<18;i++){const a=i/18*Math.PI*2;ray(c,radial(a,spec[4]),18,1.1);}
+  for(let i=0;i<24;i++){const a=i/24*Math.PI*2;ray(c,radial(a,spec[4]),26,1.2);}
   ray(m,c,35,.45);
  }else if(w===7){
   ray(m,c,9,.3);
-  for(let i=0;i<12;i++){const a=i/12*Math.PI*2,p=radial(a,260,(i%3-1)*80);ray(c,p,22,1.8);ray(p,radial(a+.17,500,(i%3-1)*160),9,2.3);}
+  for(let i=0;i<14;i++){const a=i/14*Math.PI*2,p=radial(a,spec[4]*.5,(i%3-1)*160);ray(c,p,30,1.8);ray(p,radial(a+.17,spec[4],(i%3-1)*320),12,2.3);}
  }else if(w===4){
   ray(m,V.add(c,V.mul(dir,1500)),95,.65);
  }else if(w===1){
   ray(m,c,64,.8);
-  for(let i=0;i<12;i++)ray(radial(i*Math.PI/6,440),c,12,1.15);
+  for(let i=0;i<16;i++)ray(radial(i*Math.PI/8,spec[4]),c,16,1.15);
  }else{
   ray(m,c,w===5?135:w===3?100:70,w===5?2.2:1.5);
   if(w===0){
-   const nearby=battleAI.targets(s,now).filter(t=>Math.hypot(t.x-c[0],t.y-c[1],t.z-c[2])<600).slice(0,5);
+   const nearby=ships.filter(t=>!t.dead&&t.arr&&t.side!==s.side&&Math.hypot(t.x-c[0],t.y-c[1],t.z-c[2])<spec[4]).slice(0,10);
    for(const t of nearby)ray(c,[t.x,t.y,t.z],22,1.9);
   }
   if(w===6)for(let i=0;i<16;i++){
@@ -16150,22 +16231,32 @@ function foRelease(s,c,now,w){
  }
  flash(c[0],c[1],c[2],now,spec[4]*1.3,w===6?6:8);
  flash(c[0],c[1],c[2],now+.22,spec[4]*.65,4);
- // Exactly one damage pass. No teleporting victims or permanent speed edits.
- for(const t of battleAI.targets(s,now)){
+ flash(c[0],c[1],c[2],now+.45,spec[4]*1.9,3);
+ // A slow shockwave: the blast keeps growing for two seconds, so the aftermath shot still sees it.
+ for(let k=1;k<=4;k++)flash(c[0],c[1],c[2],now+.45+k*.45,spec[4]*(1.9+k*.35),k%2?4:3);
+ kickCam(40);
+ // Exactly one damage pass, over every enemy in the blast (not just what this
+ // ancient happens to be tracking). No teleporting victims or speed edits.
+ let unmade=0,hit=0;
+ for(const t of ships){
+  if(t.dead||!t.arr||t.side===s.side||t.grace)continue;
   const p=[t.x,t.y,t.z],delta=V.sub(p,m),along=V.dot(delta,dir);
   const distance=w===4&&along>=0&&along<V.len(V.sub(c,m))+1500?V.len(V.sub(delta,V.mul(dir,along))):V.len(V.sub(p,c));
-  if(distance>spec[4])continue;
-  const damage=(t.hulls?Math.min(70,t.hpMax*.24):Math.min(35,t.hpMax*.8))*(.45+.55*(1-distance/spec[4]));
-  wound(t,damage,s,now);
+  if(distance>spec[4]+(t.slen||0)*.4)continue;
+  const fall=Math.max(0,1-distance/spec[4]);
+  // Another ancient withstands it; a capital is gutted near the centre; anything smaller is unmade.
+  const damage=(RACE_DEFS[t.race]||{}).unique?t.hpMax*(.08+.12*fall):t.hulls||t.slen>=180?t.hpMax*(.28+.5*fall):t.hpMax*(1.05+.5*fall);
+  wound(t,damage,s,now);hit++;if(t.dead)unmade++;
  }
- s.lastFire=now;s.foEvent={at:now,until:now+2.6,target:s.foCharge.target};
+ s.lastFire=now;s.foEvent={at:now,until:now+2.6,target:s.foCharge.target,point:c.slice()};
+ bcAncientStrike(s,c,spec[0],hit,unmade);
 }
 function foSpeak(s,now,dt){
  const w=s.fo??s.meta?.fo;if(w==null||!FO_WEAPONS[w])return;
  const spec=FO_WEAPONS[w];
  if(s.foCharge){
   const q=s.foCharge,t=ships[q.target];
-  if(!t||t.dead||t.grace||t.cloaked||Math.hypot(t.x-s.x,t.y-s.y,t.z-s.z)>6200){s.foCharge=null;s.foCool=3;return;}
+  if(!t||t.dead||t.grace||t.cloaked||Math.hypot(t.x-s.x,t.y-s.y,t.z-s.z)-(t.slen||0)*.45>FO_REACH+1000){s.foCharge=null;s.foCool=1;return;}
   const p=Math.min(1,(now-q.at)/spec[2]);
   if(now>=q.drawAt){
    q.drawAt=now+.12;
@@ -16179,9 +16270,11 @@ function foSpeak(s,now,dt){
   if(p>=1){foRelease(s,[t.x,t.y,t.z],now,w);s.foCharge=null;s.foCool=spec[3];}
   return;
  }
- s.foCool=(s.foCool??3)-dt;if(s.foCool>0)return;
- if(ships.some(t=>!t.dead&&(t.foCharge||t.foEvent?.until>now)))return;
- const t=foPick(s,5200);if(!t)return;
+ s.foCool=(s.foCool??(1+(s.fo||0)*.35))-dt;if(s.foCool>0)return;
+ // Every ancient fires on its own cycle. Only two may release within the same
+ // half-second, so each strike still reads on its own.
+ if(ships.filter(t=>t!==s&&!t.dead&&t.foEvent&&now-t.foEvent.at<.5).length>=2)return;
+ const t=foPick(s,FO_REACH);if(!t)return;
  s.mark=t.id;s.foCharge={at:now,target:t.id,drawAt:now};
 }
 // Fracture edges: a vertex whose position also belongs to another piece of the
@@ -16976,7 +17069,8 @@ function simStep(now,dt){
         want*=0.36;
         s.yawV*=Math.max(0,1-dt*2.4);
       }
-      s.v+=(want-s.v)*Math.min(1,dt*(0.95+0.55*(s.hot||1)+28/s.slen)*(s.hero?1.6:1));
+      want=throttle(s,now,want,prefer,mood);
+      s.v=approachSpeed(s,want,dt,s.hero?1.5:1);
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
     }
     leakHullDust(s,now);
@@ -18311,6 +18405,7 @@ function tickerText(ev){
   switch(ev.type){
     case "capitalKill":case "heroKill":case "firstOneKill":return SIDE_SHAPE[ev.side]+" "+ev.name+" destroyed"+(ev.byName?" by "+ev.byName:"");
     case "ionCharge":return SIDE_SHAPE[ev.side]+" Ion cannon charging · "+ev.name;
+    case "ancientStrike":return SIDE_SHAPE[ev.side]+" "+ev.weapon+" · "+ev.name+(ev.unmade?" · "+ev.unmade+" unmade":"");
     case "ionStrike":return SIDE_SHAPE[ev.side]+" Ion strike · "+ev.name;
     case "reinforcements":return SIDE_SHAPE[ev.side]+" Reinforcements · "+ev.name;
     case "cloakReveal":return SIDE_SHAPE[ev.side]+" Cloak broken · "+ev.name;
@@ -18353,6 +18448,16 @@ function ionScreenFlash(g,p){
   el.animate([{opacity:a},{opacity:0}],{duration:520,easing:"cubic-bezier(.2,.7,.3,1)"});
 }
 function bcIonStrike(g,lock){if(g)ionScreenFlash(g,lock.point);if(g)bcEvent("ionStrike",{side:g.side,ship:g.id,name:shipName(g),by:g.id,byName:shipName(g),x:lock.point[0],y:lock.point[1],z:lock.point[2],size:g.slen});}
+// An ancient's strike: the screen flashes in its weapon's colour, the end-of-an-age
+// sound plays, and the ticker names the weapon and the toll. Observation only.
+function bcAncientStrike(s,c,weapon,hit,unmade){
+  if(!reducedMotion){const el=document.getElementById("ionFlash");if(el&&el.animate){
+    const col=(FO_WEAPONS[s.fo??s.meta?.fo]||FO_WEAPONS[0])[1].map(v=>Math.round(Math.min(1,v*.6+.4)*255)),d=Math.hypot(c[0]-cam.ex,c[1]-cam.ey,c[2]-cam.ez);
+    el.style.background="radial-gradient(circle at 50% 50%,rgba("+col+",.95),rgba("+col+",.4) 60%,rgba("+col+",0) 100%)";
+    el.animate([{opacity:Math.max(.18,Math.min(.6,.6*12000/(d+8000)))},{opacity:0}],{duration:900,easing:"cubic-bezier(.2,.7,.3,1)"});}}
+  const A=audio();if(A&&A.unlocked){A.explosion(3,c[0],c[1],c[2]);A.stinger();}
+  bcEvent("ancientStrike",{side:s.side,ship:s.id,name:shipName(s),weapon,hit,unmade,x:c[0],y:c[1],z:c[2],size:s.slen});
+}
 function bcReinforce(side,race){bcEvent("reinforcements",{side,name:RACE_DEFS[race].name,x:0,y:0,z:0});}
 function bcVictory(side,reason){bcEvent("victory",{side,name:SIDE_NAME[side],reason:reason||"annihilation"});}
 
@@ -18443,7 +18548,7 @@ function storyText(ev,s,p,sq){
     case "planSwitch":return "The "+side+" plan has failed: "+ev.why+". Switching to "+PLAN_TEXT[ev.to][1]+".";
     case "planWorked":return ev.plan==="PINCER"?"The pincer closes on "+sideWord(1-ev.side)+".":ev.plan==="AMBUSH"?"Ambush! "+side+" squadrons come out of cover.":ev.plan==="RAID"?"The "+side+" raiders have hit and run twice.":"The "+side+" line holds.";
     case "convoySaved":{const o=battleAI.story.objective;return "A convoy ship makes the jump: "+o.saved+" of "+o.need+" needed.";}
-    case "convoyLost":{const o=battleAI.story.objective;return "Convoy ship down. "+o.lost+" lost of "+o.ids.length+".";}
+    case "convoyLost":{const o=battleAI.story.objective;return "Convoy ship down. "+(ev.lost??o.lost)+" lost of "+o.ids.length+".";}
     case "stationTaken":return sideWord(ev.side,true)+" "+((SIDE_WORD[sideRace[ev.side]]||[0,0])[1]?"take":"takes")+" the station.";
     case "wreckStrike":return S+" clips the wreck of "+(p?shortName(p):"a capital")+". Gone.";
     default:return "";
@@ -18660,7 +18765,12 @@ function broadcastCandidates(now,live){
     const frac=s.hp/Math.max(1,s.hpMax),hot=now-(s.hurtT??-99)<2.5;
     const killer=s.lastHit!=null&&ships[s.lastHit]&&!ships[s.lastHit].dead?s.lastHit:null;
     if(frac<.4&&hot)out.push({phase:"climax",kind:s.hero&&!isCapital(s)?"chase":"capital",subject:s.id,partner:killer,score:60+60*(1-frac/.4)+(s.hero?12:0)});
-    if(s.foCharge)out.push({phase:"climax",kind:"capital",subject:s.id,partner:s.foCharge.target,score:95});
+    // An ancient charging is the biggest thing on the field: cut to it now.
+    if(s.foCharge)out.push({phase:"climax",kind:"capital",subject:s.id,partner:s.foCharge.target,score:130});
+    // And the moment it releases, the aftermath: frame the ship nearest the blast.
+    if(s.foEvent&&s.foEvent.point&&now-s.foEvent.at<2.4){const c=s.foEvent.point;let near=null,nd=Infinity;
+      for(const q of live){if(q.side===s.side||!q.arr)continue;const d=Math.hypot(q.x-c[0],q.y-c[1],q.z-c[2]);if(d<nd){nd=d;near=q;}}
+      if(near&&nd<6000)out.push({phase:"reaction",kind:isCapital(near)?"capital":"chase",subject:near.id,partner:null,score:128,after:s.id});}
   }
   const pairs=live.filter(s=>isCapital(s)&&s.arr&&!s.grace).slice(0,24);
   for(const p of pairs)for(const q of pairs)if(p.side===0&&q.side===1){const d=Math.hypot(p.x-q.x,p.y-q.y,p.z-q.z);if(d<Math.max(2500,(p.slen+q.slen)*2.5))out.push({phase:"build",kind:"duel",subject:p.id,partner:q.id,score:40+Math.min(20,(p.slen+q.slen)/200)});}
@@ -18733,31 +18843,46 @@ function drawMomentum(){
   g.lineTo(w,h);g.closePath();g.fill();
   g.globalAlpha=.8;g.strokeStyle="#fff";g.lineWidth=1;g.beginPath();g.moveTo(0,h/2);g.lineTo(w,h/2);g.setLineDash([2,3]);g.stroke();g.setLineDash([]);g.globalAlpha=1;
 }
+// Reinforcements are their own line: the main fleet's count stays its own,
+// the ally's ships are counted in the fight and inbound.
+function scoreCounts(){
+  const alive=[0,0],allyAlive=[0,0],allyInbound=[0,0];
+  for(const s of ships){
+    if(s.dead)continue;const ally=allyRace[s.side]>=0&&s.race===allyRace[s.side]&&s.race!==sideRace[s.side];
+    if(!s.vao){if(ally)allyInbound[s.side]++;continue;}
+    if(ally&&s.arr)allyAlive[s.side]++;else if(ally)allyInbound[s.side]++;else alive[s.side]++;
+  }
+  return {alive,allyAlive,allyInbound};
+}
 function updateHud(wall,now){
   if(!bc.log||wall-bc.hudAt<.12)return;bc.hudAt=wall;
   const top=document.getElementById("bcTop");if(!top)return;
   const T=now-warT0,str=objectiveStrength(BC.strength(ships,s=>s.vao&&T-s.delay>=0)),total=str[0]+str[1],share=total?str[0]/total:.5;
-  const alive=[0,0],caps=[[],[]];
-  for(const s of ships){if(s.dead||!s.vao)continue;alive[s.side]++;if((isCapital(s)||s.hero)&&caps[s.side].length<8)caps[s.side].push(s);}
+  const {alive,allyAlive,allyInbound}=scoreCounts(),caps=[[],[]];
+  for(const s of ships){
+    if(s.dead||!s.vao)continue;if((isCapital(s)||s.hero)&&caps[s.side].length<8)caps[s.side].push(s);}
   // The flagship always has an icon, first in its row.
   if(battleAI.story.ready)for(const side of [0,1]){const f=ships[battleAI.story.sides[side].flag];if(f&&!f.dead&&f.vao){const i=caps[side].indexOf(f);if(i>0)caps[side].splice(i,1);if(i!==0){caps[side].unshift(f);caps[side].length=Math.min(8,caps[side].length);}}}
   const flags=battleAI.story.ready?battleAI.story.sides.map(x=>x.flag):[-1,-1];
   const icons=side=>caps[side].map(s=>"<button type=\"button\" class=\"bcIcon"+(s.hero?" hero":"")+(flags[side]===s.id?" flag":"")+(sel===s.id?" on":"")+"\" data-hid=\""+s.id+"\" title=\""+shipName(s)+(flags[side]===s.id?" · flagship":"")+"\" aria-label=\"Follow "+shipName(s)+"\">"+(s.hero?"★":SIDE_SHAPE[side])+"</button>").join("");
   // Build the frame once per matchup; update numbers and widths in place so
   // the ship buttons are not recreated under the pointer.
-  const frameKey=sideRace.join("v");
+  const frameKey=sideRace.join("v")+"/"+allyRace.join("+");
   if(top.dataset.frame!==frameKey||!top.querySelector?.(".bcBar")){
-    top.dataset.frame=frameKey;top.dataset.icons="";
+    top.dataset.frame=frameKey;top.dataset.icons="";document.body.classList.toggle("bcAllied",allyRace.some(r=>r>=0));
     const nm=i=>"<b"+(raceShort(sideRace[i]).length>9?" class=\"long\"":"")+">"+raceShort(sideRace[i])+"</b>";
-    top.innerHTML="<div class=\"bcSide a\"><span class=\"bcShape\">"+SIDE_SHAPE[0]+"</span>"+nm(0)+"<span class=\"bcCount\"></span><span class=\"bcIcons\"></span></div>"+
+    const ally=i=>allyRace[i]>=0?"<span class=\"bcAlly\" style=\"--c:"+raceColour(allyRace[i])+"\">+ <b>"+raceShort(allyRace[i])+"</b> <span class=\"bcAllyCount\"></span></span>":"";
+    top.innerHTML="<div class=\"bcSide a\"><span class=\"bcShape\">"+SIDE_SHAPE[0]+"</span>"+nm(0)+"<span class=\"bcCount\"></span>"+ally(0)+"<span class=\"bcIcons\"></span></div>"+
       "<div class=\"bcBar\" role=\"img\"><i style=\"background:"+raceColour(sideRace[0])+"\"></i><i style=\"background:"+raceColour(sideRace[1])+"\"></i><em></em></div>"+
-      "<div class=\"bcSide b\"><span class=\"bcIcons\"></span><span class=\"bcCount\"></span>"+nm(1)+"<span class=\"bcShape\">"+SIDE_SHAPE[1]+"</span></div>";
+      "<div class=\"bcSide b\"><span class=\"bcIcons\"></span><span class=\"bcCount\"></span>"+nm(1)+"<span class=\"bcShape\">"+SIDE_SHAPE[1]+"</span>"+ally(1)+"</div>";
   }
   const bar=top.querySelector?.(".bcBar");
   if(bar){
     const pct=(share*100).toFixed(1),parts=bar.children;parts[0].style.width=pct+"%";parts[1].style.width=(100-share*100).toFixed(1)+"%";parts[2].style.left=pct+"%";
     bar.setAttribute("aria-label","Strength "+Math.round(share*100)+" to "+Math.round(100-share*100));
     const counts=top.querySelectorAll(".bcCount");counts[0].textContent=alive[0];counts[1].textContent=alive[1];
+    for(const side of [0,1]){const el=top.querySelector?.(".bcSide."+(side?"b":"a")+" .bcAllyCount");if(!el)continue;
+      const t=allyAlive[side]+(allyInbound[side]?" (+"+allyInbound[side]+" inbound)":"");if(el.textContent!==t)el.textContent=t;}
     const iconKey=caps.map(c=>c.map(s=>s.id+(sel===s.id?"*":"")).join()).join("|")+"/"+flags.join();
     if(top.dataset.icons!==iconKey){top.dataset.icons=iconKey;const slots=top.querySelectorAll(".bcIcons");slots[0].innerHTML=icons(0);slots[1].innerHTML=icons(1);}
   }
