@@ -13560,7 +13560,7 @@ RACE_DEFS.push(
 {name:"ROMULAN STAR EMPIRE",fr:"star trek",mix:[0.28, 0.64, 0.08],form:"packs",fleetK:0.48,hold:580,beam:[0.35, 0.95, 0.48],ion:[0.35, 0.95, 0.48],anim:0,tone:1,hpdiv:18,spdK:1450,spdCap:74,turnK:36,cloak:true,msl:true,fire:"disruptor",boom:"warp",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
 {name:"THE DOMINION",fr:"star trek",mix:[0.64, 0.30, 0.06],form:"groups",fleetK:0.32,fleetMin:16,hold:420,beam:[0.62, 0.51, 1],ion:[0.62, 0.51, 1],anim:0,tone:1,hpdiv:20,spdK:1550,spdCap:82,turnK:40,cloak:false,msl:true,fire:"phaser",boom:"warp",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
 {name:"SPACE MARINES",fr:"warhammer 40,000",mix:[0.38, 0.37, 0.25],form:"wall",fleetK:0.55,hold:460,beam:[1, 0.7, 0.38],ion:[1, 0.7, 0.38],anim:0,tone:1,hpdiv:13,spdK:1150,spdCap:58,turnK:25,cloak:false,msl:true,fire:"smart",boom:"cookoff",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
-{name:"TYRANIDS",fr:"warhammer 40,000",mix:[0.62, 0.26, 0.12],form:"swarm",fleetK:0.8,hold:260,beam:[0.68, 0.92, 0.27],ion:[0.68, 0.92, 0.27],anim:5,tone:1,hpdiv:19,spdK:1500,spdCap:78,turnK:38,cloak:false,msl:false,fire:"bio",boom:"burst",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
+{name:"TYRANIDS",fr:"warhammer 40,000",mix:[0.62, 0.26, 0.12],form:"swarm",fleetK:0.8,hold:260,beam:[0.68, 0.92, 0.27],ion:[0.68, 0.92, 0.27],anim:5,tone:1,hpdiv:19,spdK:1500,spdCap:78,turnK:38,cloak:false,msl:false,fire:"spore",boom:"burst",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}},
 {name:"TESLA",fr:"the electric armada",mix:[0.76, 0.16, 0.08],form:"swarm",fleetK:0.9,hold:480,beam:[0.35, 0.8, 1],ion:[0.35, 0.8, 1],anim:0,tone:1,hpdiv:26,spdK:1700,spdCap:90,turnK:44,cloak:false,msl:true,fire:"pulse",boom:"cookoff",wpn:[[14,1],[28,2],[40,3],[54,4],[66,5],[78,6]],doct:{CHARGE:2,FLANK:4,ENVELOP:3,SWARM:3,HUNT:3,SCREEN:2,FEIGN:2,MINE:1}}
 );
 // Weapon signatures stay tied to the fleet, including allied reinforcements.
@@ -16070,7 +16070,7 @@ function weaponLocal(s,p,now){
 // Shared mount geometry. Only instance transforms change while a barrel turns.
 function barrelStyle(s){
   const fx=weaponProfile(s).fx;
-  return ['bio','caster','slicer'].includes(fx)?'organic':weaponProfile(s).mode==='beam'?'emitter':'naval';
+  return ['bio','spore','caster','slicer'].includes(fx)?'organic':weaponProfile(s).mode==='beam'?'emitter':'naval';
 }
 function barrelShape(s){
   const style=barrelStyle(s),length=Math.max(1.2,Math.min(48,(s.slen||20)*.018));
@@ -16640,7 +16640,7 @@ function raceFire(s,t,now,nx,ny,nz){
     }
     return;
   }
-  if(fx==="bio"){
+  if(fx==="spore"){
     // Living ammunition: a spray of acid spores that curve onto the prey.
     // Bigger organisms spit more, so a hive ship's volley is a storm.
     const n=s.slen>=180?7:s.slen>=60?4:2,[u,v]=basis(solution.direction);
@@ -16651,9 +16651,9 @@ function raceFire(s,t,now,nx,ny,nz){
     }
     s.cool=2.2+combatRandom()*.6;return;
   }
-  if(fx==="caster"){
-    plasmaShot(s,t,now,solution,380,fx);
-    s.cool=1.8+combatRandom()*.6;return;
+  if(fx==="caster"||fx==="bio"){
+    plasmaShot(s,t,now,solution,fx==='caster'?380:240,fx);
+    s.cool=(fx==='caster'?1.8:2.4)+combatRandom()*.6;return;
   }
   if(fx==="shard"){
     const ax3=solution.direction[0],ay3=solution.direction[1],az3=solution.direction[2];
@@ -17618,7 +17618,7 @@ function simStep(now,dt){
       const fx0=(RACE_DEFS[s.race]||{}).fire;
       if(fx0==="slicer"||fx0==="cutter")rng=Math.max(rng,cutRange(s));
       // Bio-cannons lob seeking spores across the gap a capital keeps in a fight.
-      if(fx0==="bio")rng=Math.max(rng,s.slen>=180?1150:s.slen>=60?520:rng);
+      if(fx0==="spore")rng=Math.max(rng,s.slen>=180?1150:s.slen>=60?520:rng);
       if(s.wpn===2)rng=Math.max(rng,210);
       else if(s.wpn===4)rng=Math.max(rng,440);
       else if(s.wpn===5)rng=Math.max(rng,holdCutRange(s));
@@ -20344,7 +20344,7 @@ function frame(nowMs){
       for(const ms of missiles)if(ms.race===rc)
         tarr.push(ms.x,ms.y,ms.z,ms.x-ms.vx*0.12,ms.y-ms.vy*0.12,ms.z-ms.vz*0.12);
       // Bio spores leave a streak of acid, so a volley reads as a spray, not dots.
-      for(const pl of plasmas)if(pl.race===rc&&pl.kind==="bio"){const k=pl.big?.3:.2;
+      for(const pl of plasmas)if(pl.race===rc&&pl.kind==="spore"){const k=pl.big?.3:.2;
         tarr.push(pl.x,pl.y,pl.z,pl.x-pl.vx*k,pl.y-pl.vy*k,pl.z-pl.vz*k);}
       if(tarr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
@@ -20363,7 +20363,7 @@ function frame(nowMs){
         pa.push(mi.x,mi.y,mi.z,3.0+Math.sin(now*4+mi.ph)*1.4);
       for(const ms of missiles)if(ms.race===rc)pa.push(ms.x,ms.y,ms.z,3.6);
       for(const pl of plasmas)if(pl.race===rc)
-        pa.push(pl.x,pl.y,pl.z,(pl.kind==="bio"?pl.big?13:9.5:6.5)+Math.sin(now*9+pl.ph)*1.8);
+        pa.push(pl.x,pl.y,pl.z,(pl.kind==="spore"?pl.big?13:9.5:6.5)+Math.sin(now*9+pl.ph)*1.8);
       // Escape pods: small beacons blinking in their fleet's colour.
       for(const p of pods)if(p.state==="drift"&&sideRace[p.side]===rc)pa.push(p.x,p.y,p.z,2.2+(Math.sin(now*6+p.id)>0?1.6:0));
       if(pa.length){

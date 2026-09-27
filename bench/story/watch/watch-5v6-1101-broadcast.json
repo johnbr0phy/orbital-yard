@@ -8,49 +8,52 @@
   "size": 60,
   "mode": "broadcast",
   "plans": [
-   "DECAPITATE",
-   "PINCER"
+   "PINCER",
+   "RAID"
   ],
   "objective": "CONVOY",
   "winner": 1,
   "reason": "convoy",
-  "duration": 81.7,
-  "cuts": 8,
+  "duration": 140.6,
+  "cuts": 14,
   "medianHold": 9.6,
-  "minHold": 7.07,
+  "minHold": 7.23,
   "fastCuts": 0,
   "kinds": {
    "top": 1,
-   "squad": 3,
-   "duel": 2,
-   "chase": 2
+   "chase": 3,
+   "duel": 4,
+   "squad": 2,
+   "capital": 4
   },
   "phases": {
    "establish": 1,
-   "story": 3,
-   "build": 2,
-   "climax": 1,
+   "story": 5,
+   "climax": 4,
+   "build": 3,
    "reaction": 1
   },
   "deadStretches": [
    [
     0,
-    16.3
+    18.4
    ]
   ],
-  "repeatedShots": 0,
-  "bigDeaths": 1,
-  "bigDeathsOnScreen": 1,
-  "bigDeathsReplayed": 0,
+  "repeatedShots": 1,
+  "bigDeaths": 4,
+  "bigDeathsOnScreen": 3,
+  "bigDeathsReplayed": 1,
   "missed": [],
-  "captions": 15,
-  "decisionCaptions": 2,
-  "eventCaptions": 10,
-  "captionMedianSeconds": 4.799999999999997,
-  "shortCaptions": 1,
-  "wallSeconds": 80
+  "captions": 32,
+  "decisionCaptions": 15,
+  "eventCaptions": 14,
+  "captionMedianSeconds": 4.57,
+  "shortCaptions": 5,
+  "wallSeconds": 79
  },
- "autoReplays": [],
+ "autoReplays": [
+  60
+ ],
  "cuts": [
   {
    "t": -0.25,
@@ -86,14 +89,30 @@
   },
   {
    "t": 18.58,
-   "kind": "squad",
-   "subject": 99,
+   "kind": "chase",
+   "subject": 68,
    "partner": null,
    "phase": "story",
-   "label": "Broadcast · Story · Blue squadron"
+   "label": "Broadcast · Story · Pursuit · REBEL"
   },
   {
-   "t": 29.25,
+   "t": 28.45,
+   "kind": "duel",
+   "subject": 60,
+   "partner": 115,
+   "phase": "climax",
+   "label": "Broadcast · Now · Crossfire · IMPERIAL"
+  },
+  {
+   "t": 39.15,
+   "kind": "squad",
+   "subject": 9,
+   "partner": null,
+   "phase": "story",
+   "label": "Broadcast · Story · Ash squadron · breaking"
+  },
+  {
+   "t": 46.38,
    "kind": "duel",
    "subject": 2,
    "partner": 61,
@@ -101,44 +120,76 @@
    "label": "Broadcast · Building · Crossfire · IMPERIAL"
   },
   {
-   "t": 39.95,
-   "kind": "chase",
-   "subject": 60,
-   "partner": 62,
-   "phase": "climax",
-   "label": "Broadcast · Now · Pursuit · IMPERIAL"
-  },
-  {
-   "t": 47.05,
-   "kind": "chase",
-   "subject": 62,
-   "partner": null,
-   "phase": "reaction",
-   "label": "Broadcast · Aftermath · Pursuit · REBEL"
-  },
-  {
-   "t": 56.65,
+   "t": 59.18,
    "kind": "squad",
-   "subject": 17,
+   "subject": 12,
    "partner": null,
    "phase": "story",
    "label": "Broadcast · Story · Black squadron · breaking"
   },
   {
-   "t": 63.72,
-   "kind": "duel",
-   "subject": 0,
-   "partner": 61,
-   "phase": "build",
-   "label": "Broadcast · Building · Crossfire · IMPERIAL"
+   "t": 66.45,
+   "kind": "capital",
+   "subject": 62,
+   "partner": 4,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · REBEL"
   },
   {
-   "t": 76.52,
-   "kind": "squad",
-   "subject": 45,
+   "t": 77.15,
+   "kind": "capital",
+   "subject": 62,
+   "partner": null,
+   "phase": "build",
+   "label": "Broadcast · Building · Capital ship · REBEL"
+  },
+  {
+   "t": 89.92,
+   "kind": "duel",
+   "subject": 4,
+   "partner": 62,
+   "phase": "story",
+   "label": "Broadcast · Story · Crossfire · IMPERIAL"
+  },
+  {
+   "t": 98.92,
+   "kind": "capital",
+   "subject": 63,
+   "partner": 2,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · REBEL"
+  },
+  {
+   "t": 109.58,
+   "kind": "duel",
+   "subject": 63,
+   "partner": 2,
+   "phase": "build",
+   "label": "Broadcast · Building · Crossfire · REBEL"
+  },
+  {
+   "t": 117.85,
+   "kind": "capital",
+   "subject": 4,
+   "partner": 79,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · IMPERIAL"
+  },
+  {
+   "t": 125.25,
+   "kind": "chase",
+   "subject": 95,
+   "partner": null,
+   "phase": "reaction",
+   "label": "Broadcast · Aftermath · Pursuit · REBEL"
+  },
+  {
+   "t": 134.85,
+   "kind": "chase",
+   "subject": 68,
    "partner": null,
    "phase": "story",
-   "label": "Broadcast · Story · Scimitar squadron · breaking"
+   "label": "Broadcast · Story · Pursuit · REBEL"
   }
  ],
  "captions": [
@@ -159,80 +210,202 @@
   },
   {
    "t": 18.82,
-   "text": "“The lines have met. squadron FLANK. coming in off their three on LAMBDA-CLASS SHUTTLE.” — Blue Leader",
-   "kind": "thought"
+   "text": "First shots: Vader's Fist opens fire on the Mc75 Ordnance-Class.",
+   "kind": "event"
   },
   {
-   "t": 23.35,
+   "t": 23.62,
    "text": "Black squadron going for the Rebel flagship.",
    "kind": "decision"
   },
   {
-   "t": 40.18,
-   "text": "Vader's Fist has lost Night 9. Now hunting the Marauder-Class Corvette that did it.",
+   "t": 31.08,
+   "text": "Night squadron going for the Rebel flagship.",
+   "kind": "decision"
+  },
+  {
+   "t": 41.65,
+   "text": "Ash squadron is breaking. 2 ships running to jump clear.",
    "kind": "event"
   },
   {
-   "t": 41.42,
-   "text": "Vader's Fist is down. The hunt for the Marauder-Class Corvette ends there.",
-   "kind": "event"
+   "t": 46.45,
+   "text": "Night squadron going for the Rebel flagship.",
+   "kind": "decision"
   },
   {
-   "t": 44.48,
-   "text": "Blue squadron is breaking. 1 ship running to jump clear.",
-   "kind": "event"
+   "t": 50.18,
+   "text": "Black Leader breaking off, hull 51%, falling back on Black 8.",
+   "kind": "decision"
   },
   {
-   "t": 49.28,
-   "text": "Red squadron is breaking. 1 ship running to jump clear.",
-   "kind": "event"
-  },
-  {
-   "t": 54.08,
+   "t": 51.52,
    "text": "Black squadron is breaking. 5 ships running to jump clear.",
    "kind": "event"
   },
   {
-   "t": 58.88,
-   "text": "The Rebel plan has failed: the raiders were caught. Switching to the pincer.",
+   "t": 56.32,
+   "text": "Aces meet: Vader's Fist against Millennium Falcon.",
    "kind": "event"
   },
   {
-   "t": 64.62,
-   "text": "Obsidian squadron is breaking. 4 ships running to jump clear.",
+   "t": 60.05,
+   "text": "Red squadron is breaking. 7 ships running to jump clear.",
    "kind": "event"
   },
   {
-   "t": 69.42,
-   "text": "Onyx squadron is breaking. 3 ships running to jump clear.",
+   "t": 64.85,
+   "text": "Blue squadron is breaking. 6 ships running to jump clear.",
    "kind": "event"
   },
   {
-   "t": 74.22,
-   "text": "Scimitar squadron is breaking. 4 ships running to jump clear.",
+   "t": 69.65,
+   "text": "Guardian breaking off, hull 13%, falling back on Millennium Falcon.",
+   "kind": "decision"
+  },
+  {
+   "t": 71.45,
+   "text": "",
+   "kind": "decision"
+  },
+  {
+   "t": 71.58,
+   "text": "Guardian breaking off, hull 13%, falling back on Millennium Falcon.",
+   "kind": "decision"
+  },
+  {
+   "t": 74.38,
+   "text": "Tan 2 running the convoy lane, 2.1 km to the jump point.",
+   "kind": "decision"
+  },
+  {
+   "t": 79.82,
+   "text": "Blue squadron has broken. Blue Leader (“Vane”) running to jump clear, hull 70%.",
+   "kind": "decision"
+  },
+  {
+   "t": 83.95,
+   "text": "Independence is doomed and turning to ram Bastion.",
    "kind": "event"
   },
   {
-   "t": 79.02,
-   "text": "The Imperial plan has failed: a wing was cut off. Switching to the decapitation strike.",
+   "t": 88.08,
+   "text": "Compellor is doomed and turning to ram Guardian.",
+   "kind": "event"
+  },
+  {
+   "t": 92.22,
+   "text": "Compellor is turning to ram Guardian.",
+   "kind": "decision"
+  },
+  {
+   "t": 93.48,
+   "text": "Blue squadron has broken. Blue 5 running to jump clear, hull 59%.",
+   "kind": "decision"
+  },
+  {
+   "t": 98.95,
+   "text": "Onyx squadron is breaking. 4 ships running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 103.75,
+   "text": "Sabre squadron is breaking. 3 ships running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 108.55,
+   "text": "Independence is turning to ram Bastion.",
+   "kind": "decision"
+  },
+  {
+   "t": 112.28,
+   "text": "Bastion is lost. Abandon ship.",
+   "kind": "event"
+  },
+  {
+   "t": 113.62,
+   "text": "10 escape pods away from Bastion.",
+   "kind": "event"
+  },
+  {
+   "t": 117.35,
+   "text": "Sabre squadron jumps out. They will live to fight another day.",
+   "kind": "event"
+  },
+  {
+   "t": 122.42,
+   "text": "Storm Leader covering Storm 4, hull 24%.",
+   "kind": "decision"
+  },
+  {
+   "t": 125.35,
+   "text": "Gold squadron coming in off their flank.",
+   "kind": "decision"
+  },
+  {
+   "t": 129.08,
+   "text": "Grey Leader running the convoy lane, 3.7 km to the jump point.",
+   "kind": "decision"
+  },
+  {
+   "t": 134.55,
+   "text": "“Squadron down to 1. squadron FLANK. coming in off their three.” — Gold 5",
+   "kind": "thought"
+  },
+  {
+   "t": 135.88,
+   "text": "A convoy ship makes the jump: 2 of 2 needed.",
    "kind": "event"
   }
  ],
  "deaths": [
   {
-   "t": 40.82,
+   "t": 69.22,
    "id": 60,
    "name": "Vader's Fist",
-   "seen": true,
+   "seen": false,
    "capital": false,
    "hero": true,
    "mode": "broadcast"
+  },
+  {
+   "t": 92.32,
+   "id": 62,
+   "name": "Guardian",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 113.45,
+   "id": 2,
+   "name": "Bastion",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 121.42,
+   "id": 4,
+   "name": "Compellor",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
   }
  ],
- "replays": [],
+ "replays": [
+  {
+   "t": 71.45,
+   "label": "Replay · Vader's Fist"
+  }
+ ],
  "winner": 1,
  "winReason": "convoy",
- "T": 81.71666666666458,
+ "T": 140.61666666666125,
  "events": [
   {
    "t": -0.2,
@@ -240,241 +413,324 @@
    "text": "The Empire will try to decapitate. The Rebels will raid and run."
   },
   {
-   "t": 16.3,
+   "t": 18.4,
    "type": "contact",
-   "text": "First shots: Obsidian 3 opens fire on the A/sf-01 B-Wing."
+   "text": "First shots: Vader's Fist opens fire on the Mc75 Ordnance-Class."
   },
   {
-   "t": 30.3,
+   "t": 28.3,
    "type": "heroDuel",
    "text": "ST-321 VADER'S FIST"
   },
   {
-   "t": 32.3,
-   "type": "raid",
-   "text": "Blue squadron jumps out mid-raid. They'll be back behind the Empire."
+   "t": 34,
+   "type": "ionCharge",
+   "text": "MAR-VA35270 INDEPENDENCE"
   },
   {
-   "t": 33.3,
+   "t": 35.4,
    "type": "raid",
    "text": "Red squadron jumps out mid-raid. They'll be back behind the Empire."
   },
   {
-   "t": 34,
-   "type": "ionCharge",
-   "text": "MAR-YK05958 GUARDIAN"
+   "t": 35.4,
+   "type": "raid",
+   "text": "Blue squadron jumps out mid-raid. They'll be back behind the Empire."
   },
   {
    "t": 38.7,
    "type": "ionStrike",
-   "text": "MAR-YK05958 GUARDIAN"
+   "text": "MAR-VA35270 INDEPENDENCE"
   },
   {
-   "t": 39.9,
-   "type": "vendetta",
-   "text": "Vader's Fist has lost Night 9. Now hunting the Marauder-Class Corvette that did it."
-  },
-  {
-   "t": 40.8,
-   "type": "heroKill",
-   "text": "Vader's Fist"
-  },
-  {
-   "t": 40.9,
-   "type": "vendettaFailed",
-   "text": "Vader's Fist is down. The hunt for the Marauder-Class Corvette ends there."
-  },
-  {
-   "t": 42.4,
+   "t": 39,
    "type": "rout",
-   "text": "Blue squadron is breaking. 1 ship running to jump clear."
+   "text": "Ash squadron is breaking. 2 ships running to jump clear."
   },
   {
-   "t": 44,
-   "type": "rout",
-   "text": "Red squadron is breaking. 1 ship running to jump clear."
-  },
-  {
-   "t": 46.2,
+   "t": 49.2,
    "type": "ionCharge",
    "text": "ISD-ED69669 PUNISHER"
   },
   {
-   "t": 48.7,
+   "t": 50.7,
    "type": "rout",
    "text": "Black squadron is breaking. 5 ships running to jump clear."
   },
   {
-   "t": 50.7,
-   "type": "ionStrike",
-   "text": "ISD-ED69669 PUNISHER"
+   "t": 53.3,
+   "type": "heroDuel",
+   "text": "ST-321 VADER'S FIST"
   },
   {
-   "t": 53.9,
-   "type": "escape",
-   "text": "Blue squadron jumps out. They will live to fight another day."
+   "t": 55.8,
+   "type": "vendetta",
+   "text": "Vader's Fist has lost Night 3. Now hunting the Mc75 Ordnance-Class that did it."
   },
   {
-   "t": 54,
-   "type": "escape",
-   "text": "Red squadron jumps out. They will live to fight another day."
+   "t": 56,
+   "type": "aceDuel",
+   "text": "Aces meet: Vader's Fist against Millennium Falcon."
   },
   {
-   "t": 54,
-   "type": "planSwitch",
-   "text": "The Rebel plan has failed: the raiders were caught. Switching to the pincer."
+   "t": 59,
+   "type": "rout",
+   "text": "Red squadron is breaking. 7 ships running to jump clear."
   },
   {
-   "t": 56.4,
-   "type": "wreckStrike",
-   "text": "Green 7 clips the wreck of the Pelta. Gone."
+   "t": 59.4,
+   "type": "rout",
+   "text": "Blue squadron is breaking. 6 ships running to jump clear."
   },
   {
-   "t": 57.7,
+   "t": 60.7,
    "type": "escape",
    "text": "Black squadron jumps out. They will live to fight another day."
   },
   {
-   "t": 57.8,
-   "type": "wreckStrike",
-   "text": "Green 9 clips the wreck of the Pelta. Gone."
-  },
-  {
-   "t": 58.1,
+   "t": 61.2,
    "type": "planSwitch",
    "text": "The Imperial plan has failed: the strike was shot down. Switching to the pincer."
   },
   {
-   "t": 58.1,
-   "type": "convoySaved",
-   "text": "A convoy ship makes the jump: 1 of 2 needed."
-  },
-  {
-   "t": 58.3,
-   "type": "wreckStrike",
-   "text": "Green 5 clips the wreck of the Pelta. Gone."
-  },
-  {
-   "t": 61.7,
-   "type": "rout",
-   "text": "Obsidian squadron is breaking. 4 ships running to jump clear."
-  },
-  {
-   "t": 61.7,
-   "type": "rout",
-   "text": "Onyx squadron is breaking. 3 ships running to jump clear."
-  },
-  {
-   "t": 62.3,
+   "t": 61.3,
    "type": "ace",
-   "text": "Sabre 6 makes ace with 2 kills. Callsign: Vane."
+   "text": "Blue Leader makes ace with 2 kills. Callsign: Vane."
   },
   {
-   "t": 62.6,
-   "type": "rout",
-   "text": "Sabre squadron is breaking. 5 ships running to jump clear."
+   "t": 62.2,
+   "type": "raid",
+   "text": "Blue squadron jumps out mid-raid. They'll be back behind the Empire."
   },
   {
    "t": 63.3,
    "type": "planWorked",
-   "text": "The pincer closes on the Empire."
+   "text": "The Rebel raiders have hit and run twice."
   },
   {
-   "t": 63.3,
-   "type": "aceDuel",
-   "text": "Aces meet: Sabre 6 (“Vane”) against Millennium Falcon."
+   "t": 65.3,
+   "type": "vendetta",
+   "text": "Millennium Falcon has lost Green 3. Now hunting the Lambda-Class Shuttle that did it."
   },
   {
-   "t": 69.1,
+   "t": 68,
+   "type": "escape",
+   "text": "Red squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 69.2,
+   "type": "heroKill",
+   "text": "Vader's Fist"
+  },
+  {
+   "t": 69.2,
+   "type": "vendettaFailed",
+   "text": "Vader's Fist is down. The hunt for the Mc75 Ordnance-Class ends there."
+  },
+  {
+   "t": 71.5,
+   "type": "planWorked",
+   "text": "The pincer closes on the Rebels."
+  },
+  {
+   "t": 72.9,
+   "type": "escape",
+   "text": "Blue squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 78.7,
+   "type": "ionCharge",
+   "text": "ISD-AM121866 BASTION"
+  },
+  {
+   "t": 81.7,
+   "type": "vendetta",
+   "text": "Blue Leader (“Vane”) has lost Blue 3. Now hunting the Imperator-Class Destroyer that did it."
+  },
+  {
+   "t": 82.1,
+   "type": "ionCharge",
+   "text": "MAR-VA35270 INDEPENDENCE"
+  },
+  {
+   "t": 83.8,
+   "type": "ionStrike",
+   "text": "ISD-AM121866 BASTION"
+  },
+  {
+   "t": 83.9,
+   "type": "lastStand",
+   "text": "Independence is doomed and turning to ram Bastion."
+  },
+  {
+   "t": 84.4,
+   "type": "vendettaFailed",
+   "text": "Blue Leader (“Vane”) is down. The hunt for the Imperator-Class Destroyer ends there."
+  },
+  {
+   "t": 86.3,
+   "type": "lastStand",
+   "text": "Compellor is doomed and turning to ram Guardian."
+  },
+  {
+   "t": 86.6,
+   "type": "ionStrike",
+   "text": "MAR-VA35270 INDEPENDENCE"
+  },
+  {
+   "t": 92.3,
+   "type": "capitalKill",
+   "text": "Guardian"
+  },
+  {
+   "t": 95.2,
    "type": "rout",
-   "text": "Scimitar squadron is breaking. 4 ships running to jump clear."
+   "text": "Onyx squadron is breaking. 4 ships running to jump clear."
   },
   {
-   "t": 70.2,
+   "t": 97.4,
+   "type": "convoySaved",
+   "text": "A convoy ship makes the jump: 1 of 2 needed."
+  },
+  {
+   "t": 103.1,
+   "type": "rout",
+   "text": "Sabre squadron is breaking. 3 ships running to jump clear."
+  },
+  {
+   "t": 106.2,
    "type": "escape",
    "text": "Onyx squadron jumps out. They will live to fight another day."
   },
   {
-   "t": 70.7,
-   "type": "vendetta",
-   "text": "Sabre 6 (“Vane”) has lost Sabre 3. Now hunting the Dp20 Corellian Gunship that did it."
+   "t": 109.9,
+   "type": "pods",
+   "text": "10 escape pods away from Bastion."
   },
   {
-   "t": 72.2,
-   "type": "escape",
-   "text": "Obsidian squadron jumps out. They will live to fight another day."
+   "t": 109.9,
+   "type": "lastStand",
+   "text": "Bastion is lost. Abandon ship."
   },
   {
-   "t": 75.6,
+   "t": 113.4,
+   "type": "capitalKill",
+   "text": "Bastion"
+  },
+  {
+   "t": 113.6,
    "type": "escape",
    "text": "Sabre squadron jumps out. They will live to fight another day."
   },
   {
-   "t": 75.7,
+   "t": 121.4,
+   "type": "capitalKill",
+   "text": "Compellor"
+  },
+  {
+   "t": 131.5,
+   "type": "ionCharge",
+   "text": "MC75-MS89810 ALLIANCE"
+  },
+  {
+   "t": 134.6,
    "type": "victory",
    "text": "THE REBEL ALLIANCE"
   },
   {
-   "t": 75.7,
+   "t": 134.6,
    "type": "convoySaved",
    "text": "A convoy ship makes the jump: 2 of 2 needed."
   },
   {
-   "t": 76.7,
-   "type": "planSwitch",
-   "text": "The Imperial plan has failed: a wing was cut off. Switching to the decapitation strike."
+   "t": 135.8,
+   "type": "wreckStrike",
+   "text": "Gold 5 clips the wreck of Compellor. Gone."
+  },
+  {
+   "t": 137.2,
+   "type": "vendetta",
+   "text": "Millennium Falcon has lost Green 8. Now hunting the Gozanti-Class Cruiser that did it."
   }
  ],
  "kills": [
-  20.6,
-  22.8,
-  24.9,
-  26.4,
-  28.2,
-  28.9,
-  31.3,
-  31.3,
-  31.7,
-  31.9,
-  32.5,
-  32.6,
-  32.7,
-  32.7,
-  32.8,
-  36.9,
-  39.8,
-  40.5,
-  40.8,
-  41.9,
-  42.3,
-  47.9,
-  48.4,
+  26.9,
+  29.4,
+  31.6,
+  33.3,
+  37,
+  38.5,
+  40.4,
+  41,
+  44.6,
+  45.2,
+  45.2,
+  45.6,
+  49.2,
+  49.5,
+  49.6,
+  50.3,
+  50.7,
+  52,
   52.2,
-  53,
-  53.2,
-  53.4,
-  53.6,
-  54.9,
-  56.3,
+  53.5,
+  55.7,
   57.8,
-  58.3,
-  58.4,
-  58.8,
-  59.6,
-  61.8,
-  62.2,
-  66.6,
+  58.6,
+  58.6,
+  59.2,
+  59.3,
+  59.5,
+  60.5,
+  61.2,
+  62.4,
+  64.9,
+  65.3,
+  66.1,
+  66.5,
+  67.4,
+  67.7,
+  67.8,
   68.6,
-  68.7,
+  68.8,
+  69.2,
   70.6,
-  70.6,
-  70.7,
-  75.4,
-  81.2
+  73.1,
+  73.4,
+  76.8,
+  77.5,
+  81.1,
+  81.2,
+  81.7,
+  81.9,
+  82,
+  84.3,
+  86.5,
+  87.6,
+  88.6,
+  91.7,
+  92.3,
+  95,
+  95.5,
+  97.9,
+  98.4,
+  100.8,
+  102,
+  106.3,
+  107.8,
+  113.4,
+  116.2,
+  117.6,
+  118.4,
+  121.4,
+  123,
+  132.9,
+  135.8,
+  137.2
  ],
  "plans": [
-  "DECAPITATE",
-  "PINCER"
+  "PINCER",
+  "RAID"
  ],
  "objective": "CONVOY",
  "names": [

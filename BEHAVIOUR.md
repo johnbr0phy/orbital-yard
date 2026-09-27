@@ -59,46 +59,46 @@ What the baseline says:
 
 ## After (this pass)
 
-Same 30 wars, same caps, same script, on the final code. Full data: `bench/story/after.json`. Values are means over three seeds.
+Same 30 wars, same caps, same script, on the current code (re-measured after the owner-feedback round: throttle, asteroids, First Ones). Full data: `bench/story/after.json`. Values are means over three seeds.
 
 | war | size | dur s (decided) | retreat | regroup | evade | flank | escort | fled & lived | cohesion m | broke / reformed | routs | last stands | rams | rescues | aces | vendettas | lead changes | event types | uniqueness (timeline / shape) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Borg vs Federation (THE BORG COLLECTIVE vs THE FEDERATION) | 60 | 122 (2/3) | 15.7 | 0 | 1911.3 | 61.7 | 132.7 | 17 | 547.3 | 2.3 / 0 | 3.7 | 4.7 | 0.3 | 3.7 | 0.3 | 1.7 | 0 | 18.3 | 40 (67 / 12) |
-| Borg vs Federation (THE BORG COLLECTIVE vs THE FEDERATION) | 300 | 98.7 (1/3) | 38.7 | 0 | 1831.3 | 413.3 | 381.7 | 62 | 556.7 | 5 / 0.3 | 7.7 | 6 | 0.3 | 4.3 | 0.7 | 1.3 | 0.7 | 17 | 39 (72 / 6) |
-| Empire vs Rebels (THE IMPERIAL STARFLEET vs THE REBEL ALLIANCE) | 60 | 117.3 (2/3) | 179.7 | 5 | 4001.3 | 165.3 | 291.7 | 59.3 | 413 | 5.7 / 1.3 | 8 | 2 | 0 | 1 | 1 | 2.3 | 0 | 18.7 | 38 (66 / 10) |
-| Empire vs Rebels (THE IMPERIAL STARFLEET vs THE REBEL ALLIANCE) | 300 | 96 (2/3) | 416 | 36 | 2847.3 | 756.7 | 744.7 | 364.3 | 452 | 20 / 2.7 | 43 | 0.7 | 0 | 0.7 | 1.3 | 2.7 | 0.7 | 18.3 | 31 (52 / 10) |
-| Random 1 (THE FEDERATION vs THE MINBARI FEDERATION) | 60 | 159.3 (1/3) | 111 | 1.3 | 5295.7 | 501 | 496.7 | 27 | 721.3 | 2.3 / 1 | 4.3 | 7 | 1 | 5.3 | 0.3 | 2 | 0.3 | 20.7 | 33 (62 / 5) |
-| Random 1 (THE FEDERATION vs THE MINBARI FEDERATION) | 300 | 120 (0/3) | 397.3 | 9 | 8379.3 | 2499.3 | 1190.7 | 120 | 1036 | 19 / 1 | 17 | 12 | 1.7 | 4 | 2 | 2 | 1 | 20 | 18 (31 / 6) |
-| Random 2 (THE ENGINEERS vs THE USCM TASK FORCE) | 60 | 99.4 (2/3) | 103 | 0 | 4785.7 | 213.7 | 171.3 | 32.3 | 567 | 0.7 / 0.3 | 2.3 | 1.3 | 0 | 0.7 | 0 | 1.3 | 1.3 | 13.7 | 35 (65 / 5) |
-| Random 2 (THE ENGINEERS vs THE USCM TASK FORCE) | 300 | 84.3 (2/3) | 433.7 | 0.7 | 1155 | 1404 | 815 | 270.3 | 574.7 | 9.3 / 1.7 | 29 | 0 | 0 | 0 | 0.7 | 1.3 | 0.7 | 12.7 | 36 (67 / 5) |
-| Shadows vs Minbari (THE SHADOWS vs THE MINBARI FEDERATION) | 60 | 167.6 (1/3) | 104 | 0.3 | 10991 | 304.3 | 171.7 | 10.7 | 1297.7 | 2.3 / 0.7 | 2.3 | 6 | 0.3 | 3.7 | 1.3 | 3.3 | 0.7 | 19.7 | 43 (65 / 22) |
-| Shadows vs Minbari (THE SHADOWS vs THE MINBARI FEDERATION) | 300 | 111.4 (1/3) | 168.7 | 4.7 | 2185 | 1100 | 235.7 | 44.7 | 842 | 5 / 0.7 | 15.7 | 3 | 0.3 | 1 | 3.3 | 4.7 | 0 | 22 | 30 (50 / 11) |
+| Borg vs Federation (THE BORG COLLECTIVE vs THE FEDERATION) | 60 | 137.9 (3/3) | 22.7 | 0 | 1949.7 | 116 | 127.7 | 14 | 456 | 3.3 / 0.3 | 3.3 | 7.3 | 0 | 5 | 0 | 1.3 | 0 | 23.3 | 35 (61 / 8) |
+| Borg vs Federation (THE BORG COLLECTIVE vs THE FEDERATION) | 300 | 105.9 (1/3) | 51 | 0 | 3837.3 | 412 | 276.3 | 54.3 | 494.3 | 6.3 / 1.3 | 7.7 | 8.7 | 0 | 2.7 | 0.7 | 1.3 | 1 | 18 | 30 (53 / 7) |
+| Empire vs Rebels (THE IMPERIAL STARFLEET vs THE REBEL ALLIANCE) | 60 | 137 (2/3) | 140.3 | 5.3 | 5939.3 | 196.3 | 275 | 46 | 377.3 | 3.7 / 1.3 | 7 | 2.3 | 0.3 | 1.3 | 1.3 | 2.7 | 0 | 18 | 40 (68 / 12) |
+| Empire vs Rebels (THE IMPERIAL STARFLEET vs THE REBEL ALLIANCE) | 300 | 120 (0/3) | 411.3 | 26.3 | 4921.3 | 900 | 957.7 | 215.7 | 403.7 | 16 / 3.3 | 42 | 2.3 | 0 | 1.3 | 2.7 | 3.7 | 0.7 | 20 | 27 (45 / 10) |
+| Random 1 (THE FEDERATION vs THE MINBARI FEDERATION) | 60 | 149.4 (1/3) | 99.3 | 1 | 3544.3 | 437.7 | 379.3 | 26.3 | 790.7 | 1.3 / 0.7 | 3.3 | 9 | 0.3 | 6 | 0.3 | 2.3 | 0.3 | 20.7 | 37 (67 / 6) |
+| Random 1 (THE FEDERATION vs THE MINBARI FEDERATION) | 300 | 117.6 (1/3) | 172.7 | 2.7 | 573 | 1965.7 | 890 | 111 | 1005.7 | 8.3 / 1.3 | 20.7 | 10 | 0.3 | 3.7 | 1 | 2.3 | 1 | 20.7 | 30 (53 / 7) |
+| Random 2 (THE ENGINEERS vs THE USCM TASK FORCE) | 60 | 105.3 (2/3) | 102 | 0 | 4437.7 | 224.3 | 194.3 | 32.3 | 541 | 0 / 0 | 4 | 0.7 | 0.3 | 0.3 | 0.7 | 1 | 1 | 14.3 | 37 (69 / 6) |
+| Random 2 (THE ENGINEERS vs THE USCM TASK FORCE) | 300 | 83.6 (2/3) | 407.3 | 0.7 | 3036.7 | 1230.3 | 658.7 | 267.3 | 550 | 2.7 / 0.3 | 26 | 0 | 0 | 0 | 2.3 | 2.3 | 0.3 | 14.7 | 40 (75 / 5) |
+| Shadows vs Minbari (THE SHADOWS vs THE MINBARI FEDERATION) | 60 | 151.8 (1/3) | 94.3 | 0 | 4543 | 232.3 | 107.7 | 10.3 | 1552 | 1.7 / 1 | 2.7 | 4.7 | 0 | 3.3 | 1.7 | 3.3 | 0.3 | 20.7 | 39 (60 / 18) |
+| Shadows vs Minbari (THE SHADOWS vs THE MINBARI FEDERATION) | 300 | 111.1 (2/3) | 162.3 | 0.3 | 4049 | 1273.7 | 267.3 | 57.3 | 881 | 9.3 / 3 | 7.7 | 4.3 | 0.3 | 2 | 3.7 | 5 | 0 | 20 | 32 (53 / 11) |
 
 ### Before → after
 
 | war | size | uniqueness | lead changes | event types | routs | rescues | aces | fled & lived | cohesion m | dur s |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Borg vs Federation | 60 | 33 → 40 | 0 → 0 | 7 → 18.3 | 0 → 3.7 | 0 → 3.7 | 0 → 0.3 | 8.3 → 17 | 730.7 → 547.3 | 114 → 122 |
-| Borg vs Federation | 300 | 18 → 39 | 1 → 0.7 | 5.7 → 17 | 0 → 7.7 | 0 → 4.3 | 0 → 0.7 | 29.7 → 62 | 789 → 556.7 | 120 → 98.7 |
-| Empire vs Rebels | 60 | 23 → 38 | 0.3 → 0 | 5.3 → 18.7 | 0 → 8 | 0 → 1 | 0 → 1 | 9 → 59.3 | 344 → 413 | 180 → 117.3 |
-| Empire vs Rebels | 300 | 28 → 31 | 0.7 → 0.7 | 5.3 → 18.3 | 0 → 43 | 0 → 0.7 | 0 → 1.3 | 45.7 → 364.3 | 569.3 → 452 | 120 → 96 |
-| Random 1 | 60 | 17 → 33 | 1 → 0.3 | 5.7 → 20.7 | 0 → 4.3 | 0 → 5.3 | 0 → 0.3 | 4 → 27 | 761.3 → 721.3 | 180 → 159.3 |
-| Random 1 | 300 | 20 → 18 | 1 → 1 | 5.3 → 20 | 0 → 17 | 0 → 4 | 0 → 2 | 64.3 → 120 | 1209.7 → 1036 | 120 → 120 |
-| Random 2 | 60 | 26 → 35 | 1.3 → 1.3 | 6.3 → 13.7 | 0 → 2.3 | 0 → 0.7 | 0 → 0 | 1.7 → 32.3 | 422.3 → 567 | 175.1 → 99.4 |
-| Random 2 | 300 | 22 → 36 | 1 → 0.7 | 5.7 → 12.7 | 0 → 29 | 0 → 0 | 0 → 0.7 | 75.3 → 270.3 | 588.3 → 574.7 | 120 → 84.3 |
-| Shadows vs Minbari | 60 | 12 → 43 | 2.3 → 0.7 | 5 → 19.7 | 0 → 2.3 | 0 → 3.7 | 0 → 1.3 | 3.3 → 10.7 | 1077 → 1297.7 | 180 → 167.6 |
-| Shadows vs Minbari | 300 | 14 → 30 | 0 → 0 | 5.3 → 22 | 0 → 15.7 | 0 → 1 | 0 → 3.3 | 5 → 44.7 | 1094.7 → 842 | 120 → 111.4 |
+| Borg vs Federation | 60 | 33 → 35 | 0 → 0 | 7 → 23.3 | 0 → 3.3 | 0 → 5 | 0 → 0 | 8.3 → 14 | 730.7 → 456 | 114 → 137.9 |
+| Borg vs Federation | 300 | 18 → 30 | 1 → 1 | 5.7 → 18 | 0 → 7.7 | 0 → 2.7 | 0 → 0.7 | 29.7 → 54.3 | 789 → 494.3 | 120 → 105.9 |
+| Empire vs Rebels | 60 | 23 → 40 | 0.3 → 0 | 5.3 → 18 | 0 → 7 | 0 → 1.3 | 0 → 1.3 | 9 → 46 | 344 → 377.3 | 180 → 137 |
+| Empire vs Rebels | 300 | 28 → 27 | 0.7 → 0.7 | 5.3 → 20 | 0 → 42 | 0 → 1.3 | 0 → 2.7 | 45.7 → 215.7 | 569.3 → 403.7 | 120 → 120 |
+| Random 1 | 60 | 17 → 37 | 1 → 0.3 | 5.7 → 20.7 | 0 → 3.3 | 0 → 6 | 0 → 0.3 | 4 → 26.3 | 761.3 → 790.7 | 180 → 149.4 |
+| Random 1 | 300 | 20 → 30 | 1 → 1 | 5.3 → 20.7 | 0 → 20.7 | 0 → 3.7 | 0 → 1 | 64.3 → 111 | 1209.7 → 1005.7 | 120 → 117.6 |
+| Random 2 | 60 | 26 → 37 | 1.3 → 1 | 6.3 → 14.3 | 0 → 4 | 0 → 0.3 | 0 → 0.7 | 1.7 → 32.3 | 422.3 → 541 | 175.1 → 105.3 |
+| Random 2 | 300 | 22 → 40 | 1 → 0.3 | 5.7 → 14.7 | 0 → 26 | 0 → 0 | 0 → 2.3 | 75.3 → 267.3 | 588.3 → 550 | 120 → 83.6 |
+| Shadows vs Minbari | 60 | 12 → 39 | 2.3 → 0.3 | 5 → 20.7 | 0 → 2.7 | 0 → 3.3 | 0 → 1.7 | 3.3 → 10.3 | 1077 → 1552 | 180 → 151.8 |
+| Shadows vs Minbari | 300 | 14 → 32 | 0 → 0 | 5.3 → 20 | 0 → 7.7 | 0 → 2 | 0 → 3.7 | 5 → 57.3 | 1094.7 → 881 | 120 → 111.1 |
 
 What the numbers say:
 
-- **More wars end.** 14 of 30 reach a result inside the cap, against 4 of 30. But 13 of those 14 had a convoy or station objective. A war of annihilation still usually runs to the cap (1 of 10 ended), and neither flagship war ended inside it.
-- **The log tells a story.** Distinct event types went from 5–7 to 12.7–22 (means over seeds). Across the 30 wars the log holds 399 routs, 29 rallies, 128 last stands, 12 rams, 73 rescue outcomes, 33 aces, 68 vendettas, 5 flagship losses with 4 successions, 48 plan switches and 33 abandon-ship launches. Before, every one of those was 0.
-- **Running away now means living.** Ships that fled and survived: 1.7–75 per war before, 10.7–364.3 after.
-- **Seeds of a matchup differ more, mostly.** Uniqueness rose in 9 of 10 cells (12–33 → 18–43). It fell in one: Random 1 at 300 a side, 20 → 18.
-- **Honest caveat on uniqueness.** The rise comes mostly from the timeline part, and new event types raise that part just by existing. The shape part (how differently the momentum curves run) is mixed: up in 5 cells, down in 5 (for example Shadows vs Minbari at 60 a side 10 → 22, Random 2 at 60 a side 14 → 5). Wars that end sooner and more decisively have less room to run differently.
-- **Lead changes did not rise** (0–2.3 before, 0–1.3 after). Morale that cascades makes wars decisive: once a side starts to break, contagion and routs finish it. I've left that as it is and say so here, rather than adding a comeback mechanic the brief didn't ask for.
-- **Squadrons hold together while command lives.** Cohesion is tighter in 7 of 10 cells, for example Borg vs Federation 731 → 547 m. It loosened in three (Empire vs Rebels, Random 2 and Shadows vs Minbari at 60 a side), where routs scatter squadrons across the field.
-- **Aces are rare but present** (0–3.3 per war). The first full run had aces in only 3 of 30 wars; see DECISIONS.md, "Characters".
+- **More wars end.** 15 of 30 reach a result inside the cap, against 4 of 30. But 13 of those 15 had a convoy or station objective. A war of annihilation still usually runs to the cap (2 of 10 ended), and neither flagship war ended inside it.
+- **The log tells a story.** Distinct event types went from 5–7 to 14.3–23.3 (means over seeds). Across the 30 wars the log holds 373 routs, 41 rallies, 148 last stands, 5 rams, 77 rescue outcomes, 43 aces, 76 vendettas, 9 flagship losses with 7 successions, 59 plan switches and 27 abandon-ship launches. Before, every one of those was 0.
+- **Running away now means living.** Ships that fled and survived: 1.7–75.3 per war before, 10.3–267.3 after.
+- **Seeds of a matchup differ more, mostly.** Uniqueness rose in 9 of 10 cells (12–33 → 27–40). It fell by one point in one: Empire vs Rebels at 300 a side, 28 → 27.
+- **Honest caveat on uniqueness.** The rise comes mostly from the timeline part, and new event types raise that part just by existing. The shape part (how differently the momentum curves run) is mixed: up in 5 cells, down in 4, level in 1 (for example Shadows vs Minbari at 60 a side 10 → 18, Random 2 at 60 a side 14 → 6). Wars that end sooner and more decisively have less room to run differently.
+- **Lead changes did not rise** (0–2.3 before, 0–1 after). Morale that cascades makes wars decisive: once a side starts to break, contagion and routs finish it. I've left that as it is and say so here, rather than adding a comeback mechanic the brief didn't ask for.
+- **Squadrons hold together while command lives.** Cohesion is tighter in 6 of 10 cells, for example Borg vs Federation at 60 a side 731 → 456 m. It loosened in four, all at 60 a side (Empire vs Rebels, Random 1, Random 2 and Shadows vs Minbari), where routs scatter squadrons across the field.
+- **Aces are present in most wars** (0–3.7 per war, in 22 of 30 wars). The first full run had aces in only 3 of 30; see DECISIONS.md, "Characters".
 
 ### Plans change the shape of the war, not just the label
 
@@ -106,17 +106,17 @@ What the numbers say:
 
 | plan (side 0) | first blood s | a side 25% lost s | losses at 60 s (0 / 1) | losses at 120 s (0 / 1) | fight centre x m | fight spread abs z m | lead changes | winner 0 / 1 / none |
 |---|---|---|---|---|---|---|---|---|
-| PINCER | 37.3 | 59.2 | 16 / 4 | 41 / 19.3 | 1372.7 | 1078.7 | 0.3 | 0 / 0 / 3 |
-| AMBUSH | 33.7 | 65.9 | 11 / 3.7 | 36.7 / 22 | 1577.3 | 1018 | 0 | 0 / 0 / 3 |
-| HOLD | 70.7 | 97.5 | 0 / 0 | 23.3 / 17 | -1492 | 1241 | 0.7 | 0 / 0 / 3 |
-| RAID | 31.9 | 81.4 | 4.3 / 2.7 | 38.3 / 21.3 | 1618.7 | 838 | 0 | 0 / 0 / 3 |
-| DECAPITATE | 33.1 | 50.5 | 18.7 / 8.3 | 30.3 / 23 | 1610.7 | 825 | 0 | 0 / 0 / 3 |
-| SIEGE | 56.1 | 105.3 | 1.3 / 0.3 | 20 / 19 | -215 | 1272.3 | 0 | 0 / 0 / 3 |
+| PINCER | 44.9 | 65.2 | 11 / 2 | 35.3 / 19 | 1478.3 | 956.3 | 0 | 0 / 0 / 3 |
+| AMBUSH | 40 | 63.5 | 13.3 / 3.7 | 31.7 / 24.3 | 1351.3 | 657.3 | 0 | 0 / 0 / 3 |
+| HOLD | 74.7 | 98.2 | 0 / 0 | 26.7 / 14.3 | -1056.7 | 787 | 0.3 | 0 / 0 / 3 |
+| RAID | 40.7 | 85.3 | 6.3 / 3 | 33.7 / 23 | 1933.3 | 725 | 0 | 0 / 0 / 3 |
+| DECAPITATE | 36.3 | 58 | 17 / 6 | 27 / 21.7 | 1476 | 642.7 | 0 | 0 / 0 / 3 |
+| SIEGE | 64.8 | 90 | 0 / 0 | 28 / 21.3 | -45.3 | 981 | 0.3 | 0 / 0 / 3 |
 
-- **Hold and siege delay first blood** to 71 and 56 s, against 32–37 s for the attacking plans.
-- **Where the fight happens moves with the plan.** Hold fights on its own side of the field (fight centre x −1,492 m) and siege in the middle (−215 m). Pincer, ambush, raid and decapitation carry the fight to the enemy (+1,373 to +1,619 m).
-- **A raid fights narrow** (spread 838 m) and a siege wide (1,272 m).
-- **Decapitation trades fastest:** it loses a quarter of its side by 50.5 s, while siege takes until 105 s.
+- **Hold and siege delay first blood** to 75 and 65 s, against 36–45 s for the attacking plans.
+- **Where the fight happens moves with the plan.** Hold fights on its own side of the field (fight centre x −1,057 m) and siege in the middle (−45 m). Pincer, ambush, raid and decapitation carry the fight to the enemy (+1,351 to +1,933 m).
+- **Attacks that pick a point fight narrow** (decapitation 643 m, ambush 657 m) and a siege wide (981 m).
+- **Decapitation trades fastest:** it loses a quarter of its side by 58 s, while siege takes until 90 s and hold until 98 s.
 
 ### Three seeds of one matchup, side by side
 
@@ -124,20 +124,20 @@ Empire vs Rebels, 60 a side, notable events per 15-second window (plain kills ar
 
 **After:**
 
-| window | seed 1101: pincer vs pincer, convoy, ◆ wins at 75.7 s | seed 2202: hold vs ambush, annihilate, undecided at 180 s | seed 3303: siege vs pincer, station, ◆ wins at 96.3 s |
+| window | seed 1101: pincer vs raid, convoy, ◆ wins at 134.6 s | seed 2202: hold vs ambush, annihilate, undecided at 180 s | seed 3303: siege vs pincer, station, ◆ wins at 96.3 s |
 |---|---|---|---|
 | 0–15 s | · | · | ◆ station taken |
-| 15–30 s | ▲ first shots | ◆ first shots | ▲ first shots |
-| 30–45 s | ▲ hero duel, ◆ raid jump ×2, ◆ ion strike, ▲ vendetta, ▲ HERO DOWN, ▲ vendetta ends, ◆ rout ×2 | · | ◆ rout ×2 |
-| 45–60 s | ▲ rout, ▲ ion strike, ◆ jump-out ×2, ◆ PLAN SWITCH, ◆ wreck strike ×3, ▲ jump-out, ▲ PLAN SWITCH, ◆ convoy through | ◆ rout ×3, ◆ ion strike, ▲ PLAN SWITCH, ◆ jump-out, ▲ rout | ◆ rout, ◆ jump-out ×3, ◆ ion strike |
-| 60–75 s | ▲ rout ×4, ▲ ace, ◆ plan works, ▲ ace duel, ▲ jump-out ×2, ▲ vendetta | ◆ plan works, ◆ jump-out ×2, ◆ vendetta, ▲ hero duel, ▲ vendetta, ◆ ace, ▲ jump-out, ◆ last stand, ▲ rout | · |
-| 75–90 s | ▲ jump-out, ◆ VICTORY, ◆ convoy through | ◆ rout ×2, ◆ HERO DOWN, ◆ vendetta ends, ▲ ion strike, ▲ jump-out, ◆ jump-out, ▲ rout | ◆ PLAN SWITCH, ▲ vendetta |
-| 90–105 s |  | ◆ ion strike, ◆ jump-out, ▲ ace, ▲ HERO DOWN, ▲ vendetta ends, ◆ rout ×2, ▲ jump-out, ▲ screen | ◆ rout, ◆ HERO DOWN, ◆ vendetta, ◆ vendetta ends, ▲ vendetta, ▲ rout, ◆ VICTORY |
-| 105–120 s |  | ▲ rout, ◆ jump-out ×2, ▲ last stand, ◆ capital down, ▲ jump-out |  |
-| 120–135 s |  | ◆ screen, ◆ last stand, ▲ rescue, ▲ ion strike, ▲ rout |  |
-| 135–150 s |  | ▲ capital down ×2, ▲ screen ×2, ◆ ion strike, ▲ pods, ▲ last stand, ◆ rescue, ▲ rescue, ◆ capital down, ▲ jump-out |  |
-| 150–165 s |  | ▲ last stand, ◆ pods, ◆ last stand, ◆ pods fired on ×3, ◆ capital down, ◆ FLAGSHIP DOWN, ◆ panic, ▲ wreck strike |  |
-| 165–180 s |  | ◆ successor, ◆ pods fired on ×4, ▲ wreck strike |  |
+| 15–30 s | ▲ first shots, ▲ hero duel | ▲ first shots | ◆ first shots |
+| 30–45 s | ◆ raid jump ×2, ◆ ion strike, ▲ rout | ◆ ion strike, ◆ rout | ◆ rout ×2 |
+| 45–60 s | ▲ rout, ▲ hero duel, ▲ vendetta, ▲ ace duel, ◆ rout ×2 | ◆ ace, ◆ vendetta, ▲ PLAN SWITCH, ◆ jump-out | ◆ rout, ◆ jump-out ×3 |
+| 60–75 s | ▲ jump-out, ▲ PLAN SWITCH, ◆ ace, ◆ raid jump, ◆ plan works, ◆ vendetta, ◆ jump-out ×2, ▲ HERO DOWN, ▲ vendetta ends, ▲ plan works | ◆ plan works, ◆ last stand, ▲ rout, ▲ hero duel, ◆ rout | ▲ PLAN SWITCH, ▲ ace, ◆ rout |
+| 75–90 s | ◆ vendetta, ▲ ion strike, ◆ last stand, ◆ vendetta ends, ▲ last stand, ◆ ion strike | ◆ HERO DOWN, ◆ vendetta ends, ▲ vendetta, ◆ jump-out | ◆ PLAN SWITCH, ◆ vendetta, ◆ jump-out |
+| 90–105 s | ◆ capital down, ▲ rout ×2, ◆ convoy through | ▲ ace, ▲ rout ×2, ◆ ion strike, ◆ rout, ◆ pods, ◆ last stand, ▲ screen, ◆ capital down ×2, ◆ RAM, ▲ jump-out, ◆ screen, ▲ last stand | ◆ VICTORY |
+| 105–120 s | ▲ jump-out ×2, ▲ pods, ▲ last stand, ▲ capital down | ◆ rout ×4, ◆ jump-out ×2, ◆ wreck strike, ▲ jump-out, ▲ rout, ▲ vendetta, ◆ pods saved |  |
+| 120–135 s | ▲ capital down, ◆ VICTORY, ◆ convoy through | ▲ rescue, ◆ jump-out ×3, ◆ wreck strike, ▲ jump-out, ◆ rescue |  |
+| 135–150 s |  | ◆ ion strike, ◆ pods saved, ▲ screen ×2, ▲ capital down |  |
+| 150–165 s |  | ▲ last stand, ▲ rescue, ▲ vendetta, ◆ pods saved |  |
+| 165–180 s |  | ▲ rescue, ◆ pods saved, ▲ HERO DOWN, ▲ vendetta ends |  |
 
 **Before** (30-second windows; the same three seeds):
 
@@ -151,9 +151,9 @@ Empire vs Rebels, 60 a side, notable events per 15-second window (plain kills ar
 | 150–180 s | ▲ ion strike, ▲ capital down | ◆ ion strike | ◆ ion strike |
 
 Before, the three wars are the same war: hero duels, ion strikes and capital kills, undecided at 180 s. After, they read differently:
-- seed 1101 is a Rebel convoy run won at 75.7 s through a rout-heavy middle;
-- seed 2202 is a long hold-versus-ambush grind that ends with the Rebel flagship falling and pods fired on;
-- seed 3303 is a fight for the station, won by the Rebels at 96.3 s.
+- seed 1101 is a Rebel convoy run against an Imperial pincer, won at 134.6 s after an ace duel, vendettas on both sides and an Imperial plan switch;
+- seed 2202 is a long hold-versus-ambush grind with rams, rescues and pods saved, still undecided at 180 s;
+- seed 3303 is a fight for the station, taken in the first 15 s and won by the Rebels at 96.3 s.
 
 ### Watching whole wars
 
@@ -161,13 +161,13 @@ Before, the three wars are the same war: hero duels, ion strikes and capital kil
 
 | war | camera | duration s | cuts | median shot s | shortest s | cuts under 4 s | big deaths | seen / replayed / missed | 15 s with nothing notable | median caption s |
 |---|---|---|---|---|---|---|---|---|---|---|
-| The Imperial Starfleet vs The Rebel Alliance, seed 1101 | broadcast | 81.7 | 8 | 9.6 | 7.07 | 0 | 1 | 1 / 0 / 0 | 0–16.3 | 4.8 |
-| The Imperial Starfleet vs The Rebel Alliance, seed 1101 | action | 81.7 | 10 | 8 | 3.94 | 1 | 1 | 1 / 0 / 0 | 0–16.3 | 4.8 |
-| The Borg Collective vs The Federation, seed 2202 | broadcast | 213.9 | 21 | 9.6 | 4.8 | 0 | 14 | 10 / 4 / 0 | none | 3.7 |
-| The Borg Collective vs The Federation, seed 2202 | action | 213.9 | 25 | 8.47 | 3.87 | 1 | 14 | 9 / 0 / 5 | none | 4.4 |
-| The Shadows vs The Minbari Federation, seed 3303 | broadcast | 148.9 | 16 | 9 | 5.33 | 0 | 5 | 5 / 0 / 0 | none | 3.7 |
-| The Shadows vs The Minbari Federation, seed 3303 | action | 148.9 | 19 | 8.03 | 3.66 | 2 | 5 | 3 / 0 / 2 | none | 4.1 |
+| The Imperial Starfleet vs The Rebel Alliance, seed 1101 | broadcast | 140.6 | 14 | 9.6 | 7.23 | 0 | 4 | 3 / 1 / 0 | 0–18.4 | 4.6 |
+| The Imperial Starfleet vs The Rebel Alliance, seed 1101 | action | 140.6 | 16 | 8.03 | 4.6 | 0 | 4 | 4 / 0 / 0 | 0–18.4 | 4.6 |
+| The Borg Collective vs The Federation, seed 2202 | broadcast | 168.6 | 18 | 9.56 | 3.74 | 1 | 14 | 9 / 4 / 1 | none | 3.7 |
+| The Borg Collective vs The Federation, seed 2202 | action | 168.6 | 20 | 8.37 | 3.57 | 2 | 14 | 9 / 0 / 5 | none | 3.7 |
+| The Shadows vs The Minbari Federation, seed 3303 | broadcast | 101.3 | 9 | 10.67 | 8.03 | 0 | 2 | 1 / 1 / 0 | none | 3.9 |
+| The Shadows vs The Minbari Federation, seed 3303 | action | 101.3 | 11 | 9 | 4.2 | 0 | 2 | 0 / 0 / 2 | none | 4.6 |
 
-- **Broadcast** holds a median shot of 9.0–9.6 s and misses no capital or hero death: 16 of 20 were on screen live and the other 4 were replayed.
-- **Action**, the default camera, rides one subject at a time and has no replays. Its median is 8.0–8.5 s. It saw 13 of the 20 big deaths live and missed 7 (5 of them in the Borg vs Federation war, which loses capitals in bursts). B switches to Broadcast.
-- **The only dead stretch** is the 16 s approach before first contact in the convoy war.
+- **Broadcast** holds a median shot of 9.6–10.7 s and misses 1 of 20 capital and hero deaths: 13 were on screen live and 6 were replayed. The miss is a Borg capital that died 6 s before the war ended, so its replay never came.
+- **Action**, the default camera, rides one subject at a time and has no replays. Its median is 8.0–9.0 s. It saw 13 of the 20 big deaths live and missed 7 (5 of them in the Borg vs Federation war, which loses capitals in bursts). B switches to Broadcast.
+- **The only dead stretch** is the 18 s approach before first contact in the convoy war.

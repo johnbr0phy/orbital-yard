@@ -177,7 +177,7 @@ Each fleet gets one row. **These are my readings of how each fleet is portrayed,
 
 ## Watching
 
-- **A war opens on the Action camera.** B toggles Broadcast; the watch dock lists Action first. Action rides with a subject (chase 9 s, duel 10 s, capital 11 s, squadron 13 s, wide views 8 s). A death holds 3.4 s, and nothing but a death cuts a shot before 6 s. At the old timings Action's median shot was 7.0–8.0 s across the three watched wars; now it's 8.0–8.5 s.
+- **A war opens on the Action camera.** B toggles Broadcast; the watch dock lists Action first. Action rides with a subject (chase 9 s, duel 10 s, capital 11 s, squadron 13 s, wide views 8 s). A death holds 3.4 s, and nothing but a death cuts a shot before 6 s. At the old timings Action's median shot was 7.0–8.0 s across the three watched wars; now it's 8.0–9.0 s.
 - **Action doesn't replay what it missed; Broadcast does.** Action is "ride with one ship", and replays would break that. So Action can miss a capital death elsewhere on the field (7 of 20 in the watched wars). Broadcast missed none.
 - **Broadcast story shots hold 10 to 25 s.** Only an event that outscores the story may cut away, and only once the shot has settled (7 s for climax and reaction shots, 6 s for a story shot). A flagship falling or a First One kill (score 125 or more) may cut earlier. The director comes back to the story afterwards unless a clearly better one (1.3×) exists.
 - **A big death the camera missed is replayed, never dropped.** Several can queue and replay together; a replay held back by the rate limit waits instead of vanishing.
@@ -292,6 +292,7 @@ The owner's words: "tyranids dont seem to have any guns".
   - Tyranid fire calls against the Empire's over 150 s: 14 vs 154, 48 vs 671, 360 vs 1,075.
 - **Now:**
   - **Doctrine:** the swarm never holds ground (`hunts`). Its capitals go to the prey even in a station war; the smaller ships still contest the station.
+  - **Their own weapon:** spores, a new weapon kind used only by the Tyranids. The Shoal and the Engineers keep the old single bio glob, so their balance is untouched.
   - **Volleys:** every shot is a spray of acid spores: 2 from a small bioform, 4 from a medium one, 7 from a hive ship. Cooldown 2.2–2.8 s.
   - **Seeking:** spores fly at 300 m/s and steer onto their prey at up to 1.1 rad/s, so most of a volley lands.
   - **Reach:** bio-cannons reach 1,150 m on a hive ship and 520 m on a medium bioform.

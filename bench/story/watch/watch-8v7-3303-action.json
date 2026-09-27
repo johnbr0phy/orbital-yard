@@ -8,43 +8,43 @@
   "size": 60,
   "mode": "action",
   "plans": [
-   "DECAPITATE",
+   "PINCER",
    "HOLD"
   ],
   "objective": "STATION",
   "winner": 1,
   "reason": "station",
-  "duration": 148.9,
-  "cuts": 19,
-  "medianHold": 8.03,
-  "minHold": 3.66,
-  "fastCuts": 2,
+  "duration": 101.3,
+  "cuts": 11,
+  "medianHold": 9,
+  "minHold": 4.2,
+  "fastCuts": 0,
   "kinds": {
    "formation": 1,
-   "chase": 4,
-   "top": 3,
-   "capital": 5,
-   "duel": 4,
-   "all": 2
+   "chase": 2,
+   "top": 2,
+   "capital": 2,
+   "duel": 3,
+   "all": 1
   },
   "phases": {
-   "-": 19
+   "-": 11
   },
   "deadStretches": [],
   "repeatedShots": 0,
-  "bigDeaths": 5,
-  "bigDeathsOnScreen": 3,
+  "bigDeaths": 2,
+  "bigDeathsOnScreen": 0,
   "bigDeathsReplayed": 0,
   "missed": [
-   "Dukhat's Blade@54.55",
-   "The Ghost@134.18"
+   "Dukhat's Blade@35.65",
+   "Shore 2@85.35"
   ],
-  "captions": 35,
-  "decisionCaptions": 11,
-  "eventCaptions": 19,
-  "captionMedianSeconds": 4.1299999999999955,
-  "shortCaptions": 3,
-  "wallSeconds": 58
+  "captions": 25,
+  "decisionCaptions": 13,
+  "eventCaptions": 9,
+  "captionMedianSeconds": 4.57,
+  "shortCaptions": 5,
+  "wallSeconds": 51
  },
  "autoReplays": [],
  "cuts": [
@@ -83,7 +83,7 @@
   {
    "t": 17.02,
    "kind": "chase",
-   "subject": 80,
+   "subject": 69,
    "partner": 20,
    "phase": null,
    "label": "Pursuit · MINBARI"
@@ -91,7 +91,7 @@
   {
    "t": 26.02,
    "kind": "top",
-   "subject": 30,
+   "subject": 20,
    "partner": 33,
    "phase": null,
    "label": "Battle from above"
@@ -99,130 +99,66 @@
   {
    "t": 34.05,
    "kind": "capital",
-   "subject": 48,
-   "partner": 10,
-   "phase": null,
-   "label": "Capital ship · MINBARI"
-  },
-  {
-   "t": 39.88,
-   "kind": "duel",
-   "subject": 24,
-   "partner": 33,
-   "phase": null,
-   "label": "Crossfire · SHADOWS"
-  },
-  {
-   "t": 45.88,
-   "kind": "chase",
-   "subject": 23,
-   "partner": 33,
-   "phase": null,
-   "label": "Pursuit · SHADOWS"
-  },
-  {
-   "t": 54.88,
-   "kind": "all",
    "subject": 40,
-   "partner": 17,
-   "phase": null,
-   "label": "Battlefield"
-  },
-  {
-   "t": 60.88,
-   "kind": "capital",
-   "subject": 44,
-   "partner": 26,
+   "partner": 20,
    "phase": null,
    "label": "Capital ship · MINBARI"
   },
   {
-   "t": 72.38,
+   "t": 45.08,
    "kind": "duel",
-   "subject": 44,
-   "partner": 25,
-   "phase": null,
-   "label": "Crossfire · MINBARI"
-  },
-  {
-   "t": 82.42,
-   "kind": "top",
-   "subject": 67,
-   "partner": 31,
-   "phase": null,
-   "label": "Battle from above"
-  },
-  {
-   "t": 86.08,
-   "kind": "chase",
-   "subject": 27,
-   "partner": 67,
-   "phase": null,
-   "label": "Pursuit · SHADOWS"
-  },
-  {
-   "t": 91.88,
-   "kind": "capital",
-   "subject": 43,
-   "partner": 25,
-   "phase": null,
-   "label": "Capital ship · MINBARI"
-  },
-  {
-   "t": 102.92,
-   "kind": "chase",
-   "subject": 5,
-   "partner": 47,
-   "phase": null,
-   "label": "Pursuit · SHADOWS"
-  },
-  {
-   "t": 111.95,
-   "kind": "all",
-   "subject": 47,
-   "partner": 5,
-   "phase": null,
-   "label": "Battlefield"
-  },
-  {
-   "t": 116.45,
-   "kind": "duel",
-   "subject": 32,
-   "partner": 46,
-   "phase": null,
-   "label": "Crossfire · SHADOWS"
-  },
-  {
-   "t": 127.62,
-   "kind": "capital",
-   "subject": 49,
-   "partner": 32,
-   "phase": null,
-   "label": "Capital ship · MINBARI"
-  },
-  {
-   "t": 137.58,
-   "kind": "top",
-   "subject": 8,
-   "partner": 49,
-   "phase": null,
-   "label": "Battle from above"
-  },
-  {
-   "t": 144.92,
-   "kind": "duel",
-   "subject": 51,
+   "subject": 41,
    "partner": 7,
    "phase": null,
    "label": "Crossfire · MINBARI"
   },
   {
-   "t": 148.58,
+   "t": 55.08,
+   "kind": "all",
+   "subject": 26,
+   "partner": 83,
+   "phase": null,
+   "label": "Battlefield"
+  },
+  {
+   "t": 63.08,
+   "kind": "chase",
+   "subject": 66,
+   "partner": 5,
+   "phase": null,
+   "label": "Pursuit · MINBARI"
+  },
+  {
+   "t": 72.12,
    "kind": "capital",
-   "subject": 45,
-   "partner": 0,
+   "subject": 51,
+   "partner": 9,
    "phase": null,
    "label": "Capital ship · MINBARI"
+  },
+  {
+   "t": 76.32,
+   "kind": "duel",
+   "subject": 49,
+   "partner": 8,
+   "phase": null,
+   "label": "Crossfire · MINBARI"
+  },
+  {
+   "t": 86.32,
+   "kind": "top",
+   "subject": 77,
+   "partner": 24,
+   "phase": null,
+   "label": "Battle from above"
+  },
+  {
+   "t": 94.35,
+   "kind": "duel",
+   "subject": 48,
+   "partner": 4,
+   "phase": null,
+   "label": "Crossfire · MINBARI"
   }
  ],
  "captions": [
@@ -253,172 +189,108 @@
   },
   {
    "t": 27.08,
-   "text": "The Minbari take the station.",
-   "kind": "event"
-  },
-  {
-   "t": 30.68,
    "text": "Umbra squadron going for the Minbari flagship.",
    "kind": "decision"
   },
   {
-   "t": 34.15,
-   "text": "“Broadside on the line. SHADOW HUNTER is in the battery.” — Shore 3",
+   "t": 34.28,
+   "text": "“Patrolling the lane. covering the fighters.” — Light 3",
    "kind": "thought"
   },
   {
-   "t": 38.18,
-   "text": "",
-   "kind": null
-  },
-  {
-   "t": 38.48,
-   "text": "The screen could not save Shore 3.",
-   "kind": "event"
-  },
-  {
-   "t": 42.22,
-   "text": "Dusk Leader clips the wreck of Shantavi. Gone.",
-   "kind": "event"
-  },
-  {
-   "t": 46.35,
-   "text": "Dukhat's Blade is hunting the Shadow Scout that killed Dawn 5.",
+   "t": 38.85,
+   "text": "Umbra 5 breaking off under heavy fire, falling back on Umbra 3.",
    "kind": "decision"
   },
   {
-   "t": 49.42,
-   "text": "Marai is going down firing everything it has.",
-   "kind": "event"
-  },
-  {
-   "t": 53.55,
-   "text": "Umbra squadron is breaking. 7 ships running to jump clear.",
-   "kind": "event"
-  },
-  {
-   "t": 58.35,
-   "text": "Dukhat's Blade is down. The hunt for the Shadow Scout ends there.",
-   "kind": "event"
-  },
-  {
-   "t": 63.82,
-   "text": "Crest squadron coming in off their flank.",
+   "t": 42.72,
+   "text": "Umbra squadron going for the Minbari flagship.",
    "kind": "decision"
   },
   {
-   "t": 67.55,
+   "t": 44.05,
+   "text": "“Patrolling the lane. guns on SHADOW SCOUT. covering the screen.” — Light 3",
+   "kind": "thought"
+  },
+  {
+   "t": 47.12,
+   "text": "Umbra squadron is breaking. 8 ships running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 51.92,
+   "text": "Umbra squadron has broken. Umbra 5 running to jump clear.",
+   "kind": "decision"
+  },
+  {
+   "t": 53.25,
    "text": "The Shadows plan has failed: the strike was shot down. Switching to the pincer.",
    "kind": "event"
   },
   {
-   "t": 73.68,
-   "text": "Marai survives. Light squadron held.",
+   "t": 59.38,
+   "text": "Hush 2 (“Vane”) has lost Hush 3. Now hunting the Torotha-Class Assault that did it.",
    "kind": "event"
   },
   {
-   "t": 77.42,
-   "text": "Shade Leader covering Veil 3, hull 39%.",
+   "t": 65.78,
+   "text": "Shade squadron is breaking. 2 ships running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 70.58,
+   "text": "Crest 7 covering Shore 4, hull 44%.",
    "kind": "decision"
   },
   {
-   "t": 78.75,
-   "text": "Hush 2 breaking off, hull 84%, falling back on Hush 5.",
+   "t": 71.92,
+   "text": "Veil Leader covering Dusk Leader, hull 7%.",
    "kind": "decision"
   },
   {
-   "t": 80.08,
-   "text": "“Patrolling the lane. guns on SHADOW SCOUT. covering the screen.” — Star 3",
-   "kind": "thought"
+   "t": 74.85,
+   "text": "Dusk squadron is breaking. 3 ships running to jump clear.",
+   "kind": "event"
   },
   {
-   "t": 84.62,
-   "text": "Veil Leader covering Veil 3, hull 39%.",
+   "t": 79.62,
+   "text": "Dusk squadron has broken. Dusk 3 running to jump clear, hull 79%.",
    "kind": "decision"
   },
   {
-   "t": 87.55,
-   "text": "Shore 2 is going down firing everything it has.",
+   "t": 81.22,
+   "text": "Veil squadron is breaking. 3 ships running to jump clear.",
    "kind": "event"
   },
   {
-   "t": 91.95,
-   "text": "“Patrolling the lane. guns on SHADOW SCOUT. covering the screen.” — Star 2",
-   "kind": "thought"
-  },
-  {
-   "t": 101.02,
-   "text": "“Patrolling the lane. guns on SHADOW HUNTER. covering the screen.” — Star 2",
-   "kind": "thought"
-  },
-  {
-   "t": 105.55,
-   "text": "Veil Leader breaking off, hull 23%, falling back to the Greater Battlecrab’s screen.",
+   "t": 86.02,
+   "text": "Veil squadron has broken. Veil 4 running to jump clear, hull 30%.",
    "kind": "decision"
   },
   {
-   "t": 111.28,
-   "text": "The Ghost has lost Hush 3. Now hunting the Tinashi-Class War that did it.",
-   "kind": "event"
-  },
-  {
-   "t": 117.42,
-   "text": "Chime squadron peels off to screen Shore Leader, hull 34%.",
-   "kind": "event"
-  },
-  {
-   "t": 122.22,
-   "text": "The Ghost is hunting the Tinashi-Class War that killed Hush 3.",
+   "t": 87.35,
+   "text": "Veil squadron has broken. Veil 2 running to jump clear, hull 89%.",
    "kind": "decision"
   },
   {
-   "t": 124.22,
-   "text": "Hush 2 covering Shade 2, hull 15%.",
+   "t": 91.48,
+   "text": "Shore 3 is doomed and turning to ram the Shadow Vessel.",
+   "kind": "event"
+  },
+  {
+   "t": 96.55,
+   "text": "Shore 3 is turning to ram the Shadow Vessel.",
    "kind": "decision"
   },
   {
-   "t": 127.95,
-   "text": "The screen could not save Shore Leader.",
-   "kind": "event"
-  },
-  {
-   "t": 131.02,
-   "text": "The Ghost is going down firing everything it has.",
-   "kind": "event"
-  },
-  {
-   "t": 134.22,
-   "text": "Chime squadron peels off to screen Shore 4, hull 37%.",
-   "kind": "event"
-  },
-  {
-   "t": 139.02,
-   "text": "Shade squadron is breaking. 1 ship running to jump clear.",
-   "kind": "event"
-  },
-  {
-   "t": 143.82,
-   "text": "The Shadows plan has failed: the wings never met. Switching to the decapitation strike.",
-   "kind": "event"
-  },
-  {
-   "t": 146.88,
-   "text": "Star 4 is going down firing everything it has.",
-   "kind": "event"
+   "t": 100.95,
+   "text": "The Shadow Vessel is withdrawing, running to jump clear.",
+   "kind": "decision"
   }
  ],
  "deaths": [
   {
-   "t": 38.18,
-   "id": 48,
-   "name": "Shore 3",
-   "seen": true,
-   "capital": true,
-   "hero": false,
-   "mode": "action"
-  },
-  {
-   "t": 54.55,
+   "t": 35.65,
    "id": 84,
    "name": "Dukhat's Blade",
    "seen": false,
@@ -427,37 +299,19 @@
    "mode": "action"
   },
   {
-   "t": 85.85,
-   "id": 44,
-   "name": "Star 3",
-   "seen": true,
-   "capital": true,
-   "hero": false,
-   "mode": "action"
-  },
-  {
-   "t": 124.18,
-   "id": 46,
-   "name": "Shore Leader",
-   "seen": true,
-   "capital": true,
-   "hero": false,
-   "mode": "action"
-  },
-  {
-   "t": 134.18,
-   "id": 32,
-   "name": "The Ghost",
+   "t": 85.35,
+   "id": 47,
+   "name": "Shore 2",
    "seen": false,
    "capital": true,
-   "hero": true,
+   "hero": false,
    "mode": "action"
   }
  ],
  "replays": [],
  "winner": 1,
  "winReason": "station",
- "T": 148.88333333332744,
+ "T": 101.3499999999968,
  "events": [
   {
    "t": -0.2,
@@ -472,17 +326,12 @@
   {
    "t": 13.3,
    "type": "contact",
-   "text": "First shots: Wave 4 opens fire on the Shadow Scout."
+   "text": "First shots: Wave 3 opens fire on the Shadow Scout."
   },
   {
-   "t": 19.6,
+   "t": 19.1,
    "type": "vendetta",
    "text": "Dukhat's Blade has lost Dawn 5. Now hunting the Shadow Scout that did it."
-  },
-  {
-   "t": 26.3,
-   "type": "stationTaken",
-   "text": "The Minbari take the station."
   },
   {
    "t": 34,
@@ -490,24 +339,14 @@
    "text": "WC-VALEN 68888 VALTAYN"
   },
   {
-   "t": 34.9,
-   "type": "rescueStart",
-   "text": "Shore squadron peels off to screen Shore 3, hull 34%."
+   "t": 35.7,
+   "type": "heroKill",
+   "text": "Dukhat's Blade"
   },
   {
-   "t": 38.2,
-   "type": "capitalKill",
-   "text": "Shore 3"
-  },
-  {
-   "t": 38.5,
-   "type": "rescue",
-   "text": "The screen could not save Shore 3."
-  },
-  {
-   "t": 38.9,
-   "type": "wreckStrike",
-   "text": "Dusk Leader clips the wreck of Shantavi. Gone."
+   "t": 35.7,
+   "type": "vendettaFailed",
+   "text": "Dukhat's Blade is down. The hunt for the Shadow Scout ends there."
   },
   {
    "t": 42.8,
@@ -515,19 +354,14 @@
    "text": "WC-VALEN 68888 VALTAYN"
   },
   {
-   "t": 47.2,
+   "t": 44.3,
    "type": "rout",
-   "text": "Umbra squadron is breaking. 7 ships running to jump clear."
+   "text": "Umbra squadron is breaking. 8 ships running to jump clear."
   },
   {
-   "t": 48.3,
-   "type": "rescueStart",
-   "text": "Light squadron peels off to screen Marai, hull 35%."
-  },
-  {
-   "t": 48.8,
-   "type": "lastStand",
-   "text": "Marai is going down firing everything it has."
+   "t": 48.7,
+   "type": "ace",
+   "text": "Hush 2 makes ace with 2 kills. Callsign: Vane."
   },
   {
    "t": 52,
@@ -535,19 +369,24 @@
    "text": "WC-VALEN 68888 VALTAYN"
   },
   {
-   "t": 52.3,
-   "type": "ace",
-   "text": "Umbra 7 makes ace with 2 kills. Callsign: Vane."
+   "t": 52.7,
+   "type": "escape",
+   "text": "Umbra squadron jumps out. They will live to fight another day."
   },
   {
-   "t": 54.5,
-   "type": "heroKill",
-   "text": "Dukhat's Blade"
+   "t": 52.9,
+   "type": "planSwitch",
+   "text": "The Shadows plan has failed: the strike was shot down. Switching to the pincer."
   },
   {
-   "t": 54.6,
-   "type": "vendettaFailed",
-   "text": "Dukhat's Blade is down. The hunt for the Shadow Scout ends there."
+   "t": 56.4,
+   "type": "vendetta",
+   "text": "Hush 2 (“Vane”) has lost Hush 3. Now hunting the Torotha-Class Assault that did it."
+  },
+  {
+   "t": 60.1,
+   "type": "rout",
+   "text": "Shade squadron is breaking. 2 ships running to jump clear."
   },
   {
    "t": 60.8,
@@ -555,238 +394,109 @@
    "text": "WC-VALEN 68888 VALTAYN"
   },
   {
-   "t": 61.2,
-   "type": "escape",
-   "text": "Umbra squadron jumps out. They will live to fight another day."
-  },
-  {
-   "t": 67.4,
-   "type": "planSwitch",
-   "text": "The Shadows plan has failed: the strike was shot down. Switching to the pincer."
-  },
-  {
    "t": 69.9,
    "type": "ionCharge",
    "text": "WC-VALEN 68888 VALTAYN"
   },
   {
-   "t": 70.5,
-   "type": "rescue",
-   "text": "Marai survives. Light squadron held."
+   "t": 71.6,
+   "type": "escape",
+   "text": "Shade squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 72.1,
+   "type": "rout",
+   "text": "Dusk squadron is breaking. 3 ships running to jump clear."
+  },
+  {
+   "t": 72.8,
+   "type": "rescueStart",
+   "text": "Shore squadron peels off to screen Shore 4, hull 34%."
   },
   {
    "t": 79.2,
    "type": "ionCharge",
-   "text": "WC-VALEN 68888 VALTAYN"
-  },
-  {
-   "t": 85.8,
-   "type": "capitalKill",
-   "text": "Star 3"
-  },
-  {
-   "t": 86.4,
-   "type": "lastStand",
-   "text": "Shore 2 is going down firing everything it has."
-  },
-  {
-   "t": 88.5,
-   "type": "ace",
-   "text": "Hush 5 makes ace with 3 kills. Callsign: Kestrel."
-  },
-  {
-   "t": 92.2,
-   "type": "stationTaken",
-   "text": "The Minbari take the station."
-  },
-  {
-   "t": 94.7,
-   "type": "ionCharge",
-   "text": "WC-VALEN 14296 ANLA'SHOK"
-  },
-  {
-   "t": 103.4,
-   "type": "ionCharge",
    "text": "WC-VALEN 00010 MARAI"
   },
   {
-   "t": 107.9,
+   "t": 81.1,
+   "type": "escape",
+   "text": "Dusk squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 81.2,
+   "type": "rout",
+   "text": "Veil squadron is breaking. 3 ships running to jump clear."
+  },
+  {
+   "t": 84.3,
    "type": "ionStrike",
    "text": "WC-VALEN 00010 MARAI"
   },
   {
-   "t": 109.6,
-   "type": "vendetta",
-   "text": "The Ghost has lost Hush 3. Now hunting the Tinashi-Class War that did it."
-  },
-  {
-   "t": 116,
-   "type": "rescueStart",
-   "text": "Shore squadron peels off to screen Star 4, hull 33%."
-  },
-  {
-   "t": 116.9,
-   "type": "rescueStart",
-   "text": "Chime squadron peels off to screen Shore Leader, hull 34%."
-  },
-  {
-   "t": 124.2,
+   "t": 85.3,
    "type": "capitalKill",
-   "text": "Shore Leader"
+   "text": "Shore 2"
   },
   {
-   "t": 124.2,
-   "type": "rescue",
-   "text": "The screen could not save Shore Leader."
-  },
-  {
-   "t": 129.1,
-   "type": "vendetta",
-   "text": "The Ghost has lost Hush 2. Now hunting the Tinashi-Class War that did it."
-  },
-  {
-   "t": 129.4,
+   "t": 91.4,
    "type": "lastStand",
-   "text": "The Ghost is going down firing everything it has."
+   "text": "Shore 3 is doomed and turning to ram the Shadow Vessel."
   },
   {
-   "t": 131.3,
-   "type": "rescueStart",
-   "text": "Chime squadron peels off to screen Shore 4, hull 37%."
+   "t": 91.7,
+   "type": "escape",
+   "text": "Veil squadron jumps out. They will live to fight another day."
   },
   {
-   "t": 134.2,
-   "type": "heroKill",
-   "text": "The Ghost"
-  },
-  {
-   "t": 134.2,
-   "type": "vendettaFailed",
-   "text": "The Ghost is down. The hunt for the Tinashi-Class War ends there."
-  },
-  {
-   "t": 136.2,
-   "type": "wreckStrike",
-   "text": "Dusk 3 clips the wreck of Callenn. Gone."
-  },
-  {
-   "t": 137.6,
-   "type": "rout",
-   "text": "Shade squadron is breaking. 1 ship running to jump clear."
-  },
-  {
-   "t": 137.7,
-   "type": "planSwitch",
-   "text": "The Shadows plan has failed: the wings never met. Switching to the decapitation strike."
-  },
-  {
-   "t": 137.7,
-   "type": "stationTaken",
-   "text": "The Minbari take the station."
-  },
-  {
-   "t": 138.7,
-   "type": "rescue",
-   "text": "Star 4 survives. Shore squadron held."
-  },
-  {
-   "t": 140.2,
-   "type": "ionCharge",
-   "text": "BATTLECRAB 90805"
-  },
-  {
-   "t": 141.5,
-   "type": "wreckStrike",
-   "text": "Veil 4 clips the wreck of Callenn. Gone."
-  },
-  {
-   "t": 142.8,
+   "t": 95.3,
    "type": "victory",
    "text": "THE MINBARI FEDERATION"
   },
   {
-   "t": 143.6,
-   "type": "rescueStart",
-   "text": "Shore squadron peels off to screen Light 4, hull 34%."
-  },
-  {
-   "t": 144,
-   "type": "lastStand",
-   "text": "Star 4 is going down firing everything it has."
-  },
-  {
-   "t": 144.2,
-   "type": "wreckStrike",
-   "text": "Veil 2 clips the wreck of The Ghost. Gone."
-  },
-  {
-   "t": 144.7,
-   "type": "rout",
-   "text": "Veil squadron is breaking. 1 ship running to jump clear."
+   "t": 95.3,
+   "type": "rescue",
+   "text": "Shore 4 survives. Shore squadron held."
   }
  ],
  "kills": [
+  19.1,
+  19.5,
   19.6,
-  21.6,
-  23.2,
-  29,
-  31.6,
-  32.6,
-  34.2,
-  35.3,
-  36.8,
-  38.2,
-  38.5,
-  38.5,
-  38.8,
-  39.4,
-  40.8,
-  42.6,
-  44,
-  46.1,
-  48.6,
+  24.5,
+  27.7,
+  29.3,
+  32.3,
+  35.7,
+  37.4,
+  37.4,
+  37.5,
+  39.3,
+  40.3,
+  44.3,
+  46,
   48.7,
-  49.2,
-  49.3,
-  52.2,
-  53.8,
-  54.1,
-  54.5,
-  54.9,
+  52.7,
+  53.9,
   56.4,
-  57.6,
+  58.5,
   59.6,
-  59.7,
-  60.7,
-  61.9,
-  66,
-  67.2,
-  67.6,
-  68.9,
-  73.8,
-  74.1,
-  74.5,
-  82.6,
-  85.8,
-  88.4,
-  88.5,
-  102.6,
-  106.9,
-  109.5,
-  112.3,
-  113,
-  124.2,
-  126.6,
-  129,
-  134.2,
-  136.1,
-  141.5,
-  141.6,
-  144.2,
-  145.2
+  60.5,
+  62.7,
+  63.8,
+  64,
+  64.9,
+  66.7,
+  66.8,
+  71.2,
+  72.9,
+  79.9,
+  84.3,
+  85.3,
+  86.3
  ],
  "plans": [
-  "DECAPITATE",
+  "PINCER",
   "HOLD"
  ],
  "objective": "STATION",

@@ -39,26 +39,26 @@ The first thing I built was a way to measure that (`scripts/story-metrics.cjs`, 
 The brief's question: if someone watches two wars back to back, could they describe how the second one was different, and would they want to watch a third?
 
 **Could they tell them apart? Yes, and in plain words.** Take Empire vs Rebels at 60 a side, seeds 1101 and 2202, the first two columns of the side-by-side table in BEHAVIOUR.md.
-- **The first** is a convoy run. The title card says the Rebels will run a convoy to a jump point and both sides try a pincer. First shots come before 30 s. By 45 s two Rebel squadrons have raided and jumped out, a hero duel has ended with a hero dead, and two squadrons have broken. Both sides switch plans before the minute. The convoy gets through and the Rebels win at 75.7 s.
-- **The second** has nothing to escort. The Empire holds its line and the Rebels lay an ambush, so nobody fires for the first 15 s. It becomes a three-minute grind: waves of routs on both sides, a Rebel ace, vendettas, and rescues as escorts screen crippled capitals. Near the end the Rebel flagship falls, command goes silent, a successor takes over, and the Imperials fire on the Rebel escape pods.
+- **The first** is a convoy run. The title card says the Rebels will run a convoy to a jump point; the Empire tries a pincer and the Rebels raid. First shots and a hero duel come before 30 s. By 45 s two Rebel squadrons have raided and jumped out and the first Imperial squadron has broken. Then an ace duel, vendettas on both sides, an Imperial plan switch and an Imperial hero dead. The convoy gets through and the Rebels win at 134.6 s.
+- **The second** has nothing to escort. The Empire holds its line and the Rebels lay an ambush, so nobody fires for the first 15 s. It becomes a three-minute grind: waves of routs on both sides, a Rebel ace, vendettas, a Rebel ram, rescues as escorts screen crippled capitals, and escape pods picked up. It is still undecided at 180 s.
 
 Before this pass those two seeds, and the third, were the same war: hero duels, ion strikes and capital kills, undecided at 180 s. That's the before table right below the after one.
 
 The numbers agree, with caveats I'd rather state than bury:
 - Uniqueness between seeds rose in 9 of 10 matchup/size cells.
-- The part of uniqueness that only moves if the war itself plays out differently (the shape of the momentum curve) rose in half the cells and fell in the other half.
+- The part of uniqueness that only moves if the war itself plays out differently (the shape of the momentum curve) rose in 5 cells, fell in 4 and held in 1.
 - Lead changes didn't rise at all.
 
 Morale that cascades makes wars decisive rather than see-saw. What tells two wars apart is what happened and where, not who was ahead when. The controlled plan experiment shows the plan alone moves:
-- first blood, from 32 s to 71 s;
-- where the fight happens, from 1.5 km on one side of the field to 1.6 km on the other.
+- first blood, from 36 s to 75 s;
+- where the fight happens, from 1.1 km on one side of the field to 1.9 km on the other.
 
-**Would they want a third? I think yes, for a while, and I can say why.** Each war now asks a question on its title card and answers it on its end card. The camera holds on a subject long enough to follow it (median shot 9.0 to 9.6 s in Broadcast, 8.0 to 8.5 s in Action). In the watched wars Broadcast missed none of the 20 capital and hero deaths: 16 live, 4 replayed. The only 15-second stretch with nothing notable was a convoy war's approach.
+**Would they want a third? I think yes, for a while, and I can say why.** Each war now asks a question on its title card and answers it on its end card. The camera holds on a subject long enough to follow it (median shot 9.6 to 10.7 s in Broadcast, 8.0 to 9.0 s in Action). In the watched wars Broadcast showed 19 of the 20 capital and hero deaths: 13 live, 6 replayed; the one it missed died 6 s before the war ended. The only 15-second stretch with nothing notable was a convoy war's approach.
 
 What would stop someone at the fourth war:
-- **Wars of annihilation still run long.** Only 1 of 10 ended inside the 180 s cap; the objective wars are the ones that finish.
+- **Wars of annihilation still run long.** Only 2 of 10 ended inside the 180 s cap; the objective wars are the ones that finish.
 - **The default Action camera misses some deaths.** It saw 13 of 20 live and doesn't replay, so a viewer who stays on Action sees less of the story than Broadcast shows.
-- **Flagship deaths are rare** (5 in 30 wars), so the succession story, which is one of the best moments, is uncommon.
+- **Flagship deaths are uncommon** (9 in 30 wars), so the succession story, which is one of the best moments, is uncommon.
 
 Those are my next three things to fix.
 
