@@ -280,3 +280,30 @@ The owner's words: they "jump in, sit still and do nothing", and should "utterly
     - Broadcast cuts to a charging ancient at once, then follows it to the blast site.
 - **Measured after:** the same war ends at 60 s, all 61 Imperial ships unmade by 10 strikes, with no First One lost. A 20-a-side war ends inside 90 s; the test checks it.
 - **Balance.** This makes the First Ones overwhelming on purpose. The picker's simulated odds were re-fitted on the new code (`bench/ratings/ratings.json`).
+
+## The Tyranids have guns
+
+The owner's words: "tyranids dont seem to have any guns".
+
+- **Measured before** (Tyranids vs Empire, 40 a side, seeds 1101/2202/3303):
+  - in a station war their hive ships held the station all war and never fired;
+  - hive ships only reached 280 m, but a capital in a fight stands 500–1,000 m off, so they almost never had a target;
+  - each shot was one slow (240 m/s), unguided glob drawn as a 6 px dot;
+  - Tyranid fire calls against the Empire's over 150 s: 14 vs 154, 48 vs 671, 360 vs 1,075.
+- **Now:**
+  - **Doctrine:** the swarm never holds ground (`hunts`). Its capitals go to the prey even in a station war; the smaller ships still contest the station.
+  - **Volleys:** every shot is a spray of acid spores: 2 from a small bioform, 4 from a medium one, 7 from a hive ship. Cooldown 2.2–2.8 s.
+  - **Seeking:** spores fly at 300 m/s and steer onto their prey at up to 1.1 rad/s, so most of a volley lands.
+  - **Reach:** bio-cannons reach 1,150 m on a hive ship and 520 m on a medium bioform.
+  - **Look:** spores are drawn larger (9.5 px, 13 px from a hive ship) with an acid streak behind each.
+- **Measured after** (same wars, Tyranid vs enemy fire calls; each Tyranid call is now a volley):
+  - vs Empire: 16 vs 228, 597 vs 512, 441 vs 419; Tyranids win two of three (before: one);
+  - vs Federation: 231 vs 397, 331 vs 286, 250 vs 226 (before 210 vs 290, 87 vs 185, 124 vs 791);
+  - vs Borg: the Borg still win two of three.
+- **Still true:** medium bioforms march slowly with the hive ships and reach the fight late; that is the swarm's shape, not a bug.
+
+## Hide all UI
+
+- One button in the speed bar (⛶), or U, hides everything but the battle itself.
+- A faint "Show UI · U" appears when the pointer moves; it, U or Esc brings the UI back.
+- Menus and the fleet picker always bring the UI back first, so nothing opens invisible.

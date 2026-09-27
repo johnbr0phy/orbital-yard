@@ -388,6 +388,12 @@ body.replaying::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
 body.idle #watchDock,body.idle #battleOptions,body.idle #bcSpeed,body.idle #brand,body.idle #bcMomentum,body.idle #bcMomentumLabel{opacity:.08;transition:opacity 1.2s}
 #watchDock,#battleOptions,#bcSpeed,#brand,#bcMomentum{transition:opacity .3s}
 body.idle #gl{cursor:none}
+/* Clean screen: only the battle (and its strike flashes). A chip to come back appears when the pointer moves. */
+body.noui>:not(#gl):not(#ionFlash):not(#uiBack){visibility:hidden!important;pointer-events:none!important}
+body.noui #gl{cursor:none}
+#uiBack{display:none;position:fixed;right:16px;bottom:16px;z-index:30;font:600 12px system-ui;letter-spacing:.04em;color:#e9f1f5;background:#14202ce6;border:1px solid #516371;border-radius:18px;padding:8px 14px;cursor:pointer;opacity:0;transition:opacity .5s}
+body.noui #uiBack{display:block}body.noui.uiPeek #uiBack{opacity:.9}body.noui.uiPeek #gl{cursor:default}
+#uiBack:focus-visible{opacity:.9;outline:2px solid #9fd0ff}
 body.menu-start #bcTop,body.menu-start #bcFeed,body.menu-start #bcTicker,body.menu-start #bcCaption,body.menu-start #bcMomentum,body.menu-start #bcMomentumLabel,body.menu-start #bcSpeed,body.menu-start #bcReplayChip,body.piloting #bcSpeed,body.piloting #bcCaption,body.piloting #bcMomentum,body.piloting #bcMomentumLabel{display:none}
 body.intro #bcTop,body.intro #bcFeed,body.intro #bcSpeed{opacity:0;pointer-events:none}
 body.ending #bcTop,body.ending #bcFeed,body.ending #bcTicker,body.ending #bcCaption,body.ending #bcMomentum,body.ending #bcMomentumLabel,body.ending #bcReplayChip,body.ending #watchDock,body.ending #bcSpeed{visibility:hidden}
@@ -467,12 +473,13 @@ body:not(.menu-start) #brand{display:none}
 <div id="bcObjective" aria-live="off"></div>
 <div id="bcTags" aria-hidden="true"></div>
 <canvas id="bcMomentum" width="300" height="76" aria-label="Momentum over time"></canvas><div id="bcMomentumLabel">Momentum</div>
-<div id="bcSpeed" role="group" aria-label="Time controls"><button type="button" data-rate="0" title="Pause (Space)" aria-label="Pause">⏸</button><button type="button" data-rate="0.25" title="0.25x (1)">¼</button><button type="button" data-rate="0.5" title="0.5x (2)">½</button><button type="button" data-rate="1" title="1x (3)">1×</button><button type="button" data-rate="2" title="2x (4)">2×</button><button type="button" data-rate="4" title="4x (5)">4×</button><span id="bcClock">0:00</span><button type="button" id="bcReplayBtn" title="Instant replay (R)">↺</button><button type="button" id="bcHelpBtn" title="Shortcuts (?)" aria-label="Keyboard shortcuts">?</button></div>
+<div id="bcSpeed" role="group" aria-label="Time controls"><button type="button" data-rate="0" title="Pause (Space)" aria-label="Pause">⏸</button><button type="button" data-rate="0.25" title="0.25x (1)">¼</button><button type="button" data-rate="0.5" title="0.5x (2)">½</button><button type="button" data-rate="1" title="1x (3)">1×</button><button type="button" data-rate="2" title="2x (4)">2×</button><button type="button" data-rate="4" title="4x (5)">4×</button><span id="bcClock">0:00</span><button type="button" id="bcReplayBtn" title="Instant replay (R)">↺</button><button type="button" id="bcHelpBtn" title="Shortcuts (?)" aria-label="Keyboard shortcuts">?</button><button type="button" id="uiHide" title="Hide all UI (U)" aria-label="Hide all UI" aria-pressed="false">⛶</button></div>
+<button type="button" id="uiBack" aria-label="Show the UI again">Show UI · U</button>
 <button type="button" id="bcReplayChip" hidden></button>
 <div id="bcReplayBar" hidden><b>Replay</b><div><i></i></div></div>
 <div id="bcHover" hidden></div>
 <section id="bcEnd" hidden aria-label="Battle result"></section>
-<section id="bcHelp" hidden aria-label="Keyboard shortcuts"><div class="panel"><h2>SHORTCUTS</h2><div class="cols"><div><kbd>B</kbd>Broadcast camera<br><kbd>Space</kbd>Pause / resume<br><kbd>1</kbd>–<kbd>5</kbd>¼× ½× 1× 2× 4×<br><kbd>R</kbd>Instant replay<br><kbd>H</kbd>Follow a hero<br><kbd>M</kbd>Sound on / off</div><div><kbd>N</kbd>Choose fleets<br><kbd>G</kbd>New random war<br><kbd>P</kbd>Ink palette<br><kbd>Esc</kbd>Close / back<br>Click a ship to follow<br>Drag to orbit · wheel or pinch to zoom</div></div><p style="opacity:.7;margin:10px 0 0">Press <kbd>?</kbd> or Esc to close</p></div></section>
+<section id="bcHelp" hidden aria-label="Keyboard shortcuts"><div class="panel"><h2>SHORTCUTS</h2><div class="cols"><div><kbd>B</kbd>Broadcast camera<br><kbd>U</kbd>Hide / show all UI<br><kbd>Space</kbd>Pause / resume<br><kbd>1</kbd>–<kbd>5</kbd>¼× ½× 1× 2× 4×<br><kbd>R</kbd>Instant replay<br><kbd>H</kbd>Follow a hero<br><kbd>M</kbd>Sound on / off</div><div><kbd>N</kbd>Choose fleets<br><kbd>G</kbd>New random war<br><kbd>P</kbd>Ink palette<br><kbd>Esc</kbd>Close / back<br>Click a ship to follow<br>Drag to orbit · wheel or pinch to zoom</div></div><p style="opacity:.7;margin:10px 0 0">Press <kbd>?</kbd> or Esc to close</p></div></section>
 <div id="win"></div>
 <div id="toast"></div>
 <section id="warMenu" aria-labelledby="warMenuTitle"><div class="warMenuPanel">

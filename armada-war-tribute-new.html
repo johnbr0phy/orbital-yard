@@ -388,6 +388,12 @@ body.replaying::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
 body.idle #watchDock,body.idle #battleOptions,body.idle #bcSpeed,body.idle #brand,body.idle #bcMomentum,body.idle #bcMomentumLabel{opacity:.08;transition:opacity 1.2s}
 #watchDock,#battleOptions,#bcSpeed,#brand,#bcMomentum{transition:opacity .3s}
 body.idle #gl{cursor:none}
+/* Clean screen: only the battle (and its strike flashes). A chip to come back appears when the pointer moves. */
+body.noui>:not(#gl):not(#ionFlash):not(#uiBack){visibility:hidden!important;pointer-events:none!important}
+body.noui #gl{cursor:none}
+#uiBack{display:none;position:fixed;right:16px;bottom:16px;z-index:30;font:600 12px system-ui;letter-spacing:.04em;color:#e9f1f5;background:#14202ce6;border:1px solid #516371;border-radius:18px;padding:8px 14px;cursor:pointer;opacity:0;transition:opacity .5s}
+body.noui #uiBack{display:block}body.noui.uiPeek #uiBack{opacity:.9}body.noui.uiPeek #gl{cursor:default}
+#uiBack:focus-visible{opacity:.9;outline:2px solid #9fd0ff}
 body.menu-start #bcTop,body.menu-start #bcFeed,body.menu-start #bcTicker,body.menu-start #bcCaption,body.menu-start #bcMomentum,body.menu-start #bcMomentumLabel,body.menu-start #bcSpeed,body.menu-start #bcReplayChip,body.piloting #bcSpeed,body.piloting #bcCaption,body.piloting #bcMomentum,body.piloting #bcMomentumLabel{display:none}
 body.intro #bcTop,body.intro #bcFeed,body.intro #bcSpeed{opacity:0;pointer-events:none}
 body.ending #bcTop,body.ending #bcFeed,body.ending #bcTicker,body.ending #bcCaption,body.ending #bcMomentum,body.ending #bcMomentumLabel,body.ending #bcReplayChip,body.ending #watchDock,body.ending #bcSpeed{visibility:hidden}
@@ -467,12 +473,13 @@ body:not(.menu-start) #brand{display:none}
 <div id="bcObjective" aria-live="off"></div>
 <div id="bcTags" aria-hidden="true"></div>
 <canvas id="bcMomentum" width="300" height="76" aria-label="Momentum over time"></canvas><div id="bcMomentumLabel">Momentum</div>
-<div id="bcSpeed" role="group" aria-label="Time controls"><button type="button" data-rate="0" title="Pause (Space)" aria-label="Pause">⏸</button><button type="button" data-rate="0.25" title="0.25x (1)">¼</button><button type="button" data-rate="0.5" title="0.5x (2)">½</button><button type="button" data-rate="1" title="1x (3)">1×</button><button type="button" data-rate="2" title="2x (4)">2×</button><button type="button" data-rate="4" title="4x (5)">4×</button><span id="bcClock">0:00</span><button type="button" id="bcReplayBtn" title="Instant replay (R)">↺</button><button type="button" id="bcHelpBtn" title="Shortcuts (?)" aria-label="Keyboard shortcuts">?</button></div>
+<div id="bcSpeed" role="group" aria-label="Time controls"><button type="button" data-rate="0" title="Pause (Space)" aria-label="Pause">⏸</button><button type="button" data-rate="0.25" title="0.25x (1)">¼</button><button type="button" data-rate="0.5" title="0.5x (2)">½</button><button type="button" data-rate="1" title="1x (3)">1×</button><button type="button" data-rate="2" title="2x (4)">2×</button><button type="button" data-rate="4" title="4x (5)">4×</button><span id="bcClock">0:00</span><button type="button" id="bcReplayBtn" title="Instant replay (R)">↺</button><button type="button" id="bcHelpBtn" title="Shortcuts (?)" aria-label="Keyboard shortcuts">?</button><button type="button" id="uiHide" title="Hide all UI (U)" aria-label="Hide all UI" aria-pressed="false">⛶</button></div>
+<button type="button" id="uiBack" aria-label="Show the UI again">Show UI · U</button>
 <button type="button" id="bcReplayChip" hidden></button>
 <div id="bcReplayBar" hidden><b>Replay</b><div><i></i></div></div>
 <div id="bcHover" hidden></div>
 <section id="bcEnd" hidden aria-label="Battle result"></section>
-<section id="bcHelp" hidden aria-label="Keyboard shortcuts"><div class="panel"><h2>SHORTCUTS</h2><div class="cols"><div><kbd>B</kbd>Broadcast camera<br><kbd>Space</kbd>Pause / resume<br><kbd>1</kbd>–<kbd>5</kbd>¼× ½× 1× 2× 4×<br><kbd>R</kbd>Instant replay<br><kbd>H</kbd>Follow a hero<br><kbd>M</kbd>Sound on / off</div><div><kbd>N</kbd>Choose fleets<br><kbd>G</kbd>New random war<br><kbd>P</kbd>Ink palette<br><kbd>Esc</kbd>Close / back<br>Click a ship to follow<br>Drag to orbit · wheel or pinch to zoom</div></div><p style="opacity:.7;margin:10px 0 0">Press <kbd>?</kbd> or Esc to close</p></div></section>
+<section id="bcHelp" hidden aria-label="Keyboard shortcuts"><div class="panel"><h2>SHORTCUTS</h2><div class="cols"><div><kbd>B</kbd>Broadcast camera<br><kbd>U</kbd>Hide / show all UI<br><kbd>Space</kbd>Pause / resume<br><kbd>1</kbd>–<kbd>5</kbd>¼× ½× 1× 2× 4×<br><kbd>R</kbd>Instant replay<br><kbd>H</kbd>Follow a hero<br><kbd>M</kbd>Sound on / off</div><div><kbd>N</kbd>Choose fleets<br><kbd>G</kbd>New random war<br><kbd>P</kbd>Ink palette<br><kbd>Esc</kbd>Close / back<br>Click a ship to follow<br>Drag to orbit · wheel or pinch to zoom</div></div><p style="opacity:.7;margin:10px 0 0">Press <kbd>?</kbd> or Esc to close</p></div></section>
 <div id="win"></div>
 <div id="toast"></div>
 <section id="warMenu" aria-labelledby="warMenuTitle"><div class="warMenuPanel">
@@ -16633,9 +16640,20 @@ function raceFire(s,t,now,nx,ny,nz){
     }
     return;
   }
-  if(fx==="caster"||fx==="bio"){
-    plasmaShot(s,t,now,solution,fx==='caster'?380:240,fx);
-    s.cool=(fx==='caster'?1.8:2.4)+combatRandom()*.6;return;
+  if(fx==="bio"){
+    // Living ammunition: a spray of acid spores that curve onto the prey.
+    // Bigger organisms spit more, so a hive ship's volley is a storm.
+    const n=s.slen>=180?7:s.slen>=60?4:2,[u,v]=basis(solution.direction);
+    for(let i=0;i<n;i++){
+      const a=i?(combatRandom()-.5)*.16:0,b=i?(combatRandom()-.5)*.16:0;
+      plasmaShot(s,t,now,{...solution,direction:V.norm(V.add(solution.direction,V.add(V.mul(u,a),V.mul(v,b))))},300,fx);
+      const pl=plasmas[plasmas.length-1];pl.seek=t.id;pl.big=s.slen>=180;
+    }
+    s.cool=2.2+combatRandom()*.6;return;
+  }
+  if(fx==="caster"){
+    plasmaShot(s,t,now,solution,380,fx);
+    s.cool=1.8+combatRandom()*.6;return;
   }
   if(fx==="shard"){
     const ax3=solution.direction[0],ay3=solution.direction[1],az3=solution.direction[2];
@@ -17599,6 +17617,8 @@ function simStep(now,dt){
       if(weaponProfile(s).fixed)rng=Math.max(rng,850);
       const fx0=(RACE_DEFS[s.race]||{}).fire;
       if(fx0==="slicer"||fx0==="cutter")rng=Math.max(rng,cutRange(s));
+      // Bio-cannons lob seeking spores across the gap a capital keeps in a fight.
+      if(fx0==="bio")rng=Math.max(rng,s.slen>=180?1150:s.slen>=60?520:rng);
       if(s.wpn===2)rng=Math.max(rng,210);
       else if(s.wpn===4)rng=Math.max(rng,440);
       else if(s.wpn===5)rng=Math.max(rng,holdCutRange(s));
@@ -17645,6 +17665,13 @@ function simStep(now,dt){
   // hull envelope rather than a sphere as wide as a capital is long.
   for(const pl of plasmas){
     if(pl.dead)continue;if(now-pl.t0>(pl.life||6)){pl.dead=true;continue;}
+    if(pl.seek!=null){
+      // Spores steer onto their prey, 1.1 rad/s at most, and lose it when it dies.
+      const q=ships[pl.seek];
+      if(!q||q.dead||q.cloaked)pl.seek=null;
+      else{const sp=Math.hypot(pl.vx,pl.vy,pl.vz),to=V.norm([q.x-pl.x,q.y-pl.y,q.z-pl.z]),k=Math.min(1,1.1*dt);
+        const d=V.norm([pl.vx/sp+to[0]*k,pl.vy/sp+to[1]*k,pl.vz/sp+to[2]*k]);pl.vx=d[0]*sp;pl.vy=d[1]*sp;pl.vz=d[2]*sp;}
+    }
     const a=[pl.x,pl.y,pl.z],b=[pl.x+pl.vx*dt,pl.y+pl.vy*dt,pl.z+pl.vz*dt];
     let hit=null,u=Infinity;
     for(const t of projectileIndex[1-pl.side].query(a,b,3)){if(t.dead||t.grace)continue;const h=weaponSegmentHit(a,b,t,now,3);if(h!==null&&h<u){hit=t;u=h;}}
@@ -18460,10 +18487,12 @@ addEventListener("keydown",e=>{
   }
   if(k==="p"){palI=(palI+1)%PAL.length;applyPal();}
   if(k==="h")followHero();
+  if(k==="u"&&!e.repeat)setNoUi(!document.body.classList.contains("noui"));
   if(intro&&!intro.done&&"wasdqe".includes(k))endIntro();
   if(k==="[")setCamGear(camGear-1);
   if(k==="]")setCamGear(camGear+1);
   if(e.key==="Escape"){
+    if(document.body.classList.contains("noui")){setNoUi(false);return;}
     const options=document.getElementById("battleOptions");if(options.open){options.open=false;return;}
     const pe=document.getElementById("pick");
     if(pe.classList.contains("on"))closePicker();
@@ -18654,9 +18683,9 @@ function buildPicker(){
   }
   updatePickOdds();
 }
-function showWarMenu(){document.getElementById("pick").classList.remove("on");document.getElementById("warMenu").hidden=false;document.body.classList.add("menu-start");document.getElementById("menuRandom").focus?.();}
+function showWarMenu(){setNoUi(false);document.getElementById("pick").classList.remove("on");document.getElementById("warMenu").hidden=false;document.body.classList.add("menu-start");document.getElementById("menuRandom").focus?.();}
 function closePicker(){document.getElementById("pick").classList.remove("on");if(!ships.length)showWarMenu();else document.getElementById("bCurate").focus?.();}
-function openPicker(){document.getElementById("battleOptions").open=false;document.getElementById("warMenu").hidden=true;document.getElementById("pick").classList.add("on");document.getElementById("pickBack").focus?.();}
+function openPicker(){setNoUi(false);document.getElementById("battleOptions").open=false;document.getElementById("warMenu").hidden=true;document.getElementById("pick").classList.add("on");document.getElementById("pickBack").focus?.();}
 // "Watch this war" simply lifts the title: the war has been live behind it.
 document.getElementById("menuRandom").addEventListener("click",()=>{
   if(!ships.length){spectacleWar(false);}
@@ -20314,6 +20343,9 @@ function frame(nowMs){
       const tarr=scratchArray("tarr");
       for(const ms of missiles)if(ms.race===rc)
         tarr.push(ms.x,ms.y,ms.z,ms.x-ms.vx*0.12,ms.y-ms.vy*0.12,ms.z-ms.vz*0.12);
+      // Bio spores leave a streak of acid, so a volley reads as a spray, not dots.
+      for(const pl of plasmas)if(pl.race===rc&&pl.kind==="bio"){const k=pl.big?.3:.2;
+        tarr.push(pl.x,pl.y,pl.z,pl.x-pl.vx*k,pl.y-pl.vy*k,pl.z-pl.vz*k);}
       if(tarr.length){
         gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
         streamUpload(tarr);
@@ -20331,7 +20363,7 @@ function frame(nowMs){
         pa.push(mi.x,mi.y,mi.z,3.0+Math.sin(now*4+mi.ph)*1.4);
       for(const ms of missiles)if(ms.race===rc)pa.push(ms.x,ms.y,ms.z,3.6);
       for(const pl of plasmas)if(pl.race===rc)
-        pa.push(pl.x,pl.y,pl.z,6.5+Math.sin(now*9+pl.ph)*1.8);
+        pa.push(pl.x,pl.y,pl.z,(pl.kind==="bio"?pl.big?13:9.5:6.5)+Math.sin(now*9+pl.ph)*1.8);
       // Escape pods: small beacons blinking in their fleet's colour.
       for(const p of pods)if(p.state==="drift"&&sideRace[p.side]===rc)pa.push(p.x,p.y,p.z,2.2+(Math.sin(now*6+p.id)>0?1.6:0));
       if(pa.length){
@@ -20483,6 +20515,16 @@ function rosterDraw(){
   el.innerHTML=col(0)+"<div class=\"sc-vs\">VS</div>"+col(1);
   updateHeroBtn();
 }
+// Hide all UI: the battle alone. U, Esc or the corner chip bring it back.
+let uiPeekTimer=0;
+function setNoUi(on){
+  document.body.classList.toggle("noui",!!on);document.body.classList.remove("uiPeek");
+  const b=document.getElementById("uiHide");if(b)b.setAttribute("aria-pressed",String(!!on));
+  if(!on)document.getElementById("uiHide")?.blur?.();
+}
+document.getElementById("uiHide")?.addEventListener("click",()=>setNoUi(true));
+document.getElementById("uiBack")?.addEventListener("click",()=>setNoUi(false));
+addEventListener("pointermove",()=>{if(!document.body.classList.contains("noui"))return;document.body.classList.add("uiPeek");clearTimeout(uiPeekTimer);uiPeekTimer=setTimeout(()=>document.body.classList.remove("uiPeek"),1800);});
 for(const b of document.querySelectorAll("#bcSpeed [data-rate]"))b.addEventListener("click",()=>{const r=+b.dataset.rate;if(r)bc.lastRate=r;setRate(r===0&&warClock.rate===0?(bc.lastRate||1):r);});
 document.getElementById("bcReplayBtn").addEventListener("click",()=>instantReplay());
 document.getElementById("bcReplayChip").addEventListener("click",()=>instantReplay());

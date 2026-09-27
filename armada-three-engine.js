@@ -16121,9 +16121,20 @@ function raceFire(s,t,now,nx,ny,nz){
     }
     return;
   }
-  if(fx==="caster"||fx==="bio"){
-    plasmaShot(s,t,now,solution,fx==='caster'?380:240,fx);
-    s.cool=(fx==='caster'?1.8:2.4)+combatRandom()*.6;return;
+  if(fx==="bio"){
+    // Living ammunition: a spray of acid spores that curve onto the prey.
+    // Bigger organisms spit more, so a hive ship's volley is a storm.
+    const n=s.slen>=180?7:s.slen>=60?4:2,[u,v]=basis(solution.direction);
+    for(let i=0;i<n;i++){
+      const a=i?(combatRandom()-.5)*.16:0,b=i?(combatRandom()-.5)*.16:0;
+      plasmaShot(s,t,now,{...solution,direction:V.norm(V.add(solution.direction,V.add(V.mul(u,a),V.mul(v,b))))},300,fx);
+      const pl=plasmas[plasmas.length-1];pl.seek=t.id;pl.big=s.slen>=180;
+    }
+    s.cool=2.2+combatRandom()*.6;return;
+  }
+  if(fx==="caster"){
+    plasmaShot(s,t,now,solution,380,fx);
+    s.cool=1.8+combatRandom()*.6;return;
   }
   if(fx==="shard"){
     const ax3=solution.direction[0],ay3=solution.direction[1],az3=solution.direction[2];
@@ -17087,6 +17098,8 @@ function simStep(now,dt){
       if(weaponProfile(s).fixed)rng=Math.max(rng,850);
       const fx0=(RACE_DEFS[s.race]||{}).fire;
       if(fx0==="slicer"||fx0==="cutter")rng=Math.max(rng,cutRange(s));
+      // Bio-cannons lob seeking spores across the gap a capital keeps in a fight.
+      if(fx0==="bio")rng=Math.max(rng,s.slen>=180?1150:s.slen>=60?520:rng);
       if(s.wpn===2)rng=Math.max(rng,210);
       else if(s.wpn===4)rng=Math.max(rng,440);
       else if(s.wpn===5)rng=Math.max(rng,holdCutRange(s));
@@ -17133,6 +17146,13 @@ function simStep(now,dt){
   // hull envelope rather than a sphere as wide as a capital is long.
   for(const pl of plasmas){
     if(pl.dead)continue;if(now-pl.t0>(pl.life||6)){pl.dead=true;continue;}
+    if(pl.seek!=null){
+      // Spores steer onto their prey, 1.1 rad/s at most, and lose it when it dies.
+      const q=ships[pl.seek];
+      if(!q||q.dead||q.cloaked)pl.seek=null;
+      else{const sp=Math.hypot(pl.vx,pl.vy,pl.vz),to=V.norm([q.x-pl.x,q.y-pl.y,q.z-pl.z]),k=Math.min(1,1.1*dt);
+        const d=V.norm([pl.vx/sp+to[0]*k,pl.vy/sp+to[1]*k,pl.vz/sp+to[2]*k]);pl.vx=d[0]*sp;pl.vy=d[1]*sp;pl.vz=d[2]*sp;}
+    }
     const a=[pl.x,pl.y,pl.z],b=[pl.x+pl.vx*dt,pl.y+pl.vy*dt,pl.z+pl.vz*dt];
     let hit=null,u=Infinity;
     for(const t of projectileIndex[1-pl.side].query(a,b,3)){if(t.dead||t.grace)continue;const h=weaponSegmentHit(a,b,t,now,3);if(h!==null&&h<u){hit=t;u=h;}}
@@ -17948,10 +17968,12 @@ addEventListener("keydown",e=>{
   }
   if(k==="p"){palI=(palI+1)%PAL.length;applyPal();}
   if(k==="h")followHero();
+  if(k==="u"&&!e.repeat)setNoUi(!document.body.classList.contains("noui"));
   if(intro&&!intro.done&&"wasdqe".includes(k))endIntro();
   if(k==="[")setCamGear(camGear-1);
   if(k==="]")setCamGear(camGear+1);
   if(e.key==="Escape"){
+    if(document.body.classList.contains("noui")){setNoUi(false);return;}
     const options=document.getElementById("battleOptions");if(options.open){options.open=false;return;}
     const pe=document.getElementById("pick");
     if(pe.classList.contains("on"))closePicker();
@@ -18142,9 +18164,9 @@ function buildPicker(){
   }
   updatePickOdds();
 }
-function showWarMenu(){document.getElementById("pick").classList.remove("on");document.getElementById("warMenu").hidden=false;document.body.classList.add("menu-start");document.getElementById("menuRandom").focus?.();}
+function showWarMenu(){setNoUi(false);document.getElementById("pick").classList.remove("on");document.getElementById("warMenu").hidden=false;document.body.classList.add("menu-start");document.getElementById("menuRandom").focus?.();}
 function closePicker(){document.getElementById("pick").classList.remove("on");if(!ships.length)showWarMenu();else document.getElementById("bCurate").focus?.();}
-function openPicker(){document.getElementById("battleOptions").open=false;document.getElementById("warMenu").hidden=true;document.getElementById("pick").classList.add("on");document.getElementById("pickBack").focus?.();}
+function openPicker(){setNoUi(false);document.getElementById("battleOptions").open=false;document.getElementById("warMenu").hidden=true;document.getElementById("pick").classList.add("on");document.getElementById("pickBack").focus?.();}
 // "Watch this war" simply lifts the title: the war has been live behind it.
 document.getElementById("menuRandom").addEventListener("click",()=>{
   if(!ships.length){spectacleWar(false);}
@@ -19513,6 +19535,16 @@ function rosterDraw(){
   el.innerHTML=col(0)+"<div class=\"sc-vs\">VS</div>"+col(1);
   updateHeroBtn();
 }
+// Hide all UI: the battle alone. U, Esc or the corner chip bring it back.
+let uiPeekTimer=0;
+function setNoUi(on){
+  document.body.classList.toggle("noui",!!on);document.body.classList.remove("uiPeek");
+  const b=document.getElementById("uiHide");if(b)b.setAttribute("aria-pressed",String(!!on));
+  if(!on)document.getElementById("uiHide")?.blur?.();
+}
+document.getElementById("uiHide")?.addEventListener("click",()=>setNoUi(true));
+document.getElementById("uiBack")?.addEventListener("click",()=>setNoUi(false));
+addEventListener("pointermove",()=>{if(!document.body.classList.contains("noui"))return;document.body.classList.add("uiPeek");clearTimeout(uiPeekTimer);uiPeekTimer=setTimeout(()=>document.body.classList.remove("uiPeek"),1800);});
 for(const b of document.querySelectorAll("#bcSpeed [data-rate]"))b.addEventListener("click",()=>{const r=+b.dataset.rate;if(r)bc.lastRate=r;setRate(r===0&&warClock.rate===0?(bc.lastRate||1):r);});
 document.getElementById("bcReplayBtn").addEventListener("click",()=>instantReplay());
 document.getElementById("bcReplayChip").addEventListener("click",()=>instantReplay());
