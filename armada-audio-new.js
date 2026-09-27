@@ -18,7 +18,7 @@
  function create(options){
   const opt=options||{},maxVoices=Math.max(1,Math.floor(num(opt.maxVoices,24)));
   let ctx=opt.context||null,unlocked=false,graph=null,noise=null,slow=false,lastStinger=-1e9;
-  const vol={...DEFAULTS},voices=[],recent={},stats={dropped:0,played:0,peak:0};
+  const vol={...DEFAULTS},voices=[],recent={},stats={dropped:0,culled:0,played:0,peak:0};
   const L={x:0,y:0,z:0,fx:0,fy:0,fz:-1};
   const M={ready:false,next:0,step:0,chord:0,level:0,target:0,pads:[]};
   let drone=null;
@@ -84,15 +84,26 @@
   function setListener(x,y,z,fx,fy,fz){
    const f=Math.hypot(fx,fy,fz)||1;Object.assign(L,{x:num(x,0),y:num(y,0),z:num(z,0),fx:num(fx,0)/f,fy:num(fy,0)/f,fz:num(fz,-1)/f});
   }
-  function place(x,y,z){
+  // ---- hearing ----
+  // Every sound has a hearing radius set by what makes it: a fighter's gun carries ~1.3k units,
+  // a dreadnought's battery ~4k, a capital's death ~9k, a First One's death the whole sky.
+  // Inside a tenth of the radius a sound is at full level; beyond that it thins (inverse distance
+  // under a smooth window) and darkens (lowpass from 18 kHz to 400 Hz) and reaches silence
+  // exactly at the radius, where it is not voiced at all. So the camera hears the fight it is in,
+  // and the rest of the war arrives as the distant bed (setDistant) and far thunder.
+  const HEAR={gun:[900,110],beam:[1100,120],engine:[250,0,4],flyby:[400,0,2.5],ion:[12000,0],boom:[2200,4000,9000,60000]};
+  function range(kind,size){
+   const sz=Math.max(1,num(size,30));
+   if(kind==='explosion')return HEAR.boom[clamp(Math.round(num(size,0)),0,3)];
+   const h=HEAR[kind]||HEAR.gun;return h[0]+h[1]*Math.sqrt(sz)+(h[2]||0)*sz;
+  }
+  function place(x,y,z,R=range('gun')){
    const dx=num(x,L.x)-L.x,dy=num(y,L.y)-L.y,dz=num(z,L.z)-L.z,d=Math.hypot(dx,dy,dz);
    let rx=-L.fz,rz=L.fx;const rl=Math.hypot(rx,rz);// right = forward x up(0,1,0)
    const pan=rl>1e-6&&d>1e-6?clamp((dx*rx+dz*rz)/rl/d,-1,1)*.7:0;
-   return {d,pan,cutoff:clamp(18000*Math.pow(300/18000,Math.min(1,d/40000)),300,18000)};
+   const ref=R*.1,u=clamp((d-ref)/(R-ref),0,1),w=1-u*u;
+   return {d,pan,R,u,heard:d<R,gain:d<R?w*w/(1+2*u):0,cutoff:18000*Math.pow(400/18000,u)};
   }
-  // Distance mostly darkens a sound (the lowpass above) and only partly quietens it: a camera
-  // pulled back to frame a capital should still hear the war, just further away.
-  const loudness=d=>.3+.7/(1+d/6000);
 
   // ---- voices ----
   function prune(t=now()){for(let i=voices.length-1;i>=0;i--)if(voices[i].end<=t){try{voices[i].out.disconnect();}catch(e){}voices.splice(i,1);}}
@@ -124,7 +135,6 @@
    voices.push(v);stats.played++;stats.peak=Math.max(stats.peak,voices.filter(x=>!x.killed).length);
    return v;
   }
-  const closeness=d=>1/(1+d/3000);
 
   // ---- weapon recipes: each returns {src,dur}; everything routes through `out` ----
   // Rule: nothing tonal below ~150 Hz and no falling low tones. A low sine sliding down
@@ -192,8 +202,8 @@
     return useSamples(out);
    }catch(e){return[];}
   }
-  function sample(role,t,o,rate=1,g=1,loop=false){
-   const b=SMP[role]&&pick(SMP[role]),s=b&&mk('createBufferSource');if(!s)return null;
+  function sample(role,t,o,rate=1,g=1,loop=false,buf=null){
+   const b=buf||SMP[role]&&pick(SMP[role]),s=b&&mk('createBufferSource');if(!s)return null;
    try{s.buffer=b;s.loop=loop;}catch(e){}set(s.playbackRate,rate,t);const sg=gain(g);link(s,sg,o);
    try{s.start(t);}catch(e){}return{src:s,dur:num(b.duration,1)/rate,g:sg};
   }
@@ -201,22 +211,23 @@
   function startBeds(){
    if(!graph)return;const t=now();
    if(SMP.music&&!B.music){const r=sample('music',t+.05,graph.duck,1,0,true);if(r){B.music=r.src;B.musicG=r.g;aim(P(r.g,'gain'),.5,t,2);M.sampled=true;if(M.pad)aim(P(M.pad,'gain'),0,t,.5);}}
-   if(SMP.ambience&&!B.amb){const r=sample('ambience',t+.05,graph.sfxIn,1,0,true);if(r){B.amb=r.src;B.ambG=r.g;aim(P(r.g,'gain'),.05,t,2);}}
+   if(SMP.ambience&&!B.amb){const r=sample('ambience',t+.05,graph.sfxIn,1,0,true);if(r){B.amb=r.src;B.ambG=r.g;aim(P(r.g,'gain'),.03+.3*distant,t,2);}}
   }
   // Big hits push the score down for a moment, the way a film mix makes room for them.
   function duckFor(t,depth,hold){if(!graph||slow)return;const p=graph.duck.gain;call(p,'cancelScheduledValues',t);aim(p,depth,t,.03);aim(p,1,t+hold,.6);}
 
   // `fleet` (race index) picks that fleet's own gun or beam recording when one exists; shared
   // hardware (arc, rail, ion) keeps its own role, and anything unrecorded falls back to the synth.
-  function weapon(style,x,y,z,g=1,fleet){
+  function weapon(style,x,y,z,g=1,fleet,size){
    if(!unlocked)return false;
    style=R[style]?style:'laser';
    const kind=style==='beam'||style==='phaser'?'beam':/^(arc|rail|ion-)/.test(style)?null:'shot';
    const own=fleet!=null&&kind?kind+'-'+fleet:null,role=own&&SMP[own]?own:SMP[style]?style:null;
-   const pos=place(x,y,z);if(pos.d>20000){stats.dropped++;return false;}
-   const big=style==='ion-fire',base=big?3:1,prio=base+closeness(pos.d)*.9;
+   const ion=/^ion-/.test(style),pos=place(x,y,z,range(ion?'ion':kind==='beam'?'beam':'gun',size));
+   if(!pos.heard){stats.culled++;return false;}
+   const big=style==='ion-fire',base=big?3:1,prio=base+(1-pos.u)*.9;
    const build=role?(t,o)=>{const r=sample(role,t,o,jit(1,.06),jit(1,.12));return r?{src:[r.src],dur:r.dur}:R[style](t,o);}:R[style];
-   const v=voice(style,prio,pos,clamp(num(g,1),0,2)*(big?1:.8)*loudness(pos.d/.85),pos.cutoff,build);
+   const v=voice(style,prio,pos,clamp(num(g,1),0,2)*(big?1:.8)*pos.gain,pos.cutoff,build);
    if(!v)return false;
    if(style!=='ion-charge')return true;
    return {cancel(){if(!v.killed&&v.end>now())kill(v);},get active(){return !v.killed&&v.end>now();}};
@@ -229,8 +240,10 @@
   function explosion(tier,x,y,z,boom){
    if(!unlocked)return false;
    tier=clamp(Math.round(num(tier,0)),0,3);
-   const pos=place(x,y,z),d=pos.d,delay=Math.min(1.6,d/12000),cutoff=pos.cutoff*TIER.tone[tier],g=TIER.gain[tier]*loudness(d);
-   const prio=(tier>=2?3:2)+closeness(d)*.9,dur=TIER.dur[tier];
+   const pos=place(x,y,z,range('explosion',tier)),d=pos.d,delay=Math.min(1.6,d/12000);
+   if(!pos.heard)return farThunder(tier,pos,delay);
+   const cutoff=pos.cutoff*TIER.tone[tier],g=TIER.gain[tier]*pos.gain;
+   const prio=(tier>=2?3:2)+(1-pos.u)*.9,dur=TIER.dur[tier];
    const rec=SMP['explosion'+tier];
    const sig=boom&&SMP['boom-'+boom]?'boom-'+boom:null;
    const base=rec?(t0,o)=>{
@@ -259,7 +272,53 @@
     const r=base(t0,o),s2=sample(sig,t0+delay,o,jit(1,.05),[.55,.7,.85,.9][tier]);
     if(s2){r.src.push(s2.src);r.dur=Math.max(r.dur,delay+s2.dur);}return r;
    }:base,false);
-   return v?{delay,cutoff,gain:g,tier,distance:d}:false;
+   return v?{delay,cutoff,gain:g,tier,distance:d,far:false}:false;
+  }
+  // A big death beyond its radius (out to 2.5x) is not silent: it arrives late as low thunder,
+  // the blast recording under a 450 Hz lowpass, no crack and no signature layer.
+  function farThunder(tier,pos,delay){
+   const k=1-(pos.d-pos.R)/(1.5*pos.R);
+   if(tier<1||k<=0||!SMP['explosion'+tier]){stats.culled++;return false;}
+   const g=TIER.gain[tier]*.18*k*k,cutoff=450;
+   const v=voice('thunder',1+k*.5,pos,g,cutoff,(t0,o)=>{const r=sample('explosion'+tier,t0+delay,o,jit(.8,.05),1);return r?{src:[r.src],dur:delay+r.dur}:{src:[],dur:0};});
+   return v?{delay,cutoff,gain:g,tier,distance:pos.d,far:true}:false;
+  }
+
+  // ---- fly-bys ----
+  // A ship about to pass close to the camera: its own fleet's engine loop swells to the closest
+  // point and falls away, pitch dropping across it (Doppler), panning from where it comes to
+  // where it goes, with a pass-by whoosh on top. The page predicts the pass (tca = seconds to
+  // closest approach, velocity relative to the camera); fighters pass at ~400 units, capitals ~3k.
+  // Where a recording is loudest (50 ms energy peak), cached per buffer: lines a whoosh's peak
+  // up with the moment of closest approach.
+  const PEAK=new WeakMap();
+  function peakAt(b){
+   if(!b)return 0;if(PEAK.has(b))return PEAK.get(b);let at=num(b.duration,1)*.4;
+   try{const d=b.getChannelData(0),sr=num(b.sampleRate,44100),w=Math.max(1,Math.floor(sr*.05));let best=-1;
+    for(let i=0;i+w<=d.length;i+=w){let e=0;for(let j=i;j<i+w;j++)e+=d[j]*d[j];if(e>best){best=e;at=(i+w/2)/sr;}}}catch(e){}
+   PEAK.set(b,at);return at;
+  }
+  function flyby(x,y,z,vx,vy,vz,fleet,size,tca){
+   if(!unlocked||!graph)return false;
+   const R=range('flyby',size),at=k=>[num(x,0)+num(vx,0)*k,num(y,0)+num(vy,0)*k,num(z,0)+num(vz,0)*k];
+   tca=clamp(num(tca,.5),0,2);
+   const pc=place(...at(tca),R);if(!pc.heard){stats.culled++;return false;}
+   const p0=place(x,y,z,R*4),p1=place(...at(tca+1.2),R*4);
+   const eng=fleet!=null?'engine-'+fleet:null;if(eng&&!SMP[eng])want(eng);
+   const big=num(size,30)>150,wh=SMP['whoosh-'+(big?1:0)]?'whoosh-'+(big?1:0):null;
+   if(!(eng&&SMP[eng])&&!wh)return false;
+   const sp=Math.hypot(num(vx,0),num(vy,0),num(vz,0)),dop=clamp(sp/5000,.04,.2),out=tca+1.3;
+   const v=voice('flyby',2.4+(1-pc.u)*.9,{...pc,pan:0},pc.gain*(big?1.1:.9),Math.max(3000,pc.cutoff),(t,o)=>{
+    const src=[],pan=mk('createStereoPanner');if(pan){const pp=P(pan,'pan');set(pp,p0.pan,t);ramp(pp,pc.pan,t+tca);ramp(pp,p1.pan,t+out);}
+    const bus=pan||o;if(pan)link(pan,o);
+    if(eng&&SMP[eng]){
+     const e=gain(0);link(e,bus);const ep=P(e,'gain');set(ep,0,t);ramp(ep,.9,t+tca);ramp(ep,0,t+out);
+     const r=sample(eng,t,e,1+dop,1,true);if(r){const pr=P(r.src,'playbackRate');set(pr,1+dop,t+Math.max(0,tca-.2));ramp(pr,1-dop,t+tca+.25);stop(r.src,t+out+.05);src.push(r.src);}
+    }
+    if(wh){const b=pick(SMP[wh]),st=t+Math.max(0,tca-peakAt(b)),r=sample(wh,st,bus,1,.8,false,b);if(r)src.push(r.src);}
+    return{src,dur:out};
+   });
+   return v?{tca,gain:pc.gain,distance:pc.d}:false;
   }
 
   // ---- dedicated engine drone for the followed ship (outside the voice cap) ----
@@ -274,33 +333,37 @@
    else if(style==='organic'){add('triangle',180,.2);add('triangle',181.5,.18);nz(.1,'bandpass',700,1.5);}
    else if(style==='roar'){add('triangle',160,.15);nz(.2,'bandpass',600,.8);}
    else {d.style='hum';add('sine',174,.2);add('sine',261,.08);}
-   aim(out.gain,.06,t,.3);droneSpeed(d,sp);return d;
+   d.base=.06;d.aud=1;aim(out.gain,.06,t,.3);droneSpeed(d,sp);return d;
   }
   // A recorded engine loop: speed lifts its pitch a little, opens its filter and its level.
   function droneSample(role,sp){
    const t=now(),out=gain(0),lp=filter('lowpass',2000,.5);
    if(!out)return null;link(lp,out,graph.sfxIn);
    const r=sample(role,t,lp,1,1,true);if(!r)return null;
-   const d={out,lp,src:[r.src],style:role,oscs:[],smp:r.src,noise:null,ng:null};
+   const d={out,lp,src:[r.src],style:role,oscs:[],smp:r.src,noise:null,ng:null,base:.1,aud:1};
    droneSpeed(d,sp);return d;
   }
   function droneSpeed(d,sp){
-   if(d.smp){glide(P(d.smp,'playbackRate'),.88+sp*.3,.4);if(d.lp)glide(d.lp.frequency,1400+sp*7000,.3);glide(d.out.gain,.1+sp*.08,.3);return;}
+   if(d.smp){glide(P(d.smp,'playbackRate'),.88+sp*.3,.4);if(d.lp)glide(d.lp.frequency,(1400+sp*7000)*Math.max(.15,d.aud),.3);d.base=.1+sp*.08;glide(d.out.gain,d.base*d.aud,.3);return;}
    const k=d.style==='turbine'?1+sp*.6:d.style==='roar'?1+sp*.4:1+sp*.25;
    d.oscs.forEach(({o,f})=>glide(o.frequency,f*k,.3));
    if(d.lp)glide(d.lp.frequency,700+sp*(d.style==='turbine'?1800:900),.3);
    if(d.noise&&d.style==='turbine')glide(d.noise.frequency,1000+sp*1600,.3);
    if(d.ng)glide(d.ng.gain,(d.style==='roar'?.2:.1)+sp*.12,.3);
+   glide(d.out.gain,d.base*d.aud,.3);
   }
-  function engineDrone(key,style,speed01,fleet){
+  // With the ship's position and length the drone also follows the camera's distance from it,
+  // fading to nothing at its hearing radius (a fighter's ~300 units, a dreadnought's ~4k).
+  function engineDrone(key,style,speed01,fleet,x,y,z,size){
    if(!unlocked||!graph)return false;
+   const aud=x==null?1:place(x,y,z,range('engine',size)).gain;
    const own=fleet!=null?'engine-'+fleet:null;if(own&&!SMP[own])want(own);
    const kind=own&&SMP[own]?own:style;
-   if(drone&&key!=null&&drone.key===key&&drone.kind===kind){droneSpeed(drone,clamp(num(speed01,.5),0,1));return true;}
+   if(drone&&key!=null&&drone.key===key&&drone.kind===kind){drone.aud=aud;droneSpeed(drone,clamp(num(speed01,.5),0,1));return true;}
    if(drone){const d=drone,t=now();call(d.out.gain,'cancelScheduledValues',t);aim(d.out.gain,0,t,.15);ramp(d.out.gain,0,t+.6);d.src.forEach(s=>stop(s,t+.65));drone=null;}
    if(key==null)return true;
    const d=kind===own?droneSample(own,clamp(num(speed01,.5),0,1)):droneBuild(style,speed01);if(!d)return false;
-   d.key=key;d.kind=kind;if(!d.smp)d.style=style;drone=d;return true;
+   d.key=key;d.kind=kind;if(!d.smp)d.style=style;d.aud=aud;droneSpeed(d,clamp(num(speed01,.5),0,1));drone=d;return true;
   }
 
   // ---- UI blips (not spatial, not capped) ----
@@ -328,8 +391,12 @@
    CHORDS[0].forEach((s,i)=>{const f=hz(s),a=osc('sawtooth',f*.996,t),b=osc('sawtooth',f*1.004,t),g=gain(.05);link(a,g,pad);link(b,g);M.pads.push([a,b]);});
    aim(P(pad,'gain'),.3,t,3);
   }
+  // The distant bed follows how much of the war is beyond hearing: pull the camera back and the
+  // single shots fall away while the far battle swells; fly into a furball and it recedes.
+  let distant=0;
+  function setDistant(v){distant=clamp(num(v,0),0,1);if(B.ambG)aim(P(B.ambG,'gain'),.03+.3*distant,now(),1.2);}
   function setIntensity(v){M.target=clamp(num(v,0),0,1);if(!M.ready)return;const i=M.target,t=now();
-   if(B.musicG)aim(P(B.musicG,'gain'),.4+.25*i,t,2.5);if(B.ambG)aim(P(B.ambG,'gain'),.04+.3*i,t,2);
+   if(B.musicG)aim(P(B.musicG,'gain'),.4+.25*i,t,2.5);
    if(M.sampled)return;
    aim(P(M.pad,'gain'),.28+.1*i,t,2.5);aim(P(M.pulse,'gain'),Math.max(0,(i-.3)/.7)*.3,t,2.5);aim(P(M.padLP,'frequency'),800+i*900,t,2.5);}
   function musicStep(t){
@@ -358,10 +425,10 @@
   }
 
   const api={
-   unlock,setVolume,setListener,weapon,explosion,loadSamples,useSamples,engine:engineDrone,ui,setIntensity,setSlowMo,stinger,update,
+   unlock,setVolume,setListener,weapon,explosion,flyby,range,setDistant,loadSamples,useSamples,engine:engineDrone,ui,setIntensity,setSlowMo,stinger,update,
    get unlocked(){return unlocked;},
    volumes:()=>({...vol}),
-   stats(){prune();return{voices:voices.filter(v=>!v.killed).length,maxVoices,dropped:stats.dropped,played:stats.played,peak:stats.peak};},
+   stats(){prune();return{voices:voices.filter(v=>!v.killed).length,maxVoices,dropped:stats.dropped,culled:stats.culled,played:stats.played,peak:stats.peak};},
    suspend(){try{const r=ctx&&ctx.suspend&&ctx.suspend();if(r&&r.catch)r.catch(()=>{});}catch(e){}},
    resume(){try{const r=ctx&&unlocked&&ctx.resume&&ctx.resume();if(r&&r.catch)r.catch(()=>{});}catch(e){}},
    styles:WEAPONS.slice()

@@ -131,6 +131,8 @@ ROLES = {
  'explosion2': ('Large warship exploding, massive deep explosion with rolling secondary detonations and groaning, collapsing metal', 5.5, False),
  'explosion3': ('Colossal capital ship destroyed, enormous reactor detonation, earth-shaking blast, long rolling rumble and raining debris', 8.0, False),
  'stinger':    ('Epic cinematic braam, deep brass hit swelling and decaying, dramatic trailer impact', 5.0, False),
+ 'whoosh-0':   ('Starfighter streaking past the camera very close, fast doppler whoosh with a screaming engine, one pass from left to right', 1.6, False),
+ 'whoosh-1':   ('Massive warship sliding past the camera close overhead, deep rumbling roar swelling and fading away, huge doppler pass-by', 3.5, False),
  'ambience':   ('Distant space battle ambience, far-off muffled explosions and weapon fire over a low rumble', 20.0, True),
 }
 # Death styles (RACE_DEFS[].boom): a signature layer played over the generic explosion.

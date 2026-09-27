@@ -513,7 +513,7 @@ body:not(.menu-start) #brand{display:none}
 <script src="armada-post-new.js?v=tribute-polish-1"></script>
 <script src="armada-broadcast-new.js?v=tribute-polish-1"></script>
 <script src="armada-replay-new.js?v=tribute-polish-1"></script>
-<script src="armada-audio-new.js?v=tribute-sfx-1"></script>
+<script src="armada-audio-new.js?v=tribute-sfx-2"></script>
 <script>
 "use strict";
 /* ===================== vector ===================== */
@@ -19690,30 +19690,60 @@ function audioForEvent(ev){
     const tier=ev.type==="firstOneKill"?3:ev.type==="kill"?(ev.size>60?1:0):2;
     // Fighters die by the dozen: at most about four small pops a second.
     if(tier===0){const w=performance.now();if(w-(bc.popAt||0)<250)return;bc.popAt=w;}
-    A.explosion(tier,ev.x,ev.y,ev.z,RACE_DEFS[ev.race]?.boom);if(tier>=2)A.stinger();}
+    // Out of hearing a death is far thunder or nothing, and only a death you could hear earns the stinger.
+    const heard=A.explosion(tier,ev.x,ev.y,ev.z,RACE_DEFS[ev.race]?.boom);if(tier>=2&&heard)A.stinger();}
   else if(ev.type==="ionCharge"){if(bc.ionHandle)bc.ionHandle.cancel?.();const h=A.weapon("ion-charge",ev.x,ev.y,ev.z,1);bc.ionHandle=h||null;}
   else if(ev.type==="ionStrike"){if(bc.ionHandle)bc.ionHandle.cancel?.();bc.ionHandle=null;A.weapon("ion-fire",ev.x,ev.y,ev.z,1);}
 }
-// A war fires hundreds of shots a second. Voicing them all is a wall of chirps, so only
-// the nearest shot of each step can speak, within a budget of about seven a second; the
-// rest are heard as the battle bed, whose level follows how much is firing.
-const shotPick={d:0,style:"",x:0,y:0,z:0,g:0,race:null};
+// A war fires hundreds of shots a second. Voicing them all is a wall of chirps, so only the
+// most audible shot of each step can speak (nearest relative to its own hearing radius, which
+// grows with the firing ship), within a budget of about seven a second. Shots beyond hearing
+// are counted instead and drive the distant bed, so a pulled-back camera hears the war as a
+// far roar, not as a thousand small guns.
+const shotPick={r:0,style:"",x:0,y:0,z:0,g:0,race:null,size:0};
 function audioShots(now){
   const A=audio();if(!A||!A.unlocked)return;
-  let n=0;shotPick.d=Infinity;
-  const offer=(style,x,y,z,g,race)=>{n++;const d=(x-cam.ex)**2+(y-cam.ey)**2+(z-cam.ez)**2;if(d<shotPick.d)Object.assign(shotPick,{d,style,x,y,z,g,race});};
-  for(const b of beams){if(b.t0!==now||b.spark||b.ion||!b.a)continue;offer(b.coherent?AUDIO_STYLE[b.race]==="phaser"?"phaser":"beam":b.arc?"arc":b.rail?"rail":AUDIO_STYLE[b.race]||"laser",b.a[0],b.a[1],b.a[2],.8,b.race);}
-  for(const t of tracers){if(t.t0!==now)continue;offer(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7,t.race);}
+  let n=0,far=0;shotPick.r=1;
+  const offer=(style,x,y,z,g,race,size)=>{n++;
+    const r=Math.hypot(x-cam.ex,y-cam.ey,z-cam.ez)/A.range(style==="beam"||style==="phaser"?"beam":"gun",size);
+    if(r>=1)far++;else if(r<shotPick.r)Object.assign(shotPick,{r,style,x,y,z,g,race,size});};
+  for(const b of beams){if(b.t0!==now||b.spark||b.ion||!b.a)continue;offer(b.coherent?AUDIO_STYLE[b.race]==="phaser"?"phaser":"beam":b.arc?"arc":b.rail?"rail":AUDIO_STYLE[b.race]||"laser",b.a[0],b.a[1],b.a[2],.8,b.race,ships[b.from]?.slen);}
+  for(const t of tracers){if(t.t0!==now)continue;offer(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7,t.race,ships[t.from]?.slen);}
   bc.shotBudget=Math.min(1.5,(bc.shotBudget||0)+7/30);
-  if(n&&bc.shotBudget>=1&&A.weapon(shotPick.style,shotPick.x,shotPick.y,shotPick.z,shotPick.g,shotPick.race))bc.shotBudget-=1;
+  if(shotPick.r<1&&bc.shotBudget>=1&&A.weapon(shotPick.style,shotPick.x,shotPick.y,shotPick.z,shotPick.g,shotPick.race,shotPick.size))bc.shotBudget-=1;
   bc.combat=bc.combat*.97+Math.min(n,10)*.03;
+  if(n)bc.far=(bc.far||0)*.95+far/n*.05;// share of the fighting that is out of earshot
+}
+// Fly-bys: a ship whose path (relative to the camera) will pass within 70% of its fly-by radius
+// in the next 0.15-0.9 s gets a pass-by: at most one per ship per 10 s and one every 2.5 s
+// overall, so a camera parked in a furball hears the close ones, not a stream of them.
+// Camera cuts are ignored (a jump in camera position is not a ship screaming past).
+const flyPrev=new WeakMap(),flyCam=[0,0,0];
+function audioFlybys(A,dt){
+  const cut=Math.hypot(cam.ex-flyCam[0],cam.ey-flyCam[1],cam.ez-flyCam[2])>Math.max(400,8000*dt);
+  flyCam[0]=cam.ex;flyCam[1]=cam.ey;flyCam[2]=cam.ez;
+  if(!(dt>0&&dt<.2)||cut)return;
+  const w=performance.now();
+  for(const s of ships){
+    if(s.dead)continue;
+    const rx=s.x-cam.ex,ry=s.y-cam.ey,rz=s.z-cam.ez,R=A.range("flyby",s.slen),f=flyPrev.get(s);
+    if(rx*rx+ry*ry+rz*rz>R*R*25){if(f)flyPrev.delete(s);continue;}
+    if(!f){flyPrev.set(s,{x:rx,y:ry,z:rz,at:0});continue;}
+    const vx=(rx-f.x)/dt,vy=(ry-f.y)/dt,vz=(rz-f.z)/dt,v2=vx*vx+vy*vy+vz*vz;f.x=rx;f.y=ry;f.z=rz;
+    if(v2<150*150||v2>9000*9000||w<f.at||w<(bc.flyAt||0))continue;
+    const tca=-(rx*vx+ry*vy+rz*vz)/v2;if(tca<.15||tca>.9)continue;
+    if(Math.hypot(rx+vx*tca,ry+vy*tca,rz+vz*tca)>R*.7)continue;
+    if(A.flyby(s.x,s.y,s.z,vx,vy,vz,s.race,s.slen,tca)){f.at=w+10000;bc.flyAt=w+2500;}
+  }
 }
 function updateAudio(wall,dt){
   const A=audio();if(!A||!A.unlocked)return;
   const [f]=camBasis();A.setListener(cam.ex,cam.ey,cam.ez,f[0],f[1],f[2]);
   A.setSlowMo(warClock.slowing||(!!replayState&&replayState.slowAt!=null&&Math.abs(replayState.t-replayState.slowAt)<1.8));
   A.setIntensity(winner!=null||warT0===Infinity?.08:Math.min(1,bc.combat/3));
-  const s=ships[pilotId??sel];A.engine(s&&!s.dead?s.id:null,ENGINE_STYLE[s?.race]||"turbine",s?Math.min(1,(s.v||0)/Math.max(1,s.spdMax||s.spd||20)):0,s?.race);
+  A.setDistant?.(winner!=null||warT0===Infinity?0:(bc.far||0)*Math.min(1,bc.combat/1.5));
+  if(A.flyby)audioFlybys(A,dt);
+  const s=ships[pilotId??sel];A.engine(s&&!s.dead?s.id:null,ENGINE_STYLE[s?.race]||"turbine",s?Math.min(1,(s.v||0)/Math.max(1,s.spdMax||s.spd||20)):0,s?.race,s?.x,s?.y,s?.z,s?.slen);
   A.update(dt);
 }
 function unlockAudio(){const A=audio();if(A&&!A.unlocked){A.unlock();syncAudioSliders();A.loadSamples?.("audio/manifest.json");}}

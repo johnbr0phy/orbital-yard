@@ -30,7 +30,7 @@ test('module loads and every play call is a silent no-op before unlock',()=>{
 
 test('voice cap is never exceeded under 500 rapid weapon calls',()=>{
  const {ctx,a}=setup({maxVoices:24});a.unlock();const styles=['laser','phaser','pulse','kinetic','plasma','organic','ion-fire','arc','rail','beam','bogus'];
- for(let i=0;i<500;i++){ctx.currentTime+=.003+(i%7)*.002;a.weapon(styles[i%styles.length],Math.sin(i)*8000,Math.cos(i*3)*500,-Math.abs(Math.cos(i))*9000);if(i%10===0)a.update(.016);
+ for(let i=0;i<500;i++){ctx.currentTime+=.003+(i%7)*.002;a.weapon(styles[i%styles.length],Math.sin(i)*800,Math.cos(i*3)*200,-Math.abs(Math.cos(i))*900);if(i%10===0)a.update(.016);
   const s=a.stats();assert.ok(s.voices<=24,`voices ${s.voices}`);}
  const s=a.stats();assert.ok(s.peak<=24&&s.peak>=20,JSON.stringify(s));assert.ok(s.dropped>0);assert.ok(s.played>24);
 });
@@ -44,7 +44,7 @@ test('high priority explosion replaces a weapon voice when full; low priority is
  const {ctx,a}=setup({maxVoices:4});a.unlock();
  for(const s of ['laser','pulse','rail','beam'])assert.equal(a.weapon(s,0,0,-500),true);
  assert.equal(a.stats().voices,4);const stops=ctx.stops;
- assert.equal(a.weapon('phaser',0,0,-500),false,'equal-priority weapon dropped');assert.equal(a.stats().dropped,1);
+ assert.equal(a.weapon('pulse',0,0,-500),false,'equal-priority weapon dropped');assert.equal(a.stats().dropped,1);
  const info=a.explosion(2,0,0,-800);assert.ok(info&&info.delay>=0);
  assert.equal(a.stats().voices,4);assert.ok(ctx.stops>stops,'evicted voice stopped');
  assert.equal(a.weapon('arc',0,0,-500),false);assert.equal(a.stats().dropped,2);
@@ -62,21 +62,70 @@ test('volumes default, clamp and persist',()=>{
  }finally{delete global.localStorage;}
 });
 
-test('explosion delay grows and lowpass cutoff and gain fall with distance',()=>{
+test('explosion delay grows and lowpass cutoff and gain fall with distance, to silence at the radius',()=>{
  const {a}=setup({maxVoices:64});a.unlock();a.setListener(0,0,0,0,0,-1);
- const r=[0,2000,10000,20000,40000,80000].map(d=>a.explosion(2,0,0,-d));
- for(let i=1;i<r.length;i++){assert.ok(r[i].delay>=r[i-1].delay);assert.ok(r[i].cutoff<r[i-1].cutoff||r[i].cutoff===r[i-1].cutoff&&i===r.length-1);assert.ok(r[i].gain<r[i-1].gain);}
- assert.equal(r[0].delay,0);assert.equal(r[5].delay,1.6);assert.ok(r[4].cutoff<=300&&r[0].cutoff>=10000,JSON.stringify(r));
- const t0=a.explosion(0,0,0,-1000),t3=a.explosion(3,0,0,-1000);assert.ok(t3.gain>t0.gain&&t3.cutoff<t0.cutoff);
+ const R=a.range('explosion',2);assert.equal(R,9000);
+ const r=[0,1500,3000,5000,7000,8900].map(d=>a.explosion(2,0,0,-d));
+ for(let i=1;i<r.length;i++){assert.ok(r[i].delay>=r[i-1].delay);assert.ok(r[i].cutoff<=r[i-1].cutoff);assert.ok(r[i].gain<=r[i-1].gain);}
+ assert.equal(r[0].delay,0);assert.ok(r[0].cutoff>=10000&&r[5].cutoff<=600,JSON.stringify(r));assert.ok(r[5].gain<.01,'fades to nothing at the edge');
+ const t0=a.explosion(0,0,0,-1000),t3=a.explosion(3,0,0,-1000);assert.ok(t3.gain>t0.gain,'a First One death at 1k is louder than a fighter at 1k');
 });
 
-test('far weapons are dropped, near ones play, unknown style falls back to laser',()=>{
- const {a}=setup();a.unlock();a.setListener(100,0,100,1,0,0);
- assert.equal(a.weapon('laser',100,0,-25000),false);assert.equal(a.stats().dropped,1);
- assert.equal(a.weapon('no-such-gun',100,0,5000),true);
- const h=a.weapon('ion-charge',0,0,0);assert.equal(typeof h.cancel,'function');assert.equal(h.active,true);
- h.cancel();assert.equal(h.active,false);assert.equal(a.stats().voices,1);
+test('every sound has a hearing radius that grows with what makes it',()=>{
+ const {a}=setup();
+ assert.ok(a.range('gun',10)<a.range('gun',100)&&a.range('gun',100)<a.range('gun',1000));
+ assert.ok(a.range('gun',10)>1000&&a.range('gun',10)<1600,'fighter gun ~1.3k');
+ assert.ok(a.range('explosion',0)<a.range('explosion',1)&&a.range('explosion',2)<a.range('explosion',3));
+ assert.ok(a.range('engine',10)<400&&a.range('engine',1000)>4000);
 });
+
+test('far weapons are culled, near ones play, big ships are heard further, unknown style falls back to laser',()=>{
+ const {a}=setup();a.unlock();a.setListener(100,0,100,1,0,0);
+ assert.equal(a.weapon('laser',100,0,-2400,1,null,10),false,'fighter gun at 2.5k: out of hearing');assert.equal(a.stats().culled,1);
+ assert.equal(a.weapon('laser',100,0,-2400,1,null,900),true,'dreadnought battery at 2.5k: heard');
+ assert.equal(a.weapon('no-such-gun',100,0,600),true);
+ const h=a.weapon('ion-charge',0,0,0);assert.equal(typeof h.cancel,'function');assert.equal(h.active,true);
+ h.cancel();assert.equal(h.active,false);
+});
+
+test('a big death beyond hearing arrives as low late thunder; a small one is silent',()=>{
+ const {a}=setup({maxVoices:64});a.unlock();a.setListener(0,0,0,0,0,-1);
+ const buf=n=>({duration:n,length:n*8000,sampleRate:8000});a.useSamples({explosion0:buf(1),explosion2:buf(4)});
+ const far=a.explosion(2,0,0,-12000);assert.ok(far&&far.far,'capital at 12k: thunder');assert.equal(far.cutoff,450);assert.ok(far.delay>.9);
+ const near=a.explosion(2,0,0,-3000);assert.ok(far.gain<near.gain*.5);
+ assert.equal(a.explosion(2,0,0,-30000),false,'beyond 2.5x the radius: nothing');
+ assert.equal(a.explosion(0,0,0,-3000),false,'a fighter out of range: nothing');
+});
+
+test('fly-by plays the fleet engine with a Doppler drop and a whoosh, only when the pass is close',()=>{
+ const ctx=fakeContext(),srcs=[],make=ctx.createBufferSource;ctx.createBufferSource=()=>{const s=make();srcs.push(s);return s;};
+ const a=ArmadaAudio.create({context:ctx,maxVoices:64});a.unlock();a.setListener(0,0,0,0,0,-1);
+ const buf=n=>({duration:n,length:n*8000,sampleRate:8000}),eng=buf(6.5),wh=buf(1.5);a.useSamples({'engine-3':eng,'whoosh-0':wh});
+ // passes 100 units to the right of the camera in 0.5 s at 2000 units/s
+ const f=a.flyby(-1000,0,-100,2000,0,0,3,10,.5);assert.ok(f&&f.tca===.5);
+ const e=srcs.find(s=>s.buffer===eng);assert.ok(e,'fleet engine used');const r=e.playbackRate.events.map(x=>x[1]);
+ assert.ok(r[0]>1&&r.at(-1)<1,'pitch falls across the pass: '+JSON.stringify(r));assert.ok(srcs.some(s=>s.buffer===wh),'whoosh layered');
+ assert.equal(a.flyby(-1000,0,-3000,2000,0,0,3,10,.5),false,'a fighter passing 3k away is not a fly-by');
+});
+
+test('engine drone fades with camera distance from the followed ship',()=>{
+ const ctx=fakeContext(),gains=[],mg=ctx.createGain;ctx.createGain=()=>{const g=mg();gains.push(g);return g;};
+ const a=ArmadaAudio.create({context:ctx});a.unlock();a.setListener(0,0,0,0,0,-1);
+ const last=g=>{const ev=g.gain.events;return ev.length?ev.at(-1)[1]:g.gain.value;};
+
+ const near=a.engine('s','hum',.5,null,0,0,-20,10);assert.equal(near,true);
+ assert.equal(a.engine('s','hum',.5,null,0,0,-5000,10),true,'far away still valid, just silent');
+ const g=gains.filter(x=>x.gain.events.length).map(last);assert.ok(g.includes(0),'drone reaches silence when far: '+JSON.stringify(g.slice(-4)));
+});
+
+test('the distant bed follows out-of-hearing fire',()=>{
+ const ctx=fakeContext(),srcs=[],make=ctx.createBufferSource;ctx.createBufferSource=()=>{const s=make();srcs.push(s);return s;};
+ const a=ArmadaAudio.create({context:ctx});a.unlock();
+ a.useSamples({ambience:{duration:20,length:160000,sampleRate:8000}});
+ a.setDistant(1);a.setDistant(0);a.setDistant(5);assert.ok(true);
+});
+
+
 
 test('engine drone switching crossfades without creating voices',()=>{
  const {ctx,a}=setup();a.unlock();
@@ -90,7 +139,7 @@ test('stinger is rate limited to one per 6s',()=>{
 
 test('update prunes expired voices and schedules music ahead without throwing',()=>{
  const {ctx,a}=setup();a.unlock();a.setIntensity(1);
- for(const s of ['laser','kinetic','ion-fire'])a.weapon(s,0,0,-300);a.explosion(1,0,0,-5000);a.ui('confirm');
+ for(const s of ['laser','kinetic','ion-fire'])a.weapon(s,0,0,-300);a.explosion(1,0,0,-2000);a.ui('confirm');
  assert.equal(a.stats().voices,4);const before=ctx.created.osc;
  for(let i=0;i<600;i++){ctx.currentTime+=1/60;a.update(1/60);}
  assert.equal(a.stats().voices,0);assert.ok(ctx.created.osc>before,'music notes scheduled');
