@@ -32,7 +32,30 @@
   }
   bodies.forEach((b,i)=>b.name=(b.moon?'Moon':['Gas giant','Rocky world','Ocean world','Ice world','Volcanic world','Star'][b.kind])+' '+String(i+1).padStart(2,'0'));
   const sun=bodies.find(b=>b.kind===5),light=sun?sun.p:[-3,5,1];
-  return {seed:seed>>>0,style,name:names[style],bodies,light,starCount:1800+Math.floor(R()*1200),starTint:pick([[.76,.84,1],[1,.89,.74],[.84,.92,1]])};
+  const out={seed:seed>>>0,style,name:names[style],bodies,light,starCount:1800+Math.floor(R()*1200),starTint:pick([[.76,.84,1],[1,.89,.74],[.84,.92,1]])};
+  // Drawn last so every earlier draw (and so every existing sky) is unchanged.
+  out.field=battlefield(R,style);
+  return out;
+ }
+ /* The battlefield itself, in battle metres around the origin where the two
+    fleets meet: an asteroid band, a nebula, a small moon on a flank. Each is
+    seeded per system and the system's style sets the odds. Fleets muster
+    beyond |x| of about 1.6 km, so rocks stay in the central band. */
+ function battlefield(R,style){
+  const f={rocks:[],nebula:null,moon:null};
+  const pRocks=[.50,.45,.80,.40,.35,.85,.45,.60][style],pNeb=[.30,.35,.25,.35,.55,.20,.40,.50][style],pMoon=[.30,.35,.30,.30,.30,.45,.35,.30][style];
+  if(R()<pMoon){const side=R()<.5?-1:1;f.moon={p:[(R()-.5)*2200,(R()-.5)*500,side*(5600+R()*1400)],r:1200+R()*800,kind:R()<.5?1:3,name:'Moon'};}
+  if(R()<pRocks){
+   const n=7+Math.floor(R()*10),cz=(R()-.5)*2600,spread=1800+R()*2200;
+   for(let i=0,tries=0;i<n&&tries<200;tries++){
+    const r=R()<.25?220+R()*260:60+R()*140,p=[(R()-.5)*2800,(R()-.5)*1000,cz+(R()-.5)*spread*2];
+    const clash=f.rocks.some(k=>Math.hypot(k.p[0]-p[0],k.p[1]-p[1],k.p[2]-p[2])<k.r+r+160)||(f.moon&&Math.hypot(f.moon.p[0]-p[0],f.moon.p[1]-p[1],f.moon.p[2]-p[2])<f.moon.r+r+400);
+    if(clash)continue;f.rocks.push({p,r,seed:(R()*4294967296)>>>0});i++;
+   }
+  }
+  if(R()<pNeb)f.nebula={p:[(R()-.5)*2400,(R()-.5)*500,(R()-.5)*3600],r:1800+R()*1500,tint:[[.36,.46,.82],[.72,.36,.56],[.34,.70,.62],[.80,.56,.30]][Math.floor(R()*4)]};
+  f.kinds=[f.rocks.length?'asteroids':null,f.nebula?'nebula':null,f.moon?'moon':null].filter(Boolean);
+  return f;
  }
 
  function worlds(system,scale){return system.bodies.map(b=>({...b,center:b.p.map(v=>v*scale),radius:b.radius*scale}));}
@@ -45,5 +68,5 @@
    if(disc<0)continue;const entry=(-b-Math.sqrt(disc))/(2*a);if(entry>=0&&entry<t){t=entry;hit=body;}}
   return {position:p.map((x,i)=>x+v[i]*Math.max(0,t-(hit?.000001:0))),hit};
  }
- const api={generate,worlds,nearest,move};if(typeof module==='object')module.exports=api;else root.ArmadaSystems=api;
+ const api={generate,worlds,nearest,move,battlefield};if(typeof module==='object')module.exports=api;else root.ArmadaSystems=api;
 })(typeof window==='object'?window:globalThis);

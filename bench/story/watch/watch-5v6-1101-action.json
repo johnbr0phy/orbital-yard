@@ -1,0 +1,513 @@
+{
+ "summary": {
+  "matchup": [
+   "THE IMPERIAL STARFLEET",
+   "THE REBEL ALLIANCE"
+  ],
+  "seed": 1101,
+  "size": 60,
+  "mode": "action",
+  "plans": [
+   "DECAPITATE",
+   "PINCER"
+  ],
+  "objective": "CONVOY",
+  "winner": 1,
+  "reason": "convoy",
+  "duration": 81.7,
+  "cuts": 10,
+  "medianHold": 8,
+  "minHold": 3.94,
+  "fastCuts": 1,
+  "kinds": {
+   "formation": 1,
+   "chase": 3,
+   "top": 1,
+   "capital": 2,
+   "duel": 2,
+   "all": 1
+  },
+  "phases": {
+   "-": 10
+  },
+  "deadStretches": [
+   [
+    0,
+    16.3
+   ]
+  ],
+  "repeatedShots": 0,
+  "bigDeaths": 1,
+  "bigDeathsOnScreen": 1,
+  "bigDeathsReplayed": 0,
+  "missed": [],
+  "captions": 18,
+  "decisionCaptions": 7,
+  "eventCaptions": 9,
+  "captionMedianSeconds": 4.799999999999997,
+  "shortCaptions": 1,
+  "wallSeconds": 42
+ },
+ "autoReplays": [],
+ "cuts": [
+  {
+   "t": -0.25,
+   "kind": "arrival",
+   "subject": 2,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet arrivals"
+  },
+  {
+   "t": 2.82,
+   "kind": "formation",
+   "subject": 2,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet approach · IMPERIAL"
+  },
+  {
+   "t": 5.92,
+   "kind": "formation",
+   "subject": 61,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet approach · REBEL"
+  },
+  {
+   "t": 9.02,
+   "kind": "formation",
+   "subject": 78,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet approach · REBEL"
+  },
+  {
+   "t": 17.02,
+   "kind": "chase",
+   "subject": 31,
+   "partner": 105,
+   "phase": null,
+   "label": "Pursuit · IMPERIAL"
+  },
+  {
+   "t": 26.02,
+   "kind": "top",
+   "subject": 9,
+   "partner": 63,
+   "phase": null,
+   "label": "Battle from above"
+  },
+  {
+   "t": 32.28,
+   "kind": "capital",
+   "subject": 63,
+   "partner": 10,
+   "phase": null,
+   "label": "Capital ship · REBEL"
+  },
+  {
+   "t": 36.22,
+   "kind": "duel",
+   "subject": 62,
+   "partner": 60,
+   "phase": null,
+   "label": "Crossfire · REBEL"
+  },
+  {
+   "t": 42.52,
+   "kind": "chase",
+   "subject": 18,
+   "partner": 61,
+   "phase": null,
+   "label": "Pursuit · IMPERIAL"
+  },
+  {
+   "t": 51.32,
+   "kind": "all",
+   "subject": 61,
+   "partner": 16,
+   "phase": null,
+   "label": "Battlefield"
+  },
+  {
+   "t": 56.38,
+   "kind": "chase",
+   "subject": 57,
+   "partner": 61,
+   "phase": null,
+   "label": "Pursuit · IMPERIAL"
+  },
+  {
+   "t": 65.38,
+   "kind": "duel",
+   "subject": 57,
+   "partner": 108,
+   "phase": null,
+   "label": "Crossfire · IMPERIAL"
+  },
+  {
+   "t": 74.08,
+   "kind": "capital",
+   "subject": 62,
+   "partner": 4,
+   "phase": null,
+   "label": "Capital ship · REBEL"
+  }
+ ],
+ "captions": [
+  {
+   "t": 2.05,
+   "text": "“Shedding the jump. burning onto her heading.” — Bastion",
+   "kind": "thought"
+  },
+  {
+   "t": 6.68,
+   "text": "“Crossing the void. they cannot hurt us. we do not need to hurry.” — Alliance",
+   "kind": "thought"
+  },
+  {
+   "t": 11.25,
+   "text": "Black squadron going for the Rebel flagship.",
+   "kind": "decision"
+  },
+  {
+   "t": 18.82,
+   "text": "Grey Leader running the convoy lane, 9.4 km to the jump point.",
+   "kind": "decision"
+  },
+  {
+   "t": 24.28,
+   "text": "Blue 7 breaking off, hull 67%, falling back to Guardian’s screen.",
+   "kind": "decision"
+  },
+  {
+   "t": 27.62,
+   "text": "Tan 2 running the convoy lane, 4.5 km to the jump point.",
+   "kind": "decision"
+  },
+  {
+   "t": 33.08,
+   "text": "Black squadron going for the Rebel flagship.",
+   "kind": "decision"
+  },
+  {
+   "t": 36.82,
+   "text": "Sabre 8 covering Obsidian 7, hull 3%.",
+   "kind": "decision"
+  },
+  {
+   "t": 38.18,
+   "text": "Black squadron going for the Rebel flagship.",
+   "kind": "decision"
+  },
+  {
+   "t": 41.95,
+   "text": "Vader's Fist is down. The hunt for the Marauder-Class Corvette ends there.",
+   "kind": "event"
+  },
+  {
+   "t": 45.02,
+   "text": "Blue squadron is breaking. 1 ship running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 49.82,
+   "text": "Red squadron is breaking. 1 ship running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 54.62,
+   "text": "Black squadron is breaking. 5 ships running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 59.42,
+   "text": "The Rebel plan has failed: the raiders were caught. Switching to the pincer.",
+   "kind": "event"
+  },
+  {
+   "t": 65.15,
+   "text": "Obsidian squadron is breaking. 4 ships running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 69.95,
+   "text": "Sabre squadron is breaking. 5 ships running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 74.75,
+   "text": "Scimitar squadron is breaking. 4 ships running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 79.55,
+   "text": "The Imperial plan has failed: a wing was cut off. Switching to the decapitation strike.",
+   "kind": "event"
+  }
+ ],
+ "deaths": [
+  {
+   "t": 40.82,
+   "id": 60,
+   "name": "Vader's Fist",
+   "seen": true,
+   "capital": false,
+   "hero": true,
+   "mode": "action"
+  }
+ ],
+ "replays": [],
+ "winner": 1,
+ "winReason": "convoy",
+ "T": 81.71666666666458,
+ "events": [
+  {
+   "t": -0.2,
+   "type": "warPlan",
+   "text": "The Empire will try to decapitate. The Rebels will raid and run."
+  },
+  {
+   "t": 16.3,
+   "type": "contact",
+   "text": "First shots: Obsidian 3 opens fire on the A/sf-01 B-Wing."
+  },
+  {
+   "t": 30.3,
+   "type": "heroDuel",
+   "text": "ST-321 VADER'S FIST"
+  },
+  {
+   "t": 32.3,
+   "type": "raid",
+   "text": "Blue squadron jumps out mid-raid. They'll be back behind the Empire."
+  },
+  {
+   "t": 33.3,
+   "type": "raid",
+   "text": "Red squadron jumps out mid-raid. They'll be back behind the Empire."
+  },
+  {
+   "t": 34,
+   "type": "ionCharge",
+   "text": "MAR-YK05958 GUARDIAN"
+  },
+  {
+   "t": 38.7,
+   "type": "ionStrike",
+   "text": "MAR-YK05958 GUARDIAN"
+  },
+  {
+   "t": 39.9,
+   "type": "vendetta",
+   "text": "Vader's Fist has lost Night 9. Now hunting the Marauder-Class Corvette that did it."
+  },
+  {
+   "t": 40.8,
+   "type": "heroKill",
+   "text": "Vader's Fist"
+  },
+  {
+   "t": 40.9,
+   "type": "vendettaFailed",
+   "text": "Vader's Fist is down. The hunt for the Marauder-Class Corvette ends there."
+  },
+  {
+   "t": 42.4,
+   "type": "rout",
+   "text": "Blue squadron is breaking. 1 ship running to jump clear."
+  },
+  {
+   "t": 44,
+   "type": "rout",
+   "text": "Red squadron is breaking. 1 ship running to jump clear."
+  },
+  {
+   "t": 46.2,
+   "type": "ionCharge",
+   "text": "ISD-ED69669 PUNISHER"
+  },
+  {
+   "t": 48.7,
+   "type": "rout",
+   "text": "Black squadron is breaking. 5 ships running to jump clear."
+  },
+  {
+   "t": 50.7,
+   "type": "ionStrike",
+   "text": "ISD-ED69669 PUNISHER"
+  },
+  {
+   "t": 53.9,
+   "type": "escape",
+   "text": "Blue squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 54,
+   "type": "escape",
+   "text": "Red squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 54,
+   "type": "planSwitch",
+   "text": "The Rebel plan has failed: the raiders were caught. Switching to the pincer."
+  },
+  {
+   "t": 56.4,
+   "type": "wreckStrike",
+   "text": "Green 7 clips the wreck of the Pelta. Gone."
+  },
+  {
+   "t": 57.7,
+   "type": "escape",
+   "text": "Black squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 57.8,
+   "type": "wreckStrike",
+   "text": "Green 9 clips the wreck of the Pelta. Gone."
+  },
+  {
+   "t": 58.1,
+   "type": "planSwitch",
+   "text": "The Imperial plan has failed: the strike was shot down. Switching to the pincer."
+  },
+  {
+   "t": 58.1,
+   "type": "convoySaved",
+   "text": "A convoy ship makes the jump: 1 of 2 needed."
+  },
+  {
+   "t": 58.3,
+   "type": "wreckStrike",
+   "text": "Green 5 clips the wreck of the Pelta. Gone."
+  },
+  {
+   "t": 61.7,
+   "type": "rout",
+   "text": "Obsidian squadron is breaking. 4 ships running to jump clear."
+  },
+  {
+   "t": 61.7,
+   "type": "rout",
+   "text": "Onyx squadron is breaking. 3 ships running to jump clear."
+  },
+  {
+   "t": 62.3,
+   "type": "ace",
+   "text": "Sabre 6 makes ace with 2 kills. Callsign: Vane."
+  },
+  {
+   "t": 62.6,
+   "type": "rout",
+   "text": "Sabre squadron is breaking. 5 ships running to jump clear."
+  },
+  {
+   "t": 63.3,
+   "type": "planWorked",
+   "text": "The pincer closes on the Empire."
+  },
+  {
+   "t": 63.3,
+   "type": "aceDuel",
+   "text": "Aces meet: Sabre 6 (“Vane”) against Millennium Falcon."
+  },
+  {
+   "t": 69.1,
+   "type": "rout",
+   "text": "Scimitar squadron is breaking. 4 ships running to jump clear."
+  },
+  {
+   "t": 70.2,
+   "type": "escape",
+   "text": "Onyx squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 70.7,
+   "type": "vendetta",
+   "text": "Sabre 6 (“Vane”) has lost Sabre 3. Now hunting the Dp20 Corellian Gunship that did it."
+  },
+  {
+   "t": 72.2,
+   "type": "escape",
+   "text": "Obsidian squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 75.6,
+   "type": "escape",
+   "text": "Sabre squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 75.7,
+   "type": "victory",
+   "text": "THE REBEL ALLIANCE"
+  },
+  {
+   "t": 75.7,
+   "type": "convoySaved",
+   "text": "A convoy ship makes the jump: 2 of 2 needed."
+  },
+  {
+   "t": 76.7,
+   "type": "planSwitch",
+   "text": "The Imperial plan has failed: a wing was cut off. Switching to the decapitation strike."
+  }
+ ],
+ "kills": [
+  20.6,
+  22.8,
+  24.9,
+  26.4,
+  28.2,
+  28.9,
+  31.3,
+  31.3,
+  31.7,
+  31.9,
+  32.5,
+  32.6,
+  32.7,
+  32.7,
+  32.8,
+  36.9,
+  39.8,
+  40.5,
+  40.8,
+  41.9,
+  42.3,
+  47.9,
+  48.4,
+  52.2,
+  53,
+  53.2,
+  53.4,
+  53.6,
+  54.9,
+  56.3,
+  57.8,
+  58.3,
+  58.4,
+  58.8,
+  59.6,
+  61.8,
+  62.2,
+  66.6,
+  68.6,
+  68.7,
+  70.6,
+  70.6,
+  70.7,
+  75.4,
+  81.2
+ ],
+ "plans": [
+  "DECAPITATE",
+  "PINCER"
+ ],
+ "objective": "CONVOY",
+ "names": [
+  "THE IMPERIAL STARFLEET",
+  "THE REBEL ALLIANCE"
+ ]
+}

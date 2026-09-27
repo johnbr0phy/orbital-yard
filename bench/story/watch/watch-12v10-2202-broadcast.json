@@ -1,0 +1,1229 @@
+{
+ "summary": {
+  "matchup": [
+   "THE BORG COLLECTIVE",
+   "THE FEDERATION"
+  ],
+  "seed": 2202,
+  "size": 60,
+  "mode": "broadcast",
+  "plans": [
+   "SIEGE",
+   "PINCER"
+  ],
+  "objective": "ANNIHILATE",
+  "winner": 0,
+  "reason": "withdrawal",
+  "duration": 213.9,
+  "cuts": 21,
+  "medianHold": 9.6,
+  "minHold": 4.8,
+  "fastCuts": 0,
+  "kinds": {
+   "top": 3,
+   "chase": 6,
+   "capital": 7,
+   "squad": 2,
+   "duel": 3
+  },
+  "phases": {
+   "establish": 3,
+   "story": 5,
+   "climax": 6,
+   "reaction": 4,
+   "build": 3
+  },
+  "deadStretches": [],
+  "repeatedShots": 0,
+  "bigDeaths": 14,
+  "bigDeathsOnScreen": 10,
+  "bigDeathsReplayed": 4,
+  "missed": [],
+  "captions": 54,
+  "decisionCaptions": 22,
+  "eventCaptions": 28,
+  "captionMedianSeconds": 3.740000000000009,
+  "shortCaptions": 10,
+  "wallSeconds": 116
+ },
+ "autoReplays": [
+  1,
+  51,
+  50,
+  66
+ ],
+ "cuts": [
+  {
+   "t": -0.25,
+   "kind": "arrival",
+   "subject": 6,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet arrivals"
+  },
+  {
+   "t": 2.82,
+   "kind": "formation",
+   "subject": 6,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet approach · BORG"
+  },
+  {
+   "t": 5.92,
+   "kind": "formation",
+   "subject": 49,
+   "partner": null,
+   "phase": null,
+   "label": "Fleet approach · FEDERATION"
+  },
+  {
+   "t": 9.02,
+   "kind": "top",
+   "subject": 0,
+   "partner": null,
+   "phase": "establish",
+   "label": "Broadcast · The field · Battle from above"
+  },
+  {
+   "t": 18.58,
+   "kind": "chase",
+   "subject": 97,
+   "partner": 1,
+   "phase": "story",
+   "label": "Broadcast · Story · Pursuit · FEDERATION"
+  },
+  {
+   "t": 44.22,
+   "kind": "capital",
+   "subject": 64,
+   "partner": 2,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · FEDERATION"
+  },
+  {
+   "t": 51.28,
+   "kind": "chase",
+   "subject": 2,
+   "partner": null,
+   "phase": "reaction",
+   "label": "Broadcast · Aftermath · Pursuit · BORG"
+  },
+  {
+   "t": 60.92,
+   "kind": "top",
+   "subject": 0,
+   "partner": null,
+   "phase": "establish",
+   "label": "Broadcast · The field · Battle from above"
+  },
+  {
+   "t": 70.52,
+   "kind": "squad",
+   "subject": 48,
+   "partner": null,
+   "phase": "story",
+   "label": "Broadcast · Story · Nexus squadron"
+  },
+  {
+   "t": 76.92,
+   "kind": "capital",
+   "subject": 2,
+   "partner": null,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · BORG"
+  },
+  {
+   "t": 87.58,
+   "kind": "capital",
+   "subject": 54,
+   "partner": 2,
+   "phase": "build",
+   "label": "Broadcast · Building · Capital ship · FEDERATION"
+  },
+  {
+   "t": 94.82,
+   "kind": "duel",
+   "subject": 97,
+   "partner": 2,
+   "phase": "story",
+   "label": "Broadcast · Story · Crossfire · FEDERATION"
+  },
+  {
+   "t": 105.48,
+   "kind": "capital",
+   "subject": 97,
+   "partner": 42,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · FEDERATION"
+  },
+  {
+   "t": 112.75,
+   "kind": "chase",
+   "subject": 37,
+   "partner": null,
+   "phase": "reaction",
+   "label": "Broadcast · Aftermath · Pursuit · BORG"
+  },
+  {
+   "t": 122.38,
+   "kind": "squad",
+   "subject": 37,
+   "partner": null,
+   "phase": "story",
+   "label": "Broadcast · Story · Nexus II squadron"
+  },
+  {
+   "t": 130.95,
+   "kind": "capital",
+   "subject": 15,
+   "partner": null,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · BORG"
+  },
+  {
+   "t": 141.62,
+   "kind": "duel",
+   "subject": 0,
+   "partner": 49,
+   "phase": "build",
+   "label": "Broadcast · Building · Crossfire · BORG"
+  },
+  {
+   "t": 154.42,
+   "kind": "duel",
+   "subject": 6,
+   "partner": 49,
+   "phase": "build",
+   "label": "Broadcast · Building · Crossfire · BORG"
+  },
+  {
+   "t": 167.22,
+   "kind": "chase",
+   "subject": 48,
+   "partner": 49,
+   "phase": "story",
+   "label": "Broadcast · Story · Pursuit · BORG"
+  },
+  {
+   "t": 179.75,
+   "kind": "capital",
+   "subject": 49,
+   "partner": null,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · FEDERATION"
+  },
+  {
+   "t": 188.22,
+   "kind": "chase",
+   "subject": 0,
+   "partner": null,
+   "phase": "reaction",
+   "label": "Broadcast · Aftermath · Pursuit · BORG"
+  },
+  {
+   "t": 197.82,
+   "kind": "top",
+   "subject": 0,
+   "partner": null,
+   "phase": "establish",
+   "label": "Broadcast · The field · Battle from above"
+  },
+  {
+   "t": 202.62,
+   "kind": "capital",
+   "subject": 68,
+   "partner": 15,
+   "phase": "climax",
+   "label": "Broadcast · Now · Capital ship · FEDERATION"
+  },
+  {
+   "t": 211.72,
+   "kind": "chase",
+   "subject": 12,
+   "partner": null,
+   "phase": "reaction",
+   "label": "Broadcast · Aftermath · Pursuit · BORG"
+  }
+ ],
+ "captions": [
+  {
+   "t": 1.52,
+   "text": "“Shedding the jump. burning onto her heading.” — the Sphere",
+   "kind": "thought"
+  },
+  {
+   "t": 6.15,
+   "text": "Alpha squadron going for the Borg flagship.",
+   "kind": "decision"
+  },
+  {
+   "t": 13.65,
+   "text": "First shots: Zeta Leader opens fire on the Obelisk-Class Carrier.",
+   "kind": "event"
+  },
+  {
+   "t": 18.42,
+   "text": "The Constitution has lost Alpha 8. Now hunting the Obelisk-Class Carrier that did it.",
+   "kind": "event"
+  },
+  {
+   "t": 24.55,
+   "text": "The Constitution is hunting the Obelisk-Class Carrier that killed Alpha 8.",
+   "kind": "decision"
+  },
+  {
+   "t": 29.62,
+   "text": "Alpha squadron going for the Borg flagship.",
+   "kind": "decision"
+  },
+  {
+   "t": 35.48,
+   "text": "The Federation plan has failed: the strike was shot down. Switching to holding the line.",
+   "kind": "event"
+  },
+  {
+   "t": 41.92,
+   "text": "Zeta squadron is breaking. 1 ship running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 46.68,
+   "text": "The Obelisk is going down firing everything it has.",
+   "kind": "event"
+  },
+  {
+   "t": 50.75,
+   "text": "Zeta squadron is breaking. 1 ship running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 52.92,
+   "text": "",
+   "kind": "event"
+  },
+  {
+   "t": 53.02,
+   "text": "Zeta squadron is breaking. 1 ship running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 55.55,
+   "text": "Zeta squadron jumps out. They will live to fight another day.",
+   "kind": "event"
+  },
+  {
+   "t": 60.62,
+   "text": "The Steamrunner picking up escape pods.",
+   "kind": "decision"
+  },
+  {
+   "t": 64.35,
+   "text": "The Borg plan has failed: they would not come to the line. Switching to the charge.",
+   "kind": "event"
+  },
+  {
+   "t": 71.15,
+   "text": "Gamma 3 covering Epsilon 3, hull 1%.",
+   "kind": "decision"
+  },
+  {
+   "t": 74.88,
+   "text": "The Obelisk jinking hard, hull 88%.",
+   "kind": "decision"
+  },
+  {
+   "t": 76.22,
+   "text": "Epsilon squadron is breaking. 1 ship running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 81.02,
+   "text": "Delta squadron is breaking. 1 ship running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 85.82,
+   "text": "Gamma squadron is breaking. 2 ships running to jump clear.",
+   "kind": "event"
+  },
+  {
+   "t": 90.62,
+   "text": "The Obelisk is doomed and turning to ram Farragut.",
+   "kind": "event"
+  },
+  {
+   "t": 93.88,
+   "text": "",
+   "kind": "event"
+  },
+  {
+   "t": 94.02,
+   "text": "The Obelisk is doomed and turning to ram Farragut.",
+   "kind": "event"
+  },
+  {
+   "t": 95.08,
+   "text": "The Obelisk rams Farragut at 29 metres a second.",
+   "kind": "event"
+  },
+  {
+   "t": 99.48,
+   "text": "The Constitution is doomed and turning to ram the Obelisk.",
+   "kind": "event"
+  },
+  {
+   "t": 104.28,
+   "text": "Queen's Diamond has lost Nexus 8. Now hunting the Constitution-Class Heavy that did it.",
+   "kind": "event"
+  },
+  {
+   "t": 105.95,
+   "text": "",
+   "kind": "event"
+  },
+  {
+   "t": 106.02,
+   "text": "Queen's Diamond has lost Nexus 8. Now hunting the Constitution-Class Heavy that did it.",
+   "kind": "event"
+  },
+  {
+   "t": 108.15,
+   "text": "The Steamrunner breaking off, hull 12%, falling back to Enterprise’s screen.",
+   "kind": "decision"
+  },
+  {
+   "t": 110.42,
+   "text": "",
+   "kind": null
+  },
+  {
+   "t": 110.68,
+   "text": "Vinculum Leader covering Subunit Leader, hull 20%.",
+   "kind": "decision"
+  },
+  {
+   "t": 114.42,
+   "text": "The Akira covering Constellation, hull 4%.",
+   "kind": "decision"
+  },
+  {
+   "t": 118.05,
+   "text": "",
+   "kind": "decision"
+  },
+  {
+   "t": 118.15,
+   "text": "Exeter picking up escape pods.",
+   "kind": "decision"
+  },
+  {
+   "t": 121.88,
+   "text": "“Squadron ENVELOP. over the top of CONSTITUTION-CLASS HEAVY CRUISER.” — Nexus II 2",
+   "kind": "thought"
+  },
+  {
+   "t": 126.42,
+   "text": "Nexus II 2 covering Subunit 4, hull 28%.",
+   "kind": "decision"
+  },
+  {
+   "t": 127.75,
+   "text": "Vinculum 2 clips the wreck of the Akira. Gone.",
+   "kind": "event"
+  },
+  {
+   "t": 132.15,
+   "text": "Conduit Leader covering Subunit 4, hull 28%.",
+   "kind": "decision"
+  },
+  {
+   "t": 135.88,
+   "text": "Conduit 4 covering Subunit 4, hull 17%.",
+   "kind": "decision"
+  },
+  {
+   "t": 139.62,
+   "text": "Vinculum Leader covering Subunit 4, hull 17%.",
+   "kind": "decision"
+  },
+  {
+   "t": 143.35,
+   "text": "The Akira breaking off, hull 25%, falling back to Enterprise’s screen.",
+   "kind": "decision"
+  },
+  {
+   "t": 144.68,
+   "text": "Cortex 2 clips the wreck of the Obelisk. Gone.",
+   "kind": "event"
+  },
+  {
+   "t": 149.08,
+   "text": "Constellation picking up escape pods.",
+   "kind": "decision"
+  },
+  {
+   "t": 152.82,
+   "text": "Conduit 2 clips the wreck of Exeter. Gone.",
+   "kind": "event"
+  },
+  {
+   "t": 156.95,
+   "text": "Vinculum 3 covering Subunit 4, hull 17%.",
+   "kind": "decision"
+  },
+  {
+   "t": 158.28,
+   "text": "Conduit Leader covering Subunit 4, hull 17%.",
+   "kind": "decision"
+  },
+  {
+   "t": 162.02,
+   "text": "The Federation plan has failed: the wings never met. Switching to the charge.",
+   "kind": "event"
+  },
+  {
+   "t": 167.75,
+   "text": "Queen's Diamond has lost Nexus 2. Now hunting the Sovereign-Class Flagship that did it.",
+   "kind": "event"
+  },
+  {
+   "t": 173.88,
+   "text": "Queen's Diamond is hunting the Sovereign-Class Flagship that killed Nexus 2.",
+   "kind": "decision"
+  },
+  {
+   "t": 178.95,
+   "text": "Enterprise jinking hard, hull 49%.",
+   "kind": "decision"
+  },
+  {
+   "t": 180.95,
+   "text": "Enterprise is lost. Abandon ship.",
+   "kind": "event"
+  },
+  {
+   "t": 184.42,
+   "text": "The Federation flagship Enterprise is gone. Command is silent.",
+   "kind": "event"
+  },
+  {
+   "t": 188.82,
+   "text": "Constellation picking up escape pods.",
+   "kind": "decision"
+  },
+  {
+   "t": 192.55,
+   "text": "Constellation takes command of the Federation fleet.",
+   "kind": "event"
+  },
+  {
+   "t": 196.28,
+   "text": "Nexus 6 clips the wreck of Enterprise. Gone.",
+   "kind": "event"
+  },
+  {
+   "t": 200.42,
+   "text": "Vinculum Leader covering Subunit 4, hull 17%.",
+   "kind": "decision"
+  },
+  {
+   "t": 204.15,
+   "text": "“Patrolling the lane. guns on LONG-RANGE PROBE. covering the screen.” — Constellation",
+   "kind": "thought"
+  },
+  {
+   "t": 207.88,
+   "text": "",
+   "kind": null
+  },
+  {
+   "t": 208.02,
+   "text": "The Federation flagship Constellation is gone. Command is silent.",
+   "kind": "event"
+  },
+  {
+   "t": 212.42,
+   "text": "“The sky is ours. guns cooling.” — Conduit Leader",
+   "kind": "thought"
+  }
+ ],
+ "deaths": [
+  {
+   "t": 46.65,
+   "id": 64,
+   "name": "Enterprise",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 50.68,
+   "id": 1,
+   "name": "the Obelisk",
+   "seen": false,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 75.95,
+   "id": 52,
+   "name": "Enterprise",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 88.28,
+   "id": 54,
+   "name": "Excelsior",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 91.65,
+   "id": 51,
+   "name": "Farragut",
+   "seen": false,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 94.38,
+   "id": 50,
+   "name": "Enterprise",
+   "seen": false,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 94.88,
+   "id": 56,
+   "name": "Excelsior",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 96.98,
+   "id": 2,
+   "name": "the Obelisk",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 108.12,
+   "id": 97,
+   "name": "the Constitution",
+   "seen": true,
+   "capital": true,
+   "hero": true,
+   "mode": "broadcast"
+  },
+  {
+   "t": 115.82,
+   "id": 66,
+   "name": "Constellation",
+   "seen": false,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 129.58,
+   "id": 61,
+   "name": "Exeter",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 143.32,
+   "id": 57,
+   "name": "Yorktown",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 184.38,
+   "id": 49,
+   "name": "Enterprise",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  },
+  {
+   "t": 207.88,
+   "id": 68,
+   "name": "Constellation",
+   "seen": true,
+   "capital": true,
+   "hero": false,
+   "mode": "broadcast"
+  }
+ ],
+ "replays": [
+  {
+   "t": 52.92,
+   "label": "Replay · The Obelisk"
+  },
+  {
+   "t": 93.88,
+   "label": "Replay · Farragut"
+  },
+  {
+   "t": 105.95,
+   "label": "Replay · Enterprise"
+  },
+  {
+   "t": 118.05,
+   "label": "Replay · Constellation"
+  }
+ ],
+ "winner": 0,
+ "winReason": "withdrawal",
+ "T": 213.91666666665708,
+ "events": [
+  {
+   "t": -0.2,
+   "type": "warPlan",
+   "text": "The Borg will screen and siege. The Federation will try to decapitate."
+  },
+  {
+   "t": 12.3,
+   "type": "contact",
+   "text": "First shots: Zeta Leader opens fire on the Obelisk-Class Carrier."
+  },
+  {
+   "t": 15.7,
+   "type": "vendetta",
+   "text": "The Constitution has lost Alpha 8. Now hunting the Obelisk-Class Carrier that did it."
+  },
+  {
+   "t": 28,
+   "type": "ionCharge",
+   "text": "FABRICATION NODE 59 OF 06"
+  },
+  {
+   "t": 32.9,
+   "type": "ionStrike",
+   "text": "FABRICATION NODE 59 OF 06"
+  },
+  {
+   "t": 34,
+   "type": "ionCharge",
+   "text": "NCC-39544-DCF FARRAGUT"
+  },
+  {
+   "t": 35.4,
+   "type": "planSwitch",
+   "text": "The Federation plan has failed: the strike was shot down. Switching to holding the line."
+  },
+  {
+   "t": 37.8,
+   "type": "rout",
+   "text": "Zeta squadron is breaking. 1 ship running to jump clear."
+  },
+  {
+   "t": 42.5,
+   "type": "ionCharge",
+   "text": "NCC-39544-DCF FARRAGUT"
+  },
+  {
+   "t": 44,
+   "type": "lastStand",
+   "text": "The Obelisk is going down firing everything it has."
+  },
+  {
+   "t": 44.4,
+   "type": "rescueStart",
+   "text": "Alpha squadron peels off to screen Enterprise, hull 33%."
+  },
+  {
+   "t": 45.3,
+   "type": "rally",
+   "text": "Zeta squadron rallies on the Enterprise and turns back into the fight."
+  },
+  {
+   "t": 45.8,
+   "type": "rout",
+   "text": "Zeta squadron is breaking. 1 ship running to jump clear."
+  },
+  {
+   "t": 45.8,
+   "type": "pods",
+   "text": "3 escape pods away from Enterprise."
+  },
+  {
+   "t": 45.8,
+   "type": "lastStand",
+   "text": "Enterprise is lost. Abandon ship."
+  },
+  {
+   "t": 46.6,
+   "type": "capitalKill",
+   "text": "Enterprise"
+  },
+  {
+   "t": 46.7,
+   "type": "rescue",
+   "text": "The screen could not save Enterprise."
+  },
+  {
+   "t": 50.7,
+   "type": "capitalKill",
+   "text": "The Obelisk"
+  },
+  {
+   "t": 51.5,
+   "type": "ionCharge",
+   "text": "NCC-39544-DCF FARRAGUT"
+  },
+  {
+   "t": 54.3,
+   "type": "escape",
+   "text": "Zeta squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 60,
+   "type": "ionCharge",
+   "text": "NCC-39544-DCF FARRAGUT"
+  },
+  {
+   "t": 61.2,
+   "type": "planSwitch",
+   "text": "The Borg plan has failed: they would not come to the line. Switching to the charge."
+  },
+  {
+   "t": 68.6,
+   "type": "ionCharge",
+   "text": "NCC-39544-DCF FARRAGUT"
+  },
+  {
+   "t": 72.2,
+   "type": "rescueStart",
+   "text": "Alpha squadron peels off to screen Enterprise, hull 35%."
+  },
+  {
+   "t": 73.2,
+   "type": "ionStrike",
+   "text": "NCC-39544-DCF FARRAGUT"
+  },
+  {
+   "t": 75.3,
+   "type": "rout",
+   "text": "Epsilon squadron is breaking. 1 ship running to jump clear."
+  },
+  {
+   "t": 75.9,
+   "type": "capitalKill",
+   "text": "Enterprise"
+  },
+  {
+   "t": 76.7,
+   "type": "rescue",
+   "text": "The screen could not save Enterprise."
+  },
+  {
+   "t": 78.3,
+   "type": "rout",
+   "text": "Delta squadron is breaking. 1 ship running to jump clear."
+  },
+  {
+   "t": 78.9,
+   "type": "rout",
+   "text": "Gamma squadron is breaking. 2 ships running to jump clear."
+  },
+  {
+   "t": 79.8,
+   "type": "wreckStrike",
+   "text": "Nexus II Leader clips the wreck of Enterprise. Gone."
+  },
+  {
+   "t": 80.4,
+   "type": "rout",
+   "text": "Beta squadron is breaking. 1 ship running to jump clear."
+  },
+  {
+   "t": 81.4,
+   "type": "wreckStrike",
+   "text": "Tertiary Leader clips the wreck of Enterprise. Gone."
+  },
+  {
+   "t": 84.8,
+   "type": "wreckStrike",
+   "text": "Relay 4 clips the wreck of Enterprise. Gone."
+  },
+  {
+   "t": 86.7,
+   "type": "ionCharge",
+   "text": "FABRICATION NODE 17 OF 12"
+  },
+  {
+   "t": 86.8,
+   "type": "escape",
+   "text": "Epsilon squadron jumps out. They will live to fight another day."
+  },
+  {
+   "t": 87.4,
+   "type": "lastStand",
+   "text": "The Obelisk is doomed and turning to ram Farragut."
+  },
+  {
+   "t": 87.5,
+   "type": "wreckStrike",
+   "text": "Adjunct Leader clips the wreck of Enterprise. Gone."
+  },
+  {
+   "t": 88.2,
+   "type": "wreckStrike",
+   "text": "Relay Leader clips the wreck of the Tactical Diamond. Gone."
+  },
+  {
+   "t": 88.3,
+   "type": "capitalKill",
+   "text": "Excelsior"
+  },
+  {
+   "t": 89.1,
+   "type": "planSwitch",
+   "text": "The Federation plan has failed: the line broke. Switching to the pincer."
+  },
+  {
+   "t": 91.1,
+   "type": "rescueStart",
+   "text": "Alpha squadron peels off to screen Excelsior, hull 36%."
+  },
+  {
+   "t": 91.5,
+   "type": "ionStrike",
+   "text": "FABRICATION NODE 17 OF 12"
+  },
+  {
+   "t": 91.6,
+   "type": "capitalKill",
+   "text": "Farragut"
+  },
+  {
+   "t": 91.7,
+   "type": "ram",
+   "text": "The Obelisk rams Farragut at 29 metres a second."
+  },
+  {
+   "t": 92.8,
+   "type": "wreckStrike",
+   "text": "Relay 2 clips the wreck of Enterprise. Gone."
+  },
+  {
+   "t": 94.4,
+   "type": "capitalKill",
+   "text": "Enterprise"
+  },
+  {
+   "t": 94.7,
+   "type": "lastStand",
+   "text": "The Constitution is doomed and turning to ram the Obelisk."
+  },
+  {
+   "t": 94.9,
+   "type": "capitalKill",
+   "text": "Excelsior"
+  },
+  {
+   "t": 95.3,
+   "type": "rescue",
+   "text": "The screen could not save Excelsior."
+  },
+  {
+   "t": 96.4,
+   "type": "wreckStrike",
+   "text": "Conduit 3 clips the wreck of the Tactical Diamond. Gone."
+  },
+  {
+   "t": 97,
+   "type": "capitalKill",
+   "text": "The Obelisk"
+  },
+  {
+   "t": 98.4,
+   "type": "wreckStrike",
+   "text": "Nexus 3 clips the wreck of the Akira. Gone."
+  },
+  {
+   "t": 99.4,
+   "type": "vendetta",
+   "text": "Queen's Diamond has lost Nexus 8. Now hunting the Constitution-Class Heavy that did it."
+  },
+  {
+   "t": 100.2,
+   "type": "podsSaved",
+   "text": "1 escape pod from Enterprise picked up."
+  },
+  {
+   "t": 103.7,
+   "type": "wreckStrike",
+   "text": "Adjunct 4 clips the wreck of the Obelisk. Gone."
+  },
+  {
+   "t": 106.2,
+   "type": "ace",
+   "text": "Nexus 5 makes ace with 2 kills. Callsign: Vane."
+  },
+  {
+   "t": 107.7,
+   "type": "aceDuel",
+   "text": "Aces meet: Nexus 5 (“Vane”) against the Constitution."
+  },
+  {
+   "t": 108.1,
+   "type": "heroKill",
+   "text": "The Constitution"
+  },
+  {
+   "t": 110.9,
+   "type": "wreckStrike",
+   "text": "Nexus 5 (“Vane”) clips the wreck of the Akira. Gone."
+  },
+  {
+   "t": 115.8,
+   "type": "capitalKill",
+   "text": "Constellation"
+  },
+  {
+   "t": 115.8,
+   "type": "wreckStrike",
+   "text": "Nexus 7 clips the wreck of Excelsior. Gone."
+  },
+  {
+   "t": 115.9,
+   "type": "wreckStrike",
+   "text": "Vinculum 4 clips the wreck of Enterprise. Gone."
+  },
+  {
+   "t": 116.7,
+   "type": "wreckStrike",
+   "text": "Relay 3 clips the wreck of the Tactical Diamond. Gone."
+  },
+  {
+   "t": 117.9,
+   "type": "ionCharge",
+   "text": "NCC-87171-IIY ENTERPRISE"
+  },
+  {
+   "t": 118.9,
+   "type": "wreckStrike",
+   "text": "Nexus 9 clips the wreck of the Constitution. Gone."
+  },
+  {
+   "t": 123.3,
+   "type": "ionStrike",
+   "text": "NCC-87171-IIY ENTERPRISE"
+  },
+  {
+   "t": 127.7,
+   "type": "wreckStrike",
+   "text": "Vinculum 2 clips the wreck of the Akira. Gone."
+  },
+  {
+   "t": 129.6,
+   "type": "capitalKill",
+   "text": "Exeter"
+  },
+  {
+   "t": 130.7,
+   "type": "wreckStrike",
+   "text": "Cortex 3 clips the wreck of Constellation. Gone."
+  },
+  {
+   "t": 143.3,
+   "type": "capitalKill",
+   "text": "Yorktown"
+  },
+  {
+   "t": 144,
+   "type": "wreckStrike",
+   "text": "Cortex 2 clips the wreck of the Obelisk. Gone."
+  },
+  {
+   "t": 152.6,
+   "type": "wreckStrike",
+   "text": "Conduit 2 clips the wreck of Exeter. Gone."
+  },
+  {
+   "t": 159.4,
+   "type": "planSwitch",
+   "text": "The Federation plan has failed: the wings never met. Switching to the charge."
+  },
+  {
+   "t": 162.2,
+   "type": "vendetta",
+   "text": "Queen's Diamond has lost Nexus 2. Now hunting the Sovereign-Class Flagship that did it."
+  },
+  {
+   "t": 175.6,
+   "type": "ionCharge",
+   "text": "NCC-87171-IIY ENTERPRISE"
+  },
+  {
+   "t": 180.8,
+   "type": "ionStrike",
+   "text": "NCC-87171-IIY ENTERPRISE"
+  },
+  {
+   "t": 180.8,
+   "type": "pods",
+   "text": "4 escape pods away from Enterprise."
+  },
+  {
+   "t": 180.8,
+   "type": "lastStand",
+   "text": "Enterprise is lost. Abandon ship."
+  },
+  {
+   "t": 184.4,
+   "type": "capitalKill",
+   "text": "Enterprise"
+  },
+  {
+   "t": 184.4,
+   "type": "flagshipDown",
+   "text": "The Federation flagship Enterprise is gone. Command is silent."
+  },
+  {
+   "t": 188.9,
+   "type": "successor",
+   "text": "Constellation takes command of the Federation fleet."
+  },
+  {
+   "t": 190.2,
+   "type": "wreckStrike",
+   "text": "Nexus 4 clips the wreck of Enterprise. Gone."
+  },
+  {
+   "t": 194.5,
+   "type": "wreckStrike",
+   "text": "Nexus 6 clips the wreck of Enterprise. Gone."
+  },
+  {
+   "t": 207.9,
+   "type": "capitalKill",
+   "text": "Constellation"
+  },
+  {
+   "t": 207.9,
+   "type": "victory",
+   "text": "THE BORG COLLECTIVE"
+  },
+  {
+   "t": 207.9,
+   "type": "flagshipDown",
+   "text": "The Federation flagship Constellation is gone. Command is silent."
+  }
+ ],
+ "kills": [
+  15.6,
+  16,
+  23.4,
+  28.4,
+  31.7,
+  32.2,
+  32.2,
+  33.1,
+  35.4,
+  35.4,
+  36.1,
+  37.5,
+  46.6,
+  48.3,
+  49,
+  50.7,
+  53.6,
+  54.9,
+  55.2,
+  56.7,
+  60.4,
+  66.4,
+  70.8,
+  72.5,
+  74.4,
+  74.9,
+  75.9,
+  78.1,
+  78.9,
+  79,
+  79.8,
+  80.6,
+  80.7,
+  81.4,
+  84,
+  84.8,
+  87.4,
+  87.9,
+  88.1,
+  88.3,
+  89.5,
+  91.6,
+  92.8,
+  94.4,
+  94.9,
+  96.4,
+  97,
+  98.4,
+  99,
+  99.3,
+  103.6,
+  106.2,
+  108.1,
+  108.2,
+  110.4,
+  110.4,
+  110.4,
+  110.9,
+  115.8,
+  115.8,
+  115.8,
+  116.7,
+  117.4,
+  118.9,
+  120,
+  125.7,
+  127.1,
+  127.7,
+  129.6,
+  130.6,
+  143.3,
+  144,
+  145.9,
+  146.6,
+  152.6,
+  162.2,
+  184.4,
+  190.1,
+  194.5,
+  201.8,
+  207.9
+ ],
+ "plans": [
+  "SIEGE",
+  "PINCER"
+ ],
+ "objective": "ANNIHILATE",
+ "names": [
+  "THE BORG COLLECTIVE",
+  "THE FEDERATION"
+ ]
+}

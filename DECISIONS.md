@@ -99,3 +99,123 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 - "600 ships" in the brief is read as the benchmark's total ship count: 300 a side, which makes 572 ships once musters are cut. The old default of 600 a side made 1,142 ships.
 - The reference laptop is a 2020 integrated GPU (Intel Iris Xe / UHD 620 class) with a 4-core CPU. The phone is a mid-range 2021 Android (Adreno 6xx class).
 - No real GPU was available in this environment. Every browser frame time here comes from SwiftShader and is labelled that way. `scripts/bench-tribute.cjs --headed` on real hardware produces the numbers this document can't.
+
+# Story pass: decisions
+
+The second pass had one goal: make every war a story. Calls I made without being able to ask are below. BEHAVIOUR.md has the story numbers, PERFORMANCE.md the costs.
+
+## The story lives in the AI module
+
+- **`WarStory` sits inside `armada-battle-ai-new.js`, not the page.** Every harness (headless battle, Three.js engine harness, story metrics) already loads that module, so morale, plans and characters run identically everywhere. The page only supplies what needs the scene: leaving the battle, re-jumping, volleys, abandoning ship and declaring a winner (`STORY_HOST`).
+- **Orders override pilots, they don't replace them.** A story order (rout, ram, rescue, hold, convoy and so on) sits on the pilot's mind and is read first by `think()` and `destination()`. When it ends, the pilot's own decision loop resumes. This kept the existing dogfighting untouched.
+- **All story randomness comes from a seeded stream** mixed with both sides' races. Nothing reads the clock, the camera, the frame rate or `Math.random`. `story.test.cjs` checks the war across time scale and with `Math.random` replaced; `scripts/determinism-browser.cjs` checks it in Chromium across frame rate, time scale, camera and worker count.
+- **Story work is bucketed by ship id.** Squadron morale and capital crises each run on a slice of ids per step; plans, objectives, rescues and ace duels run once a simulated second.
+
+## Doctrine
+
+Each fleet gets one row. **These are my readings of how each fleet is portrayed, written as game rules. None of them is a claim about canon.** Three rules came from the brief: the Borg never rout, the Jem'Hadar never retreat, and the Rebels retreat to fight another day.
+
+- **Breaks at**: a squadron routs when its stress passes this value (`rout × 1.9`, 0.2 lower when leaderless). Stress builds from losses, sustained fear, nearby routs and a lost flagship, and bleeds off when things calm down.
+- **Single retreat**: whether a lone damaged ship may withdraw. Borg, Dominion and Tyranids: no.
+- **Fear spread**: how strongly fear passes between neighbours (contagion), on top of witnessed losses and the local strength ratio.
+- **Last stand** weights choose between a ram, a full volley and abandoning ship when a capital is doomed.
+
+| fleet | breaks at (squadron stress) | single retreat | fear spread | on flagship loss: panic / berserk | successor after | pursues the broken | leaves by | rallies | rescues | last stand: ram / volley / abandon | fires on pods | favourite plans | why |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Yard | 1.18 | yes | 0.8 | 25% / 10% | 8 s | sometimes | jump | 35% | 60% | 0.2 / 0.4 / 0.3 | no | hold, pincer, siege | A drilled yard navy: breaks by the book and regroups by the book. |
+| Shoal | 1.04 | yes | 1.3 | 45% / 30% | 12 s | yes | the edge | 20% | 30% | 0.5 / 0.3 / 0 | yes | pincer, ambush, raid | A social swarm: fear and fury both run through it like a current. |
+| Lattice | 1.33 | yes | 0.5 | 10% / 5% | 3 s | no | jump | 50% | 70% | 0.1 / 0.6 / 0.2 | no | pincer, siege, hold | A coordinated lattice: a node falls, the next one holds the geometry. |
+| Drift | 0.85 | yes | 1 | 40% / 10% | 10 s | no | jump | 40% | 80% | 0.2 / 0.2 / 0.5 | no | ambush, raid, pincer | Salvagers: they run early, strike from cover and tow home what they can. |
+| Choir | 1.14 | yes | 0.6 | 20% / 5% | 6 s | no | jump | 60% | 90% | 0 / 0.5 / 0.4 | no | hold, siege, pincer | A patient choir: holds its line, shelters the wounded, comes back. |
+| Empire | 1.37 | yes | 0.5 | 15% / 15% | 5 s | yes | jump | 15% | 30% | 0.35 / 0.45 / 0.1 | yes | siege, pincer, hold | Imperial officers fear their superiors more than the enemy. They siege, and they run down the broken. |
+| Rebels | 0.95 | yes | 0.9 | 30% / 15% | 7 s | no | jump | 30% | 90% | 0.4 / 0.2 / 0.4 | no | ambush, raid, decapitate | The Rebellion retreats to fight another day, and never leaves a pilot in the void. |
+| Minbari | 1.42 | yes | 0.4 | 10% / 20% | 4 s | sometimes | jump | 50% | 70% | 0.2 / 0.6 / 0.1 | no | pincer, hold, decapitate | Composed and proud: slow to break, precise in pursuit. |
+| Shadows | 1.52 | yes | 0.3 | 30% / 50% | 2 s | yes | jump | 20% | 0% | 0.6 / 0.4 / 0 | yes | ambush, raid, pincer | The Shadows are chaos with a purpose: leaderless, they get more dangerous, not less. |
+| EarthForce | 1.14 | yes | 0.7 | 20% / 15% | 6 s | sometimes | jump | 50% | 80% | 0.4 / 0.4 / 0.2 | no | hold, pincer, siege | EarthForce holds the line and covers its wounded. |
+| Federation | 1.04 | yes | 0.7 | 20% / 5% | 5 s | no | jump | 50% | 100% | 0.3 / 0.3 / 0.4 | no | hold, siege, pincer | Starfleet does not hunt a beaten enemy, and always beams out the crew. |
+| Klingons | 1.71 | yes | 0.4 | 5% / 60% | 3 s | yes | jump | 30% | 20% | 0.8 / 0.2 / 0 | yes | pincer, raid, ambush | Klingons almost never break; losing the flagship makes them charge. |
+| Borg | never | no | 0 | 0% / 0% | 0.5 s | sometimes | jump | 0% | 0% | 0.3 / 0.7 / 0 | no | siege, pincer, hold | The Collective has no nerve to break and no captain to lose. |
+| Mondoshawan | 1.14 | yes | 0.6 | 20% / 5% | 8 s | no | jump | 50% | 100% | 0.1 / 0.3 / 0.6 | no | hold, siege | A protective convoy: it holds, shelters the wounded and abandons ships before lives. |
+| USCM | 1.33 | yes | 0.6 | 20% / 20% | 4 s | sometimes | jump | 40% | 90% | 0.3 / 0.5 / 0.3 | no | pincer, hold, raid | Marines leave nobody behind and hold together under pressure. |
+| Engineers | 1.52 | yes | 0.3 | 10% / 30% | 6 s | yes | the edge | 10% | 10% | 0.5 / 0.5 / 0 | yes | siege, ambush, decapitate | The Engineers are indifferent to loss and merciless to the fleeing. |
+| Yautja | 1.61 | yes | 0.2 | 5% / 40% | 5 s | yes | jump | 20% | 0% | 0.5 / 0.5 / 0 | no | ambush, raid, decapitate | Hunters: they ambush, they hunt the strongest, and they do not surrender a ship. |
+| First Ones | 1.71 | yes | 0.1 | 0% / 0% | 1 s | sometimes | jump | 0% | 0% | 0 / 1 / 0 | no | siege, hold, decapitate | The First Ones do not panic. When the age turns they simply withdraw. |
+| Romulans | 1.14 | yes | 0.6 | 20% / 10% | 5 s | sometimes | jump | 40% | 30% | 0.2 / 0.3 / 0.4 | no | ambush, raid, decapitate | Romulans strike from the cloak and leave when the odds turn. |
+| Dominion | never | no | 0.1 | 0% / 50% | 3 s | yes | jump | 0% | 0% | 0.9 / 0.1 / 0 | yes | pincer, decapitate, ambush | The Jem'Hadar never retreat. Losing command only makes them charge. |
+| Space Marines | never | yes | 0.1 | 0% / 20% | 3 s | yes | jump | 50% | 60% | 0.5 / 0.5 / 0 | no | hold, decapitate, pincer | Space Marines do not break, though a lone ship may fall back to its brothers. |
+| Tyranids | never | no | 0 | 60% / 40% | 10 s | yes | the edge | 0% | 0% | 0.8 / 0.2 / 0 | yes | pincer, ambush, raid | The swarm cannot rout; when the hive ship dies the broods lose synapse and go feral. |
+| Tesla | 1.14 | yes | 0.8 | 25% / 10% | 4 s | sometimes | jump | 50% | 70% | 0.4 / 0.2 / 0.4 | no | raid, pincer, decapitate | A startup fleet: fast, improvised, and willing to pull out and relaunch. |
+
+## Morale, routs and last stands
+
+- **Stress, not a threshold on fear.** My first version routed a squadron the moment its fear crossed a line, and half the field broke at first contact. The second needed so much fear that nothing ever broke. Stress accumulates and decays, so a squadron breaks after sustained punishment, and a nearby rout or a lost flagship pushes it over.
+- **Encirclement adds fear** (0.10 with four or more enemies close), so a closed pincer or sprung ambush breaks squadrons through the same system. It started at 0.20 with three contacts, which routed too many.
+- **Routing ships leave alive.** They leave through their fleet's arrival effect in reverse (hyperspace, jump point, warp, transwarp) or, for fleets without one, off the edge beyond 6.5 km. They count as "withdrew" on the end card, not as kills.
+- **Rams are real collisions.** A doomed capital picks a reachable enemy capital, burns for it and turns hard; the damage comes from the contact solver, scaled by closing speed and mass, once per pair. There is never a scripted kill. A ramming ship diverts power forward and takes 40% of incoming damage while committed. Without that, and without a reach limit and an emergency burn, rammers in my test wars died before contact and rams almost never landed.
+- **A fighter that clips a wreck dies**, but only a real wreck (a disabled hull or debris of radius 30 m or more) at a scrape speed over 15 m/s. Hero ships lose 35% of their hull instead. Deterministic: it runs inside the contact solver. The first version killed every fighter that brushed a fragment, which emptied the dogfights.
+- **Escape pods** drift, can be recovered by a friendly ship that reaches them, or destroyed by a fleet whose doctrine is ruthless. Both outcomes are captioned and scored.
+
+## Characters
+
+- **Aces**: a small craft earns a callsign from a neutral list (never a franchise name), +0.06 skill and +0.05 courage, and a ✦ marker. A side's first ace needs 2 kills, each later ace one more, at most four a side. I started at a flat 3 kills, and the full metrics run showed aces in 3 of 30 wars: small craft rarely get credited kills (in one 60-a-side Empire vs Rebels war, 8 of 82 fighters scored at all and none scored 3). Aces weight enemy aces as targets, and the director builds duels from that.
+- **Vendettas**: an ace or hero who sees a squadron mate die within 3 km remembers the killer. The chase is a story shot. It ends settled or with the ace's death.
+- **Rescues**: a squadron screens a crippled capital for 22 s (saved if the capital is alive at the end, lost if not); a shuttle, runabout, dropship or tug latches onto a disabled capital's hull and drags it toward its own side's edge, where it jumps out (saved), or loses it (the tug dies, the hull breaks up, it can't latch within 45 s, or the line parts after 60 s). A tug with a hull on the line crawls at 0.3× its cruise speed, and a tow only counts as saved if the hull is within about 900 m of the tug when they jump. Until a test caught it, tugs flew home at full speed, left the hull 2 km behind, and were still scored as saved.
+
+## Plans and objectives
+
+- **Six plans**: pincer, ambush, hold, raid, decapitate and siege. Each fleet has favourites in its doctrine row; the seed picks. `?plan=PINCER,HOLD` forces them (for tests, captures and the plan experiment).
+- **A plan is a fleet-wide posture plus orders**, not a label. A pincer splits wings to the flanks and only closes once they are there; a hold waits at its line; a siege stands off at long range; a raid holds a reserve that jumps in behind; a decapitation sends a strike group at the flagship; an ambush waits in cover or, with no terrain, arrives late behind the enemy.
+- **Plans switch when they fail**, captioned. A plan gets 18 s before it can be judged, failure is measured against losses since the plan began (not since the war began, which made plans flip every few seconds), and a fleet switches at most twice. After that it charges.
+- **A convoy must be hunted.** The side that has to stop a convoy never draws hold or siege. Found in the gallery: a Borg hold let a Federation convoy walk out at 0:59 with one loss a side. With the rule, 6 test convoy wars split 4 to 2 and the hunters fight.
+- **A station can be "taken" before first contact.** It goes to whoever reaches it first with 1.5× the other side's weight nearby. I left that: getting there first is a real advantage and the ticker says so.
+- **Objectives**: annihilation (weight 4), flagship (2.5), convoy (2) and station (1.5). They are shown on the title card and as a HUD chip, blended at 25% into the momentum bar, reported in the ticker and named on the end card. `?objective=` forces one.
+
+## Terrain
+
+- **Seeded through the system generator** (`ArmadaSystems.generate().field`): an asteroid band, a nebula and sometimes a flanking moon. Rocks and moons block line of sight and rounds and give cover; pilots steer around them. The nebula shortens sensor range and keeps cloaked ships hidden longer.
+- **The nebula is drawn as sorted soft billboards** with normal alpha blending. An additive nebula washed out planets.
+
+## Watching
+
+- **A war opens on the Action camera.** B toggles Broadcast; the watch dock lists Action first. Action rides with a subject (chase 9 s, duel 10 s, capital 11 s, squadron 13 s, wide views 8 s). A death holds 3.4 s, and nothing but a death cuts a shot before 6 s. At the old timings Action's median shot was 7.0–8.0 s across the three watched wars; now it's 8.0–8.5 s.
+- **Action doesn't replay what it missed; Broadcast does.** Action is "ride with one ship", and replays would break that. So Action can miss a capital death elsewhere on the field (7 of 20 in the watched wars). Broadcast missed none.
+- **Broadcast story shots hold 10 to 25 s.** Only an event that outscores the story may cut away, and only once the shot has settled (7 s for climax and reaction shots, 6 s for a story shot). A flagship falling or a First One kill (score 125 or more) may cut earlier. The director comes back to the story afterwards unless a clearly better one (1.3×) exists.
+- **A big death the camera missed is replayed, never dropped.** Several can queue and replay together; a replay held back by the rate limit waits instead of vanishing.
+- **Event captions about a ship in action are withdrawn when it dies** (vendetta, ace duel, rescue screen, last stand, raid). Found in the gallery: a vendetta caption outlived its hunter.
+- **Captions come from live AI state**, one at a time, each held long enough to read (at least 3 s before a bigger event replaces it). A decision must have held 0.8 s to be captioned. Each caption carries a check and is withdrawn when the state it describes stops being true, so it can't contradict the sim. The same line doesn't repeat within 25 s. The older flavour lines remain the fallback.
+
+## Debris
+
+- **Fracture edges glow and cool** from orange to dark (heat decays as exp(−t/3.2 s) on wreckage, exp(−t/6 s) on a disabled hull), from a per-vertex edge flag computed from vertices shared between fragments, and a heat uniform.
+- **Wrecks stay readable**: tone 0.86 plus a rim lift, so they don't vanish against space.
+- **Dust uses MAX blending**: it glows but saturates instead of summing past white.
+
+## Battle size
+
+- **Default battle size comes from a measured simulation-speed probe, never the GPU tier.** On first visit the page runs the real fleet minds on 240 dummy ships (`ArmadaBattleAI.probe`: 150 ms warm-up, then the better of two 90 ms runs, about 330 ms once) and divides the score by the reference machine's. Cold runs read up to 2× slow, hence the warm-up. The result is kept in `localStorage` (`tributeSimSpeed`).
+- **Every war then refines it** from the real simulation: after 20 s it times each 15 simulated seconds at the ships actually alive and folds that in (60% old, 40% new). Paused, fast-forwarded and replayed stretches are skipped.
+- **Rule: the default is the largest size whose simulation fits 550 ms of CPU per simulated second** (real time needs 1,000 ms; 45% is left for rendering). A size needs a speed factor of at least cost ÷ 550, where the reference machine (4-core Xeon 2.1 GHz, Node 22, measured idle) is 1.00:
+
+| per side | ships | reference ms CPU per simulated second | speed factor needed for real time | speed on the reference machine |
+|---|---|---|---|---|
+| 50 | 100 | 419 | 0.76 | 1.00× |
+| 100 | 192 | 660 | 1.20 | 0.83× |
+| 150 | 287 | 1,301 | 2.37 | 0.42× |
+| 200 | 382 | 1,620 | 2.95 | 0.34× |
+| 300 | 572 | 2,587 | 4.70 | 0.21× |
+| 450 | 857 | 4,325 | 7.86 | 0.13× |
+| 600 | 1,142 | 5,862 | 10.66 | 0.09× |
+
+- **On the reference machine the default is 50 a side.** Chromium's probe on the same machine reads 0.98 to 1.05 (three page loads).
+- **Every size stays selectable, 600 included.** Each size button's tooltip gives its measured speed on this machine ("about 0.1× real time on this machine (measured)") and slow sizes are marked. A fast desktop gets whatever its probe earns: a machine twice as fast as the reference defaults to 100 a side (factor 1.20 needed), three times as fast to 200. Running 600 a side in real time needs a factor of about 10.7, which no current desktop CPU reaches on one thread. A desktop 2.5× faster than the reference (my estimate for a fast one, not measured) would run it at about 0.23× real time. I'd rather say that than let a GPU tier promise it.
+- **Why not the GPU tier:** the simulation, not the renderer, is what makes a large war slow. A laptop with a strong GPU and a reference-class CPU would have got 300 a side from the old tier rule (Ultra) and played it at 0.21× real time.
+
+## Audio
+
+- **Close explosions and lasers were made darker**, because the new cameras sit close to the fight and the old voices had only been tuned from far away. The near crack is a band around 1.2 kHz (was a 700 Hz highpass), the explosion body stops by about 3 kHz (was 4.5 kHz), and the laser sweep starts at 1,150 Hz (was 1,700). Energy at 2–8 kHz fell from 21% to 9.1% on the same capture. No tone goes below 150 Hz, and the test for that passes. Details: `bench/story/audio-report.md`.
+
+## Other calls
+
+- **Setting a quality tier no longer changes fleet size.** Size now comes from simulation speed; tiers only change rendering.
+- **The browser and the Node harness don't produce the same war**, by design and already so on main: the harness forges box meshes, so a ship's own hull obstructs its weapons differently. Browser against browser is identical across everything a viewer can change.
+- **Metrics caps.** Story metrics cap wars at 180 simulated seconds at 60 a side and 120 at 300 a side, as the baseline did, so before and after are compared on the same terms.

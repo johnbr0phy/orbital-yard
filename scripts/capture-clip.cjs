@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 /* Captures a highlight clip (WebM, VP8) from the real page, frame by frame.
    node scripts/capture-clip.cjs [--matchup 5,6] [--seed 77] [--size 60] [--clips 3] [--out design/tribute-new/review/highlights.webm]
+          [--types rout,ace,flagshipDown] [--reel 24] [--plans PINCER,HOLD] [--objective FLAGSHIP] [--max 90]
+   --types picks the best clip of each listed event type first (in that order),
+   then fills up to --clips with the best of the rest; --reel enlarges the
+   highlight reel during the capture so story moments are not evicted.
 
    The page's own requestAnimationFrame loop is stopped and frame() is called
    with exact 1/30 s timestamps, so software rendering speed does not change
@@ -14,6 +18,8 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
 const root = path.resolve(__dirname, '..');
 const [a, b] = arg('matchup', '5,6').split(',').map(Number), seed = +arg('seed', 77), size = +arg('size', 60), clips = +arg('clips', 3);
 const outFile = path.resolve(root, arg('out', 'design/tribute-new/review/highlights.webm'));
+const types = arg('types', '') ? arg('types').split(',') : [], reelSize = +arg('reel', 0), maxSeconds = +arg('max', 70);
+const force = arg('plans') || arg('objective') ? {plans: arg('plans') ? arg('plans').split(',') : null, objective: arg('objective') || null} : null;
 const ffmpeg = process.env.FFMPEG || '/opt/pw-browsers/ffmpeg-1011/ffmpeg-linux';
 
 (async () => {
@@ -29,12 +35,14 @@ const ffmpeg = process.env.FFMPEG || '/opt/pw-browsers/ffmpeg-1011/ffmpeg-linux'
   await page.route(/fonts\.(googleapis|gstatic)\.com|goatcounter|gc\.zgo\.at/, r => r.abort());
   await page.goto(`http://localhost:${server.address().port}/armada-war-tribute-new.html?autostart=0&quality=high`);
   await page.waitForFunction(() => typeof startWar === 'function');
-  await page.evaluate(({a, b, seed, size}) => {
+  await page.evaluate(({a, b, seed, size, force}) => {
     window.requestAnimationFrame = () => 0; // the capture drives frame() itself
+    storyForce = force;
     pickMain = [a, b]; pickAlly = [-1, -1]; perFleet = size; warSeed = seed;
     document.getElementById('warMenu').hidden = true; document.body.classList.remove('menu-start');
     startWar(false); window.__t = 1000; lastT = 0;
-  }, {a, b, seed, size});
+  }, {a, b, seed, size, force});
+  if (reelSize) await page.evaluate(n => { bc.reel = ArmadaReplay.createReel(n); }, reelSize);
   // Forging happens in workers; pump frames until the war starts.
   await page.waitForFunction(() => { frame(window.__t += 33.333); return Number.isFinite(warT0); }, null, {timeout: 300000, polling: 50});
   // Fast-forward the war to its end (coarse frames, no screenshots).
@@ -53,20 +61,24 @@ const ffmpeg = process.env.FFMPEG || '/opt/pw-browsers/ffmpeg-1011/ffmpeg-linux'
   });
   console.error('war over', JSON.stringify(result));
   // Keep the best N clips, play them in time order, record at 30 fps.
-  const started = await page.evaluate(n => {
+  const started = await page.evaluate(({n, types}) => {
     // The victory itself is not a moment; keep the best kills.
     for (let i = bc.reel.clips.length - 1; i >= 0; i--) if (bc.reel.clips[i].meta.ev.type === 'victory') bc.reel.clips.splice(i, 1);
-    bc.reel.clips.splice(n);
+    // Requested story moments first (best of each type), then the best of the rest.
+    const chosen = [];
+    for (const t of types) { const c = bc.reel.clips.filter(c => c.meta.ev.type === t && !chosen.includes(c)).sort((x, y) => y.meta.score - x.meta.score)[0]; if (c) chosen.push(c); }
+    for (const c of bc.reel.clips) if (chosen.length < n && !chosen.includes(c) && !chosen.some(o => Math.abs(o.meta.ev.t - c.meta.ev.t) < 4)) chosen.push(c);
+    bc.reel.clips.length = 0; bc.reel.clips.push(...chosen);
     document.body.classList.add('idle');
     return playHighlights(false);
-  }, clips);
+  }, {n: clips, types});
   if (!started) throw new Error('no highlights to record');
   fs.mkdirSync(path.dirname(outFile), {recursive: true});
   const enc = spawn(ffmpeg, ['-y', '-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', '30', '-i', 'pipe:0', '-c:v', 'libvpx', '-b:v', '2500k', '-crf', '10', '-auto-alt-ref', '0', outFile], {stdio: ['pipe', 'ignore', 'inherit']});
   // Warm-up: let the HUD and replay bar settle before the first recorded frame.
   await page.evaluate(() => { for (let i = 0; i < 4; i++) frame(window.__t += 1000 / 30); });
   let frames = 0;
-  while (frames < 30 * 70) {
+  while (frames < 30 * maxSeconds) {
     const live = await page.evaluate(() => { frame(window.__t += 1000 / 30); document.getElementById('bcEnd').hidden = true; return !!replayState; });
     if (!live) break;
     const jpg = await page.screenshot({type: 'jpeg', quality: 88});

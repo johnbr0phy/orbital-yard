@@ -1,0 +1,22 @@
+{
+ "matchup": [
+  6,
+  5
+ ],
+ "seed": 2202,
+ "size": 40,
+ "seconds": 90,
+ "workers": [
+  3,
+  1
+ ],
+ "comparedSeconds": 90,
+ "firstDivergentSecond": null,
+ "eventsIdentical": true,
+ "storyEvents": 15,
+ "finalHash": [
+  "46dbb88abdf6",
+  "46dbb88abdf6"
+ ],
+ "errors": []
+}

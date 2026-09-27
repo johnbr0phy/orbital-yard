@@ -1,0 +1,487 @@
+{
+ "matchup": [
+  5,
+  6
+ ],
+ "size": 60,
+ "rows": [
+  "| plan (side 0) | first blood s | a side 25% lost s | losses at 60 s (0 / 1) | losses at 120 s (0 / 1) | fight centre x m | fight spread abs z m | lead changes | winner 0 / 1 / none |",
+  "|---|---|---|---|---|---|---|---|---|",
+  "| PINCER | 37.3 | 59.2 | 16 / 4 | 41 / 19.3 | 1372.7 | 1078.7 | 0.3 | 0 / 0 / 3 |",
+  "| AMBUSH | 33.7 | 65.9 | 11 / 3.7 | 36.7 / 22 | 1577.3 | 1018 | 0 | 0 / 0 / 3 |",
+  "| HOLD | 70.7 | 97.5 | 0 / 0 | 23.3 / 17 | -1492 | 1241 | 0.7 | 0 / 0 / 3 |",
+  "| RAID | 31.9 | 81.4 | 4.3 / 2.7 | 38.3 / 21.3 | 1618.7 | 838 | 0 | 0 / 0 / 3 |",
+  "| DECAPITATE | 33.1 | 50.5 | 18.7 / 8.3 | 30.3 / 23 | 1610.7 | 825 | 0 | 0 / 0 / 3 |",
+  "| SIEGE | 56.1 | 105.3 | 1.3 / 0.3 | 20 / 19 | -215 | 1272.3 | 0 | 0 / 0 / 3 |"
+ ],
+ "wars": [
+  {
+   "plan": "PINCER",
+   "seed": 1101,
+   "shape": {
+    "firstBlood": 36.8,
+    "quarterLost": 62.5,
+    "losses60": [
+     13,
+     7
+    ],
+    "losses120": [
+     33,
+     23
+    ],
+    "killX": 1590,
+    "killSpreadZ": 1030,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "PINCER",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "AMBUSH",
+   "seed": 1101,
+   "shape": {
+    "firstBlood": 37.2,
+    "quarterLost": 68.6,
+    "losses60": [
+     8,
+     4
+    ],
+    "losses120": [
+     38,
+     21
+    ],
+    "killX": 1651,
+    "killSpreadZ": 1182,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "AMBUSH",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "PINCER",
+   "seed": 3303,
+   "shape": {
+    "firstBlood": 42.8,
+    "quarterLost": 67.7,
+    "losses60": [
+     11,
+     2
+    ],
+    "losses120": [
+     47,
+     18
+    ],
+    "killX": 1581,
+    "killSpreadZ": 1219,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "PINCER",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "PINCER",
+   "seed": 2202,
+   "shape": {
+    "firstBlood": 32.4,
+    "quarterLost": 47.3,
+    "losses60": [
+     24,
+     3
+    ],
+    "losses120": [
+     43,
+     17
+    ],
+    "killX": 947,
+    "killSpreadZ": 987,
+    "end": 150
+   },
+   "leadChanges": 1,
+   "winner": null,
+   "plans": [
+    "PINCER",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "HOLD",
+   "seed": 1101,
+   "shape": {
+    "firstBlood": 72.4,
+    "quarterLost": 87.1,
+    "losses60": [
+     0,
+     0
+    ],
+    "losses120": [
+     22,
+     20
+    ],
+    "killX": -1642,
+    "killSpreadZ": 1459,
+    "end": 150
+   },
+   "leadChanges": 1,
+   "winner": null,
+   "plans": [
+    "HOLD",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "AMBUSH",
+   "seed": 2202,
+   "shape": {
+    "firstBlood": 29.7,
+    "quarterLost": 57.3,
+    "losses60": [
+     17,
+     4
+    ],
+    "losses120": [
+     40,
+     30
+    ],
+    "killX": 1132,
+    "killSpreadZ": 1071,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "AMBUSH",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "AMBUSH",
+   "seed": 3303,
+   "shape": {
+    "firstBlood": 34.2,
+    "quarterLost": 71.9,
+    "losses60": [
+     8,
+     3
+    ],
+    "losses120": [
+     32,
+     15
+    ],
+    "killX": 1949,
+    "killSpreadZ": 801,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "AMBUSH",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "HOLD",
+   "seed": 2202,
+   "shape": {
+    "firstBlood": 66.7,
+    "quarterLost": 99.2,
+    "losses60": [
+     0,
+     0
+    ],
+    "losses120": [
+     24,
+     15
+    ],
+    "killX": -1609,
+    "killSpreadZ": 844,
+    "end": 150
+   },
+   "leadChanges": 1,
+   "winner": null,
+   "plans": [
+    "HOLD",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "RAID",
+   "seed": 1101,
+   "shape": {
+    "firstBlood": 32.5,
+    "quarterLost": 77.7,
+    "losses60": [
+     7,
+     5
+    ],
+    "losses120": [
+     42,
+     22
+    ],
+    "killX": 1806,
+    "killSpreadZ": 1232,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "RAID",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "HOLD",
+   "seed": 3303,
+   "shape": {
+    "firstBlood": 72.9,
+    "quarterLost": 106.3,
+    "losses60": [
+     0,
+     0
+    ],
+    "losses120": [
+     24,
+     16
+    ],
+    "killX": -1225,
+    "killSpreadZ": 1420,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "HOLD",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "RAID",
+   "seed": 3303,
+   "shape": {
+    "firstBlood": 32.6,
+    "quarterLost": 87.8,
+    "losses60": [
+     2,
+     2
+    ],
+    "losses120": [
+     38,
+     25
+    ],
+    "killX": 1768,
+    "killSpreadZ": 509,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "RAID",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "RAID",
+   "seed": 2202,
+   "shape": {
+    "firstBlood": 30.6,
+    "quarterLost": 78.8,
+    "losses60": [
+     4,
+     1
+    ],
+    "losses120": [
+     35,
+     17
+    ],
+    "killX": 1282,
+    "killSpreadZ": 773,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "RAID",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "DECAPITATE",
+   "seed": 1101,
+   "shape": {
+    "firstBlood": 31.1,
+    "quarterLost": 53.9,
+    "losses60": [
+     18,
+     8
+    ],
+    "losses120": [
+     29,
+     25
+    ],
+    "killX": 1536,
+    "killSpreadZ": 983,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "HOLD",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "DECAPITATE",
+   "seed": 2202,
+   "shape": {
+    "firstBlood": 31.3,
+    "quarterLost": 47.1,
+    "losses60": [
+     20,
+     9
+    ],
+    "losses120": [
+     28,
+     22
+    ],
+    "killX": 1408,
+    "killSpreadZ": 654,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "HOLD",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "DECAPITATE",
+   "seed": 3303,
+   "shape": {
+    "firstBlood": 37,
+    "quarterLost": 50.6,
+    "losses60": [
+     18,
+     8
+    ],
+    "losses120": [
+     34,
+     22
+    ],
+    "killX": 1888,
+    "killSpreadZ": 838,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "SIEGE",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "SIEGE",
+   "seed": 1101,
+   "shape": {
+    "firstBlood": 52.5,
+    "quarterLost": 111.3,
+    "losses60": [
+     0,
+     1
+    ],
+    "losses120": [
+     17,
+     21
+    ],
+    "killX": 159,
+    "killSpreadZ": 917,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "SIEGE",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "SIEGE",
+   "seed": 2202,
+   "shape": {
+    "firstBlood": 46.2,
+    "quarterLost": 97.8,
+    "losses60": [
+     4,
+     0
+    ],
+    "losses120": [
+     22,
+     22
+    ],
+    "killX": 12,
+    "killSpreadZ": 1389,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "SIEGE",
+    "HOLD"
+   ],
+   "duration": 150
+  },
+  {
+   "plan": "SIEGE",
+   "seed": 3303,
+   "shape": {
+    "firstBlood": 69.7,
+    "quarterLost": 106.7,
+    "losses60": [
+     0,
+     0
+    ],
+    "losses120": [
+     21,
+     14
+    ],
+    "killX": -816,
+    "killSpreadZ": 1511,
+    "end": 150
+   },
+   "leadChanges": 0,
+   "winner": null,
+   "plans": [
+    "SIEGE",
+    "HOLD"
+   ],
+   "duration": 150
+  }
+ ]
+}

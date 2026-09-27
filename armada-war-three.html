@@ -315,7 +315,7 @@ body.intro #battleOptions{opacity:0;pointer-events:none}
 #score,#win{display:none!important}
 #bcTop{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:7;width:min(680px,calc(100vw - 32px));display:grid;grid-template-columns:1fr minmax(120px,1.1fr) 1fr;gap:12px;align-items:center;color:#eef3f6;font:12px system-ui;text-shadow:0 1px 3px #000c;pointer-events:none}
 .bcSide{display:flex;align-items:center;gap:4px 7px;min-width:0;flex-wrap:wrap}.bcSide.b{justify-content:flex-end}
-.bcSide b{font:700 17px "Saira Condensed",system-ui;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+.bcSide b{font:700 17px "Saira Condensed",system-ui;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}.bcSide b.long{font-size:14px;letter-spacing:.02em}
 .bcCount{font:700 22px "Saira Condensed",system-ui;font-variant-numeric:tabular-nums}
 .bcShape{font-size:11px;opacity:.9}
 .bcIcons{display:flex;gap:2px;pointer-events:auto;flex-wrap:nowrap;overflow:hidden;flex-basis:100%;order:5}.bcSide.b .bcIcons{justify-content:flex-end}
@@ -332,6 +332,19 @@ body.intro #battleOptions{opacity:0;pointer-events:none}
 .bcTick{font:600 12px "IBM Plex Mono",monospace;letter-spacing:.12em;text-transform:uppercase;color:#f3f6f8;background:#0b1218b8;padding:5px 12px;border-radius:3px;animation:bcIn .35s ease-out;text-shadow:0 1px 2px #000}
 #bcCaption{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:6;max-width:min(720px,80vw);text-align:center;font:italic 15px/1.45 Georgia,serif;color:#f1f4f5;text-shadow:0 1px 4px #000,0 0 14px #000;opacity:0;transition:opacity .5s;pointer-events:none}
 #bcCaption.on{opacity:.95}
+#bcCaption.story{font:500 15px/1.45 system-ui;letter-spacing:.01em;font-style:normal}
+#bcPlan{position:fixed;left:50%;top:92px;transform:translateX(-50%);z-index:7;max-width:min(720px,88vw);text-align:center;pointer-events:none;color:#f1f5f7;opacity:0;transition:opacity .8s}
+#bcPlan.on{opacity:1}
+#bcPlan b{display:block;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase;color:#aebfcb;margin-bottom:6px}
+#bcPlan p{margin:0;font:600 clamp(15px,2.1vw,22px)/1.35 "Saira Condensed",system-ui;letter-spacing:.02em;text-shadow:0 2px 10px #000,0 0 3px #000}
+#bcPlan p+p{margin-top:6px;font:500 13px/1.4 system-ui;color:#cfdae1}
+#bcObjective{position:fixed;left:20px;top:140px;z-index:6;font:600 10px "IBM Plex Mono",monospace;letter-spacing:.12em;text-transform:uppercase;color:#d7e1e7;background:#0b1218b8;padding:5px 9px;border-radius:3px;pointer-events:none;max-width:220px}
+#bcObjective:empty{display:none}
+#bcTags{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+.bcTag{position:absolute;left:0;top:0;font:600 10px "IBM Plex Mono",monospace;letter-spacing:.08em;color:var(--c);text-shadow:0 1px 3px #000,0 0 6px #000;white-space:nowrap;transform:translate(-50%,-100%);will-change:transform}
+.bcTag.flag{font-size:11px}
+.bcIcon.flag::before{content:"⚑";margin-right:2px;font-size:10px}
+body.replaying #bcTags,body.replaying #bcPlan,body.replaying #bcObjective,body.ending #bcTags,body.ending #bcObjective,body.menu-start #bcTags,body.menu-start #bcPlan,body.menu-start #bcObjective,body.piloting #bcPlan{display:none}
 #bcMomentum{position:fixed;left:20px;top:78px;z-index:6;width:150px;height:38px;border-radius:4px;opacity:.85;box-shadow:0 0 0 1px #0007;pointer-events:none}
 #bcMomentumLabel{position:fixed;left:20px;top:120px;z-index:6;font:10px system-ui;letter-spacing:.1em;color:#b8c6cf;text-transform:uppercase;pointer-events:none}
 #bcSpeed{position:fixed;right:16px;bottom:70px;z-index:9;display:flex;align-items:center;gap:3px;padding:5px;background:#14202cf2;border:1px solid #516371;border-radius:10px;font:12px system-ui;color:#dce5ec}
@@ -440,13 +453,16 @@ body:not(.menu-start) #brand{display:none}
   <label class="bcSetting">Effects<input id="vol_sfx" type="range" min="0" max="100" value="80"></label>
 </div></details>
 <div id="ionFlash" aria-hidden="true"></div>
-<nav id="watchDock" aria-label="Battle cameras"><div id="watchLabel">Watch the battle</div><div class="watchButtons"><button data-view="broadcast">Broadcast</button><button data-view="action">Action</button><button data-view="all">All ships</button><button data-view="top">Top down</button><button data-view="hero">Hero</button><button data-view="follow">Follow</button><button data-view="bridge">Crew</button><button data-view="fly">Take control</button></div></nav>
+<nav id="watchDock" aria-label="Battle cameras"><div id="watchLabel">Watch the battle</div><div class="watchButtons"><button data-view="action">Action</button><button data-view="broadcast">Broadcast</button><button data-view="all">All ships</button><button data-view="top">Top down</button><button data-view="hero">Hero</button><button data-view="follow">Follow</button><button data-view="bridge">Crew</button><button data-view="fly">Take control</button></div></nav>
 <div id="cockpitHud" hidden><div class="cockpitBeam"></div><button id="helmLeave">Autopilot · Esc</button><div class="crosshair">┼</div><canvas id="flightInstruments" aria-label="Flight attitude and target bearing"></canvas><div id="flightReadouts"></div><div id="flightTarget"></div><canvas id="helmPortrait" width="520" height="300" aria-label="Your captain reacting on the bridge"></canvas><div id="flightStatus">At the helm</div><div class="flightHelp">Drag sky to steer · W/S throttle · A/D yaw · ↑/↓ pitch · Shift boost · C cruise · X brake · T target · Space fire · Esc autopilot</div><div id="flightTouch"><button data-flight="w" aria-label="Increase throttle">Faster</button><button data-flight="s" aria-label="Decrease throttle">Slower</button><button data-flight="a" aria-label="Turn left">←</button><button data-flight="d" aria-label="Turn right">→</button><button data-flight="arrowup" aria-label="Pitch up">↑</button><button data-flight="arrowdown" aria-label="Pitch down">↓</button><button data-flight="shift" aria-label="Boost">Boost</button><button data-flight="x" aria-label="Brake">Brake</button><button id="flightCruise">Cruise</button><button id="flightNext">Target</button><button data-flight=" " aria-label="Fire">Fire</button><button id="flightExit">Autopilot</button></div></div>
 <div id="card" aria-label="Ship and crew"></div>
 <div id="bcTop" aria-live="off"></div>
 <div id="bcFeed" aria-live="polite" aria-label="Kill feed"></div>
 <div id="bcTicker" aria-live="polite"></div>
 <div id="bcCaption"></div>
+<div id="bcPlan" aria-live="polite"></div>
+<div id="bcObjective" aria-live="off"></div>
+<div id="bcTags" aria-hidden="true"></div>
 <canvas id="bcMomentum" width="300" height="76" aria-label="Momentum over time"></canvas><div id="bcMomentumLabel">Momentum</div>
 <div id="bcSpeed" role="group" aria-label="Time controls"><button type="button" data-rate="0" title="Pause (Space)" aria-label="Pause">⏸</button><button type="button" data-rate="0.25" title="0.25x (1)">¼</button><button type="button" data-rate="0.5" title="0.5x (2)">½</button><button type="button" data-rate="1" title="1x (3)">1×</button><button type="button" data-rate="2" title="2x (4)">2×</button><button type="button" data-rate="4" title="4x (5)">4×</button><span id="bcClock">0:00</span><button type="button" id="bcReplayBtn" title="Instant replay (R)">↺</button><button type="button" id="bcHelpBtn" title="Shortcuts (?)" aria-label="Keyboard shortcuts">?</button></div>
 <button type="button" id="bcReplayChip" hidden></button>

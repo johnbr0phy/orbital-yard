@@ -1,8 +1,140 @@
-# The Tribute War, polished: a writeup
+# The Tribute War, as stories: a writeup
+
+This pass had one job: make every war a story. Before it, the minds were busy but the story was flat:
+- thousands of evasions per war, but only 5 to 7 kinds of event in the log;
+- 26 of 30 test wars still running at the cap;
+- three seeds of the same matchup were nearly the same war.
+
+The first thing I built was a way to measure that (`scripts/story-metrics.cjs`, BEHAVIOUR.md). Everything below is checked against it, or against a watch log, a screenshot or a recording.
+
+## What changed
+
+**The fleets have nerves.**
+- Every fleet has a doctrine row: when it breaks, whether it runs, how fear spreads through it, what it does when its flagship dies, whether it hunts the broken, whether it rescues. The table and the reasoning for each fleet are in DECISIONS.md, written as game rules. They're my readings, not canon.
+- Fear is contagious and weighted by what a pilot saw die and how outnumbered it is. Squadron stress builds into routs.
+- Routed ships leave through their own arrival effect in reverse, or run off the edge, and count as withdrawn, not dead. Some rally.
+- A flagship's death silences command until a successor takes over, and the HUD's flag moves with it.
+- Doomed capitals make a last stand: a ram that resolves through the real collision solver, a full volley, or abandon ship with pods that get picked up or shot.
+
+**There are characters.**
+- Small craft that score become aces with callsigns, a ✦ marker and a small edge, and they hunt each other.
+- An ace or hero who loses a wingman remembers the killer. That chase is a story shot and a caption until it's settled, or until the hunter dies, at which point the caption is withdrawn.
+- Escorts screen crippled capitals, and shuttles and tugs drag disabled hulls home.
+
+**Every war has a shape.**
+- Seeded battle plans: pincer, ambush, hold, raid, decapitation, siege. They're on the title card and change mid-war when they fail.
+- Seeded terrain from the system generator: rocks and moons block shots and give cover, and a nebula hides cloaks.
+- Objectives besides annihilation (flagship, convoy, station) sit on the title card, the HUD, the momentum bar and the end card.
+
+**You can see the minds.**
+- A war opens on the Action camera, with Broadcast one key away (B).
+- Broadcast holds story shots of 10 to 25 s and comes back to them after interruptions.
+- Captions say what the minds are doing and why, straight from their state, one at a time, withdrawn the moment they stop being true.
+- Fracture edges glow and cool, dust saturates instead of blowing out, and a fighter that clips a real wreck dies.
+
+**Battle size comes from a measured speed probe, not the GPU tier.** The honest part: on this Xeon the default is 50 a side. 600 a side is always available, and its button says how fast it will run here (about 0.1× real time). Real time at 600 a side would need a CPU about 10× this one on a single thread. DECISIONS.md has the thresholds.
+
+## Two wars back to back
+
+The brief's question: if someone watches two wars back to back, could they describe how the second one was different, and would they want to watch a third?
+
+**Could they tell them apart? Yes, and in plain words.** Take Empire vs Rebels at 60 a side, seeds 1101 and 2202, the first two columns of the side-by-side table in BEHAVIOUR.md.
+- **The first** is a convoy run. The title card says the Rebels will run a convoy to a jump point and both sides try a pincer. First shots come before 30 s. By 45 s two Rebel squadrons have raided and jumped out, a hero duel has ended with a hero dead, and two squadrons have broken. Both sides switch plans before the minute. The convoy gets through and the Rebels win at 75.7 s.
+- **The second** has nothing to escort. The Empire holds its line and the Rebels lay an ambush, so nobody fires for the first 15 s. It becomes a three-minute grind: waves of routs on both sides, a Rebel ace, vendettas, and rescues as escorts screen crippled capitals. Near the end the Rebel flagship falls, command goes silent, a successor takes over, and the Imperials fire on the Rebel escape pods.
+
+Before this pass those two seeds, and the third, were the same war: hero duels, ion strikes and capital kills, undecided at 180 s. That's the before table right below the after one.
+
+The numbers agree, with caveats I'd rather state than bury:
+- Uniqueness between seeds rose in 9 of 10 matchup/size cells.
+- The part of uniqueness that only moves if the war itself plays out differently (the shape of the momentum curve) rose in half the cells and fell in the other half.
+- Lead changes didn't rise at all.
+
+Morale that cascades makes wars decisive rather than see-saw. What tells two wars apart is what happened and where, not who was ahead when. The controlled plan experiment shows the plan alone moves:
+- first blood, from 32 s to 71 s;
+- where the fight happens, from 1.5 km on one side of the field to 1.6 km on the other.
+
+**Would they want a third? I think yes, for a while, and I can say why.** Each war now asks a question on its title card and answers it on its end card. The camera holds on a subject long enough to follow it (median shot 9.0 to 9.6 s in Broadcast, 8.0 to 8.5 s in Action). In the watched wars Broadcast missed none of the 20 capital and hero deaths: 16 live, 4 replayed. The only 15-second stretch with nothing notable was a convoy war's approach.
+
+What would stop someone at the fourth war:
+- **Wars of annihilation still run long.** Only 1 of 10 ended inside the 180 s cap; the objective wars are the ones that finish.
+- **The default Action camera misses some deaths.** It saw 13 of 20 live and doesn't replay, so a viewer who stays on Action sees less of the story than Broadcast shows.
+- **Flagship deaths are rare** (5 in 30 wars), so the succession story, which is one of the best moments, is uncommon.
+
+Those are my next three things to fix.
+
+## What it cost
+
+- **CPU: the story layer takes 0.8 to 0.9% of the simulation** (22 ms per simulated second at 300 a side), bucketed by ship id.
+- **The whole war costs about the same per ship.** 2,955 to 3,067 ms per simulated second over war seconds 30 to 90 at 300 a side, against 2,769 to 2,785 before. The story war keeps 48% more ships alive in that window, and per live ship it costs less (6.2 against 8.4 ms).
+- **Software browser frame times didn't move** (7.58 → 7.63 FPS at 192 ships, 6.15 → 6.26 at 572; SwiftShader, not a GPU).
+- **One behaviour-neutral refactor** (spatial-index keys) was checked byte-identical against the recorded trace. The story itself changes the war on purpose, so the new trace is recorded separately. PERFORMANCE.md has all of it.
+
+## Verification log (what worked, what didn't)
+
+- **Plans did nothing at first.** A two-argument distance helper returned NaN, which silently disabled pincer wings, raids, postures and convoy exits. The first two plan experiments were invalid because of it. The fix was one default parameter. After it, the plan experiment showed the shapes above.
+- **The speed probe hung the headless harness.** It looped against a frozen clock. It is now bounded by cycles and guards against a clock that doesn't move.
+- **Routs went from everywhere to nowhere.**
+  - A fear threshold broke half the field at first contact.
+  - Raising it meant nothing ever broke.
+  - Squadron stress that builds and decays fixed both.
+  - Encirclement then over-routed (0.20 fear at 3 contacts), so it's 0.10 at 4.
+- **Plans flip-flopped every few seconds** because failure counted losses since the war began. It now counts since the plan began, waits 18 s, and a fleet switches at most twice.
+- **Wreck strikes emptied the dogfights.** Every brush with a fragment was lethal. Only real wrecks at real speed kill now.
+- **Rams almost never landed.** Rammers died on approach. A reach limit, an emergency burn and 40% damage while committed fixed that; about one ram lands every two or three wars.
+- **Losses always read zero.** The command step prunes dead ships from squadron lists, so losses are measured from each squadron's starting size.
+- **The median shot was under 8 s in Broadcast.** Two changes fixed it:
+  - a settled rule: climax and reaction shots hold 7 s and story shots 6 s before an ordinary interrupt;
+  - missed deaths queue for replay instead of being dropped.
+- **Action was at 7.0 to 8.0 s.** Wide views were 4 to 5.5 s and a death payoff only 2.4 s. Longer holds broke the variety of shots: every kind saturated its "not seen lately" bonus. A higher cap fixed that. Action is now 8.0 to 8.5 s.
+- **Looking at the gallery found real bugs, not just framing:**
+  - a Borg hold let a convoy walk out at 0:59 with one loss a side, so the side hunting a convoy can no longer hold or siege;
+  - an end-card line reported a momentum swing in the first second;
+  - a vendetta caption stayed up after the hunter died (now withdrawn, with a test that fails without the fix);
+  - a successor's caption was dropped behind a pods caption;
+  - captions started with a lowercase "the";
+  - rout captions said "the edge" for fleets that jump;
+  - a rout was invisible from any distance, so a breaking squadron now gets a HUD tag.
+- **Aces almost never happened.** The first full metrics run had aces in 3 of 30 wars: fighters rarely get credited kills. A side's first ace now needs 2 kills and each later one a kill more.
+- **The audio got harsh without the audio changing.** The new cameras sit 100 m to 2 km from the fight, where the old one heard everything from 22 km.
+  - Muting one group at a time put it on close explosions: 34% of their energy sat at 2 to 8 kHz.
+  - After softening the crack and body and lowering the laser: 9.1% harsh overall, against 21%.
+  - I only found this because I compared recordings. My first fix, the laser, alone changed nothing, and the split showed why.
+- **The debris screenshot showed an intact hull** with embers, because it caught a disabled capital. The debris shots now wait for a hull that breaks apart. They show the fracture edges orange-hot at 1.5 s and dark, readable chunks at 9 s.
+- **Tows were scored as saved without towing anything.** When I wrote a test that a tug saves a disabled capital (`tests/tribute-new/story-guarantees.test.cjs`), the tug latched and then flew home at 85 m/s. The hull could follow at only 28 m/s, so after 28 s it was scored "saved" with the hull 2 km behind. An attached tug now crawls, the hull keeps pace, and a save needs the hull on the line.
+- **The same file pins the no-regressions list to tests:**
+  - the ion lance keeps its 22 px floor, white-tinted core and 0.3 s flare;
+  - the dust and ember MAX blend and the lance's overlap dimming stay in place;
+  - replays still borrow a disabled capital's wreck mesh;
+  - fragments of a shattered capital show no single-tick positional snap (largest measured: 1.4e-12 units over 8 s).
+
+  It also covers screens and tows that save, probe-based sizes, fracture-edge glow, and convoy and station wins.
+- **Browser against headless.** The Node harness forges box meshes, so its wars differ from the browser's; that was already true on main. The browser against itself is identical across frame rate, time scale, camera, slow motion and forge-worker count (`scripts/determinism-browser.cjs`).
+
+## Where to look
+
+- **Story gallery:** `design/tribute-new/review/story/index.html`. Every moment in it came from the simulation; only the camera was placed. It includes a top-down plot of each plan.
+- **Highlight clip:** `design/tribute-new/review/story/highlights-story.webm`. It's 89.4 s, from one war (Rebels vs Empire, seed 1101, both sides told to decapitate), made by `scripts/capture-clip.cjs --types flagshipDown,rout,ace --reel 80 --clips 6`. In time order it shows an ace promotion ("Kestrel"), capital kills, the Imperial flagship dying, a squadron breaking, and then the successor flagship dying too.
+  - It's rendered in software, frame by frame at exact 1/30 s steps, so it plays at true speed.
+  - Two honest weaknesses: the ace clip doesn't single out the ace (the reel frames the event's neighbourhood and there is no ✦ tag in replays), and the rout it picked is a squadron already down to one ship.
+  - My first attempt missed the rout and the ace entirely: a 30-clip reel sorted by score had evicted them behind 20-odd capital kills.
+- **Numbers:**
+  - BEHAVIOUR.md: story metrics, the plan experiment, side-by-side seeds and watch logs;
+  - PERFORMANCE.md;
+  - DECISIONS.md: doctrine table, battle-size thresholds and every call I made;
+  - `bench/story/audio-report.md`.
+- **Tools:**
+  - `scripts/story-metrics.cjs`;
+  - `scripts/watch-log.cjs`;
+  - `scripts/story-timelines.cjs`;
+  - `scripts/capture-story.cjs`;
+  - `scripts/story-cost.cjs`;
+  - `scripts/determinism-browser.cjs`.
+
+## Earlier: the polish pass
 
 I spent this pass on the thing the brief cared about most: someone who has never heard of this page opens a link and wants to watch a war. So the page no longer starts on a menu. It opens straight into a live matchup picked for spectacle, with two buttons over it, and the camera is a broadcast director.
 
-## What changed
+### What changed
 
 **Watching.**
 - Broadcast is the default camera. It follows shot grammar (establish, build, climax, reaction) and scores events by importance: capital kill > hero duel > ion strike > squadron wipe > dogfight.
@@ -29,7 +161,7 @@ I spent this pass on the thing the brief cared about most: someone who has never
 - Rendering interpolates between the 30 Hz simulation steps, so 60 Hz and slow motion are smooth.
 - Quality tiers auto-detect and remember, dynamic resolution holds the budget, and `?perf=1` shows where every frame goes.
 
-## What it cost
+### What it cost
 
 - **The High tier's image pipeline isn't free.** In software rendering it halves the frame rate. Low keeps most of the look and beats the original page at every size even in software (+7% to +27% FPS, p95 down by up to two-thirds). I never saw a real GPU in this environment, so every browser number in PERFORMANCE.md is software and labelled that way.
 - **The simulation is the real ceiling.** After my changes it still costs about 1 s of CPU per simulated second at 190 ships in combat on this Xeon. A 600-ship war can't run in real time at 60 FPS here, and I didn't pretend otherwise: default sizes now follow the quality tier.
@@ -44,7 +176,7 @@ I spent this pass on the thing the brief cared about most: someone who has never
 
   DECISIONS.md says why for each.
 
-## What I'd do next
+### What I'd do next
 
 1. **Take the simulation off the main thread.** The measured work is spread thinly across AI, weapons, prediction and collision, so the next big win is structural. The sim owns plain data, sends transforms back as a transferable buffer, and the renderer interpolates as it already does. That buys a smooth 60 FPS camera even when the battle itself runs below real time.
 2. **Give the AI a deterministic level of detail.** Think less when no enemy is within twice sensor range, bucketed by id. It would be a documented behaviour change, measured against the fleet ratings.
@@ -52,7 +184,7 @@ I spent this pass on the thing the brief cared about most: someone who has never
 4. **A hero-capital shadow map on Ultra**, so fighters can pass through a Star Destroyer's shadow.
 5. **Proper per-ship staged deaths** that delay the breakup visually without touching combat: the pieces exist at death, only their reveal would be staged.
 
-## Verification log (what worked, what didn't)
+### Verification log (what worked, what didn't)
 
 - **ACES on display-referred shaders.** Didn't work: crushed blacks and washed the hull mid-tones (measured). Replaced with a shoulder-only curve.
 - **Key light at full star colour.** Didn't work: a red star painted the Imperial fleet pink while the planets stayed neutral. Now 10%.
@@ -78,7 +210,7 @@ I spent this pass on the thing the brief cared about most: someone who has never
   All fixed.
 - **`tests/three/browser-smoke.cjs`** runs its control and regeneration checks, then fails its final "no console errors" assertion. The only errors are the Google Fonts certificate through this sandbox's proxy and a favicon 404, and the committed page does the same here.
 
-## Where to look
+### Where to look
 
 - **Before/after gallery:** `design/tribute-new/review/index.html`
 - **Captured highlight clip:** `design/tribute-new/review/highlights.webm` (software-rendered frame by frame at exact 1/30 s steps, so it plays at true speed)
@@ -86,6 +218,6 @@ I spent this pass on the thing the brief cared about most: someone who has never
 - **Benchmarks:** `scripts/bench-tribute.cjs`
 - **Fleet ratings:** `scripts/fleet-ratings.cjs`
 
-## The last question
+### The last question
 
 Would someone who has never seen this page watch a whole war without touching anything, then hit replay and send it to a friend? I think the first half is now yes: it opens live, it explains itself, it cuts to what matters and slows down for it. The second half depends on how it runs on their machine. A phone gets a small, smooth war; a laptop gets a medium one. Seeing a 600-ship war move at full speed still needs the simulation rewrite above.

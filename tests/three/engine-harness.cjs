@@ -29,7 +29,7 @@ function loadBattle() {
     elements.set(id,e);return e;
   }
   const storage = {getItem:()=>null,setItem:noop};
-  const context = vm.createContext({console,ArmadaBattleAI:AI,performance:{now:()=>0},
+  const context = vm.createContext({console,ArmadaBattleAI:AI,ArmadaSystems:require('../../armada-systems-new.js'),performance:{now:()=>0},
     document:{getElementById:element,querySelectorAll:s=>s==='script'?[{textContent:source}]:[],
       querySelector:s=>s==='script'?{textContent:source}:element(s),createElement:()=>element('new'),
       documentElement:element('html'),body:element('body'),head:element('head')},

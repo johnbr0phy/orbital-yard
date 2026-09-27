@@ -1,0 +1,1101 @@
+[
+ {
+  "id": "rout",
+  "seed": 2202,
+  "event": {
+   "type": "rout",
+   "t": 49.7,
+   "ship": 22,
+   "partner": null,
+   "squad": 0,
+   "text": "Red squadron is breaking. 8 ships running to jump clear.",
+   "x": 2983.0151552672473,
+   "y": 411.62668677301195,
+   "z": -2429.731539231403
+  },
+  "shots": [
+   {
+    "name": "rout-near.jpg",
+    "distance": 1750,
+    "subject": "Red Leader",
+    "camera": "squad",
+    "caption": "Red squadron is breaking. 8 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · hold the station · ▲ 48 ◆ 0 / 90",
+    "tags": [
+     "» Red breaking (8)"
+    ]
+   },
+   {
+    "name": "rout-mid.jpg",
+    "distance": 3267,
+    "subject": "Red Leader",
+    "camera": "squad",
+    "caption": "Red squadron is breaking. 8 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · hold the station · ▲ 48 ◆ 0 / 90",
+    "tags": [
+     "» Red breaking (8)"
+    ]
+   },
+   {
+    "name": "rout-far.jpg",
+    "distance": 7001,
+    "subject": "Red Leader",
+    "camera": "squad",
+    "caption": "Red squadron is breaking. 8 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · hold the station · ▲ 48 ◆ 0 / 90",
+    "tags": [
+     "⚑ Dominator",
+     "» Red breaking (8)",
+     "◎ STATION"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "flagship-death",
+  "seed": 1101,
+  "event": {
+   "type": "flagshipDown",
+   "t": 213.1,
+   "ship": 55,
+   "partner": null,
+   "squad": null,
+   "text": "The Imperial flagship Firestorm is gone. Command is silent.",
+   "x": 10494.607180185438,
+   "y": 439.40563236533336,
+   "z": 1504.3681215408433
+  },
+  "shots": [
+   {
+    "name": "flagship-death-near.jpg",
+    "distance": 35384,
+    "subject": null,
+    "camera": "place",
+    "caption": "The Imperial flagship Firestorm is gone. Command is silent.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Liberty"
+    ]
+   },
+   {
+    "name": "flagship-death-mid.jpg",
+    "distance": 66346,
+    "subject": null,
+    "camera": "place",
+    "caption": "The Imperial flagship Firestorm is gone. Command is silent.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Liberty"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "ram-turn",
+  "seed": 1101,
+  "event": {
+   "type": "lastStand",
+   "t": 30.8,
+   "ship": 51,
+   "partner": 2,
+   "squad": null,
+   "text": "Bellerophon is doomed and turning to ram the Obelisk.",
+   "x": -755.093752653492,
+   "y": 380.7488017434921,
+   "z": 850.4614913687066
+  },
+  "shots": [
+   {
+    "name": "ram-turn-mid.jpg",
+    "distance": 952,
+    "subject": "Bellerophon",
+    "camera": "duel",
+    "caption": "Bellerophon is doomed and turning to ram the Obelisk.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Sovereign"
+    ]
+   },
+   {
+    "name": "ram-turn-far.jpg",
+    "distance": 2040,
+    "subject": "Bellerophon",
+    "camera": "duel",
+    "caption": "Bellerophon is doomed and turning to ram the Obelisk.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Sovereign"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "ram-impact",
+  "seed": 2202,
+  "event": {
+   "type": "ram",
+   "t": 156.8,
+   "ship": 1,
+   "partner": 62,
+   "squad": null,
+   "text": "Obliterator rams Alliance at 51 metres a second.",
+   "x": -1815.9177576958564,
+   "y": -1335.704610655908,
+   "z": 316.21575581444375
+  },
+  "shots": [
+   {
+    "name": "ram-impact-near.jpg",
+    "distance": 878,
+    "subject": null,
+    "camera": "place",
+    "caption": "Obliterator rams Alliance at 51 metres a second.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": []
+   },
+   {
+    "name": "ram-impact-mid.jpg",
+    "distance": 1647,
+    "subject": null,
+    "camera": "place",
+    "caption": "Obliterator rams Alliance at 51 metres a second.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": []
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "last-stand-volley",
+  "seed": 2202,
+  "event": {
+   "type": "lastStand",
+   "t": 54.3,
+   "ship": 64,
+   "partner": 1,
+   "squad": null,
+   "text": "Enterprise is going down firing everything it has.",
+   "x": 1536.7888027310566,
+   "y": 485.76951347337047,
+   "z": -476.8825382637117
+  },
+  "shots": [
+   {
+    "name": "last-stand-volley-mid.jpg",
+    "distance": 631,
+    "subject": "Enterprise",
+    "camera": "capital",
+    "caption": "Enterprise is going down firing everything it has.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": []
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "abandon-ship",
+  "seed": 3303,
+  "event": {
+   "type": "pods",
+   "t": 56.7,
+   "ship": 53,
+   "partner": null,
+   "squad": null,
+   "text": "3 escape pods away from Potemkin.",
+   "x": -211.67039530449586,
+   "y": -174.61819691066938,
+   "z": -794.5236153482092
+  },
+  "shots": [
+   {
+    "name": "abandon-ship-near.jpg",
+    "distance": 266,
+    "subject": "Potemkin",
+    "camera": "capital",
+    "caption": "Potemkin is lost. Abandon ship.",
+    "plan": "",
+    "objective": "Objective · convoy ◆ · 2/2 through · 0 lost",
+    "tags": [
+     "⇥ JUMP POINT"
+    ]
+   },
+   {
+    "name": "abandon-ship-mid.jpg",
+    "distance": 496,
+    "subject": "Potemkin",
+    "camera": "capital",
+    "caption": "Potemkin is lost. Abandon ship.",
+    "plan": "",
+    "objective": "Objective · convoy ◆ · 2/2 through · 0 lost",
+    "tags": [
+     "⇥ JUMP POINT"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "ace",
+  "seed": 1101,
+  "event": {
+   "type": "ace",
+   "t": 30.9,
+   "ship": 42,
+   "partner": null,
+   "squad": null,
+   "text": "Blue 5 makes ace with 2 kills. Callsign: Vane.",
+   "x": -14.338510333738997,
+   "y": -503.04939005768017,
+   "z": -688.9823443898607
+  },
+  "shots": [
+   {
+    "name": "ace-near.jpg",
+    "distance": 41,
+    "subject": "Blue 5 (“Vane”)",
+    "camera": "chase",
+    "caption": "Blue squadron is breaking. 6 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · kill the flagship · ▲ 100% ◆ 100%",
+    "tags": [
+     "✦ Vane"
+    ]
+   },
+   {
+    "name": "ace-mid.jpg",
+    "distance": 77,
+    "subject": "Blue 5 (“Vane”)",
+    "camera": "chase",
+    "caption": "Blue squadron is breaking. 6 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · kill the flagship · ▲ 100% ◆ 100%",
+    "tags": [
+     "✦ Vane"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "ace-duel",
+  "seed": 1101,
+  "event": {
+   "type": "aceDuel",
+   "t": 45.7,
+   "ship": 60,
+   "partner": 115,
+   "squad": null,
+   "text": "Aces meet: Vader's Fist against Millennium Falcon.",
+   "x": 1070.9008329755343,
+   "y": -126.24258926868734,
+   "z": -735.0438326274183
+  },
+  "shots": [
+   {
+    "name": "ace-duel-near.jpg",
+    "distance": 182,
+    "subject": "Vader's Fist",
+    "camera": "duel",
+    "caption": "Red squadron is breaking. 8 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · convoy ◆ · 0/2 through · 0 lost",
+    "tags": [
+     "★ Vader's Fist",
+     "★ Millennium Falcon"
+    ]
+   },
+   {
+    "name": "ace-duel-mid.jpg",
+    "distance": 339,
+    "subject": "Vader's Fist",
+    "camera": "duel",
+    "caption": "Red squadron is breaking. 8 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · convoy ◆ · 0/2 through · 0 lost",
+    "tags": [
+     "★ Vader's Fist",
+     "★ Millennium Falcon"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "vendetta-chase",
+  "seed": 1101,
+  "event": {
+   "type": "vendetta",
+   "t": 65.3,
+   "ship": 54,
+   "partner": 56,
+   "squad": null,
+   "text": "Millennium Falcon has lost Green 8. Now hunting the Imperator-Class Destroyer that did it.",
+   "x": 3505.577164426267,
+   "y": -1213.3747379020747,
+   "z": -593.5718226062238
+  },
+  "shots": [
+   {
+    "name": "vendetta-chase-near.jpg",
+    "distance": 2040,
+    "subject": "Millennium Falcon",
+    "camera": "duel",
+    "caption": "Millennium Falcon is hunting the Imperator-Class Destroyer that killed Green 8.",
+    "plan": "",
+    "objective": "Objective · kill the flagship · ▲ 99% ◆ 98%",
+    "tags": [
+     "★ Millennium Falcon"
+    ]
+   },
+   {
+    "name": "vendetta-chase-mid.jpg",
+    "distance": 3809,
+    "subject": "Millennium Falcon",
+    "camera": "duel",
+    "caption": "Millennium Falcon is hunting the Imperator-Class Destroyer that killed Green 8.",
+    "plan": "",
+    "objective": "Objective · kill the flagship · ▲ 99% ◆ 98%",
+    "tags": [
+     "★ Millennium Falcon"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "rescue-screen",
+  "seed": 1101,
+  "event": {
+   "type": "rescueStart",
+   "t": 46.5,
+   "ship": 0,
+   "partner": null,
+   "squad": 5,
+   "text": "Zeta squadron peels off to screen Enterprise, hull 37%.",
+   "x": -2078.465131771482,
+   "y": 70.9814445387272,
+   "z": -628.4761341027177
+  },
+  "shots": [
+   {
+    "name": "rescue-screen-mid.jpg",
+    "distance": 2538,
+    "subject": "Zeta Leader",
+    "camera": "squad",
+    "caption": "Enterprise is going down firing everything it has.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Enterprise"
+    ]
+   },
+   {
+    "name": "rescue-screen-far.jpg",
+    "distance": 5438,
+    "subject": "Zeta Leader",
+    "camera": "squad",
+    "caption": "Enterprise is going down firing everything it has.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Enterprise"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "rescue-outcome",
+  "seed": 1101,
+  "event": {
+   "type": "rescue",
+   "t": 50.9,
+   "ship": 0,
+   "partner": null,
+   "squad": 5,
+   "text": "The screen could not save Enterprise.",
+   "x": -2029.215056916993,
+   "y": 83.57326314536563,
+   "z": -638.5322781931814
+  },
+  "shots": [
+   {
+    "name": "rescue-outcome-mid.jpg",
+    "distance": 1647,
+    "subject": null,
+    "camera": "place",
+    "caption": "The Federation flagship Enterprise is gone. Command is silent.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": []
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-pincer-card",
+  "seed": 1101,
+  "event": null,
+  "shots": [
+   {
+    "name": "plan-pincer-card-far.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "all",
+    "caption": "Red squadron swinging wide on the left flank for the pincer.",
+    "plan": "The plansThe Rebels attempt a pincer. The Empire will hold the line.Last fleet flying wins.",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Liberty",
+     "⚑ Firestorm"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-pincer",
+  "seed": 1101,
+  "event": null,
+  "shots": [
+   {
+    "name": "plan-pincer-plot.svg",
+    "camera": "plot"
+   },
+   {
+    "name": "plan-pincer-top.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "top",
+    "caption": "Red squadron swinging wide on the left flank for the pincer.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Liberty",
+     "⚑ Firestorm"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-ambush-card",
+  "seed": 3303,
+  "event": null,
+  "shots": [
+   {
+    "name": "plan-ambush-card-far.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "all",
+    "caption": "Blue squadron holding inside the nebula, waiting to spring the ambush.",
+    "plan": "The plansThe Rebels lay an ambush. The Empire will screen and siege.Last fleet flying wins.",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Liberty",
+     "⚑ Dauntless"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-ambush",
+  "seed": 3303,
+  "event": {
+   "type": "planWorked",
+   "t": 60.2,
+   "ship": null,
+   "partner": null,
+   "squad": null,
+   "text": "Ambush! Rebel squadrons come out of cover.",
+   "x": 113.22592766466283,
+   "y": -117.94663594542239,
+   "z": 1362.543762820846
+  },
+  "shots": [
+   {
+    "name": "plan-ambush-plot.svg",
+    "camera": "plot"
+   },
+   {
+    "name": "plan-ambush-top.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "top",
+    "caption": "The Imperial plan has failed: they would not come to the line. Switching to the charge.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Liberty",
+     "⚑ Dauntless",
+     "» Red breaking (6)"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-hold-card",
+  "seed": 1101,
+  "event": null,
+  "shots": [
+   {
+    "name": "plan-hold-card-far.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "all",
+    "caption": "“Crossing the void. walking the gun line. covering the fleet.” — Bastion",
+    "plan": "The plansThe Empire will hold the line. The Rebels will raid and run.Last fleet flying wins.",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Ultimatum",
+     "⚑ Alliance"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-hold",
+  "seed": 1101,
+  "event": null,
+  "shots": [
+   {
+    "name": "plan-hold-plot.svg",
+    "camera": "plot"
+   },
+   {
+    "name": "plan-hold-top.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "top",
+    "caption": "First shots: Blue 7 opens fire on the Tie/ln Starfighter.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Ultimatum",
+     "⚑ Alliance"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-raid",
+  "seed": 2202,
+  "event": {
+   "type": "raid",
+   "t": 41.6,
+   "ship": null,
+   "partner": null,
+   "squad": 2,
+   "text": "Blue squadron jumps out mid-raid. They'll be back behind the Empire.",
+   "x": 1557.4714822056496,
+   "y": -792.151813307159,
+   "z": -1370.8578960437967
+  },
+  "shots": [
+   {
+    "name": "plan-raid-mid.jpg",
+    "distance": 625,
+    "subject": "Blue Leader",
+    "camera": "squad",
+    "caption": "Red squadron coming in off their flank.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": []
+   },
+   {
+    "name": "plan-raid-far.jpg",
+    "distance": 1340,
+    "subject": "Blue Leader",
+    "camera": "squad",
+    "caption": "Red squadron coming in off their flank.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": []
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-decapitate-card",
+  "seed": 1101,
+  "event": null,
+  "shots": [
+   {
+    "name": "plan-decapitate-card-far.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "all",
+    "caption": "Red squadron going for the Imperial flagship.",
+    "plan": "The plansThe Rebels will try to decapitate. The Empire will screen and siege.Last fleet flying wins.",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Liberty",
+     "⚑ Firestorm"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-decapitate",
+  "seed": 1101,
+  "event": null,
+  "shots": [
+   {
+    "name": "plan-decapitate-plot.svg",
+    "camera": "plot"
+   },
+   {
+    "name": "plan-decapitate-top.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "top",
+    "caption": "Red squadron going for the Imperial flagship.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Liberty",
+     "⚑ Firestorm"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-siege-card",
+  "seed": 2202,
+  "event": null,
+  "shots": [
+   {
+    "name": "plan-siege-card-far.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "all",
+    "caption": "“Crossing the void. walking the gun line. covering the fleet.” — the Sphere",
+    "plan": "The plansThe Borg will screen and siege. The Federation attempts a pincer.Last fleet flying wins.",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Cube",
+     "⚑ Enterprise"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-siege",
+  "seed": 2202,
+  "event": null,
+  "shots": [
+   {
+    "name": "plan-siege-plot.svg",
+    "camera": "plot"
+   },
+   {
+    "name": "plan-siege-top.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "top",
+    "caption": "Farragut is lost. Abandon ship.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Cube",
+     "⚑ Enterprise"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "objective-station",
+  "seed": 1101,
+  "event": null,
+  "shots": [
+   {
+    "name": "objective-station-far.jpg",
+    "distance": 17567,
+    "subject": null,
+    "camera": "place",
+    "caption": "Crest squadron is breaking. 2 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · hold the station · ▲ 14 ◆ 5 / 90",
+    "tags": [
+     "⚑ Greater Battlecrab",
+     "⚑ Derann",
+     "✦ Vane",
+     "» Crest breaking (1)",
+     "◎ STATION"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "objective-convoy",
+  "seed": 3303,
+  "event": null,
+  "shots": [
+   {
+    "name": "objective-convoy-mid.jpg",
+    "distance": 15262,
+    "subject": null,
+    "camera": "place",
+    "caption": "Vader's Fist has lost Night 6. Now hunting the Gr-75 Medium Transport that did it.",
+    "plan": "",
+    "objective": "Objective · convoy ◆ · 0/2 through · 0 lost",
+    "tags": [
+     "⚑ Majestic",
+     "⚑ Freedom",
+     "✦ Vane",
+     "⇥ JUMP POINT"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "terrain-rocks",
+  "seed": 1107,
+  "event": null,
+  "shots": [
+   {
+    "name": "terrain-rocks-mid.jpg",
+    "distance": 8003,
+    "subject": null,
+    "camera": "place",
+    "caption": "“Broadside on the line. A/SF-01 B-WING is in the battery.” — Dominator",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Independence"
+    ]
+   },
+   {
+    "name": "terrain-rocks-far.jpg",
+    "distance": 17074,
+    "subject": null,
+    "camera": "place",
+    "caption": "“Broadside on the line. A/SF-01 B-WING is in the battery.” — Dominator",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Tyrant",
+     "⚑ Independence"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "terrain-nebula",
+  "seed": 1101,
+  "event": null,
+  "shots": [
+   {
+    "name": "terrain-nebula-mid.jpg",
+    "distance": 17423,
+    "subject": null,
+    "camera": "place",
+    "caption": "The Akira covering Alpha 4, hull 49%.",
+    "plan": "",
+    "objective": "Objective · kill the flagship · ▲ 100% ◆ 100%",
+    "tags": [
+     "⚑ D’deridex Warbird",
+     "⚑ Sovereign"
+    ]
+   },
+   {
+    "name": "terrain-nebula-far.jpg",
+    "distance": 37170,
+    "subject": null,
+    "camera": "place",
+    "caption": "The Akira covering Alpha 4, hull 49%.",
+    "plan": "",
+    "objective": "Objective · kill the flagship · ▲ 100% ◆ 100%",
+    "tags": [
+     "⚑ D’deridex Warbird",
+     "⚑ Sovereign"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "terrain-moon",
+  "seed": 1104,
+  "event": null,
+  "shots": [
+   {
+    "name": "terrain-moon-far.jpg",
+    "distance": 21268,
+    "subject": null,
+    "camera": "place",
+    "caption": "First shots: Red Leader opens fire on the Tie/in Interceptor.",
+    "plan": "",
+    "objective": "Objective · hold the station · ▲ 18 ◆ 0 / 90",
+    "tags": [
+     "⚑ Aegis",
+     "⚑ Majestic",
+     "◎ STATION"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "ion-005",
+  "seed": 1101,
+  "event": {
+   "type": "ionStrike",
+   "t": 48.6,
+   "ship": 61,
+   "partner": null,
+   "squad": null,
+   "text": "MC75-MS89810 ALLIANCE",
+   "x": 1227.6968485618006,
+   "y": -531.7775080656999,
+   "z": -843.9187100975569
+  },
+  "shots": [
+   {
+    "name": "ion-005-near.jpg",
+    "distance": 1192,
+    "subject": "Alliance",
+    "camera": "place",
+    "caption": "Red squadron is breaking. 8 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · convoy ◆ · 0/2 through · 0 lost",
+    "tags": []
+   },
+   {
+    "name": "ion-005-far.jpg",
+    "distance": 4766,
+    "subject": "Alliance",
+    "camera": "place",
+    "caption": "Red squadron is breaking. 8 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · convoy ◆ · 0/2 through · 0 lost",
+    "tags": [
+     "⚑ Alliance",
+     "» Red breaking (8)"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "ion-080",
+  "seed": 1101,
+  "event": {
+   "type": "ionStrike",
+   "t": 48.6,
+   "ship": 61,
+   "partner": null,
+   "squad": null,
+   "text": "MC75-MS89810 ALLIANCE",
+   "x": 1227.6968485618006,
+   "y": -531.7775080656999,
+   "z": -843.9187100975569
+  },
+  "shots": [
+   {
+    "name": "ion-080-near.jpg",
+    "distance": 1189,
+    "subject": "Alliance",
+    "camera": "place",
+    "caption": "Red squadron is breaking. 8 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · convoy ◆ · 0/2 through · 0 lost",
+    "tags": []
+   },
+   {
+    "name": "ion-080-far.jpg",
+    "distance": 4755,
+    "subject": "Alliance",
+    "camera": "place",
+    "caption": "Red squadron is breaking. 8 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · convoy ◆ · 0/2 through · 0 lost",
+    "tags": [
+     "⚑ Alliance",
+     "» Red breaking (8)"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "debris",
+  "seed": 2202,
+  "event": {
+   "type": "capitalKill",
+   "t": 167.7,
+   "ship": 2,
+   "partner": null,
+   "squad": null,
+   "text": "Persecutor",
+   "x": -338.21411908544485,
+   "y": 1402.1003376803062,
+   "z": -1658.447568748241
+  },
+  "shots": [
+   {
+    "name": "debris-near.jpg",
+    "distance": 2607,
+    "subject": null,
+    "camera": "place",
+    "caption": "Night 8 moving in to tow Obliterator clear.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": []
+   },
+   {
+    "name": "debris-mid.jpg",
+    "distance": 4888,
+    "subject": null,
+    "camera": "place",
+    "caption": "Night 8 moving in to tow Obliterator clear.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Defender"
+    ]
+   },
+   {
+    "name": "debris-far.jpg",
+    "distance": 10428,
+    "subject": null,
+    "camera": "place",
+    "caption": "Night 8 moving in to tow Obliterator clear.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Defender"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "debris-cooled",
+  "seed": 2202,
+  "event": {
+   "type": "capitalKill",
+   "t": 167.7,
+   "ship": 2,
+   "partner": null,
+   "squad": null,
+   "text": "Persecutor",
+   "x": -338.21411908544485,
+   "y": 1402.1003376803062,
+   "z": -1658.447568748241
+  },
+  "shots": [
+   {
+    "name": "debris-cooled-near.jpg",
+    "distance": 2607,
+    "subject": null,
+    "camera": "place",
+    "caption": "Night 8 moving in to tow Obliterator clear.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": []
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "successor",
+  "seed": 1101,
+  "event": {
+   "type": "successor",
+   "t": 219,
+   "ship": 57,
+   "partner": null,
+   "squad": null,
+   "text": "Interrogator takes command of the Imperial fleet.",
+   "x": 1905.4363148606815,
+   "y": 1888.0917560086152,
+   "z": -877.4146585721091
+  },
+  "shots": [
+   {
+    "name": "successor-mid.jpg",
+    "distance": 2480,
+    "subject": "Interrogator",
+    "camera": "capital",
+    "caption": "Salvation picking up escape pods.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Interrogator"
+    ]
+   },
+   {
+    "name": "successor-far.jpg",
+    "distance": 5313,
+    "subject": "Interrogator",
+    "camera": "capital",
+    "caption": "Salvation picking up escape pods.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Liberty",
+     "⚑ Interrogator"
+    ]
+   }
+  ],
+  "errors": []
+ },
+ {
+  "id": "plan-switch",
+  "seed": 2202,
+  "event": {
+   "type": "planSwitch",
+   "t": 56,
+   "ship": null,
+   "partner": null,
+   "squad": null,
+   "text": "The Imperial plan has failed: they would not come to the line. Switching to the charge.",
+   "x": -3113.5485571476547,
+   "y": -71.74272904189408,
+   "z": -533.2175072355602
+  },
+  "shots": [
+   {
+    "name": "plan-switch-far.jpg",
+    "distance": null,
+    "subject": null,
+    "camera": "all",
+    "caption": "Obsidian squadron is breaking. 2 ships running to jump clear.",
+    "plan": "",
+    "objective": "Objective · last fleet flying",
+    "tags": [
+     "⚑ Decree",
+     "⚑ Defender",
+     "» Obsidian breaking (2)",
+     "» Gold breaking (8)"
+    ]
+   }
+  ],
+  "errors": []
+ }
+]
