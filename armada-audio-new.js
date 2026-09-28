@@ -140,7 +140,7 @@
    if(graph)return;
    const t=now(),master=gain(vol.master),comp=mk('createDynamicsCompressor'),pre=gain(1),hp=filter('highpass',28,.6);
    if(comp){set(comp.threshold,-20,t);set(comp.knee,10,t);set(comp.ratio,2.5,t);set(comp.attack,.015,t);set(comp.release,.25,t);}
-   const makeup=gain(1.25),out=gain(1),clip=mk('createWaveShaper');
+   const makeup=gain(1.5),out=gain(1),clip=mk('createWaveShaper');
    // Soft clipper: the fallback limiter where AudioWorklet is missing (file://, old browsers).
    if(clip)try{const n=2048,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*1.2)/Math.tanh(1.2)*.89;}clip.curve=c;clip.oversample='4x';}catch(e){}
    link(pre,hp,master,comp,makeup,out);link(out,clip,ctx.destination);
