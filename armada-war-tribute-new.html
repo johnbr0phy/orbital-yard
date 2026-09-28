@@ -460,6 +460,8 @@ body:not(.menu-start) #brand{display:none}
   <label class="bcSetting">Master<input id="vol_master" type="range" min="0" max="100" value="80"></label>
   <label class="bcSetting">Music<input id="vol_music" type="range" min="0" max="100" value="50"></label>
   <label class="bcSetting">Effects<input id="vol_sfx" type="range" min="0" max="100" value="80"></label>
+  <label class="bcSetting">Engines &amp; ambience<input id="vol_engines" type="range" min="0" max="100" value="80"></label>
+  <label class="bcSetting">3D sound<select id="audioSpace"><option value="1">Headphones</option><option value="0">Speakers</option></select></label>
 </div></details>
 <div id="ionFlash" aria-hidden="true"></div>
 <nav id="watchDock" aria-label="Battle cameras"><div id="watchLabel">Watch the battle</div><div class="watchButtons"><button data-view="action">Action</button><button data-view="broadcast">Broadcast</button><button data-view="all">All ships</button><button data-view="top">Top down</button><button data-view="hero">Hero</button><button data-view="follow">Follow</button><button data-view="bridge">Crew</button><button data-view="fly">Take control</button></div></nav>
@@ -513,7 +515,7 @@ body:not(.menu-start) #brand{display:none}
 <script src="armada-post-new.js?v=tribute-polish-1"></script>
 <script src="armada-broadcast-new.js?v=tribute-polish-1"></script>
 <script src="armada-replay-new.js?v=tribute-polish-1"></script>
-<script src="armada-audio-new.js?v=tribute-sfx-2"></script>
+<script src="armada-audio-new.js?v=tribute-sfx-5"></script>
 <script>
 "use strict";
 /* ===================== vector ===================== */
@@ -15801,6 +15803,7 @@ const ARRIVAL_STYLE={5:"hyper",6:"hyper",7:"jump",8:"rift",9:"jump",10:"warp",11
 function arrivalEffect(s,now){
   const style=ARRIVAL_STYLE[s.race];if(!style)return;
   if(s.slen<40&&!s.hero&&Math.random()>.3)return; // fighters arrive in swarms: sample them
+  audioArrival(s,style,false);
   const c=Math.cos(s.yaw||0),n=Math.sin(s.yaw||0),L=Math.max(260,s.slen*(style==="hyper"?7:3.5)),size=Math.max(60,s.slen*2.4);
   const streak=col=>{if(streaks.length<256)streaks.push({a:[s.x-c*L,s.y,s.z-n*L],b:[s.x,s.y,s.z],t0:now,life:style==="hyper"?.45:.3,col,id:s.id});};
   if(style==="hyper")streak([.75,.88,1]);
@@ -15838,7 +15841,7 @@ function dyingCapitals(now){
     s.blastAt=now+(.35+frac*3)*(.6+Math.random()*.8);
     s.blastU=((s.blastU??(Math.random()-.5))+.17+Math.random()*.1)%1; // marches toward the bow
     const local=[(s.blastU-.5)*s.slen*.8,(Math.random()-.4)*s.slen*.08,(Math.random()-.5)*s.slen*.12],p=gunWorld(s,local,now);
-    flash(p[0],p[1],p[2],now,Math.max(16,s.slen*(.04+Math.random()*.05)),2);
+    flash(p[0],p[1],p[2],now,Math.max(16,s.slen*(.04+Math.random()*.05)),2);audioBlast(s,p);
     const v=s.v||0;dustBurst(p[0],p[1],p[2],Math.cos(s.yaw)*v,s.vy||0,Math.sin(s.yaw)*v,3,now);
   }
 }
@@ -16471,6 +16474,7 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
   return true;
 }
 function weaponImpact(s,t,now,hit,dmg,heavy){
+  audioHit(t,hit,heavy);
   flash(hit[0],hit[1],hit[2],now,Math.max(heavy?48:12,Math.min(90,t.slen*(heavy?0.08:0.04))),heavy?3:s.side);
   shieldEffect(t,hit,now);
   wound(t,dmg||1,s,now);
@@ -16890,6 +16894,7 @@ function leaveBattle(s,now,how){
 }
 function departureEffect(s,now,how){
   const style=how==="edge"?null:ARRIVAL_STYLE[s.race];
+  audioArrival(s,style,true);
   const c=Math.cos(s.yaw||0),n=Math.sin(s.yaw||0),L=Math.max(260,s.slen*(style==="hyper"?7:3.5)),size=Math.max(60,s.slen*2.4);
   // The arrival streak runs forward out of the ship instead of in to it.
   const streak=col=>{if(streaks.length<256)streaks.push({a:[s.x,s.y,s.z],b:[s.x+c*L,s.y,s.z+n*L],t0:now,life:style==="hyper"?.45:.3,col,id:s.id});};
@@ -17704,7 +17709,7 @@ function simStep(now,dt){
     if(hit){
       const source=ships[tr.from];
       if(tr.energy&&source)weaponImpact(source,hit,now,point,tr.damage,tr.heavy);
-      else{wound(hit,.3,tr.from,now);flash(...point,now,8,tr.side);}
+      else{audioHit(hit,point,false);wound(hit,.3,tr.from,now);flash(...point,now,8,tr.side);}
       tr.dead=true;
     }
   }
@@ -18829,7 +18834,7 @@ let qualityProbe=(()=>{try{return !qualityParam&&!localStorage.getItem("tributeQ
 let quality=PX?PX.TIERS[qualityTier]:{msaa:0,fxaa:false,bloomLevels:0,nebula:0,grain:false,vignette:false,dprCap:1.5,minScale:1,fleet:600,eclipse:true,dust:0};
 function setQuality(tier,remember=true){
   if(!PX||!PX.TIERS[tier])return;
-  qualityTier=tier;quality=PX.TIERS[tier];renderScale=1;dprCap=quality.dprCap;
+  qualityTier=tier;quality=PX.TIERS[tier];renderScale=1;dprCap=quality.dprCap;if(bc.audio)bc.audio.quality=quality.name;
   if(remember)try{localStorage.setItem("tributeQuality",JSON.stringify({tier,auto:false}));}catch(e){}
   dpr=renderPixelRatio(innerWidth,innerHeight,devicePixelRatio);resize();
   if(image)image.settings.tier=tier;
@@ -18923,7 +18928,7 @@ const SIDE_SHAPE=["▲","◆"];
 const bc={log:BC?BC.createLog():null,feed:BC?BC.createFeed():null,momentum:BC?BC.createMomentum():null,director:BC?BC.createDirector():null,
   ticker:[],shownFeed:"",hudAt:0,duelSeen:new Map(),cloakSeen:new Map(),lastSlow:-99,slowFor:null,endShownAt:null,endTimer:null,prediction:null,
   replayChipUntil:0,lastBigEvent:null,pendingClips:[],reel:RP?RP.createReel(5):null,ring:null,flashLog:[],retired:[],idleAt:0,audio:null,
-  lastAudioShots:0,combat:0,warTime:0};
+  lastAudioShots:0,combat:0,warTime:0,ear:[0,0,0]};
 function raceColour(r){const c=(RACE_DEFS[r]||{}).beam||[.8,.8,.8];return "rgb("+c.map(v=>Math.round(Math.min(1,v)*255)).join(",")+")";}
 function shipName(s){return s?.meta?.desig||(s?.meta?.klass)||raceShort(s?.race);}
 function shipClass(s){return (s?.meta?.klass||"").replace(/\s+/g," ").trim()||raceShort(s?.race);}
@@ -18996,7 +19001,7 @@ function bcAncientStrike(s,c,weapon,hit,unmade){
     const col=(FO_WEAPONS[s.fo??s.meta?.fo]||FO_WEAPONS[0])[1].map(v=>Math.round(Math.min(1,v*.6+.4)*255)),d=Math.hypot(c[0]-cam.ex,c[1]-cam.ey,c[2]-cam.ez);
     el.style.background="radial-gradient(circle at 50% 50%,rgba("+col+",.95),rgba("+col+",.4) 60%,rgba("+col+",0) 100%)";
     el.animate([{opacity:Math.max(.18,Math.min(.6,.6*12000/(d+8000)))},{opacity:0}],{duration:900,easing:"cubic-bezier(.2,.7,.3,1)"});}}
-  const A=audio();if(A&&A.unlocked){A.explosion(3,c[0],c[1],c[2]);A.stinger();}
+  const A=audio();if(A&&A.unlocked){const h=A.explosion(3,c[0],c[1],c[2]);if(!(h&&h.dip))A.stinger();}
   bcEvent("ancientStrike",{side:s.side,ship:s.id,name:shipName(s),weapon,hit,unmade,x:c[0],y:c[1],z:c[2],size:s.slen});
 }
 function bcReinforce(side,race){bcEvent("reinforcements",{side,name:RACE_DEFS[race].name,x:0,y:0,z:0});}
@@ -19676,80 +19681,165 @@ function recordHighlights(){
 }
 
 /* ---------- audio ---------- */
+// Audio observes the war and never changes it: nothing here draws from the simulation's random
+// streams or writes to a ship. It runs in three places: per sim step (new shots, from
+// broadcastTick), at events (deaths, ion strikes, arrivals, hits) and per frame (updateAudio:
+// the listener and every emitter near it).
 const AUDIO_STYLE={0:"laser",1:"plasma",2:"beam",3:"kinetic",4:"beam",5:"laser",6:"laser",7:"beam",8:"beam",9:"pulse",10:"phaser",11:"pulse",12:"beam",13:"pulse",14:"kinetic",15:"plasma",16:"plasma",17:"arc",18:"pulse",19:"phaser",20:"kinetic",21:"organic",22:"kinetic"};
 const ENGINE_STYLE={1:"organic",8:"organic",21:"organic",15:"organic",12:"hum",7:"hum",17:"hum",10:"hum",22:"roar",14:"roar",20:"roar"};
+// Shields where the lore has them: deflectors ring, the Klingon and Romulan ones buzz, the Borg crackle.
+const SHIELD_SOUND={10:"shield-ring",19:"shield-ring",11:"shield-hum",18:"shield-hum",12:"shield-crackle"};
+let audioFocusId=null;// scripted captures may name the subject a wide shot frames
 function audio(){
   if(bc.audio!==null)return bc.audio;
-  bc.audio=typeof ArmadaAudio!=="undefined"?ArmadaAudio.create({maxVoices:quality.name==="Low"?12:24}):false;
+  bc.audio=typeof ArmadaAudio!=="undefined"?ArmadaAudio.create({maxVoices:quality.name==="Low"?12:24,quality:quality.name}):false;
   return bc.audio;
 }
+const audioOn=()=>{const A=bc.audio;return A&&A.unlocked?A:null;};
 function ui(kind){const A=audio();if(A&&A.unlocked)A.ui(kind);}
+const shipClassSize=s=>((s.hulls||0)>=10||(s.slen||0)>=180)?"c":(s.slen||0)>=50?"m":"f";
 function audioForEvent(ev){
   const A=audio();if(!A||!A.unlocked)return;
   if(/Kill/.test(ev.type)||ev.type==="kill"){
-    const tier=ev.type==="firstOneKill"?3:ev.type==="kill"?(ev.size>60?1:0):2;
+    // By size: a hero freighter is not a capital (heroes are at least a frigate's blast).
+    const tier=ev.type==="firstOneKill"?3:ev.type==="kill"?(ev.size>60?1:0):ev.type==="heroKill"&&ev.size<180?1:2;
     // Fighters die by the dozen: at most about four small pops a second.
     if(tier===0){const w=performance.now();if(w-(bc.popAt||0)<250)return;bc.popAt=w;}
+    // A fighter's death style (the screaming engine cut off) is not a destroyer's.
+    const boom=RACE_DEFS[ev.race]?.boom,sig=boom==="tie"&&tier>0?null:boom;
     // Out of hearing a death is far thunder or nothing, and only a death you could hear earns the stinger.
-    const heard=A.explosion(tier,ev.x,ev.y,ev.z,RACE_DEFS[ev.race]?.boom);if(tier>=2&&heard)A.stinger();}
+    // A death close enough to earn the silence after it (heard.dip) is its own moment: no stinger over it.
+    const heard=A.explosion(tier,ev.x,ev.y,ev.z,sig);if(tier>=2&&heard&&!heard.dip)A.stinger();}
   else if(ev.type==="ionCharge"){if(bc.ionHandle)bc.ionHandle.cancel?.();const h=A.weapon("ion-charge",ev.x,ev.y,ev.z,1);bc.ionHandle=h||null;}
   else if(ev.type==="ionStrike"){if(bc.ionHandle)bc.ionHandle.cancel?.();bc.ionHandle=null;A.weapon("ion-fire",ev.x,ev.y,ev.z,1);}
 }
-// A war fires hundreds of shots a second. Voicing them all is a wall of chirps, so only the
-// most audible shot of each step can speak (nearest relative to its own hearing radius, which
-// grows with the firing ship), within a budget of about seven a second. Shots beyond hearing
-// are counted instead and drive the distant bed, so a pulled-back camera hears the war as a
-// far roar, not as a thousand small guns.
-const shotPick={r:0,style:"",x:0,y:0,z:0,g:0,race:null,size:0};
+// Every new round and bolt is offered to the mix (the engine voices the most audible, within its
+// weapons budget); coherent beams are held emitters, sent per frame. Fire beyond hearing is counted
+// and drives the distant bed, so a pulled-back camera hears the war as a far roar.
+const audioVoiced=new WeakSet();
 function audioShots(now){
-  const A=audio();if(!A||!A.unlocked)return;
-  let n=0,far=0;shotPick.r=1;
-  const offer=(style,x,y,z,g,race,size)=>{n++;
-    const r=Math.hypot(x-cam.ex,y-cam.ey,z-cam.ez)/A.range(style==="beam"||style==="phaser"?"beam":"gun",size);
-    if(r>=1)far++;else if(r<shotPick.r)Object.assign(shotPick,{r,style,x,y,z,g,race,size});};
-  for(const b of beams){if(b.t0!==now||b.spark||b.ion||!b.a)continue;offer(b.coherent?AUDIO_STYLE[b.race]==="phaser"?"phaser":"beam":b.arc?"arc":b.rail?"rail":AUDIO_STYLE[b.race]||"laser",b.a[0],b.a[1],b.a[2],.8,b.race,ships[b.from]?.slen);}
-  for(const t of tracers){if(t.t0!==now)continue;offer(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7,t.race,ships[t.from]?.slen);}
-  bc.shotBudget=Math.min(1.5,(bc.shotBudget||0)+7/30);
-  if(shotPick.r<1&&bc.shotBudget>=1&&A.weapon(shotPick.style,shotPick.x,shotPick.y,shotPick.z,shotPick.g,shotPick.race,shotPick.size))bc.shotBudget-=1;
+  const A=audioOn();if(!A)return;
+  let n=0,far=0;const own=pilotId;
+  const offer=(style,x,y,z,g,race,from)=>{n++;const size=ships[from]?.slen,mine=from!=null&&from===own;
+    const d=Math.hypot(x-bc.ear[0],y-bc.ear[1],z-bc.ear[2]);if(!mine&&d>=A.range(style==="beam"||style==="phaser"?"beam":"gun",size)){far++;return;}
+    if(A.hasSamples)A.shot(style,x,y,z,race,size,g,{own:mine});else A.weapon(style,x,y,z,g,race,size);};
+  for(const b of beams){if(b.t0!==now||b.spark||b.ion||!b.a||b.coherent&&A.hasSamples)continue;offer(b.coherent?AUDIO_STYLE[b.race]==="phaser"?"phaser":"beam":b.arc?"arc":b.rail?"rail":AUDIO_STYLE[b.race]||"laser",b.a[0],b.a[1],b.a[2],.8,b.race,b.from);}
+  for(const t of tracers){if(audioVoiced.has(t)||now<t.t0||t.dead)continue;audioVoiced.add(t);offer(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7,t.race,t.from);}
   bc.combat=bc.combat*.97+Math.min(n,10)*.03;
   if(n)bc.far=(bc.far||0)*.95+far/n*.05;// share of the fighting that is out of earshot
 }
-// Fly-bys: a ship whose path (relative to the camera) will pass within 70% of its fly-by radius
-// in the next 0.15-0.9 s gets a pass-by: at most one per ship per 10 s and one every 2.5 s
-// overall, so a camera parked in a furball hears the close ones, not a stream of them.
-// Camera cuts are ignored (a jump in camera position is not a ship screaming past).
+// Hits: a shielded hull rings, buzzes or crackles by fleet; a plain one clangs, heavy fire tears it.
+function audioHit(t,hit,heavy){
+  const A=audioOn();if(!A||!t||!hit)return;
+  const sh=SHIELD_SOUND[t.race];A.impact(sh||(heavy?"heavy":"hull"),hit[0],hit[1],hit[2],t.slen,heavy?1:.8);
+}
+// A dying capital's internal blasts, and now and then her structure groaning.
+function audioBlast(s,p){
+  const A=audioOn();if(!A)return;
+  A.impact("heavy",p[0],p[1],p[2],s.slen,1.2);
+  if(!(s.audioGroanAt>battleTime)){s.audioGroanAt=battleTime+3+Math.random()*4;A.impact("groan",s.x,s.y,s.z,s.slen,1);}
+}
+// Arrivals by franchise family, and routs and jump-outs as the same sound reversed.
+function audioArrival(s,style,exit){
+  const A=audioOn();if(!A||!style)return;
+  const k=exit?"audioLeft":"audioCame";if(s[k]===battleTime)return;s[k]=battleTime;
+  A.arrival(style,s.x,s.y,s.z,s.slen,exit);
+}
+// Fly-bys: a ship whose path (relative to the ear) will pass within 70% of its fly-by radius in
+// the next 0.15-0.9 s gets a pass-by whoosh on top of its own engine emitter: at most one per ship
+// per 10 s and one every 1.2 s overall. Camera cuts are ignored.
 const flyPrev=new WeakMap(),flyCam=[0,0,0];
-function audioFlybys(A,dt){
-  const cut=Math.hypot(cam.ex-flyCam[0],cam.ey-flyCam[1],cam.ez-flyCam[2])>Math.max(400,8000*dt);
-  flyCam[0]=cam.ex;flyCam[1]=cam.ey;flyCam[2]=cam.ez;
+function audioFlybys(A,dt,layer){
+  const cut=Math.hypot(bc.ear[0]-flyCam[0],bc.ear[1]-flyCam[1],bc.ear[2]-flyCam[2])>Math.max(400,8000*dt);
+  [flyCam[0],flyCam[1],flyCam[2]]=bc.ear;
   if(!(dt>0&&dt<.2)||cut)return;
   const w=performance.now();
   for(const s of ships){
-    if(s.dead)continue;
-    const rx=s.x-cam.ex,ry=s.y-cam.ey,rz=s.z-cam.ez,R=A.range("flyby",s.slen),f=flyPrev.get(s);
+    if(s.dead||s.id===pilotId)continue;
+    const rx=s.x-bc.ear[0],ry=s.y-bc.ear[1],rz=s.z-bc.ear[2],R=A.range("flyby",s.slen),f=flyPrev.get(s);
     if(rx*rx+ry*ry+rz*rz>R*R*25){if(f)flyPrev.delete(s);continue;}
     if(!f){flyPrev.set(s,{x:rx,y:ry,z:rz,at:0});continue;}
     const vx=(rx-f.x)/dt,vy=(ry-f.y)/dt,vz=(rz-f.z)/dt,v2=vx*vx+vy*vy+vz*vz;f.x=rx;f.y=ry;f.z=rz;
     if(v2<150*150||v2>9000*9000||w<f.at||w<(bc.flyAt||0))continue;
     const tca=-(rx*vx+ry*vy+rz*vz)/v2;if(tca<.15||tca>.9)continue;
     if(Math.hypot(rx+vx*tca,ry+vy*tca,rz+vz*tca)>R*.7)continue;
-    if(A.flyby(s.x,s.y,s.z,vx,vy,vz,s.race,s.slen,tca)){f.at=w+10000;bc.flyAt=w+2500;}
+    if(A.flyby(s.x,s.y,s.z,vx,vy,vz,s.race,s.slen,tca,{layer,ship:s.id})){f.at=w+10000;bc.flyAt=w+(layer?1200:2500);}
   }
+}
+// The ear. Usually the camera; on a wide shot it slides toward the subject being framed (see
+// ArmadaAudio.micBlend), so the moment on screen stays audible while the rest of the war recedes.
+function audioSubject(){
+  const id=pilotId??sel??audioFocusId??((watchMode==="broadcast"||watchMode==="action")?actionCamera?.subject:null);
+  const s=id!=null?ships[id]:null;return s&&!s.dead?s:null;
+}
+function audioInterior(){
+  if(pilotId!=null){const s=ships[pilotId];return s&&!s.dead?s:null;}
+  const a=actionCamera,s=ships[a?.subject];
+  return watchMode==="action"&&sel==null&&cinemaInteriorKind(a?.kind)&&s&&!s.dead?s:null;
+}
+const audioBeamId=new WeakMap();let audioBeamSeq=0;
+function audioEmitters(A,now){
+  const ex=bc.ear[0],ey=bc.ear[1],ez=bc.ear[2],inside=audioInterior(),list=[],hurt=[];
+  for(const s of ships){
+    if(s.dead||!s.arr||!s.vao||s===inside)continue;
+    const dx=s.x-ex,dy=s.y-ey,dz=s.z-ez,d2=dx*dx+dy*dy+dz*dz,R=A.range("drive",s.slen)*1.05;
+    if(d2>R*R)continue;
+    const cp=Math.cos(s.pitch||0),f=[Math.cos(s.yaw)*cp,Math.sin(s.pitch||0),Math.sin(s.yaw)*cp],v=s.v||0,cap=s.spdMax||s.spd||20;
+    list.push({id:s.id,x:s.x,y:s.y,z:s.z,vx:f[0]*v,vy:s.vy??f[1]*v,vz:f[2]*v,fx:f[0],fy:f[1],fz:f[2],len:s.slen,fleet:s.race,cls:shipClassSize(s),speed:Math.min(1,v/Math.max(1,cap))});
+    if(s.hp<s.hpMax*.65&&d2<Math.pow(A.range("hit",s.slen),2))hurt.push({id:s.id,x:s.x,y:s.y,z:s.z,len:s.slen,hull:s.hp/Math.max(1,s.hpMax)});
+  }
+  A.ships(list);A.damage(hurt);
+  const bl=[];
+  for(const b of beams){
+    if(!b.coherent||b.ion||!b.a||!b.b||now<b.t0||now-b.t0>=(b.life||.5))continue;
+    const len=ships[b.from]?.slen||20,R=A.range("beam",len)*1.1,ax=b.a[0]-ex,ay=b.a[1]-ey,az=b.a[2]-ez,bx=b.b[0]-ex,by=b.b[1]-ey,bz=b.b[2]-ez;
+    if(Math.min(ax*ax+ay*ay+az*az,bx*bx+by*by+bz*bz)>R*R*4)continue;
+    const key=b.mountKey!=null&&b.from!=null?b.from+":"+b.mountKey:(audioBeamId.get(b)??(audioBeamId.set(b,++audioBeamSeq),audioBeamSeq));
+    bl.push({key,ax:b.a[0],ay:b.a[1],az:b.a[2],bx:b.b[0],by:b.b[1],bz:b.b[2],fleet:b.race,len,own:b.from!=null&&b.from===pilotId});
+  }
+  A.beams(bl);
+  // Bolts and rounds passing within a few ship-lengths of the ear whizz by along their path.
+  if(!(bc.whizzAt>now))for(const t of tracers){
+    if(t.dead||t.launch||t.whz||now<t.t0||t.from===pilotId)continue;
+    const px=t.x-ex,py=t.y-ey,pz=t.z-ez,v2=t.vx*t.vx+t.vy*t.vy+t.vz*t.vz;if(v2<1)continue;
+    const tca=-(px*t.vx+py*t.vy+pz*t.vz)/v2;if(tca<.05||tca>.6)continue;
+    const L=ships[t.from]?.slen||20,miss=Math.hypot(px+t.vx*tca,py+t.vy*tca,pz+t.vz*tca);
+    if(miss>Math.max(25,Math.min(160,L*3)))continue;
+    t.whz=true;if(A.whizz(t.x,t.y,t.z,t.vx,t.vy,t.vz,tca,!t.energy)){bc.whizzAt=now+.22;break;}
+  }
+  // Debris tumbling near the ear clatters now and then.
+  for(const w of wrecks){
+    if(w.gone||!(w.audioAt<=battleTime||w.audioAt==null))continue;
+    const d=Math.hypot(w.x-ex,w.y-ey,w.z-ez);if(d>Math.max(160,(w.rad||10)*6))continue;
+    w.audioAt=battleTime+1.2+Math.random()*2.4;A.impact(w.disabled&&w.rad>90?"groan":"debris",w.x,w.y,w.z,w.rad||10,.8);
+  }
+  return inside;
 }
 function updateAudio(wall,dt){
   const A=audio();if(!A||!A.unlocked)return;
-  const [f]=camBasis();A.setListener(cam.ex,cam.ey,cam.ez,f[0],f[1],f[2]);
+  const [f,,u]=camBasis(),subj=audioSubject(),mic=ArmadaAudio.micBlend?ArmadaAudio.micBlend(cam.ex,cam.ey,cam.ez,subj?.x,subj?.y,subj?.z):{x:cam.ex,y:cam.ey,z:cam.ez,k:0};
+  bc.ear=[mic.x,mic.y,mic.z];bc.earBlend=mic.k;
+  A.setListener(mic.x,mic.y,mic.z,f[0],f[1],f[2],u[0],u[1],u[2]);
   A.setSlowMo(warClock.slowing||(!!replayState&&replayState.slowAt!=null&&Math.abs(replayState.t-replayState.slowAt)<1.8));
-  A.setIntensity(winner!=null||warT0===Infinity?.08:Math.min(1,bc.combat/3));
+  const S=bc.momentum?.samples,mom=S&&S.length>10?(S[S.length-1].share-S[S.length-11].share)*6:0;
+  A.setIntensity(winner!=null||warT0===Infinity?.08:Math.min(1,bc.combat/3),mom);
   A.setDistant?.(winner!=null||warT0===Infinity?0:(bc.far||0)*Math.min(1,bc.combat/1.5));
-  if(A.flyby)audioFlybys(A,dt);
-  const s=ships[pilotId??sel];A.engine(s&&!s.dead?s.id:null,ENGINE_STYLE[s?.race]||"turbine",s?Math.min(1,(s.v||0)/Math.max(1,s.spdMax||s.spd||20)):0,s?.race,s?.x,s?.y,s?.z,s?.slen);
+  if(!(bc.audioRacesAt>wall)){bc.audioRacesAt=wall+2;const rs=[...new Set(ships.filter(s=>!s.dead).map(s=>s.race))].sort((a,b)=>a-b).join();if(rs!==bc.audioRaces){bc.audioRaces=rs;A.prepare?.(rs.split(",").filter(Boolean).map(Number));}}
+  if(A.ships&&A.hasSamples){
+    const inside=audioEmitters(A,battleTime);
+    A.cockpit(inside?{fleet:inside.race,cls:shipClassSize(inside),speed:Math.min(1,(inside.v||0)/Math.max(1,inside.spdMax||inside.spd||20))}:null);
+    audioFlybys(A,dt,true);
+  }else{// no recordings (file://): the synth drone for the followed ship and the old fly-by
+    if(A.flyby)audioFlybys(A,dt,false);
+    const s=ships[pilotId??sel];A.engine(s&&!s.dead?s.id:null,ENGINE_STYLE[s?.race]||"turbine",s?Math.min(1,(s.v||0)/Math.max(1,s.spdMax||s.spd||20)):0,s?.race,s?.x,s?.y,s?.z,s?.slen);
+  }
+  if(winner!=null&&!bc.audioCoda&&bc.endShownAt!=null){const mine=ships[pilotId??sel];bc.audioCoda=A.coda?.(mine&&mine.side!==winner?"defeat":"victory")||!A.coda;}
   A.update(dt);
 }
-function unlockAudio(){const A=audio();if(A&&!A.unlocked){A.unlock();syncAudioSliders();A.loadSamples?.("audio/manifest.json");}}
+function unlockAudio(){const A=audio();if(A&&!A.unlocked){A.unlock();syncAudioSliders();bc.audioRaces=null;A.loadSamples?.("audio/manifest.json");}}
 addEventListener("pointerdown",unlockAudio,{capture:true});addEventListener("keydown",unlockAudio,{capture:true});
 document.addEventListener?.("visibilitychange",()=>{const A=audio();if(!A||!A.unlocked)return;if(document.hidden)A.suspend();else A.resume();});
-function syncAudioSliders(){const A=audio();if(!A)return;const v=A.volumes();for(const k of ["master","music","sfx"]){const el=document.getElementById("vol_"+k);if(el)el.value=String(Math.round(v[k]*100));}}
+function syncAudioSliders(){const A=audio();if(!A)return;const v=A.volumes(true);for(const k of ["master","music","sfx","engines"]){const el=document.getElementById("vol_"+k);if(el&&v[k]!=null)el.value=String(Math.round(v[k]*100));}const sp=document.getElementById("audioSpace");if(sp&&A.headphones!=null)sp.value=A.headphones?"1":"0";}
 
 /* ---------- per frame, after the image ---------- */
 function afterFrame(wall,dt){
@@ -20563,7 +20653,8 @@ document.getElementById("bcHelp").addEventListener("click",e=>{if(e.target.id===
 document.getElementById("bcTop").addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-hid]");if(!b)return;const id=+b.dataset.hid;if(ships[id]&&!ships[id].dead){select(id,false);ui("click");}});
 document.getElementById("qualitySel").value=qualityTier;
 document.getElementById("qualitySel").addEventListener("change",e=>{setQuality(e.target.value);toast("QUALITY · "+quality.name.toUpperCase());});
-for(const k of ["master","music","sfx"])document.getElementById("vol_"+k).addEventListener("input",e=>{const A=audio();if(A)A.setVolume(k,+e.target.value/100);});
+for(const k of ["master","music","sfx","engines"])document.getElementById("vol_"+k)?.addEventListener("input",e=>{const A=audio();if(A)A.setVolume(k,+e.target.value/100);});
+document.getElementById("audioSpace")?.addEventListener("change",e=>{const A=audio();if(A)A.headphones=e.target.value==="1";});
 document.addEventListener?.("click",e=>{if(e.target.closest&&e.target.closest("button,summary"))ui("click");},{capture:true});
 // Default battle size: measured simulation speed, never the GPU tier.
 {const f=measureSimSpeed(),n=/[?&]size=\d+/.test(location.search)?+location.search.match(/[?&]size=(\d+)/)[1]:realtimeSize(f);setFleetSize(n,false);describeSizes(f);}

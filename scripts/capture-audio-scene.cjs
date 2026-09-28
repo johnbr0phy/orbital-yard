@@ -11,7 +11,8 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
   const {browser, page, server} = await S.openPage({dir, quality: scene.quality || 'high'});
   await S.startWar(page, scene);
   await S.installCamera(page, scene.camera);
-  const res = await page.evaluate(async ({scene, rate}) => {
+  const opts = JSON.parse(arg('opts', '{}'));
+  const res = await page.evaluate(async ({scene, rate, opts}) => {
     const seconds = scene.seconds, N = Math.floor(seconds * 30);
     const off = new OfflineAudioContext(2, Math.round(rate * seconds), rate);
     // Every fetch and decode is tracked; each tick waits for them, so streamed sounds
@@ -20,7 +21,7 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
     const dec = off.decodeAudioData.bind(off); off.decodeAudioData = (...a) => track(dec(...a));
     const f0 = window.fetch.bind(window); window.fetch = (...a) => track(f0(...a));
     const settle = async () => { for (let i = 0; i < 50 && inflight.size; i++) await Promise.allSettled([...inflight]); };
-    bc.audio = ArmadaAudio.create({context: off, maxVoices: quality.name === 'Low' ? 12 : 24, quality: quality.name});
+    bc.audio = ArmadaAudio.create({context: off, maxVoices: quality.name === 'Low' ? 12 : 24, quality: quality.name, ...opts});
     const A = bc.audio; A.unlock(); syncAudioSliders?.();
     const roles = await A.loadSamples?.('audio/manifest.json'); await settle();
     const subj = scene.subject != null ? ships[scene.subject] : null, log = [];
@@ -31,10 +32,14 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
       if (['broadcast', 'pilot'].includes(scene.camera.type)) updateWatchCamera(battleTime, 1 / 30);
       const t0 = window.__realNow(); updateAudio(window.__vt / 1000, 1 / 30); const js = window.__realNow() - t0; jsMs += js;
       const st = A.stats(), row = {t: +(k / 30).toFixed(3), bt: +(battleTime - warT0).toFixed(3), cam: [cam.ex, cam.ey, cam.ez].map(v => Math.round(v)), yaw: +cam.yaw.toFixed(3), pitch: +cam.pitch.toFixed(3), js: +js.toFixed(3), voices: st.voices};
+      if (A._debug && opts.meters) row.bus = A._debug.meters();
       if (st.engines != null) Object.assign(row, {engines: st.engines, weapons: st.weapons, impacts: st.impacts, emitters: st.emitters, hrtf: st.hrtf});
       if (subj) {
         const d = [subj.x - cam.ex, subj.y - cam.ey, subj.z - cam.ez], r = Math.hypot(...d);
         row.subj = {d: Math.round(r), dead: !!subj.dead, p: [subj.x, subj.y, subj.z].map(v => Math.round(v))};
+        const em = A._debug && A._debug.EM.get('n' + subj.id);
+        if (A._debug && k % 15 === 0) row.top = [...A._debug.EM.values()].filter(e => e.bus === 'engines').sort((a, b) => b.aud - a.aud).slice(0, 10).map(e => [e.id, e.role, Math.round(e.d), +e.aud.toFixed(3), !!(e.voice && !e.voice.dying)]);
+        if (em) row.subj.em = {voiced: !!(em.voice && !em.voice.dying), g: +(em.cur || 0).toFixed(4), aud: +(em.aud || 0).toFixed(4), dop: +(em.dop || 1).toFixed(3), model: em.voice ? em.voice.model : null, role: em.role, dir: em.voice && em.voice.pn && em.voice.pn.__dir ? em.voice.pn.__dir.map(v => +v.toFixed(2)) : null, ex: [em.x, em.y, em.z].map(Math.round), L: [A._debug.L.x, A._debug.L.y, A._debug.L.z].map(Math.round)};
       }
       log.push(row);
     };
@@ -49,7 +54,7 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
     const f = new Float32Array(n * 2); for (let i = 0; i < n; i++) { f[2 * i] = L[i]; f[2 * i + 1] = R[i]; }
     const u8 = new Uint8Array(f.buffer); let b64 = ''; for (let i = 0; i < u8.length; i += 0x8000) b64 += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
     return {pcm: btoa(b64), log, roles: roles && roles.length, renderMs, jsMs, seconds, final: A.stats(), end: {bt: battleTime - warT0, alive: ships.filter(s => !s.dead).length}};
-  }, {scene, rate});
+  }, {scene, rate, opts});
   const f = new Float32Array(Buffer.from(res.pcm, 'base64').buffer.slice(0));
   fs.mkdirSync(path.dirname(outFile), {recursive: true});
   fs.writeFileSync(outFile, wavF32(f, rate));

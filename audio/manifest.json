@@ -17,7 +17,6 @@
   ],
   "ion-fire": [
    "ion-fire-1.mp3",
-   "ion-fire-2.mp3",
    "ion-fire-3.mp3"
   ],
   "explosion0": [
@@ -47,22 +46,23 @@
   "shot-0": [
    "shot-0-1.mp3",
    "shot-0-2.mp3",
-   "shot-0-3.mp3"
+   "shot-0-3.mp3",
+   "shot-0-4.mp3",
+   "shot-0-5.mp3"
   ],
   "beam-0": [
    "beam-0-1.mp3",
    "beam-0-2.mp3"
   ],
   "ambience": [
-   "ambience-1.mp3"
+   "ambience-3.mp3"
   ],
   "shot-1": [
    "shot-1-1.mp3",
    "shot-1-2.mp3",
-   "shot-1-3.mp3"
-  ],
-  "engine-0": [
-   "engine-0-1.wav"
+   "shot-1-3.mp3",
+   "shot-1-4.mp3",
+   "shot-1-5.mp3"
   ],
   "beam-1": [
    "beam-1-1.mp3",
@@ -71,10 +71,9 @@
   "shot-2": [
    "shot-2-1.mp3",
    "shot-2-2.mp3",
-   "shot-2-3.mp3"
-  ],
-  "engine-1": [
-   "engine-1-1.wav"
+   "shot-2-3.mp3",
+   "shot-2-4.mp3",
+   "shot-2-5.mp3"
   ],
   "beam-2": [
    "beam-2-1.mp3",
@@ -83,7 +82,9 @@
   "shot-3": [
    "shot-3-1.mp3",
    "shot-3-2.mp3",
-   "shot-3-3.mp3"
+   "shot-3-3.mp3",
+   "shot-3-4.mp3",
+   "shot-3-5.mp3"
   ],
   "beam-3": [
    "beam-3-1.mp3",
@@ -92,13 +93,9 @@
   "shot-4": [
    "shot-4-1.mp3",
    "shot-4-2.mp3",
-   "shot-4-3.mp3"
-  ],
-  "engine-2": [
-   "engine-2-1.wav"
-  ],
-  "engine-3": [
-   "engine-3-1.wav"
+   "shot-4-3.mp3",
+   "shot-4-4.mp3",
+   "shot-4-5.mp3"
   ],
   "beam-4": [
    "beam-4-1.mp3",
@@ -107,34 +104,29 @@
   "shot-5": [
    "shot-5-1.mp3",
    "shot-5-2.mp3",
-   "shot-5-3.mp3"
-  ],
-  "engine-4": [
-   "engine-4-1.wav"
+   "shot-5-4.mp3",
+   "shot-5-5.mp3"
   ],
   "beam-5": [
-   "beam-5-1.mp3",
    "beam-5-2.mp3"
   ],
   "shot-6": [
    "shot-6-1.mp3",
    "shot-6-2.mp3",
-   "shot-6-3.mp3"
+   "shot-6-3.mp3",
+   "shot-6-4.mp3",
+   "shot-6-5.mp3"
   ],
   "beam-6": [
    "beam-6-1.mp3",
    "beam-6-2.mp3"
   ],
-  "engine-5": [
-   "engine-5-1.wav"
-  ],
   "shot-7": [
    "shot-7-1.mp3",
    "shot-7-2.mp3",
-   "shot-7-3.mp3"
-  ],
-  "engine-6": [
-   "engine-6-1.wav"
+   "shot-7-3.mp3",
+   "shot-7-4.mp3",
+   "shot-7-5.mp3"
   ],
   "beam-7": [
    "beam-7-1.mp3",
@@ -143,43 +135,42 @@
   "shot-8": [
    "shot-8-1.mp3",
    "shot-8-2.mp3",
-   "shot-8-3.mp3"
+   "shot-8-3.mp3",
+   "shot-8-4.mp3",
+   "shot-8-5.mp3"
   ],
   "beam-8": [
    "beam-8-1.mp3",
    "beam-8-2.mp3"
   ],
-  "engine-7": [
-   "engine-7-1.wav"
-  ],
   "shot-9": [
    "shot-9-1.mp3",
    "shot-9-2.mp3",
-   "shot-9-3.mp3"
+   "shot-9-3.mp3",
+   "shot-9-4.mp3",
+   "shot-9-5.mp3"
   ],
   "beam-9": [
    "beam-9-1.mp3",
    "beam-9-2.mp3"
   ],
-  "engine-8": [
-   "engine-8-1.wav"
-  ],
   "shot-10": [
    "shot-10-1.mp3",
    "shot-10-2.mp3",
-   "shot-10-3.mp3"
+   "shot-10-3.mp3",
+   "shot-10-4.mp3",
+   "shot-10-5.mp3"
   ],
   "beam-10": [
    "beam-10-1.mp3",
    "beam-10-2.mp3"
   ],
-  "engine-9": [
-   "engine-9-1.wav"
-  ],
   "shot-11": [
    "shot-11-1.mp3",
    "shot-11-2.mp3",
-   "shot-11-3.mp3"
+   "shot-11-3.mp3",
+   "shot-11-4.mp3",
+   "shot-11-5.mp3"
   ],
   "beam-11": [
    "beam-11-1.mp3",
@@ -187,14 +178,8 @@
   ],
   "shot-12": [
    "shot-12-1.mp3",
-   "shot-12-2.mp3",
-   "shot-12-3.mp3"
-  ],
-  "engine-10": [
-   "engine-10-1.wav"
-  ],
-  "engine-11": [
-   "engine-11-1.wav"
+   "shot-12-3.mp3",
+   "shot-12-4.mp3"
   ],
   "beam-12": [
    "beam-12-1.mp3",
@@ -203,34 +188,31 @@
   "shot-13": [
    "shot-13-1.mp3",
    "shot-13-2.mp3",
-   "shot-13-3.mp3"
+   "shot-13-3.mp3",
+   "shot-13-4.mp3",
+   "shot-13-5.mp3"
   ],
   "beam-13": [
    "beam-13-1.mp3",
    "beam-13-2.mp3"
   ],
-  "engine-12": [
-   "engine-12-1.wav"
-  ],
   "shot-14": [
    "shot-14-1.mp3",
    "shot-14-2.mp3",
-   "shot-14-3.mp3"
+   "shot-14-3.mp3",
+   "shot-14-4.mp3",
+   "shot-14-5.mp3"
   ],
   "beam-14": [
    "beam-14-1.mp3",
    "beam-14-2.mp3"
   ],
-  "engine-13": [
-   "engine-13-1.wav"
-  ],
   "shot-15": [
    "shot-15-1.mp3",
    "shot-15-2.mp3",
-   "shot-15-3.mp3"
-  ],
-  "engine-14": [
-   "engine-14-1.wav"
+   "shot-15-3.mp3",
+   "shot-15-4.mp3",
+   "shot-15-5.mp3"
   ],
   "beam-15": [
    "beam-15-1.mp3",
@@ -239,7 +221,9 @@
   "shot-16": [
    "shot-16-1.mp3",
    "shot-16-2.mp3",
-   "shot-16-3.mp3"
+   "shot-16-3.mp3",
+   "shot-16-4.mp3",
+   "shot-16-5.mp3"
   ],
   "beam-16": [
    "beam-16-1.mp3",
@@ -248,37 +232,31 @@
   "shot-17": [
    "shot-17-1.mp3",
    "shot-17-2.mp3",
-   "shot-17-3.mp3"
-  ],
-  "engine-15": [
-   "engine-15-1.wav"
+   "shot-17-3.mp3",
+   "shot-17-4.mp3",
+   "shot-17-5.mp3"
   ],
   "beam-17": [
    "beam-17-1.mp3",
    "beam-17-2.mp3"
   ],
-  "engine-16": [
-   "engine-16-1.wav"
-  ],
   "shot-18": [
    "shot-18-1.mp3",
    "shot-18-2.mp3",
-   "shot-18-3.mp3"
+   "shot-18-3.mp3",
+   "shot-18-4.mp3",
+   "shot-18-5.mp3"
   ],
   "beam-18": [
    "beam-18-1.mp3",
    "beam-18-2.mp3"
   ],
-  "engine-17": [
-   "engine-17-1.wav"
-  ],
   "shot-19": [
    "shot-19-1.mp3",
    "shot-19-2.mp3",
-   "shot-19-3.mp3"
-  ],
-  "engine-18": [
-   "engine-18-1.wav"
+   "shot-19-3.mp3",
+   "shot-19-4.mp3",
+   "shot-19-5.mp3"
   ],
   "beam-19": [
    "beam-19-1.mp3",
@@ -287,22 +265,20 @@
   "shot-20": [
    "shot-20-1.mp3",
    "shot-20-2.mp3",
-   "shot-20-3.mp3"
+   "shot-20-3.mp3",
+   "shot-20-4.mp3",
+   "shot-20-5.mp3"
   ],
   "beam-20": [
    "beam-20-1.mp3",
    "beam-20-2.mp3"
   ],
-  "engine-19": [
-   "engine-19-1.wav"
-  ],
   "shot-21": [
    "shot-21-1.mp3",
    "shot-21-2.mp3",
-   "shot-21-3.mp3"
-  ],
-  "engine-20": [
-   "engine-20-1.wav"
+   "shot-21-3.mp3",
+   "shot-21-4.mp3",
+   "shot-21-5.mp3"
   ],
   "beam-21": [
    "beam-21-1.mp3",
@@ -316,15 +292,6 @@
   "beam-22": [
    "beam-22-1.mp3",
    "beam-22-2.mp3"
-  ],
-  "engine-21": [
-   "engine-21-1.wav"
-  ],
-  "engine-22": [
-   "engine-22-1.wav"
-  ],
-  "music": [
-   "music-1.mp3"
   ],
   "boom-burst": [
    "boom-burst-1.mp3",
@@ -358,8 +325,7 @@
   ],
   "boom-warp": [
    "boom-warp-1.mp3",
-   "boom-warp-2.mp3",
-   "boom-warp-3.mp3"
+   "boom-warp-2.mp3"
   ],
   "boom-cleave": [
    "boom-cleave-1.mp3",
@@ -384,12 +350,1828 @@
   "whoosh-0": [
    "whoosh-0-1.mp3",
    "whoosh-0-2.mp3",
-   "whoosh-0-3.mp3"
+   "whoosh-0-4.mp3",
+   "whoosh-0-5.mp3",
+   "whoosh-0-6.mp3"
   ],
   "whoosh-1": [
    "whoosh-1-1.mp3",
    "whoosh-1-2.mp3",
-   "whoosh-1-3.mp3"
+   "whoosh-1-3.mp3",
+   "whoosh-1-4.mp3",
+   "whoosh-1-5.mp3"
+  ],
+  "hit-light": [
+   "hit-light-1.mp3",
+   "hit-light-2.mp3",
+   "hit-light-3.mp3",
+   "hit-light-4.mp3"
+  ],
+  "eng-f-5": [
+   "eng-f-5-1.mp3",
+   "eng-f-5-2.mp3"
+  ],
+  "eng-c-5": [
+   "eng-c-5-1.mp3",
+   "eng-c-5-2.mp3"
+  ],
+  "arrive-hyper": [
+   "arrive-hyper-1.mp3",
+   "arrive-hyper-3.mp3"
+  ],
+  "score-calm": [
+   "score-calm-1.mp3"
+  ],
+  "score-tension": [
+   "score-tension-1.mp3"
+  ],
+  "score-battle": [
+   "score-battle-1.mp3"
+  ],
+  "score-victory": [
+   "score-victory-1.mp3"
+  ],
+  "score-defeat": [
+   "score-defeat-1.mp3"
+  ],
+  "shotfar-5": [
+   "shotfar-5-1.mp3",
+   "shotfar-5-2.mp3",
+   "shotfar-5-3.mp3",
+   "shotfar-5-4.mp3"
+  ],
+  "exit-hyper": [
+   "exit-hyper-1.mp3",
+   "exit-hyper-2.mp3"
+  ],
+  "eng-f-0": [
+   "eng-f-0-2.mp3"
+  ],
+  "eng-m-0": [
+   "eng-m-0-1.mp3",
+   "eng-m-0-2.mp3"
+  ],
+  "eng-c-0": [
+   "eng-c-0-1.mp3",
+   "eng-c-0-2.mp3"
+  ],
+  "eng-m-1": [
+   "eng-m-1-1.mp3",
+   "eng-m-1-2.mp3"
+  ],
+  "eng-f-1": [
+   "eng-f-1-1.mp3",
+   "eng-f-1-2.mp3"
+  ],
+  "eng-c-1": [
+   "eng-c-1-1.mp3",
+   "eng-c-1-2.mp3"
+  ],
+  "eng-f-2": [
+   "eng-f-2-1.mp3",
+   "eng-f-2-2.mp3"
+  ],
+  "eng-m-2": [
+   "eng-m-2-1.mp3",
+   "eng-m-2-2.mp3"
+  ],
+  "eng-c-2": [
+   "eng-c-2-1.mp3",
+   "eng-c-2-2.mp3"
+  ],
+  "eng-m-3": [
+   "eng-m-3-1.mp3",
+   "eng-m-3-2.mp3"
+  ],
+  "eng-f-3": [
+   "eng-f-3-1.mp3",
+   "eng-f-3-2.mp3"
+  ],
+  "eng-c-3": [
+   "eng-c-3-1.mp3",
+   "eng-c-3-2.mp3"
+  ],
+  "eng-f-4": [
+   "eng-f-4-2.mp3"
+  ],
+  "eng-m-4": [
+   "eng-m-4-1.mp3",
+   "eng-m-4-2.mp3"
+  ],
+  "eng-c-4": [
+   "eng-c-4-1.mp3",
+   "eng-c-4-2.mp3"
+  ],
+  "eng-m-5": [
+   "eng-m-5-1.mp3",
+   "eng-m-5-2.mp3"
+  ],
+  "eng-f-6": [
+   "eng-f-6-1.mp3",
+   "eng-f-6-2.mp3"
+  ],
+  "eng-m-6": [
+   "eng-m-6-1.mp3",
+   "eng-m-6-2.mp3"
+  ],
+  "eng-c-6": [
+   "eng-c-6-1.mp3",
+   "eng-c-6-2.mp3"
+  ],
+  "eng-f-7": [
+   "eng-f-7-1.mp3",
+   "eng-f-7-2.mp3"
+  ],
+  "eng-c-7": [
+   "eng-c-7-1.mp3",
+   "eng-c-7-2.mp3"
+  ],
+  "eng-f-8": [
+   "eng-f-8-1.mp3"
+  ],
+  "eng-m-8": [
+   "eng-m-8-1.mp3",
+   "eng-m-8-2.mp3"
+  ],
+  "eng-f-9": [
+   "eng-f-9-1.mp3",
+   "eng-f-9-2.mp3"
+  ],
+  "eng-c-8": [
+   "eng-c-8-1.mp3",
+   "eng-c-8-2.mp3"
+  ],
+  "eng-m-9": [
+   "eng-m-9-1.mp3",
+   "eng-m-9-2.mp3"
+  ],
+  "eng-c-9": [
+   "eng-c-9-1.mp3",
+   "eng-c-9-2.mp3"
+  ],
+  "eng-m-10": [
+   "eng-m-10-1.mp3",
+   "eng-m-10-2.mp3"
+  ],
+  "eng-c-10": [
+   "eng-c-10-1.mp3",
+   "eng-c-10-2.mp3"
+  ],
+  "eng-f-11": [
+   "eng-f-11-2.mp3"
+  ],
+  "eng-c-11": [
+   "eng-c-11-1.mp3",
+   "eng-c-11-2.mp3"
+  ],
+  "eng-m-11": [
+   "eng-m-11-1.mp3",
+   "eng-m-11-2.mp3"
+  ],
+  "eng-f-12": [
+   "eng-f-12-1.mp3",
+   "eng-f-12-2.mp3"
+  ],
+  "eng-m-12": [
+   "eng-m-12-1.mp3",
+   "eng-m-12-2.mp3"
+  ],
+  "eng-c-12": [
+   "eng-c-12-1.mp3",
+   "eng-c-12-2.mp3"
+  ],
+  "eng-f-13": [
+   "eng-f-13-2.mp3"
+  ],
+  "eng-c-13": [
+   "eng-c-13-1.mp3",
+   "eng-c-13-2.mp3"
+  ],
+  "eng-f-14": [
+   "eng-f-14-1.mp3",
+   "eng-f-14-2.mp3"
+  ],
+  "eng-m-13": [
+   "eng-m-13-1.mp3",
+   "eng-m-13-2.mp3"
+  ],
+  "eng-m-14": [
+   "eng-m-14-1.mp3",
+   "eng-m-14-2.mp3"
+  ],
+  "eng-c-14": [
+   "eng-c-14-1.mp3",
+   "eng-c-14-2.mp3"
+  ],
+  "eng-f-15": [
+   "eng-f-15-1.mp3",
+   "eng-f-15-2.mp3"
+  ],
+  "eng-m-15": [
+   "eng-m-15-1.mp3",
+   "eng-m-15-2.mp3"
+  ],
+  "eng-c-15": [
+   "eng-c-15-1.mp3",
+   "eng-c-15-2.mp3"
+  ],
+  "eng-f-16": [
+   "eng-f-16-1.mp3"
+  ],
+  "eng-m-16": [
+   "eng-m-16-1.mp3",
+   "eng-m-16-2.mp3"
+  ],
+  "eng-c-16": [
+   "eng-c-16-2.mp3"
+  ],
+  "eng-c-17": [
+   "eng-c-17-1.mp3",
+   "eng-c-17-2.mp3"
+  ],
+  "eng-f-18": [
+   "eng-f-18-1.mp3",
+   "eng-f-18-2.mp3"
+  ],
+  "eng-m-18": [
+   "eng-m-18-1.mp3",
+   "eng-m-18-2.mp3"
+  ],
+  "eng-c-18": [
+   "eng-c-18-1.mp3",
+   "eng-c-18-2.mp3"
+  ],
+  "eng-m-19": [
+   "eng-m-19-1.mp3",
+   "eng-m-19-2.mp3"
+  ],
+  "eng-c-19": [
+   "eng-c-19-1.mp3",
+   "eng-c-19-2.mp3"
+  ],
+  "eng-m-20": [
+   "eng-m-20-1.mp3",
+   "eng-m-20-2.mp3"
+  ],
+  "eng-f-20": [
+   "eng-f-20-2.mp3"
+  ],
+  "eng-c-20": [
+   "eng-c-20-1.mp3",
+   "eng-c-20-2.mp3"
+  ],
+  "eng-f-21": [
+   "eng-f-21-1.mp3",
+   "eng-f-21-2.mp3"
+  ],
+  "eng-m-21": [
+   "eng-m-21-1.mp3",
+   "eng-m-21-2.mp3"
+  ],
+  "eng-c-21": [
+   "eng-c-21-1.mp3",
+   "eng-c-21-2.mp3"
+  ],
+  "eng-f-22": [
+   "eng-f-22-2.mp3"
+  ],
+  "eng-m-22": [
+   "eng-m-22-1.mp3",
+   "eng-m-22-2.mp3"
+  ],
+  "eng-c-22": [
+   "eng-c-22-1.mp3",
+   "eng-c-22-2.mp3"
+  ],
+  "beamloop-1": [
+   "beamloop-1-1.mp3",
+   "beamloop-1-2.mp3"
+  ],
+  "beamloop-0": [
+   "beamloop-0-1.mp3",
+   "beamloop-0-2.mp3"
+  ],
+  "beamloop-2": [
+   "beamloop-2-1.mp3",
+   "beamloop-2-2.mp3"
+  ],
+  "beamloop-3": [
+   "beamloop-3-1.mp3",
+   "beamloop-3-2.mp3"
+  ],
+  "beamloop-4": [
+   "beamloop-4-1.mp3",
+   "beamloop-4-2.mp3"
+  ],
+  "beamloop-5": [
+   "beamloop-5-1.mp3",
+   "beamloop-5-2.mp3"
+  ],
+  "beamloop-6": [
+   "beamloop-6-1.mp3",
+   "beamloop-6-2.mp3"
+  ],
+  "beamloop-7": [
+   "beamloop-7-1.mp3",
+   "beamloop-7-2.mp3"
+  ],
+  "beamloop-8": [
+   "beamloop-8-1.mp3",
+   "beamloop-8-2.mp3"
+  ],
+  "beamloop-9": [
+   "beamloop-9-1.mp3",
+   "beamloop-9-2.mp3"
+  ],
+  "beamloop-10": [
+   "beamloop-10-1.mp3",
+   "beamloop-10-2.mp3"
+  ],
+  "beamloop-12": [
+   "beamloop-12-1.mp3",
+   "beamloop-12-2.mp3"
+  ],
+  "beamloop-11": [
+   "beamloop-11-1.mp3",
+   "beamloop-11-2.mp3"
+  ],
+  "beamloop-13": [
+   "beamloop-13-1.mp3",
+   "beamloop-13-2.mp3"
+  ],
+  "beamloop-15": [
+   "beamloop-15-1.mp3",
+   "beamloop-15-2.mp3"
+  ],
+  "beamloop-14": [
+   "beamloop-14-1.mp3",
+   "beamloop-14-2.mp3"
+  ],
+  "beamloop-16": [
+   "beamloop-16-1.mp3",
+   "beamloop-16-2.mp3"
+  ],
+  "beamloop-17": [
+   "beamloop-17-1.mp3",
+   "beamloop-17-2.mp3"
+  ],
+  "beamloop-18": [
+   "beamloop-18-1.mp3",
+   "beamloop-18-2.mp3"
+  ],
+  "beamloop-19": [
+   "beamloop-19-1.mp3",
+   "beamloop-19-2.mp3"
+  ],
+  "beamloop-20": [
+   "beamloop-20-1.mp3",
+   "beamloop-20-2.mp3"
+  ],
+  "beamloop-21": [
+   "beamloop-21-1.mp3",
+   "beamloop-21-2.mp3"
+  ],
+  "beamloop-22": [
+   "beamloop-22-1.mp3",
+   "beamloop-22-2.mp3"
+  ],
+  "hit-heavy": [
+   "hit-heavy-1.mp3",
+   "hit-heavy-2.mp3",
+   "hit-heavy-3.mp3",
+   "hit-heavy-4.mp3"
+  ],
+  "shield-ring": [
+   "shield-ring-2.mp3",
+   "shield-ring-4.mp3"
+  ],
+  "shield-hum": [
+   "shield-hum-1.mp3",
+   "shield-hum-2.mp3",
+   "shield-hum-3.mp3",
+   "shield-hum-4.mp3"
+  ],
+  "shield-crackle": [
+   "shield-crackle-1.mp3",
+   "shield-crackle-2.mp3",
+   "shield-crackle-3.mp3"
+  ],
+  "whizz-e": [
+   "whizz-e-1.mp3",
+   "whizz-e-2.mp3",
+   "whizz-e-3.mp3",
+   "whizz-e-4.mp3"
+  ],
+  "debris": [
+   "debris-1.mp3",
+   "debris-2.mp3",
+   "debris-3.mp3",
+   "debris-4.mp3"
+  ],
+  "sparks": [
+   "sparks-1.mp3",
+   "sparks-2.mp3",
+   "sparks-3.mp3",
+   "sparks-4.mp3"
+  ],
+  "xcrack": [
+   "xcrack-1.mp3",
+   "xcrack-2.mp3",
+   "xcrack-3.mp3",
+   "xcrack-4.mp3"
+  ],
+  "xsub": [
+   "xsub-1.mp3",
+   "xsub-2.mp3",
+   "xsub-3.mp3",
+   "xsub-4.mp3"
+  ],
+  "whizz-k": [
+   "whizz-k-1.mp3",
+   "whizz-k-2.mp3",
+   "whizz-k-3.mp3"
+  ],
+  "groan": [
+   "groan-1.mp3",
+   "groan-2.mp3",
+   "groan-3.mp3"
+  ],
+  "arrive-jump": [
+   "arrive-jump-1.mp3",
+   "arrive-jump-2.mp3",
+   "arrive-jump-3.mp3"
+  ],
+  "arrive-conduit": [
+   "arrive-conduit-1.mp3",
+   "arrive-conduit-2.mp3",
+   "arrive-conduit-3.mp3"
+  ],
+  "arrive-warp": [
+   "arrive-warp-1.mp3",
+   "arrive-warp-2.mp3",
+   "arrive-warp-3.mp3"
+  ],
+  "arrive-rift": [
+   "arrive-rift-1.mp3",
+   "arrive-rift-2.mp3",
+   "arrive-rift-3.mp3"
+  ],
+  "arrive-rocket": [
+   "arrive-rocket-1.mp3",
+   "arrive-rocket-2.mp3",
+   "arrive-rocket-3.mp3"
+  ],
+  "xdebris": [
+   "xdebris-1.mp3",
+   "xdebris-2.mp3",
+   "xdebris-3.mp3"
+  ],
+  "xtail": [
+   "xtail-1.mp3",
+   "xtail-2.mp3",
+   "xtail-3.mp3"
+  ],
+  "capital-break": [
+   "capital-break-1.mp3",
+   "capital-break-3.mp3"
+  ],
+  "age-end": [
+   "age-end-1.mp3",
+   "age-end-2.mp3",
+   "age-end-3.mp3"
+  ],
+  "ringing": [
+   "ringing-1.mp3",
+   "ringing-2.mp3"
+  ],
+  "vent": [
+   "vent-1.mp3",
+   "vent-2.mp3"
+  ],
+  "cockpit-f": [
+   "cockpit-f-1.mp3",
+   "cockpit-f-2.mp3"
+  ],
+  "cockpit-c": [
+   "cockpit-c-1.mp3",
+   "cockpit-c-2.mp3"
+  ],
+  "shotfar-0": [
+   "shotfar-0-1.mp3",
+   "shotfar-0-2.mp3",
+   "shotfar-0-3.mp3",
+   "shotfar-0-4.mp3",
+   "shotfar-0-5.mp3"
+  ],
+  "beamfar-0": [
+   "beamfar-0-1.mp3",
+   "beamfar-0-2.mp3"
+  ],
+  "shotfar-1": [
+   "shotfar-1-1.mp3",
+   "shotfar-1-2.mp3",
+   "shotfar-1-3.mp3",
+   "shotfar-1-4.mp3",
+   "shotfar-1-5.mp3"
+  ],
+  "beamfar-1": [
+   "beamfar-1-1.mp3",
+   "beamfar-1-2.mp3"
+  ],
+  "shotfar-2": [
+   "shotfar-2-1.mp3",
+   "shotfar-2-2.mp3",
+   "shotfar-2-3.mp3",
+   "shotfar-2-4.mp3",
+   "shotfar-2-5.mp3"
+  ],
+  "beamfar-2": [
+   "beamfar-2-1.mp3",
+   "beamfar-2-2.mp3"
+  ],
+  "shotfar-3": [
+   "shotfar-3-1.mp3",
+   "shotfar-3-2.mp3",
+   "shotfar-3-3.mp3",
+   "shotfar-3-4.mp3",
+   "shotfar-3-5.mp3"
+  ],
+  "beamfar-3": [
+   "beamfar-3-1.mp3",
+   "beamfar-3-2.mp3"
+  ],
+  "shotfar-4": [
+   "shotfar-4-1.mp3",
+   "shotfar-4-2.mp3",
+   "shotfar-4-3.mp3",
+   "shotfar-4-4.mp3",
+   "shotfar-4-5.mp3"
+  ],
+  "beamfar-4": [
+   "beamfar-4-1.mp3",
+   "beamfar-4-2.mp3"
+  ],
+  "beamfar-5": [
+   "beamfar-5-1.mp3"
+  ],
+  "shotfar-6": [
+   "shotfar-6-1.mp3",
+   "shotfar-6-2.mp3",
+   "shotfar-6-3.mp3",
+   "shotfar-6-4.mp3",
+   "shotfar-6-5.mp3"
+  ],
+  "beamfar-6": [
+   "beamfar-6-1.mp3",
+   "beamfar-6-2.mp3"
+  ],
+  "shotfar-7": [
+   "shotfar-7-1.mp3",
+   "shotfar-7-2.mp3",
+   "shotfar-7-3.mp3",
+   "shotfar-7-4.mp3",
+   "shotfar-7-5.mp3"
+  ],
+  "beamfar-7": [
+   "beamfar-7-1.mp3",
+   "beamfar-7-2.mp3"
+  ],
+  "shotfar-8": [
+   "shotfar-8-1.mp3",
+   "shotfar-8-2.mp3",
+   "shotfar-8-3.mp3",
+   "shotfar-8-4.mp3",
+   "shotfar-8-5.mp3"
+  ],
+  "beamfar-8": [
+   "beamfar-8-1.mp3",
+   "beamfar-8-2.mp3"
+  ],
+  "shotfar-9": [
+   "shotfar-9-1.mp3",
+   "shotfar-9-2.mp3",
+   "shotfar-9-3.mp3",
+   "shotfar-9-4.mp3",
+   "shotfar-9-5.mp3"
+  ],
+  "beamfar-9": [
+   "beamfar-9-1.mp3",
+   "beamfar-9-2.mp3"
+  ],
+  "shotfar-10": [
+   "shotfar-10-1.mp3",
+   "shotfar-10-2.mp3",
+   "shotfar-10-3.mp3",
+   "shotfar-10-4.mp3",
+   "shotfar-10-5.mp3"
+  ],
+  "beamfar-10": [
+   "beamfar-10-1.mp3",
+   "beamfar-10-2.mp3"
+  ],
+  "shotfar-11": [
+   "shotfar-11-1.mp3",
+   "shotfar-11-2.mp3",
+   "shotfar-11-3.mp3",
+   "shotfar-11-4.mp3",
+   "shotfar-11-5.mp3"
+  ],
+  "beamfar-11": [
+   "beamfar-11-1.mp3",
+   "beamfar-11-2.mp3"
+  ],
+  "shotfar-12": [
+   "shotfar-12-1.mp3",
+   "shotfar-12-2.mp3",
+   "shotfar-12-3.mp3"
+  ],
+  "beamfar-12": [
+   "beamfar-12-1.mp3",
+   "beamfar-12-2.mp3"
+  ],
+  "shotfar-13": [
+   "shotfar-13-1.mp3",
+   "shotfar-13-2.mp3",
+   "shotfar-13-3.mp3",
+   "shotfar-13-4.mp3",
+   "shotfar-13-5.mp3"
+  ],
+  "beamfar-13": [
+   "beamfar-13-1.mp3",
+   "beamfar-13-2.mp3"
+  ],
+  "shotfar-14": [
+   "shotfar-14-1.mp3",
+   "shotfar-14-2.mp3",
+   "shotfar-14-3.mp3",
+   "shotfar-14-4.mp3",
+   "shotfar-14-5.mp3"
+  ],
+  "beamfar-14": [
+   "beamfar-14-1.mp3",
+   "beamfar-14-2.mp3"
+  ],
+  "shotfar-15": [
+   "shotfar-15-1.mp3",
+   "shotfar-15-2.mp3",
+   "shotfar-15-3.mp3",
+   "shotfar-15-4.mp3",
+   "shotfar-15-5.mp3"
+  ],
+  "beamfar-15": [
+   "beamfar-15-1.mp3",
+   "beamfar-15-2.mp3"
+  ],
+  "shotfar-16": [
+   "shotfar-16-1.mp3",
+   "shotfar-16-2.mp3",
+   "shotfar-16-3.mp3",
+   "shotfar-16-4.mp3",
+   "shotfar-16-5.mp3"
+  ],
+  "beamfar-16": [
+   "beamfar-16-1.mp3",
+   "beamfar-16-2.mp3"
+  ],
+  "shotfar-17": [
+   "shotfar-17-1.mp3",
+   "shotfar-17-2.mp3",
+   "shotfar-17-3.mp3",
+   "shotfar-17-4.mp3",
+   "shotfar-17-5.mp3"
+  ],
+  "beamfar-17": [
+   "beamfar-17-1.mp3",
+   "beamfar-17-2.mp3"
+  ],
+  "shotfar-18": [
+   "shotfar-18-1.mp3",
+   "shotfar-18-2.mp3",
+   "shotfar-18-3.mp3",
+   "shotfar-18-4.mp3",
+   "shotfar-18-5.mp3"
+  ],
+  "beamfar-18": [
+   "beamfar-18-1.mp3",
+   "beamfar-18-2.mp3"
+  ],
+  "shotfar-19": [
+   "shotfar-19-1.mp3",
+   "shotfar-19-2.mp3",
+   "shotfar-19-3.mp3",
+   "shotfar-19-4.mp3",
+   "shotfar-19-5.mp3"
+  ],
+  "beamfar-19": [
+   "beamfar-19-1.mp3",
+   "beamfar-19-2.mp3"
+  ],
+  "shotfar-20": [
+   "shotfar-20-1.mp3",
+   "shotfar-20-2.mp3",
+   "shotfar-20-3.mp3",
+   "shotfar-20-4.mp3",
+   "shotfar-20-5.mp3"
+  ],
+  "beamfar-20": [
+   "beamfar-20-1.mp3",
+   "beamfar-20-2.mp3"
+  ],
+  "shotfar-21": [
+   "shotfar-21-1.mp3",
+   "shotfar-21-2.mp3",
+   "shotfar-21-3.mp3",
+   "shotfar-21-4.mp3",
+   "shotfar-21-5.mp3"
+  ],
+  "beamfar-21": [
+   "beamfar-21-1.mp3",
+   "beamfar-21-2.mp3"
+  ],
+  "shotfar-22": [
+   "shotfar-22-1.mp3",
+   "shotfar-22-2.mp3",
+   "shotfar-22-3.mp3"
+  ],
+  "beamfar-22": [
+   "beamfar-22-1.mp3",
+   "beamfar-22-2.mp3"
+  ],
+  "exit-conduit": [
+   "exit-conduit-1.mp3",
+   "exit-conduit-2.mp3",
+   "exit-conduit-3.mp3"
+  ],
+  "exit-jump": [
+   "exit-jump-1.mp3",
+   "exit-jump-2.mp3",
+   "exit-jump-3.mp3"
+  ],
+  "exit-rift": [
+   "exit-rift-1.mp3",
+   "exit-rift-2.mp3",
+   "exit-rift-3.mp3"
+  ],
+  "exit-rocket": [
+   "exit-rocket-1.mp3",
+   "exit-rocket-2.mp3",
+   "exit-rocket-3.mp3"
+  ],
+  "exit-warp": [
+   "exit-warp-1.mp3",
+   "exit-warp-2.mp3",
+   "exit-warp-3.mp3"
+  ],
+  "eng-f-10": [
+   "eng-f-10-4.mp3"
   ]
+ },
+ "loops": {
+  "eng-f-5-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-5-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-5-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-5-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "score-calm-1.mp3": [
+   0.25,
+   40.25
+  ],
+  "score-tension-1.mp3": [
+   0.25,
+   35.25
+  ],
+  "score-battle-1.mp3": [
+   0.25,
+   75.25
+  ],
+  "ambience-3.mp3": [
+   0.25,
+   19.65
+  ],
+  "eng-f-0-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-0-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-0-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-0-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-0-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-1-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-1-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-1-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-1-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-1-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-1-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-2-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-2-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-2-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-2-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-2-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-2-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-3-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-3-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-3-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-3-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-3-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-3-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-4-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-4-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-4-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-4-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-4-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-5-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-5-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-6-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-6-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-6-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-6-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-6-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-6-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-7-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-7-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-7-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-7-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-8-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-8-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-8-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-9-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-9-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-8-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-8-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-9-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-9-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-9-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-9-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-10-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-10-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-10-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-10-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-11-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-11-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-11-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-11-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-11-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-12-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-12-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-12-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-12-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-12-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-12-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-13-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-13-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-13-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-14-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-14-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-13-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-13-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-14-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-14-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-14-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-14-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-15-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-15-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-15-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-15-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-15-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-15-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-16-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-16-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-16-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-16-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-17-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-17-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-18-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-18-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-18-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-18-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-18-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-18-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-19-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-19-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-19-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-19-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-20-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-20-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-20-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-20-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-20-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-21-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-21-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-21-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-21-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-21-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-21-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-22-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-22-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-m-22-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-22-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-c-22-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "beamloop-1-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-1-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-0-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-0-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-2-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-2-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-3-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-3-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-4-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-4-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-5-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-5-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-6-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-6-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-7-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-7-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-8-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-8-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-9-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-9-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-10-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-10-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-12-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-12-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-11-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-11-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-13-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-13-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-15-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-15-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-14-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-14-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-16-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-16-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-17-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-17-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-18-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-18-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-19-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-19-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-20-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-20-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-21-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-21-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-22-1.mp3": [
+   0.25,
+   2.65
+  ],
+  "beamloop-22-2.mp3": [
+   0.25,
+   2.65
+  ],
+  "vent-1.mp3": [
+   0.25,
+   3.65
+  ],
+  "vent-2.mp3": [
+   0.25,
+   3.65
+  ],
+  "cockpit-f-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "cockpit-f-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "cockpit-c-1.mp3": [
+   0.25,
+   7.65
+  ],
+  "cockpit-c-2.mp3": [
+   0.25,
+   7.65
+  ],
+  "eng-f-10-4.mp3": [
+   0.25,
+   7.65
+  ]
+ },
+ "groups": {
+  "core": [
+   "arc",
+   "rail",
+   "explosion0",
+   "explosion1",
+   "explosion2",
+   "ambience",
+   "whoosh-0",
+   "hit-light",
+   "score-calm",
+   "hit-heavy",
+   "whizz-e",
+   "debris",
+   "sparks",
+   "xcrack",
+   "xsub",
+   "whizz-k",
+   "xdebris",
+   "vent"
+  ],
+  "soon": [
+   "score-tension",
+   "score-battle",
+   "score-victory",
+   "score-defeat",
+   "cockpit-f",
+   "cockpit-c",
+   "capital-break",
+   "xtail",
+   "groan",
+   "ringing",
+   "whoosh-1",
+   "stinger",
+   "ion-charge",
+   "ion-fire"
+  ],
+  "fleet": {
+   "0": [
+    "shot-0",
+    "shotfar-0",
+    "beam-0",
+    "beamfar-0",
+    "beamloop-0",
+    "eng-f-0",
+    "eng-m-0",
+    "eng-c-0"
+   ],
+   "1": [
+    "shot-1",
+    "shotfar-1",
+    "beam-1",
+    "beamfar-1",
+    "beamloop-1",
+    "eng-f-1",
+    "eng-m-1",
+    "eng-c-1",
+    "boom-burst"
+   ],
+   "2": [
+    "shot-2",
+    "shotfar-2",
+    "beam-2",
+    "beamfar-2",
+    "beamloop-2",
+    "eng-f-2",
+    "eng-m-2",
+    "eng-c-2",
+    "boom-shatter"
+   ],
+   "3": [
+    "shot-3",
+    "shotfar-3",
+    "beam-3",
+    "beamfar-3",
+    "beamloop-3",
+    "eng-f-3",
+    "eng-m-3",
+    "eng-c-3"
+   ],
+   "4": [
+    "shot-4",
+    "shotfar-4",
+    "beam-4",
+    "beamfar-4",
+    "beamloop-4",
+    "eng-f-4",
+    "eng-m-4",
+    "eng-c-4",
+    "boom-flash"
+   ],
+   "5": [
+    "shot-5",
+    "shotfar-5",
+    "beam-5",
+    "beamfar-5",
+    "beamloop-5",
+    "eng-f-5",
+    "eng-m-5",
+    "eng-c-5",
+    "boom-tie",
+    "arrive-hyper",
+    "exit-hyper"
+   ],
+   "6": [
+    "shot-6",
+    "shotfar-6",
+    "beam-6",
+    "beamfar-6",
+    "beamloop-6",
+    "eng-f-6",
+    "eng-m-6",
+    "eng-c-6",
+    "arrive-hyper",
+    "exit-hyper"
+   ],
+   "7": [
+    "shot-7",
+    "shotfar-7",
+    "beam-7",
+    "beamfar-7",
+    "beamloop-7",
+    "eng-f-7",
+    "eng-c-7",
+    "boom-crystal",
+    "arrive-jump",
+    "exit-jump"
+   ],
+   "8": [
+    "shot-8",
+    "shotfar-8",
+    "beam-8",
+    "beamfar-8",
+    "beamloop-8",
+    "eng-f-8",
+    "eng-m-8",
+    "eng-c-8",
+    "boom-dissolve",
+    "arrive-rift",
+    "exit-rift"
+   ],
+   "9": [
+    "shot-9",
+    "shotfar-9",
+    "beam-9",
+    "beamfar-9",
+    "beamloop-9",
+    "eng-f-9",
+    "eng-m-9",
+    "eng-c-9",
+    "arrive-jump",
+    "exit-jump"
+   ],
+   "10": [
+    "shot-10",
+    "shotfar-10",
+    "beam-10",
+    "beamfar-10",
+    "beamloop-10",
+    "eng-f-10",
+    "eng-m-10",
+    "eng-c-10",
+    "boom-warp",
+    "arrive-warp",
+    "exit-warp",
+    "shield-ring"
+   ],
+   "11": [
+    "shot-11",
+    "shotfar-11",
+    "beam-11",
+    "beamfar-11",
+    "beamloop-11",
+    "eng-f-11",
+    "eng-m-11",
+    "eng-c-11",
+    "arrive-warp",
+    "exit-warp",
+    "shield-hum"
+   ],
+   "12": [
+    "shot-12",
+    "shotfar-12",
+    "beam-12",
+    "beamfar-12",
+    "beamloop-12",
+    "eng-f-12",
+    "eng-m-12",
+    "eng-c-12",
+    "boom-cleave",
+    "arrive-conduit",
+    "exit-conduit",
+    "shield-crackle"
+   ],
+   "13": [
+    "shot-13",
+    "shotfar-13",
+    "beam-13",
+    "beamfar-13",
+    "beamloop-13",
+    "eng-f-13",
+    "eng-m-13",
+    "eng-c-13",
+    "boom-bronze"
+   ],
+   "14": [
+    "shot-14",
+    "shotfar-14",
+    "beam-14",
+    "beamfar-14",
+    "beamloop-14",
+    "eng-f-14",
+    "eng-m-14",
+    "eng-c-14"
+   ],
+   "15": [
+    "shot-15",
+    "shotfar-15",
+    "beam-15",
+    "beamfar-15",
+    "beamloop-15",
+    "eng-f-15",
+    "eng-m-15",
+    "eng-c-15",
+    "boom-fossil"
+   ],
+   "16": [
+    "shot-16",
+    "shotfar-16",
+    "beam-16",
+    "beamfar-16",
+    "beamloop-16",
+    "eng-f-16",
+    "eng-m-16",
+    "eng-c-16",
+    "boom-cloakpop"
+   ],
+   "17": [
+    "shot-17",
+    "shotfar-17",
+    "beam-17",
+    "beamfar-17",
+    "beamloop-17",
+    "eng-c-17",
+    "boom-flash",
+    "age-end",
+    "explosion3"
+   ],
+   "18": [
+    "shot-18",
+    "shotfar-18",
+    "beam-18",
+    "beamfar-18",
+    "beamloop-18",
+    "eng-f-18",
+    "eng-m-18",
+    "eng-c-18",
+    "boom-warp",
+    "arrive-warp",
+    "exit-warp",
+    "shield-hum"
+   ],
+   "19": [
+    "shot-19",
+    "shotfar-19",
+    "beam-19",
+    "beamfar-19",
+    "beamloop-19",
+    "eng-m-19",
+    "eng-c-19",
+    "boom-warp",
+    "arrive-warp",
+    "exit-warp",
+    "shield-ring"
+   ],
+   "20": [
+    "shot-20",
+    "shotfar-20",
+    "beam-20",
+    "beamfar-20",
+    "beamloop-20",
+    "eng-f-20",
+    "eng-m-20",
+    "eng-c-20"
+   ],
+   "21": [
+    "shot-21",
+    "shotfar-21",
+    "beam-21",
+    "beamfar-21",
+    "beamloop-21",
+    "eng-f-21",
+    "eng-m-21",
+    "eng-c-21",
+    "boom-burst",
+    "arrive-rift",
+    "exit-rift"
+   ],
+   "22": [
+    "shot-22",
+    "shotfar-22",
+    "beam-22",
+    "beamfar-22",
+    "beamloop-22",
+    "eng-f-22",
+    "eng-m-22",
+    "eng-c-22",
+    "arrive-rocket",
+    "exit-rocket"
+   ]
+  }
+ },
+ "sizes": {
+  "core_mb": 2.9,
+  "soon_mb": 5.06,
+  "fleet_mb": {
+   "0": 0.89,
+   "1": 1.14,
+   "2": 1.16,
+   "3": 0.99,
+   "4": 1.04,
+   "5": 1.11,
+   "6": 1.04,
+   "7": 1.14,
+   "8": 1.29,
+   "9": 1.21,
+   "10": 1.2,
+   "11": 1.13,
+   "12": 1.37,
+   "13": 1.06,
+   "14": 0.99,
+   "15": 1.16,
+   "16": 0.94,
+   "17": 1.69,
+   "18": 1.34,
+   "19": 1.09,
+   "20": 0.89,
+   "21": 1.38,
+   "22": 1.06
+  },
+  "total_mb": 32.63
  }
 }

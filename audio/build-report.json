@@ -1,0 +1,8313 @@
+{
+ "shot-5": [
+  {
+   "take": "shot-5-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-5-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    1.03,
+    0.4,
+    351,
+    171
+   ]
+  },
+  {
+   "take": "shot-5-3.mp3",
+   "rejected": [
+    "falling low tone (1.17 octaves to 62 Hz in 0.3 s)"
+   ],
+   "kept": false
+  },
+  {
+   "take": "shot-5-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.12,
+   "centroid_hz": 929,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-5-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-5-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.093,
+   "centroid_hz": 1032,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-5-5.wav",
+   "kb": 14
+  }
+ ],
+ "hit-light": [
+  {
+   "take": "hit-light-1.mp3",
+   "seconds": 0.68,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.004,
+   "centroid_hz": 5443,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/hit-light-1.wav",
+   "kb": 11
+  },
+  {
+   "take": "hit-light-2.mp3",
+   "seconds": 0.68,
+   "sounding_s": 0.3,
+   "sub_lt120": 0.053,
+   "centroid_hz": 5272,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/hit-light-2.wav",
+   "kb": 11
+  },
+  {
+   "take": "hit-light-3.mp3",
+   "seconds": 0.68,
+   "sounding_s": 0.15,
+   "sub_lt120": 0.001,
+   "centroid_hz": 7248,
+   "clip": 0,
+   "falling": [
+    0.06,
+    0.44,
+    203,
+    195
+   ],
+   "source": "fal/hit-light-3.wav",
+   "kb": 11
+  },
+  {
+   "take": "hit-light-4.mp3",
+   "seconds": 0.68,
+   "sounding_s": 0.25,
+   "sub_lt120": 0.001,
+   "centroid_hz": 5465,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/hit-light-4.wav",
+   "kb": 11
+  }
+ ],
+ "eng-f-5": [
+  {
+   "take": "eng-f-5-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.049,
+   "centroid_hz": 1001,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.02,
+    0.26,
+    695,
+    687
+   ],
+   "seam_raw": [
+    1.1,
+    1.95,
+    1.0
+   ],
+   "seam": [
+    0.84,
+    1.87,
+    2.9
+   ],
+   "source": "fal/eng-f-5-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-5-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.041,
+   "centroid_hz": 1196,
+   "clip": 0,
+   "steady_db": 2.4,
+   "falling": [
+    0.05,
+    0.3,
+    210,
+    203
+   ],
+   "seam_raw": [
+    2.69,
+    1.66,
+    0.1
+   ],
+   "seam": [
+    0.65,
+    1.72,
+    0.3
+   ],
+   "source": "fal/eng-f-5-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-5": [
+  {
+   "take": "eng-c-5-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.572,
+   "centroid_hz": 113,
+   "clip": 0,
+   "steady_db": 3.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.95,
+    2.41,
+    1.8
+   ],
+   "seam": [
+    -1.69,
+    2.21,
+    2.4
+   ],
+   "source": "fal/eng-c-5-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-5-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.617,
+   "centroid_hz": 107,
+   "clip": 0,
+   "steady_db": 4.3,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -2.0,
+    3.44,
+    3.0
+   ],
+   "seam": [
+    -2.37,
+    3.16,
+    1.3
+   ],
+   "source": "fal/eng-c-5-2.wav",
+   "kb": 109
+  }
+ ],
+ "arrive-hyper": [
+  {
+   "take": "arrive-hyper-1.mp3",
+   "seconds": 0.54,
+   "sounding_s": 0.45,
+   "sub_lt120": 0.557,
+   "centroid_hz": 213,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-hyper-1.wav",
+   "kb": 10
+  },
+  {
+   "take": "arrive-hyper-2.mp3",
+   "rejected": [
+    "mostly silent (0.6 s sounding)"
+   ],
+   "seconds": 2.48,
+   "sounding_s": 0.55,
+   "sub_lt120": 0.849,
+   "centroid_hz": 111,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-hyper-2.wav"
+  },
+  {
+   "take": "arrive-hyper-3.mp3",
+   "seconds": 0.69,
+   "sounding_s": 0.45,
+   "sub_lt120": 0.696,
+   "centroid_hz": 228,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-hyper-3.wav",
+   "kb": 12
+  }
+ ],
+ "score-calm": [
+  {
+   "take": "score-calm-1.mp3",
+   "seconds": 40.0,
+   "sounding_s": 39.55,
+   "sub_lt120": 0.043,
+   "centroid_hz": 377,
+   "clip": 0,
+   "steady_db": 8.6,
+   "falling": [
+    0.07,
+    0.76,
+    462,
+    441
+   ],
+   "seam_raw": [
+    -34.46,
+    3.02,
+    15.9
+   ],
+   "seam": [
+    -1.08,
+    2.93,
+    4.2
+   ],
+   "source": "fal/score-calm-1.mp3",
+   "kb": 792
+  }
+ ],
+ "score-tension": [
+  {
+   "take": "score-tension-1.mp3",
+   "seconds": 35.0,
+   "sounding_s": 34.25,
+   "sub_lt120": 0.097,
+   "centroid_hz": 560,
+   "clip": 0,
+   "steady_db": 11.8,
+   "falling": [
+    0.19,
+    0.58,
+    441,
+    387
+   ],
+   "seam_raw": [
+    -9.01,
+    3.43,
+    31.8
+   ],
+   "seam": [
+    -1.1,
+    3.45,
+    2.0
+   ],
+   "source": "fal/score-1.mp3",
+   "kb": 694
+  }
+ ],
+ "score-battle": [
+  {
+   "take": "score-battle-1.mp3",
+   "seconds": 75.0,
+   "sounding_s": 75.0,
+   "sub_lt120": 0.295,
+   "centroid_hz": 471,
+   "clip": 0,
+   "steady_db": 6.5,
+   "falling": [
+    0.22,
+    0.4,
+    75,
+    64
+   ],
+   "seam_raw": [
+    -7.62,
+    3.04,
+    26.9
+   ],
+   "seam": [
+    0.76,
+    2.95,
+    2.8
+   ],
+   "source": "fal/score-1.mp3",
+   "kb": 1476
+  }
+ ],
+ "score-victory": [
+  {
+   "take": "score-victory-1.mp3",
+   "seconds": 27.19,
+   "sounding_s": 24.75,
+   "sub_lt120": 0.152,
+   "centroid_hz": 652,
+   "clip": 0,
+   "falling": [
+    0.04,
+    0.26,
+    355,
+    344
+   ],
+   "source": "fal/score-1.mp3",
+   "kb": 532
+  }
+ ],
+ "score-defeat": [
+  {
+   "take": "score-defeat-1.mp3",
+   "seconds": 14.69,
+   "sounding_s": 12.55,
+   "sub_lt120": 0.005,
+   "centroid_hz": 540,
+   "clip": 0,
+   "falling": [
+    0.03,
+    1.06,
+    559,
+    549
+   ],
+   "source": "fal/score-1.mp3",
+   "kb": 288
+  }
+ ],
+ "shot-0": [
+  {
+   "take": "shot-0-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.06,
+    0.26,
+    203,
+    195
+   ]
+  },
+  {
+   "take": "shot-0-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-0-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-0-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.25,
+   "sub_lt120": 0.022,
+   "centroid_hz": 4063,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-0-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-0-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.011,
+   "centroid_hz": 3580,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-0-5.wav",
+   "kb": 14
+  }
+ ],
+ "ambience": [
+  {
+   "take": "ambience-2.mp3",
+   "rejected": [
+    "falling low tone (0.58 octaves to 64 Hz in 0.26 s)"
+   ],
+   "seconds": 19.4,
+   "sounding_s": 19.4,
+   "sub_lt120": 0.825,
+   "centroid_hz": 84,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.58,
+    0.26,
+    96,
+    64
+   ],
+   "seam_raw": [
+    0.94,
+    2.92,
+    7.8
+   ],
+   "seam": [
+    -1.61,
+    2.93,
+    1.0
+   ],
+   "source": "fal/ambience-2.wav"
+  },
+  {
+   "take": "ambience-3.mp3",
+   "seconds": 19.4,
+   "sounding_s": 19.4,
+   "sub_lt120": 0.867,
+   "centroid_hz": 77,
+   "clip": 0,
+   "steady_db": 3.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.97,
+    2.43,
+    33.8
+   ],
+   "seam": [
+    1.17,
+    2.38,
+    2.0
+   ],
+   "source": "fal/ambience-3.wav",
+   "kb": 389
+  }
+ ],
+ "shot-1": [
+  {
+   "take": "shot-1-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-1-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-1-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-1-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.25,
+   "sub_lt120": 0.153,
+   "centroid_hz": 2354,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-1-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-1-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.3,
+   "sub_lt120": 0.044,
+   "centroid_hz": 2078,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-1-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-2": [
+  {
+   "take": "shot-2-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-2-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-2-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-2-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7775,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-2-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-2-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.3,
+   "sub_lt120": 0.001,
+   "centroid_hz": 9580,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-2-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-3": [
+  {
+   "take": "shot-3-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-3-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-3-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-3-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.3,
+   "sub_lt120": 0.001,
+   "centroid_hz": 3031,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-3-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-3-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.0,
+   "centroid_hz": 2438,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-3-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-4": [
+  {
+   "take": "shot-4-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-4-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-4-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-4-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.051,
+   "centroid_hz": 1008,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-4-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-4-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.089,
+   "centroid_hz": 1517,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-4-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-6": [
+  {
+   "take": "shot-6-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-6-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-6-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-6-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.004,
+   "centroid_hz": 2254,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-6-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-6-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.45,
+   "sub_lt120": 0.038,
+   "centroid_hz": 2170,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-6-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-7": [
+  {
+   "take": "shot-7-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-7-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.06,
+    0.28,
+    203,
+    195
+   ]
+  },
+  {
+   "take": "shot-7-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-7-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.45,
+   "sub_lt120": 0.0,
+   "centroid_hz": 1780,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-7-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-7-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 1356,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-7-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-8": [
+  {
+   "take": "shot-8-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-8-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-8-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-8-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.5,
+   "sub_lt120": 0.001,
+   "centroid_hz": 3140,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-8-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-8-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.5,
+   "sub_lt120": 0.005,
+   "centroid_hz": 3353,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-8-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-9": [
+  {
+   "take": "shot-9-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-9-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-9-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-9-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.061,
+   "centroid_hz": 976,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-9-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-9-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.109,
+   "centroid_hz": 965,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-9-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-10": [
+  {
+   "take": "shot-10-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.27,
+    0.28,
+    695,
+    578
+   ]
+  },
+  {
+   "take": "shot-10-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-10-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-10-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.6,
+   "sub_lt120": 0.0,
+   "centroid_hz": 2948,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-10-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-10-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.45,
+   "sub_lt120": 0.105,
+   "centroid_hz": 458,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-10-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-11": [
+  {
+   "take": "shot-11-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-11-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-11-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-11-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.016,
+   "centroid_hz": 2695,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-11-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-11-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.45,
+   "sub_lt120": 0.063,
+   "centroid_hz": 2485,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-11-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-12": [
+  {
+   "take": "shot-12-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.14,
+    0.26,
+    85,
+    78
+   ]
+  },
+  {
+   "take": "shot-12-2.mp3",
+   "rejected": [
+    "falling low tone (1.32 octaves to 62 Hz in 0.34 s)"
+   ],
+   "kept": false
+  },
+  {
+   "take": "shot-12-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-12-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.152,
+   "centroid_hz": 1560,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-12-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-12-5.mp3",
+   "rejected": [
+    "falling low tone (1.09 octaves to 62 Hz in 0.36 s)"
+   ],
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.01,
+   "centroid_hz": 1729,
+   "clip": 0,
+   "falling": [
+    1.09,
+    0.36,
+    132,
+    62
+   ],
+   "source": "fal/shot-12-5.wav"
+  }
+ ],
+ "shot-13": [
+  {
+   "take": "shot-13-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-13-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.11,
+    0.36,
+    625,
+    578
+   ]
+  },
+  {
+   "take": "shot-13-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-13-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.6,
+   "sub_lt120": 0.0,
+   "centroid_hz": 565,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-13-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-13-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.65,
+   "sub_lt120": 0.0,
+   "centroid_hz": 1098,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-13-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-14": [
+  {
+   "take": "shot-14-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-14-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-14-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-14-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.008,
+   "centroid_hz": 1448,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-14-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-14-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.3,
+   "sub_lt120": 0.006,
+   "centroid_hz": 1499,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-14-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-15": [
+  {
+   "take": "shot-15-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-15-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-15-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-15-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.6,
+   "sub_lt120": 0.409,
+   "centroid_hz": 760,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-15-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-15-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.473,
+   "centroid_hz": 773,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-15-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-16": [
+  {
+   "take": "shot-16-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-16-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-16-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-16-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.254,
+   "centroid_hz": 1316,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-16-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-16-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.095,
+   "centroid_hz": 1376,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-16-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-17": [
+  {
+   "take": "shot-17-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-17-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-17-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-17-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.5,
+   "sub_lt120": 0.101,
+   "centroid_hz": 1479,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-17-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-17-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.056,
+   "centroid_hz": 1586,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-17-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-18": [
+  {
+   "take": "shot-18-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-18-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-18-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-18-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.5,
+   "sub_lt120": 0.0,
+   "centroid_hz": 4250,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-18-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-18-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.063,
+   "centroid_hz": 3421,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-18-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-19": [
+  {
+   "take": "shot-19-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-19-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-19-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-19-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.45,
+   "sub_lt120": 0.003,
+   "centroid_hz": 3539,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-19-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-19-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.6,
+   "sub_lt120": 0.0,
+   "centroid_hz": 3778,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-19-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-20": [
+  {
+   "take": "shot-20-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-20-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-20-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-20-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.6,
+   "sub_lt120": 0.537,
+   "centroid_hz": 145,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-20-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-20-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.55,
+   "sub_lt120": 0.379,
+   "centroid_hz": 552,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-20-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-21": [
+  {
+   "take": "shot-21-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-21-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-21-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-21-4.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.3,
+   "sub_lt120": 0.403,
+   "centroid_hz": 864,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-21-4.wav",
+   "kb": 14
+  },
+  {
+   "take": "shot-21-5.mp3",
+   "seconds": 0.8,
+   "sounding_s": 0.3,
+   "sub_lt120": 0.474,
+   "centroid_hz": 622,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shot-21-5.wav",
+   "kb": 14
+  }
+ ],
+ "shot-22": [
+  {
+   "take": "shot-22-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-22-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-22-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "shot-22-4.mp3",
+   "rejected": [
+    "unused: prompt named a device after the brand the fleet is named for"
+   ]
+  },
+  {
+   "take": "shot-22-5.mp3",
+   "rejected": [
+    "unused: prompt named a device after the brand the fleet is named for"
+   ]
+  }
+ ],
+ "whoosh-0": [
+  {
+   "take": "whoosh-0-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.15,
+    0.28,
+    695,
+    625
+   ]
+  },
+  {
+   "take": "whoosh-0-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "whoosh-0-3.mp3",
+   "rejected": [
+    "falling low tone (0.87 octaves to 140 Hz in 0.5 s)"
+   ],
+   "kept": false
+  },
+  {
+   "take": "whoosh-0-4.mp3",
+   "seconds": 1.33,
+   "sounding_s": 0.85,
+   "sub_lt120": 0.002,
+   "centroid_hz": 1659,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/whoosh-0-4.wav",
+   "kb": 21
+  },
+  {
+   "take": "whoosh-0-5.mp3",
+   "seconds": 1.08,
+   "sounding_s": 0.85,
+   "sub_lt120": 0.019,
+   "centroid_hz": 1182,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/whoosh-0-5.wav",
+   "kb": 18
+  },
+  {
+   "take": "whoosh-0-6.mp3",
+   "seconds": 1.15,
+   "sounding_s": 0.8,
+   "sub_lt120": 0.1,
+   "centroid_hz": 1055,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/whoosh-0-6.wav",
+   "kb": 19
+  }
+ ],
+ "whoosh-1": [
+  {
+   "take": "whoosh-1-1.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "whoosh-1-2.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "whoosh-1-3.mp3",
+   "kept": "shipped; raw not in the repo",
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ]
+  },
+  {
+   "take": "whoosh-1-4.mp3",
+   "seconds": 3.48,
+   "sounding_s": 2.7,
+   "sub_lt120": 0.307,
+   "centroid_hz": 246,
+   "clip": 0,
+   "falling": [
+    0.38,
+    0.28,
+    101,
+    78
+   ],
+   "source": "fal/whoosh-1-4.wav",
+   "kb": 55
+  },
+  {
+   "take": "whoosh-1-5.mp3",
+   "seconds": 3.06,
+   "sounding_s": 2.55,
+   "sub_lt120": 0.571,
+   "centroid_hz": 200,
+   "clip": 0,
+   "falling": [
+    0.1,
+    0.28,
+    117,
+    109
+   ],
+   "source": "fal/whoosh-1-5.wav",
+   "kb": 49
+  }
+ ],
+ "eng-f-0": [
+  {
+   "take": "eng-f-0-1.mp3",
+   "rejected": [
+    "sub-heavy (71% under 120 Hz)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.708,
+   "centroid_hz": 480,
+   "clip": 0,
+   "steady_db": 4.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.84,
+    4.2,
+    0.0
+   ],
+   "seam": [
+    0.4,
+    4.23,
+    1.2
+   ],
+   "source": "fal/eng-f-0-1.wav"
+  },
+  {
+   "take": "eng-f-0-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.333,
+   "centroid_hz": 5581,
+   "clip": 0,
+   "steady_db": 2.7,
+   "falling": [
+    0.24,
+    0.26,
+    101,
+    85
+   ],
+   "seam_raw": [
+    -2.52,
+    1.46,
+    1.6
+   ],
+   "seam": [
+    -1.73,
+    1.46,
+    0.5
+   ],
+   "source": "fal/eng-f-0-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-0": [
+  {
+   "take": "eng-m-0-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.627,
+   "centroid_hz": 106,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.2,
+    2.53,
+    8.2
+   ],
+   "seam": [
+    -0.47,
+    2.56,
+    1.3
+   ],
+   "source": "fal/eng-m-0-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-0-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.476,
+   "centroid_hz": 125,
+   "clip": 0,
+   "steady_db": 6.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.32,
+    4.09,
+    0.3
+   ],
+   "seam": [
+    -0.78,
+    4.21,
+    0.6
+   ],
+   "source": "fal/eng-m-0-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-0": [
+  {
+   "take": "eng-c-0-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.592,
+   "centroid_hz": 104,
+   "clip": 0,
+   "steady_db": 3.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.26,
+    2.76,
+    0.3
+   ],
+   "seam": [
+    0.21,
+    2.81,
+    0.6
+   ],
+   "source": "fal/eng-c-0-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-0-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.347,
+   "centroid_hz": 104,
+   "clip": 0,
+   "steady_db": 5.6,
+   "falling": [
+    0.18,
+    1.18,
+    132,
+    117
+   ],
+   "seam_raw": [
+    -0.51,
+    3.01,
+    2.2
+   ],
+   "seam": [
+    1.37,
+    3.0,
+    0.7
+   ],
+   "source": "fal/eng-c-0-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-1": [
+  {
+   "take": "eng-m-1-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.716,
+   "centroid_hz": 107,
+   "clip": 0,
+   "steady_db": 9.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    2.3,
+    1.91,
+    1.4
+   ],
+   "seam": [
+    -1.47,
+    1.84,
+    0.1
+   ],
+   "source": "fal/eng-m-1-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-1-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.753,
+   "centroid_hz": 102,
+   "clip": 0,
+   "steady_db": 4.3,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.77,
+    2.99,
+    1.7
+   ],
+   "seam": [
+    0.6,
+    2.83,
+    2.4
+   ],
+   "source": "fal/eng-m-1-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-1": [
+  {
+   "take": "eng-f-1-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8862,
+   "clip": 0,
+   "steady_db": 2.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.1,
+    1.5,
+    1.2
+   ],
+   "seam": [
+    -0.02,
+    1.51,
+    0.8
+   ],
+   "source": "fal/eng-f-1-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-1-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8201,
+   "clip": 0,
+   "steady_db": 3.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.34,
+    0.92,
+    1.9
+   ],
+   "seam": [
+    0.32,
+    0.76,
+    0.6
+   ],
+   "source": "fal/eng-f-1-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-1": [
+  {
+   "take": "eng-c-1-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.8,
+   "centroid_hz": 98,
+   "clip": 0,
+   "steady_db": 7.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    4.31,
+    6.5,
+    2.6
+   ],
+   "seam": [
+    1.67,
+    6.61,
+    0.3
+   ],
+   "source": "fal/eng-c-1-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-1-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.639,
+   "centroid_hz": 107,
+   "clip": 0,
+   "steady_db": 6.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.58,
+    4.59,
+    1.6
+   ],
+   "seam": [
+    0.48,
+    4.44,
+    0.5
+   ],
+   "source": "fal/eng-c-1-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-2": [
+  {
+   "take": "eng-f-2-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7512,
+   "clip": 0,
+   "steady_db": 1.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.65,
+    0.75,
+    0.1
+   ],
+   "seam": [
+    0.2,
+    0.51,
+    0.2
+   ],
+   "source": "fal/eng-f-2-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-2-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7582,
+   "clip": 0,
+   "steady_db": 2.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.14,
+    1.29,
+    0.5
+   ],
+   "seam": [
+    0.09,
+    0.98,
+    2.5
+   ],
+   "source": "fal/eng-f-2-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-2": [
+  {
+   "take": "eng-m-2-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.482,
+   "centroid_hz": 120,
+   "clip": 0,
+   "steady_db": 4.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.07,
+    3.54,
+    4.2
+   ],
+   "seam": [
+    -0.06,
+    3.71,
+    1.1
+   ],
+   "source": "fal/eng-m-2-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-2-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.493,
+   "centroid_hz": 123,
+   "clip": 0,
+   "steady_db": 4.6,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.26,
+    2.17,
+    2.8
+   ],
+   "seam": [
+    0.16,
+    2.18,
+    0.3
+   ],
+   "source": "fal/eng-m-2-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-2": [
+  {
+   "take": "eng-c-2-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.382,
+   "centroid_hz": 126,
+   "clip": 0,
+   "steady_db": 7.1,
+   "falling": [
+    0.25,
+    0.26,
+    148,
+    125
+   ],
+   "seam_raw": [
+    -0.01,
+    4.11,
+    1.0
+   ],
+   "seam": [
+    1.18,
+    3.9,
+    3.4
+   ],
+   "source": "fal/eng-c-2-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-2-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.657,
+   "centroid_hz": 111,
+   "clip": 0,
+   "steady_db": 4.6,
+   "falling": [
+    0.29,
+    0.3,
+    85,
+    70
+   ],
+   "seam_raw": [
+    0.72,
+    3.53,
+    1.1
+   ],
+   "seam": [
+    1.31,
+    3.38,
+    1.6
+   ],
+   "source": "fal/eng-c-2-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-3": [
+  {
+   "take": "eng-m-3-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.411,
+   "centroid_hz": 212,
+   "clip": 0,
+   "steady_db": 4.8,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.28,
+    3.82,
+    1.9
+   ],
+   "seam": [
+    3.8,
+    3.73,
+    1.2
+   ],
+   "source": "fal/eng-m-3-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-3-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.699,
+   "centroid_hz": 133,
+   "clip": 0,
+   "steady_db": 2.4,
+   "falling": [
+    0.26,
+    0.4,
+    93,
+    78
+   ],
+   "seam_raw": [
+    -0.68,
+    1.28,
+    2.7
+   ],
+   "seam": [
+    0.04,
+    1.43,
+    3.0
+   ],
+   "source": "fal/eng-m-3-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-3": [
+  {
+   "take": "eng-f-3-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.1,
+   "centroid_hz": 3048,
+   "clip": 0,
+   "steady_db": 2.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.13,
+    1.97,
+    0.4
+   ],
+   "seam": [
+    0.7,
+    1.95,
+    0.1
+   ],
+   "source": "fal/eng-f-3-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-3-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.079,
+   "centroid_hz": 4771,
+   "clip": 0,
+   "steady_db": 2.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.17,
+    1.29,
+    0.4
+   ],
+   "seam": [
+    -0.26,
+    1.19,
+    0.4
+   ],
+   "source": "fal/eng-f-3-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-3": [
+  {
+   "take": "eng-c-3-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.609,
+   "centroid_hz": 104,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.79,
+    2.93,
+    2.0
+   ],
+   "seam": [
+    1.3,
+    2.99,
+    2.3
+   ],
+   "source": "fal/eng-c-3-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-3-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.793,
+   "centroid_hz": 90,
+   "clip": 0,
+   "steady_db": 5.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.3,
+    2.9,
+    1.2
+   ],
+   "seam": [
+    1.16,
+    2.91,
+    1.1
+   ],
+   "source": "fal/eng-c-3-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-4": [
+  {
+   "take": "eng-f-4-1.mp3",
+   "rejected": [
+    "falling low tone (0.62 octaves to 117 Hz in 0.26 s)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.343,
+   "centroid_hz": 129,
+   "clip": 0,
+   "steady_db": 4.4,
+   "falling": [
+    0.62,
+    0.26,
+    179,
+    117
+   ],
+   "seam_raw": [
+    2.68,
+    2.76,
+    1.2
+   ],
+   "seam": [
+    0.85,
+    2.72,
+    1.3
+   ],
+   "source": "fal/eng-f-4-1.wav"
+  },
+  {
+   "take": "eng-f-4-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.358,
+   "centroid_hz": 285,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.46,
+    2.21,
+    0.5
+   ],
+   "seam": [
+    -0.25,
+    2.02,
+    1.1
+   ],
+   "source": "fal/eng-f-4-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-4": [
+  {
+   "take": "eng-m-4-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.343,
+   "centroid_hz": 125,
+   "clip": 0,
+   "steady_db": 4.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.35,
+    2.83,
+    0.2
+   ],
+   "seam": [
+    -2.98,
+    2.69,
+    0.3
+   ],
+   "source": "fal/eng-m-4-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-4-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.913,
+   "centroid_hz": 105,
+   "clip": 0,
+   "steady_db": 8.7,
+   "falling": [
+    0.32,
+    0.3,
+    117,
+    93
+   ],
+   "seam_raw": [
+    -0.74,
+    4.74,
+    3.5
+   ],
+   "seam": [
+    -1.79,
+    4.9,
+    0.2
+   ],
+   "source": "fal/eng-m-4-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-4": [
+  {
+   "take": "eng-c-4-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.803,
+   "centroid_hz": 88,
+   "clip": 0,
+   "steady_db": 5.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.85,
+    3.82,
+    8.0
+   ],
+   "seam": [
+    -0.49,
+    3.89,
+    1.7
+   ],
+   "source": "fal/eng-c-4-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-4-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.579,
+   "centroid_hz": 114,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.35,
+    0.34,
+    109,
+    85
+   ],
+   "seam_raw": [
+    0.39,
+    2.57,
+    3.8
+   ],
+   "seam": [
+    0.37,
+    2.5,
+    0.5
+   ],
+   "source": "fal/eng-c-4-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-5": [
+  {
+   "take": "eng-m-5-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.741,
+   "centroid_hz": 98,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.84,
+    2.13,
+    3.7
+   ],
+   "seam": [
+    -0.27,
+    2.22,
+    1.2
+   ],
+   "source": "fal/eng-m-5-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-5-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.38,
+   "centroid_hz": 126,
+   "clip": 0,
+   "steady_db": 2.9,
+   "falling": [
+    0.08,
+    0.26,
+    148,
+    140
+   ],
+   "seam_raw": [
+    3.19,
+    1.75,
+    3.5
+   ],
+   "seam": [
+    0.17,
+    1.75,
+    0.7
+   ],
+   "source": "fal/eng-m-5-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-6": [
+  {
+   "take": "eng-f-6-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.207,
+   "centroid_hz": 310,
+   "clip": 0,
+   "steady_db": 4.6,
+   "falling": [
+    0.19,
+    0.32,
+    187,
+    164
+   ],
+   "seam_raw": [
+    -0.99,
+    2.94,
+    1.5
+   ],
+   "seam": [
+    1.37,
+    2.88,
+    0.7
+   ],
+   "source": "fal/eng-f-6-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-6-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.216,
+   "centroid_hz": 372,
+   "clip": 0,
+   "steady_db": 2.6,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.15,
+    1.81,
+    1.3
+   ],
+   "seam": [
+    -0.84,
+    1.65,
+    1.4
+   ],
+   "source": "fal/eng-f-6-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-6": [
+  {
+   "take": "eng-m-6-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.73,
+   "centroid_hz": 104,
+   "clip": 0,
+   "steady_db": 4.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.25,
+    3.06,
+    0.3
+   ],
+   "seam": [
+    1.61,
+    2.89,
+    1.2
+   ],
+   "source": "fal/eng-m-6-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-6-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.607,
+   "centroid_hz": 110,
+   "clip": 0,
+   "steady_db": 4.3,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.28,
+    2.99,
+    1.1
+   ],
+   "seam": [
+    1.99,
+    2.73,
+    1.0
+   ],
+   "source": "fal/eng-m-6-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-6": [
+  {
+   "take": "eng-c-6-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.859,
+   "centroid_hz": 88,
+   "clip": 0,
+   "steady_db": 6.6,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.54,
+    3.56,
+    4.9
+   ],
+   "seam": [
+    0.88,
+    3.33,
+    0.5
+   ],
+   "source": "fal/eng-c-6-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-6-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.788,
+   "centroid_hz": 96,
+   "clip": 0,
+   "steady_db": 4.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.18,
+    3.92,
+    5.0
+   ],
+   "seam": [
+    -1.31,
+    3.85,
+    0.5
+   ],
+   "source": "fal/eng-c-6-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-7": [
+  {
+   "take": "eng-f-7-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.217,
+   "centroid_hz": 152,
+   "clip": 0,
+   "steady_db": 4.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.61,
+    2.56,
+    1.5
+   ],
+   "seam": [
+    -2.05,
+    2.76,
+    0.6
+   ],
+   "source": "fal/eng-f-7-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-7-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.113,
+   "centroid_hz": 146,
+   "clip": 0,
+   "steady_db": 4.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.76,
+    3.26,
+    2.5
+   ],
+   "seam": [
+    -1.25,
+    3.17,
+    2.2
+   ],
+   "source": "fal/eng-f-7-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-7": [
+  {
+   "take": "eng-c-7-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.664,
+   "centroid_hz": 100,
+   "clip": 0,
+   "steady_db": 4.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.15,
+    2.87,
+    0.3
+   ],
+   "seam": [
+    0.69,
+    2.84,
+    0.1
+   ],
+   "source": "fal/eng-c-7-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-7-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.709,
+   "centroid_hz": 92,
+   "clip": 0,
+   "steady_db": 4.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.33,
+    2.57,
+    2.2
+   ],
+   "seam": [
+    0.28,
+    2.6,
+    0.5
+   ],
+   "source": "fal/eng-c-7-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-8": [
+  {
+   "take": "eng-f-8-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.424,
+   "centroid_hz": 616,
+   "clip": 0,
+   "steady_db": 6.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.57,
+    3.11,
+    1.2
+   ],
+   "seam": [
+    -2.79,
+    2.94,
+    0.1
+   ],
+   "source": "fal/eng-f-8-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-8-2.mp3",
+   "rejected": [
+    "sub-heavy (53% under 120 Hz)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.528,
+   "centroid_hz": 655,
+   "clip": 0,
+   "steady_db": 4.4,
+   "falling": [
+    0.17,
+    0.26,
+    70,
+    62
+   ],
+   "seam_raw": [
+    1.32,
+    2.12,
+    1.2
+   ],
+   "seam": [
+    0.85,
+    2.15,
+    2.2
+   ],
+   "source": "fal/eng-f-8-2.wav"
+  }
+ ],
+ "eng-m-8": [
+  {
+   "take": "eng-m-8-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.804,
+   "centroid_hz": 88,
+   "clip": 0,
+   "steady_db": 4.1,
+   "falling": [
+    0.17,
+    0.38,
+    70,
+    62
+   ],
+   "seam_raw": [
+    -2.55,
+    1.92,
+    0.9
+   ],
+   "seam": [
+    -0.93,
+    2.04,
+    0.2
+   ],
+   "source": "fal/eng-m-8-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-8-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.762,
+   "centroid_hz": 106,
+   "clip": 0,
+   "steady_db": 4.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.44,
+    2.7,
+    0.8
+   ],
+   "seam": [
+    1.18,
+    2.74,
+    1.3
+   ],
+   "source": "fal/eng-m-8-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-9": [
+  {
+   "take": "eng-f-9-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.25,
+   "centroid_hz": 186,
+   "clip": 0,
+   "steady_db": 3.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.74,
+    2.94,
+    0.6
+   ],
+   "seam": [
+    2.94,
+    2.83,
+    0.5
+   ],
+   "source": "fal/eng-f-9-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-9-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.182,
+   "centroid_hz": 201,
+   "clip": 0,
+   "steady_db": 3.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.75,
+    2.61,
+    1.2
+   ],
+   "seam": [
+    0.32,
+    2.61,
+    1.6
+   ],
+   "source": "fal/eng-f-9-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-8": [
+  {
+   "take": "eng-c-8-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.727,
+   "centroid_hz": 82,
+   "clip": 0,
+   "steady_db": 4.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.15,
+    3.17,
+    4.2
+   ],
+   "seam": [
+    0.97,
+    3.17,
+    1.7
+   ],
+   "source": "fal/eng-c-8-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-8-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.93,
+   "centroid_hz": 80,
+   "clip": 0,
+   "steady_db": 4.6,
+   "falling": [
+    0.22,
+    0.36,
+    109,
+    93
+   ],
+   "seam_raw": [
+    0.27,
+    3.65,
+    2.5
+   ],
+   "seam": [
+    0.05,
+    3.57,
+    0.4
+   ],
+   "source": "fal/eng-c-8-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-9": [
+  {
+   "take": "eng-m-9-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.482,
+   "centroid_hz": 123,
+   "clip": 0,
+   "steady_db": 6.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.41,
+    2.43,
+    0.0
+   ],
+   "seam": [
+    0.24,
+    2.37,
+    0.6
+   ],
+   "source": "fal/eng-m-9-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-9-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.486,
+   "centroid_hz": 113,
+   "clip": 0,
+   "steady_db": 4.3,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -2.28,
+    2.75,
+    0.0
+   ],
+   "seam": [
+    -0.1,
+    2.66,
+    1.2
+   ],
+   "source": "fal/eng-m-9-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-9": [
+  {
+   "take": "eng-c-9-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.823,
+   "centroid_hz": 85,
+   "clip": 0,
+   "steady_db": 4.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.98,
+    3.27,
+    3.9
+   ],
+   "seam": [
+    -0.27,
+    3.39,
+    0.8
+   ],
+   "source": "fal/eng-c-9-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-9-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.586,
+   "centroid_hz": 103,
+   "clip": 0,
+   "steady_db": 3.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.07,
+    2.04,
+    1.3
+   ],
+   "seam": [
+    0.03,
+    1.87,
+    0.6
+   ],
+   "source": "fal/eng-c-9-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-10": [
+  {
+   "take": "eng-f-10-1.mp3",
+   "rejected": [
+    "sub-heavy (97% under 120 Hz)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.973,
+   "centroid_hz": 116,
+   "clip": 0,
+   "steady_db": 5.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.73,
+    4.13,
+    0.4
+   ],
+   "seam": [
+    0.87,
+    3.95,
+    1.4
+   ],
+   "source": "fal/eng-f-10-1.wav"
+  },
+  {
+   "take": "eng-f-10-2.mp3",
+   "rejected": [
+    "sub-heavy (84% under 120 Hz)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.839,
+   "centroid_hz": 340,
+   "clip": 0,
+   "steady_db": 5.1,
+   "falling": [
+    0.32,
+    0.32,
+    78,
+    62
+   ],
+   "seam_raw": [
+    -0.57,
+    4.48,
+    1.1
+   ],
+   "seam": [
+    -0.3,
+    4.59,
+    1.8
+   ],
+   "source": "fal/eng-f-10-2.wav"
+  },
+  {
+   "take": "eng-f-10-3.mp3",
+   "rejected": [
+    "sub-heavy (60% under 120 Hz)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.595,
+   "centroid_hz": 3064,
+   "clip": 0,
+   "steady_db": 5.3,
+   "falling": [
+    0.22,
+    0.3,
+    109,
+    93
+   ],
+   "seam_raw": [
+    -0.55,
+    4.09,
+    0.1
+   ],
+   "seam": [
+    0.52,
+    4.1,
+    0.1
+   ],
+   "source": "fal/eng-f-10-3.wav"
+  },
+  {
+   "take": "eng-f-10-4.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.156,
+   "centroid_hz": 206,
+   "clip": 0,
+   "steady_db": 3.9,
+   "falling": [
+    0.13,
+    0.26,
+    179,
+    164
+   ],
+   "seam_raw": [
+    -0.77,
+    2.23,
+    1.1
+   ],
+   "seam": [
+    0.39,
+    2.28,
+    0.1
+   ],
+   "source": "fal/eng-f-10-4.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-10": [
+  {
+   "take": "eng-m-10-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.591,
+   "centroid_hz": 123,
+   "clip": 0,
+   "steady_db": 3.0,
+   "falling": [
+    0.21,
+    0.26,
+    117,
+    101
+   ],
+   "seam_raw": [
+    -0.07,
+    1.88,
+    0.7
+   ],
+   "seam": [
+    0.2,
+    2.07,
+    0.8
+   ],
+   "source": "fal/eng-m-10-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-10-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.233,
+   "centroid_hz": 120,
+   "clip": 0,
+   "steady_db": 4.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.99,
+    1.98,
+    2.8
+   ],
+   "seam": [
+    0.23,
+    3.09,
+    0.6
+   ],
+   "source": "fal/eng-m-10-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-10": [
+  {
+   "take": "eng-c-10-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.825,
+   "centroid_hz": 81,
+   "clip": 0,
+   "steady_db": 4.3,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.19,
+    2.2,
+    7.9
+   ],
+   "seam": [
+    -1.38,
+    2.13,
+    2.1
+   ],
+   "source": "fal/eng-c-10-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-10-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.562,
+   "centroid_hz": 109,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.8,
+    2.39,
+    0.5
+   ],
+   "seam": [
+    0.25,
+    2.6,
+    1.4
+   ],
+   "source": "fal/eng-c-10-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-11": [
+  {
+   "take": "eng-f-11-1.mp3",
+   "rejected": [
+    "sub-heavy (55% under 120 Hz)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.551,
+   "centroid_hz": 178,
+   "clip": 0,
+   "steady_db": 3.8,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.44,
+    1.95,
+    1.1
+   ],
+   "seam": [
+    -1.06,
+    1.69,
+    0.2
+   ],
+   "source": "fal/eng-f-11-1.wav"
+  },
+  {
+   "take": "eng-f-11-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.327,
+   "centroid_hz": 158,
+   "clip": 0,
+   "steady_db": 3.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.9,
+    2.58,
+    1.6
+   ],
+   "seam": [
+    0.74,
+    2.5,
+    2.2
+   ],
+   "source": "fal/eng-f-11-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-11": [
+  {
+   "take": "eng-c-11-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.923,
+   "centroid_hz": 79,
+   "clip": 0,
+   "steady_db": 4.7,
+   "falling": [
+    0.32,
+    0.36,
+    78,
+    62
+   ],
+   "seam_raw": [
+    1.64,
+    3.52,
+    8.7
+   ],
+   "seam": [
+    -3.49,
+    3.36,
+    0.2
+   ],
+   "source": "fal/eng-c-11-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-11-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.893,
+   "centroid_hz": 75,
+   "clip": 0,
+   "steady_db": 6.6,
+   "falling": [
+    0.32,
+    0.26,
+    78,
+    62
+   ],
+   "seam_raw": [
+    -2.96,
+    5.63,
+    0.5
+   ],
+   "seam": [
+    2.61,
+    5.66,
+    0.1
+   ],
+   "source": "fal/eng-c-11-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-11": [
+  {
+   "take": "eng-m-11-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.246,
+   "centroid_hz": 134,
+   "clip": 0,
+   "steady_db": 7.4,
+   "falling": [
+    0.08,
+    0.36,
+    140,
+    132
+   ],
+   "seam_raw": [
+    1.45,
+    4.96,
+    6.8
+   ],
+   "seam": [
+    -0.77,
+    5.0,
+    2.5
+   ],
+   "source": "fal/eng-m-11-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-11-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.651,
+   "centroid_hz": 107,
+   "clip": 0,
+   "steady_db": 6.8,
+   "falling": [
+    0.21,
+    0.48,
+    117,
+    101
+   ],
+   "seam_raw": [
+    -0.35,
+    3.3,
+    8.0
+   ],
+   "seam": [
+    -0.45,
+    3.25,
+    0.4
+   ],
+   "source": "fal/eng-m-11-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-12": [
+  {
+   "take": "eng-f-12-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.276,
+   "centroid_hz": 158,
+   "clip": 0,
+   "steady_db": 5.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.84,
+    2.92,
+    0.4
+   ],
+   "seam": [
+    -0.21,
+    2.93,
+    1.2
+   ],
+   "source": "fal/eng-f-12-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-12-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 9984,
+   "clip": 0,
+   "steady_db": 1.4,
+   "falling": [
+    0.16,
+    0.32,
+    218,
+    195
+   ],
+   "seam_raw": [
+    -0.89,
+    0.83,
+    0.5
+   ],
+   "seam": [
+    -0.43,
+    0.74,
+    0.5
+   ],
+   "source": "fal/eng-f-12-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-12": [
+  {
+   "take": "eng-m-12-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.756,
+   "centroid_hz": 104,
+   "clip": 0,
+   "steady_db": 3.8,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.38,
+    3.39,
+    5.7
+   ],
+   "seam": [
+    1.63,
+    3.63,
+    0.4
+   ],
+   "source": "fal/eng-m-12-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-12-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.676,
+   "centroid_hz": 103,
+   "clip": 0,
+   "steady_db": 5.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.5,
+    2.42,
+    9.7
+   ],
+   "seam": [
+    0.83,
+    2.42,
+    0.8
+   ],
+   "source": "fal/eng-m-12-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-12": [
+  {
+   "take": "eng-c-12-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.237,
+   "centroid_hz": 346,
+   "clip": 0,
+   "steady_db": 3.3,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.63,
+    2.21,
+    0.6
+   ],
+   "seam": [
+    -0.22,
+    2.09,
+    0.7
+   ],
+   "source": "fal/eng-c-12-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-12-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.198,
+   "centroid_hz": 355,
+   "clip": 0,
+   "steady_db": 3.6,
+   "falling": [
+    0.42,
+    0.26,
+    218,
+    164
+   ],
+   "seam_raw": [
+    2.42,
+    2.27,
+    0.8
+   ],
+   "seam": [
+    -0.43,
+    2.24,
+    1.3
+   ],
+   "source": "fal/eng-c-12-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-13": [
+  {
+   "take": "eng-f-13-1.mp3",
+   "rejected": [
+    "sub-heavy (56% under 120 Hz)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.562,
+   "centroid_hz": 109,
+   "clip": 0,
+   "steady_db": 4.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.73,
+    2.75,
+    1.4
+   ],
+   "seam": [
+    0.4,
+    2.83,
+    1.8
+   ],
+   "source": "fal/eng-f-13-1.wav"
+  },
+  {
+   "take": "eng-f-13-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.079,
+   "centroid_hz": 158,
+   "clip": 0,
+   "steady_db": 6.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -3.66,
+    3.01,
+    1.7
+   ],
+   "seam": [
+    -0.31,
+    2.93,
+    0.0
+   ],
+   "source": "fal/eng-f-13-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-13": [
+  {
+   "take": "eng-c-13-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.541,
+   "centroid_hz": 126,
+   "clip": 0,
+   "steady_db": 3.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.59,
+    1.64,
+    0.2
+   ],
+   "seam": [
+    -0.48,
+    1.63,
+    0.6
+   ],
+   "source": "fal/eng-c-13-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-13-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.531,
+   "centroid_hz": 121,
+   "clip": 0,
+   "steady_db": 4.5,
+   "falling": [
+    0.19,
+    0.28,
+    125,
+    109
+   ],
+   "seam_raw": [
+    1.94,
+    1.68,
+    0.6
+   ],
+   "seam": [
+    -0.7,
+    1.86,
+    0.2
+   ],
+   "source": "fal/eng-c-13-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-14": [
+  {
+   "take": "eng-f-14-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.301,
+   "centroid_hz": 147,
+   "clip": 0,
+   "steady_db": 5.6,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.9,
+    3.06,
+    3.0
+   ],
+   "seam": [
+    1.43,
+    2.99,
+    0.1
+   ],
+   "source": "fal/eng-f-14-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-14-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.193,
+   "centroid_hz": 203,
+   "clip": 0,
+   "steady_db": 3.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    2.53,
+    3.05,
+    3.9
+   ],
+   "seam": [
+    -0.71,
+    2.51,
+    1.5
+   ],
+   "source": "fal/eng-f-14-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-13": [
+  {
+   "take": "eng-m-13-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.416,
+   "centroid_hz": 119,
+   "clip": 0,
+   "steady_db": 5.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.61,
+    2.54,
+    2.4
+   ],
+   "seam": [
+    -0.48,
+    2.74,
+    0.4
+   ],
+   "source": "fal/eng-m-13-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-13-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.636,
+   "centroid_hz": 101,
+   "clip": 0,
+   "steady_db": 3.0,
+   "falling": [
+    0.1,
+    0.28,
+    117,
+    109
+   ],
+   "seam_raw": [
+    -0.36,
+    1.6,
+    11.2
+   ],
+   "seam": [
+    -0.23,
+    1.58,
+    0.5
+   ],
+   "source": "fal/eng-m-13-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-14": [
+  {
+   "take": "eng-m-14-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.693,
+   "centroid_hz": 99,
+   "clip": 0,
+   "steady_db": 3.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.44,
+    2.5,
+    7.3
+   ],
+   "seam": [
+    -1.88,
+    2.52,
+    1.1
+   ],
+   "source": "fal/eng-m-14-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-14-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.617,
+   "centroid_hz": 108,
+   "clip": 0,
+   "steady_db": 4.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.6,
+    3.04,
+    6.5
+   ],
+   "seam": [
+    0.27,
+    3.22,
+    1.4
+   ],
+   "source": "fal/eng-m-14-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-14": [
+  {
+   "take": "eng-c-14-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.813,
+   "centroid_hz": 86,
+   "clip": 0,
+   "steady_db": 4.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    2.57,
+    3.01,
+    0.6
+   ],
+   "seam": [
+    0.21,
+    2.97,
+    1.3
+   ],
+   "source": "fal/eng-c-14-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-14-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.871,
+   "centroid_hz": 75,
+   "clip": 0,
+   "steady_db": 4.3,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.63,
+    3.32,
+    0.7
+   ],
+   "seam": [
+    0.02,
+    3.45,
+    2.7
+   ],
+   "source": "fal/eng-c-14-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-15": [
+  {
+   "take": "eng-f-15-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.429,
+   "centroid_hz": 132,
+   "clip": 0,
+   "steady_db": 4.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    2.51,
+    3.46,
+    4.8
+   ],
+   "seam": [
+    -0.6,
+    3.35,
+    2.6
+   ],
+   "source": "fal/eng-f-15-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-15-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.411,
+   "centroid_hz": 128,
+   "clip": 0,
+   "steady_db": 4.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.47,
+    3.1,
+    4.3
+   ],
+   "seam": [
+    -3.74,
+    2.9,
+    0.6
+   ],
+   "source": "fal/eng-f-15-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-15": [
+  {
+   "take": "eng-m-15-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.425,
+   "centroid_hz": 129,
+   "clip": 0,
+   "steady_db": 4.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    2.26,
+    2.93,
+    5.2
+   ],
+   "seam": [
+    0.37,
+    2.67,
+    0.7
+   ],
+   "source": "fal/eng-m-15-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-15-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.528,
+   "centroid_hz": 118,
+   "clip": 0,
+   "steady_db": 3.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.8,
+    2.59,
+    1.2
+   ],
+   "seam": [
+    -0.56,
+    2.49,
+    2.2
+   ],
+   "source": "fal/eng-m-15-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-15": [
+  {
+   "take": "eng-c-15-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.758,
+   "centroid_hz": 85,
+   "clip": 0,
+   "steady_db": 3.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.37,
+    3.09,
+    2.2
+   ],
+   "seam": [
+    1.92,
+    3.1,
+    0.0
+   ],
+   "source": "fal/eng-c-15-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-15-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.738,
+   "centroid_hz": 96,
+   "clip": 0,
+   "steady_db": 3.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    2.18,
+    2.07,
+    2.3
+   ],
+   "seam": [
+    0.57,
+    2.04,
+    0.7
+   ],
+   "source": "fal/eng-c-15-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-16": [
+  {
+   "take": "eng-f-16-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.352,
+   "centroid_hz": 128,
+   "clip": 0,
+   "steady_db": 4.9,
+   "falling": [
+    0.49,
+    0.32,
+    164,
+    117
+   ],
+   "seam_raw": [
+    1.42,
+    3.78,
+    11.3
+   ],
+   "seam": [
+    -0.96,
+    3.88,
+    2.0
+   ],
+   "source": "fal/eng-f-16-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-16-2.mp3",
+   "rejected": [
+    "sub-heavy (59% under 120 Hz)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.591,
+   "centroid_hz": 110,
+   "clip": 0,
+   "steady_db": 3.6,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.68,
+    3.03,
+    7.3
+   ],
+   "seam": [
+    -1.35,
+    3.05,
+    0.6
+   ],
+   "source": "fal/eng-f-16-2.wav"
+  }
+ ],
+ "eng-m-16": [
+  {
+   "take": "eng-m-16-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.603,
+   "centroid_hz": 111,
+   "clip": 0,
+   "steady_db": 6.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -6.78,
+    5.54,
+    1.3
+   ],
+   "seam": [
+    4.25,
+    5.54,
+    0.9
+   ],
+   "source": "fal/eng-m-16-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-16-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.76,
+   "centroid_hz": 94,
+   "clip": 0,
+   "steady_db": 5.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -3.47,
+    4.53,
+    3.8
+   ],
+   "seam": [
+    -1.12,
+    4.58,
+    0.3
+   ],
+   "source": "fal/eng-m-16-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-16": [
+  {
+   "take": "eng-c-16-1.mp3",
+   "rejected": [
+    "falling low tone (0.55 octaves to 101 Hz in 0.3 s)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.687,
+   "centroid_hz": 101,
+   "clip": 0,
+   "steady_db": 6.4,
+   "falling": [
+    0.55,
+    0.3,
+    148,
+    101
+   ],
+   "seam_raw": [
+    -1.62,
+    5.56,
+    2.7
+   ],
+   "seam": [
+    0.17,
+    5.86,
+    1.4
+   ],
+   "source": "fal/eng-c-16-1.wav"
+  },
+  {
+   "take": "eng-c-16-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.825,
+   "centroid_hz": 77,
+   "clip": 0,
+   "steady_db": 5.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.3,
+    3.86,
+    5.1
+   ],
+   "seam": [
+    -0.68,
+    3.95,
+    0.7
+   ],
+   "source": "fal/eng-c-16-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-17": [
+  {
+   "take": "eng-c-17-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.463,
+   "centroid_hz": 116,
+   "clip": 0,
+   "steady_db": 3.8,
+   "falling": [
+    0.23,
+    0.28,
+    156,
+    132
+   ],
+   "seam_raw": [
+    -0.44,
+    2.84,
+    2.2
+   ],
+   "seam": [
+    2.94,
+    2.81,
+    0.0
+   ],
+   "source": "fal/eng-c-17-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-17-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.75,
+   "centroid_hz": 96,
+   "clip": 0,
+   "steady_db": 4.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.36,
+    3.02,
+    4.1
+   ],
+   "seam": [
+    1.53,
+    3.08,
+    0.7
+   ],
+   "source": "fal/eng-c-17-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-18": [
+  {
+   "take": "eng-f-18-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.287,
+   "centroid_hz": 2432,
+   "clip": 0,
+   "steady_db": 2.6,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.87,
+    1.65,
+    0.3
+   ],
+   "seam": [
+    0.34,
+    1.42,
+    2.0
+   ],
+   "source": "fal/eng-f-18-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-18-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.105,
+   "centroid_hz": 7042,
+   "clip": 0,
+   "steady_db": 2.7,
+   "falling": [
+    0.15,
+    0.46,
+    156,
+    140
+   ],
+   "seam_raw": [
+    0.33,
+    2.0,
+    0.2
+   ],
+   "seam": [
+    0.66,
+    1.64,
+    0.1
+   ],
+   "source": "fal/eng-f-18-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-18": [
+  {
+   "take": "eng-m-18-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.677,
+   "centroid_hz": 106,
+   "clip": 0,
+   "steady_db": 7.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.97,
+    3.12,
+    0.2
+   ],
+   "seam": [
+    -1.26,
+    3.12,
+    1.1
+   ],
+   "source": "fal/eng-m-18-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-18-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.494,
+   "centroid_hz": 123,
+   "clip": 0,
+   "steady_db": 3.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.17,
+    2.58,
+    0.8
+   ],
+   "seam": [
+    -1.54,
+    2.58,
+    0.5
+   ],
+   "source": "fal/eng-m-18-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-18": [
+  {
+   "take": "eng-c-18-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.927,
+   "centroid_hz": 76,
+   "clip": 0,
+   "steady_db": 5.0,
+   "falling": [
+    0.24,
+    0.36,
+    101,
+    85
+   ],
+   "seam_raw": [
+    -3.32,
+    2.91,
+    0.5
+   ],
+   "seam": [
+    -0.0,
+    2.96,
+    0.1
+   ],
+   "source": "fal/eng-c-18-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-18-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.913,
+   "centroid_hz": 81,
+   "clip": 0,
+   "steady_db": 5.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    2.74,
+    3.6,
+    0.9
+   ],
+   "seam": [
+    -0.1,
+    3.7,
+    1.3
+   ],
+   "source": "fal/eng-c-18-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-19": [
+  {
+   "take": "eng-m-19-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.303,
+   "centroid_hz": 152,
+   "clip": 0,
+   "steady_db": 4.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.7,
+    3.14,
+    2.2
+   ],
+   "seam": [
+    -3.76,
+    2.94,
+    0.1
+   ],
+   "source": "fal/eng-m-19-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-19-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.273,
+   "centroid_hz": 171,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.71,
+    2.83,
+    1.4
+   ],
+   "seam": [
+    -1.82,
+    2.67,
+    0.5
+   ],
+   "source": "fal/eng-m-19-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-19": [
+  {
+   "take": "eng-c-19-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.817,
+   "centroid_hz": 78,
+   "clip": 0,
+   "steady_db": 3.9,
+   "falling": [
+    0.35,
+    0.36,
+    109,
+    85
+   ],
+   "seam_raw": [
+    3.0,
+    2.14,
+    2.2
+   ],
+   "seam": [
+    0.12,
+    1.84,
+    0.6
+   ],
+   "source": "fal/eng-c-19-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-19-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.796,
+   "centroid_hz": 104,
+   "clip": 0,
+   "steady_db": 6.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    2.66,
+    3.37,
+    0.1
+   ],
+   "seam": [
+    -0.67,
+    3.31,
+    0.1
+   ],
+   "source": "fal/eng-c-19-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-20": [
+  {
+   "take": "eng-m-20-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.687,
+   "centroid_hz": 106,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -2.78,
+    2.59,
+    3.6
+   ],
+   "seam": [
+    3.31,
+    2.63,
+    0.7
+   ],
+   "source": "fal/eng-m-20-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-20-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.561,
+   "centroid_hz": 111,
+   "clip": 0,
+   "steady_db": 4.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.73,
+    2.35,
+    0.3
+   ],
+   "seam": [
+    0.76,
+    2.37,
+    0.8
+   ],
+   "source": "fal/eng-m-20-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-20": [
+  {
+   "take": "eng-f-20-1.mp3",
+   "rejected": [
+    "sub-heavy (69% under 120 Hz)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.693,
+   "centroid_hz": 154,
+   "clip": 0,
+   "steady_db": 6.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    2.28,
+    3.71,
+    0.3
+   ],
+   "seam": [
+    1.13,
+    3.79,
+    1.3
+   ],
+   "source": "fal/eng-f-20-1.wav"
+  },
+  {
+   "take": "eng-f-20-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.253,
+   "centroid_hz": 265,
+   "clip": 0,
+   "steady_db": 2.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.02,
+    1.87,
+    0.1
+   ],
+   "seam": [
+    0.67,
+    1.84,
+    1.0
+   ],
+   "source": "fal/eng-f-20-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-20": [
+  {
+   "take": "eng-c-20-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.773,
+   "centroid_hz": 98,
+   "clip": 0,
+   "steady_db": 4.3,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.18,
+    2.82,
+    3.5
+   ],
+   "seam": [
+    -1.05,
+    3.02,
+    0.5
+   ],
+   "source": "fal/eng-c-20-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-20-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.59,
+   "centroid_hz": 109,
+   "clip": 0,
+   "steady_db": 2.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.07,
+    2.34,
+    1.8
+   ],
+   "seam": [
+    0.23,
+    2.51,
+    0.7
+   ],
+   "source": "fal/eng-c-20-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-21": [
+  {
+   "take": "eng-f-21-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.261,
+   "centroid_hz": 163,
+   "clip": 0,
+   "steady_db": 6.5,
+   "falling": [
+    0.06,
+    0.28,
+    187,
+    179
+   ],
+   "seam_raw": [
+    -3.18,
+    5.05,
+    4.9
+   ],
+   "seam": [
+    -3.46,
+    5.47,
+    0.1
+   ],
+   "source": "fal/eng-f-21-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-f-21-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.415,
+   "centroid_hz": 130,
+   "clip": 0,
+   "steady_db": 3.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.5,
+    2.38,
+    1.0
+   ],
+   "seam": [
+    -0.18,
+    2.5,
+    0.6
+   ],
+   "source": "fal/eng-f-21-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-21": [
+  {
+   "take": "eng-m-21-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.698,
+   "centroid_hz": 112,
+   "clip": 0,
+   "steady_db": 5.3,
+   "falling": [
+    0.12,
+    0.28,
+    101,
+    93
+   ],
+   "seam_raw": [
+    3.77,
+    3.77,
+    1.2
+   ],
+   "seam": [
+    2.69,
+    3.98,
+    2.1
+   ],
+   "source": "fal/eng-m-21-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-21-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.588,
+   "centroid_hz": 109,
+   "clip": 0,
+   "steady_db": 5.8,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.22,
+    3.38,
+    3.6
+   ],
+   "seam": [
+    3.59,
+    3.39,
+    1.4
+   ],
+   "source": "fal/eng-m-21-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-21": [
+  {
+   "take": "eng-c-21-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.734,
+   "centroid_hz": 103,
+   "clip": 0,
+   "steady_db": 4.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.15,
+    3.69,
+    4.6
+   ],
+   "seam": [
+    5.1,
+    3.45,
+    1.3
+   ],
+   "source": "fal/eng-c-21-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-21-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.644,
+   "centroid_hz": 114,
+   "clip": 0,
+   "steady_db": 6.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -3.67,
+    4.88,
+    3.5
+   ],
+   "seam": [
+    5.12,
+    4.56,
+    0.4
+   ],
+   "source": "fal/eng-c-21-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-f-22": [
+  {
+   "take": "eng-f-22-1.mp3",
+   "rejected": [
+    "sub-heavy (74% under 120 Hz)"
+   ],
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.738,
+   "centroid_hz": 988,
+   "clip": 0,
+   "steady_db": 7.3,
+   "falling": [
+    0.11,
+    0.26,
+    109,
+    101
+   ],
+   "seam_raw": [
+    -0.33,
+    4.71,
+    1.5
+   ],
+   "seam": [
+    -0.78,
+    4.73,
+    0.4
+   ],
+   "source": "fal/eng-f-22-1.wav"
+  },
+  {
+   "take": "eng-f-22-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.475,
+   "centroid_hz": 4511,
+   "clip": 0,
+   "steady_db": 2.4,
+   "falling": [
+    0.26,
+    0.66,
+    93,
+    78
+   ],
+   "seam_raw": [
+    -2.14,
+    1.23,
+    0.0
+   ],
+   "seam": [
+    -0.21,
+    1.21,
+    0.4
+   ],
+   "source": "fal/eng-f-22-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-m-22": [
+  {
+   "take": "eng-m-22-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.518,
+   "centroid_hz": 120,
+   "clip": 0,
+   "steady_db": 3.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.14,
+    2.56,
+    1.0
+   ],
+   "seam": [
+    0.83,
+    2.62,
+    1.6
+   ],
+   "source": "fal/eng-m-22-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-m-22-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.443,
+   "centroid_hz": 126,
+   "clip": 0,
+   "steady_db": 4.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.35,
+    3.23,
+    5.3
+   ],
+   "seam": [
+    1.79,
+    3.24,
+    0.2
+   ],
+   "source": "fal/eng-m-22-2.wav",
+   "kb": 109
+  }
+ ],
+ "eng-c-22": [
+  {
+   "take": "eng-c-22-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.583,
+   "centroid_hz": 113,
+   "clip": 0,
+   "steady_db": 4.6,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.53,
+    3.43,
+    2.0
+   ],
+   "seam": [
+    1.8,
+    3.42,
+    0.5
+   ],
+   "source": "fal/eng-c-22-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "eng-c-22-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.477,
+   "centroid_hz": 132,
+   "clip": 0,
+   "steady_db": 3.3,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.75,
+    2.1,
+    4.1
+   ],
+   "seam": [
+    -0.05,
+    2.03,
+    0.6
+   ],
+   "source": "fal/eng-c-22-2.wav",
+   "kb": 109
+  }
+ ],
+ "beamloop-1": [
+  {
+   "take": "beamloop-1-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.009,
+   "centroid_hz": 7759,
+   "clip": 0,
+   "steady_db": 1.2,
+   "falling": [
+    0.04,
+    0.34,
+    257,
+    250
+   ],
+   "seam_raw": [
+    -0.43,
+    1.05,
+    0.7
+   ],
+   "seam": [
+    -0.67,
+    0.65,
+    0.8
+   ],
+   "source": "fal/beamloop-1-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-1-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8650,
+   "clip": 0,
+   "steady_db": 0.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.59,
+    0.78,
+    0.6
+   ],
+   "seam": [
+    0.58,
+    0.51,
+    0.3
+   ],
+   "source": "fal/beamloop-1-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-0": [
+  {
+   "take": "beamloop-0-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7846,
+   "clip": 0,
+   "steady_db": 0.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.27,
+    1.0,
+    0.1
+   ],
+   "seam": [
+    -0.03,
+    0.35,
+    0.4
+   ],
+   "source": "fal/beamloop-0-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-0-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8497,
+   "clip": 0,
+   "steady_db": 1.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.36,
+    0.94,
+    0.8
+   ],
+   "seam": [
+    -0.5,
+    0.69,
+    2.3
+   ],
+   "source": "fal/beamloop-0-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-2": [
+  {
+   "take": "beamloop-2-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7801,
+   "clip": 0,
+   "steady_db": 2.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.39,
+    1.05,
+    0.5
+   ],
+   "seam": [
+    -0.02,
+    1.07,
+    0.4
+   ],
+   "source": "fal/beamloop-2-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-2-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 886,
+   "clip": 0,
+   "steady_db": 6.9,
+   "falling": [
+    0.05,
+    0.46,
+    234,
+    226
+   ],
+   "seam_raw": [
+    6.74,
+    8.51,
+    0.5
+   ],
+   "seam": [
+    0.17,
+    7.36,
+    1.0
+   ],
+   "source": "fal/beamloop-2-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-3": [
+  {
+   "take": "beamloop-3-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 6721,
+   "clip": 0,
+   "steady_db": 0.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.08,
+    0.81,
+    1.1
+   ],
+   "seam": [
+    0.09,
+    0.5,
+    0.1
+   ],
+   "source": "fal/beamloop-3-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-3-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.001,
+   "centroid_hz": 6497,
+   "clip": 0,
+   "steady_db": 0.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.05,
+    0.64,
+    0.5
+   ],
+   "seam": [
+    0.2,
+    0.49,
+    0.1
+   ],
+   "source": "fal/beamloop-3-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-4": [
+  {
+   "take": "beamloop-4-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 3206,
+   "clip": 0,
+   "steady_db": 3.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.36,
+    2.33,
+    0.8
+   ],
+   "seam": [
+    -1.05,
+    2.41,
+    0.1
+   ],
+   "source": "fal/beamloop-4-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-4-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 6136,
+   "clip": 0,
+   "steady_db": 2.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.08,
+    1.58,
+    0.4
+   ],
+   "seam": [
+    0.24,
+    1.52,
+    1.0
+   ],
+   "source": "fal/beamloop-4-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-5": [
+  {
+   "take": "beamloop-5-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.036,
+   "centroid_hz": 169,
+   "clip": 0,
+   "steady_db": 4.6,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.01,
+    3.24,
+    0.7
+   ],
+   "seam": [
+    -3.41,
+    4.35,
+    0.6
+   ],
+   "source": "fal/beamloop-5-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-5-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.234,
+   "centroid_hz": 134,
+   "clip": 0,
+   "steady_db": 4.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.2,
+    2.97,
+    0.2
+   ],
+   "seam": [
+    1.15,
+    3.03,
+    0.6
+   ],
+   "source": "fal/beamloop-5-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-6": [
+  {
+   "take": "beamloop-6-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7316,
+   "clip": 0,
+   "steady_db": 0.6,
+   "falling": [
+    0.04,
+    0.28,
+    257,
+    250
+   ],
+   "seam_raw": [
+    -1.14,
+    1.02,
+    0.1
+   ],
+   "seam": [
+    0.4,
+    0.97,
+    0.7
+   ],
+   "source": "fal/beamloop-6-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-6-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8181,
+   "clip": 0,
+   "steady_db": 0.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.03,
+    0.81,
+    0.3
+   ],
+   "seam": [
+    0.13,
+    0.33,
+    3.3
+   ],
+   "source": "fal/beamloop-6-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-7": [
+  {
+   "take": "beamloop-7-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 5683,
+   "clip": 0,
+   "steady_db": 1.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.32,
+    1.21,
+    0.8
+   ],
+   "seam": [
+    0.27,
+    0.97,
+    2.1
+   ],
+   "source": "fal/beamloop-7-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-7-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7356,
+   "clip": 0,
+   "steady_db": 0.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.25,
+    0.93,
+    0.2
+   ],
+   "seam": [
+    -0.2,
+    0.39,
+    0.8
+   ],
+   "source": "fal/beamloop-7-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-8": [
+  {
+   "take": "beamloop-8-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 4313,
+   "clip": 0,
+   "steady_db": 1.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.14,
+    1.27,
+    1.1
+   ],
+   "seam": [
+    0.73,
+    1.25,
+    0.7
+   ],
+   "source": "fal/beamloop-8-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-8-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 3536,
+   "clip": 0,
+   "steady_db": 3.0,
+   "falling": [
+    0.21,
+    0.42,
+    695,
+    601
+   ],
+   "seam_raw": [
+    0.16,
+    1.46,
+    0.1
+   ],
+   "seam": [
+    -0.62,
+    0.88,
+    1.8
+   ],
+   "source": "fal/beamloop-8-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-9": [
+  {
+   "take": "beamloop-9-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.358,
+   "centroid_hz": 698,
+   "clip": 0,
+   "steady_db": 3.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.66,
+    1.76,
+    0.4
+   ],
+   "seam": [
+    -0.19,
+    1.81,
+    0.4
+   ],
+   "source": "fal/beamloop-9-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-9-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.45,
+   "centroid_hz": 2477,
+   "clip": 0,
+   "steady_db": 3.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -1.26,
+    1.78,
+    0.4
+   ],
+   "seam": [
+    -0.32,
+    1.19,
+    0.9
+   ],
+   "source": "fal/beamloop-9-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-10": [
+  {
+   "take": "beamloop-10-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7490,
+   "clip": 0,
+   "steady_db": 0.7,
+   "falling": [
+    0.06,
+    0.32,
+    203,
+    195
+   ],
+   "seam_raw": [
+    -0.35,
+    1.0,
+    0.1
+   ],
+   "seam": [
+    0.16,
+    0.51,
+    1.9
+   ],
+   "source": "fal/beamloop-10-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-10-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 5155,
+   "clip": 0,
+   "steady_db": 0.7,
+   "falling": [
+    0.09,
+    0.78,
+    500,
+    468
+   ],
+   "seam_raw": [
+    -0.12,
+    0.87,
+    0.9
+   ],
+   "seam": [
+    -0.02,
+    0.33,
+    3.7
+   ],
+   "source": "fal/beamloop-10-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-12": [
+  {
+   "take": "beamloop-12-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.004,
+   "centroid_hz": 3838,
+   "clip": 0,
+   "steady_db": 1.0,
+   "falling": [
+    0.19,
+    0.46,
+    640,
+    562
+   ],
+   "seam_raw": [
+    -0.1,
+    0.84,
+    1.3
+   ],
+   "seam": [
+    -0.42,
+    0.72,
+    0.3
+   ],
+   "source": "fal/beamloop-12-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-12-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.032,
+   "centroid_hz": 3675,
+   "clip": 0,
+   "steady_db": 1.5,
+   "falling": [
+    0.1,
+    0.58,
+    117,
+    109
+   ],
+   "seam_raw": [
+    -0.31,
+    1.37,
+    0.2
+   ],
+   "seam": [
+    -0.21,
+    0.96,
+    0.4
+   ],
+   "source": "fal/beamloop-12-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-11": [
+  {
+   "take": "beamloop-11-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.042,
+   "centroid_hz": 4935,
+   "clip": 0,
+   "steady_db": 1.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.46,
+    0.95,
+    0.4
+   ],
+   "seam": [
+    0.45,
+    0.84,
+    0.3
+   ],
+   "source": "fal/beamloop-11-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-11-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.016,
+   "centroid_hz": 4598,
+   "clip": 0,
+   "steady_db": 2.4,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.75,
+    0.89,
+    0.7
+   ],
+   "seam": [
+    -0.09,
+    0.62,
+    0.8
+   ],
+   "source": "fal/beamloop-11-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-13": [
+  {
+   "take": "beamloop-13-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8487,
+   "clip": 0,
+   "steady_db": 0.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.23,
+    0.86,
+    0.6
+   ],
+   "seam": [
+    0.11,
+    0.42,
+    0.4
+   ],
+   "source": "fal/beamloop-13-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-13-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 9144,
+   "clip": 0,
+   "steady_db": 0.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.39,
+    1.06,
+    0.6
+   ],
+   "seam": [
+    -0.1,
+    0.49,
+    2.1
+   ],
+   "source": "fal/beamloop-13-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-15": [
+  {
+   "take": "beamloop-15-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.12,
+   "centroid_hz": 414,
+   "clip": 0,
+   "steady_db": 3.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.03,
+    1.97,
+    0.8
+   ],
+   "seam": [
+    0.45,
+    2.36,
+    0.2
+   ],
+   "source": "fal/beamloop-15-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-15-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.166,
+   "centroid_hz": 2469,
+   "clip": 0,
+   "steady_db": 2.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    1.97,
+    2.65,
+    0.8
+   ],
+   "seam": [
+    0.97,
+    2.23,
+    0.3
+   ],
+   "source": "fal/beamloop-15-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-14": [
+  {
+   "take": "beamloop-14-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.002,
+   "centroid_hz": 8379,
+   "clip": 0,
+   "steady_db": 0.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.37,
+    0.9,
+    1.0
+   ],
+   "seam": [
+    0.26,
+    0.31,
+    0.8
+   ],
+   "source": "fal/beamloop-14-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-14-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.002,
+   "centroid_hz": 6932,
+   "clip": 0,
+   "steady_db": 0.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.19,
+    0.68,
+    0.0
+   ],
+   "seam": [
+    -0.45,
+    0.31,
+    0.5
+   ],
+   "source": "fal/beamloop-14-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-16": [
+  {
+   "take": "beamloop-16-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 6590,
+   "clip": 0,
+   "steady_db": 0.8,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.07,
+    0.73,
+    0.7
+   ],
+   "seam": [
+    -0.08,
+    0.75,
+    0.9
+   ],
+   "source": "fal/beamloop-16-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-16-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7294,
+   "clip": 0,
+   "steady_db": 0.6,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.15,
+    0.87,
+    0.2
+   ],
+   "seam": [
+    0.11,
+    0.47,
+    3.0
+   ],
+   "source": "fal/beamloop-16-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-17": [
+  {
+   "take": "beamloop-17-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.003,
+   "centroid_hz": 3321,
+   "clip": 0,
+   "steady_db": 3.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.0,
+    2.15,
+    0.7
+   ],
+   "seam": [
+    -0.73,
+    2.05,
+    1.1
+   ],
+   "source": "fal/beamloop-17-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-17-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.112,
+   "centroid_hz": 2011,
+   "clip": 0,
+   "steady_db": 1.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.82,
+    1.35,
+    0.1
+   ],
+   "seam": [
+    0.93,
+    1.02,
+    0.9
+   ],
+   "source": "fal/beamloop-17-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-18": [
+  {
+   "take": "beamloop-18-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8396,
+   "clip": 0,
+   "steady_db": 0.7,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.09,
+    0.86,
+    1.0
+   ],
+   "seam": [
+    0.17,
+    0.55,
+    1.8
+   ],
+   "source": "fal/beamloop-18-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-18-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7500,
+   "clip": 0,
+   "steady_db": 0.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.06,
+    0.92,
+    0.4
+   ],
+   "seam": [
+    0.04,
+    0.36,
+    0.6
+   ],
+   "source": "fal/beamloop-18-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-19": [
+  {
+   "take": "beamloop-19-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.001,
+   "centroid_hz": 7459,
+   "clip": 0,
+   "steady_db": 0.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.23,
+    0.75,
+    0.3
+   ],
+   "seam": [
+    0.23,
+    0.44,
+    1.6
+   ],
+   "source": "fal/beamloop-19-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-19-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.005,
+   "centroid_hz": 6856,
+   "clip": 0,
+   "steady_db": 0.8,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.84,
+    0.71,
+    0.3
+   ],
+   "seam": [
+    -0.02,
+    0.6,
+    0.3
+   ],
+   "source": "fal/beamloop-19-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-20": [
+  {
+   "take": "beamloop-20-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.033,
+   "centroid_hz": 5582,
+   "clip": 0,
+   "steady_db": 0.7,
+   "falling": [
+    0.18,
+    0.4,
+    203,
+    179
+   ],
+   "seam_raw": [
+    -0.42,
+    0.97,
+    0.4
+   ],
+   "seam": [
+    -0.07,
+    0.62,
+    1.5
+   ],
+   "source": "fal/beamloop-20-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-20-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.031,
+   "centroid_hz": 4562,
+   "clip": 0,
+   "steady_db": 1.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.27,
+    1.05,
+    0.7
+   ],
+   "seam": [
+    0.3,
+    0.92,
+    1.4
+   ],
+   "source": "fal/beamloop-20-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-21": [
+  {
+   "take": "beamloop-21-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8204,
+   "clip": 0,
+   "steady_db": 0.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.02,
+    0.84,
+    0.8
+   ],
+   "seam": [
+    0.08,
+    0.36,
+    1.4
+   ],
+   "source": "fal/beamloop-21-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-21-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8053,
+   "clip": 0,
+   "steady_db": 0.5,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.17,
+    0.93,
+    0.3
+   ],
+   "seam": [
+    -0.08,
+    0.32,
+    0.9
+   ],
+   "source": "fal/beamloop-21-2.wav",
+   "kb": 40
+  }
+ ],
+ "beamloop-22": [
+  {
+   "take": "beamloop-22-1.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8063,
+   "clip": 0,
+   "steady_db": 0.6,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.2,
+    0.92,
+    1.1
+   ],
+   "seam": [
+    0.1,
+    0.34,
+    0.0
+   ],
+   "source": "fal/beamloop-22-1.wav",
+   "kb": 40
+  },
+  {
+   "take": "beamloop-22-2.mp3",
+   "seconds": 2.4,
+   "sounding_s": 2.4,
+   "sub_lt120": 0.001,
+   "centroid_hz": 6089,
+   "clip": 0,
+   "steady_db": 0.5,
+   "falling": [
+    0.05,
+    0.28,
+    218,
+    210
+   ],
+   "seam_raw": [
+    -0.4,
+    0.92,
+    0.4
+   ],
+   "seam": [
+    0.18,
+    0.66,
+    1.2
+   ],
+   "source": "fal/beamloop-22-2.wav",
+   "kb": 40
+  }
+ ],
+ "hit-heavy": [
+  {
+   "take": "hit-heavy-1.mp3",
+   "seconds": 1.48,
+   "sounding_s": 0.7,
+   "sub_lt120": 0.884,
+   "centroid_hz": 146,
+   "clip": 0,
+   "falling": [
+    0.14,
+    0.4,
+    85,
+    78
+   ],
+   "source": "fal/hit-heavy-1.wav",
+   "kb": 24
+  },
+  {
+   "take": "hit-heavy-2.mp3",
+   "seconds": 1.48,
+   "sounding_s": 0.6,
+   "sub_lt120": 0.721,
+   "centroid_hz": 203,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/hit-heavy-2.wav",
+   "kb": 24
+  },
+  {
+   "take": "hit-heavy-3.mp3",
+   "seconds": 1.15,
+   "sounding_s": 0.65,
+   "sub_lt120": 0.629,
+   "centroid_hz": 419,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/hit-heavy-3.wav",
+   "kb": 19
+  },
+  {
+   "take": "hit-heavy-4.mp3",
+   "seconds": 1.48,
+   "sounding_s": 0.65,
+   "sub_lt120": 0.861,
+   "centroid_hz": 105,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/hit-heavy-4.wav",
+   "kb": 24
+  }
+ ],
+ "shield-ring": [
+  {
+   "take": "shield-ring-1.mp3",
+   "rejected": [
+    "sub-heavy (78% under 120 Hz)"
+   ],
+   "seconds": 1.2,
+   "sounding_s": 0.85,
+   "sub_lt120": 0.781,
+   "centroid_hz": 97,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-ring-1.wav"
+  },
+  {
+   "take": "shield-ring-2.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.7,
+   "sub_lt120": 0.038,
+   "centroid_hz": 159,
+   "clip": 0,
+   "falling": [
+    0.07,
+    0.34,
+    156,
+    148
+   ],
+   "source": "fal/shield-ring-2.wav",
+   "kb": 20
+  },
+  {
+   "take": "shield-ring-3.mp3",
+   "rejected": [
+    "sub-heavy (91% under 120 Hz)"
+   ],
+   "seconds": 1.2,
+   "sounding_s": 0.75,
+   "sub_lt120": 0.909,
+   "centroid_hz": 103,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-ring-3.wav"
+  },
+  {
+   "take": "shield-ring-4.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.6,
+   "sub_lt120": 0.249,
+   "centroid_hz": 7119,
+   "clip": 0,
+   "falling": [
+    0.14,
+    0.8,
+    85,
+    78
+   ],
+   "source": "fal/shield-ring-4.wav",
+   "kb": 20
+  },
+  {
+   "take": "shield-ring-5.mp3",
+   "rejected": [
+    "sub-heavy (64% under 120 Hz)"
+   ],
+   "seconds": 1.2,
+   "sounding_s": 0.65,
+   "sub_lt120": 0.636,
+   "centroid_hz": 114,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-ring-5.wav"
+  },
+  {
+   "take": "shield-ring-6.mp3",
+   "rejected": [
+    "sub-heavy (96% under 120 Hz)"
+   ],
+   "seconds": 1.2,
+   "sounding_s": 0.8,
+   "sub_lt120": 0.962,
+   "centroid_hz": 104,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-ring-6.wav"
+  }
+ ],
+ "shield-hum": [
+  {
+   "take": "shield-hum-1.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.6,
+   "sub_lt120": 0.002,
+   "centroid_hz": 5101,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-hum-1.wav",
+   "kb": 20
+  },
+  {
+   "take": "shield-hum-2.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.65,
+   "sub_lt120": 0.004,
+   "centroid_hz": 6963,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-hum-2.wav",
+   "kb": 20
+  },
+  {
+   "take": "shield-hum-3.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.65,
+   "sub_lt120": 0.005,
+   "centroid_hz": 5824,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-hum-3.wav",
+   "kb": 20
+  },
+  {
+   "take": "shield-hum-4.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.7,
+   "sub_lt120": 0.015,
+   "centroid_hz": 5812,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-hum-4.wav",
+   "kb": 20
+  }
+ ],
+ "shield-crackle": [
+  {
+   "take": "shield-crackle-1.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.95,
+   "sub_lt120": 0.0,
+   "centroid_hz": 10408,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-crackle-1.wav",
+   "kb": 20
+  },
+  {
+   "take": "shield-crackle-2.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.65,
+   "sub_lt120": 0.021,
+   "centroid_hz": 10818,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-crackle-2.wav",
+   "kb": 20
+  },
+  {
+   "take": "shield-crackle-3.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.142,
+   "centroid_hz": 909,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-crackle-3.wav",
+   "kb": 20
+  },
+  {
+   "take": "shield-crackle-4.mp3",
+   "rejected": [
+    "mostly silent (0.3 s sounding)"
+   ],
+   "seconds": 1.2,
+   "sounding_s": 0.3,
+   "sub_lt120": 0.156,
+   "centroid_hz": 1828,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/shield-crackle-4.wav"
+  }
+ ],
+ "whizz-e": [
+  {
+   "take": "whizz-e-1.mp3",
+   "seconds": 1.0,
+   "sounding_s": 0.45,
+   "sub_lt120": 0.002,
+   "centroid_hz": 2508,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/whizz-e-1.wav",
+   "kb": 16
+  },
+  {
+   "take": "whizz-e-2.mp3",
+   "seconds": 1.0,
+   "sounding_s": 0.5,
+   "sub_lt120": 0.001,
+   "centroid_hz": 2573,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/whizz-e-2.wav",
+   "kb": 16
+  },
+  {
+   "take": "whizz-e-3.mp3",
+   "seconds": 1.0,
+   "sounding_s": 0.5,
+   "sub_lt120": 0.001,
+   "centroid_hz": 2317,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/whizz-e-3.wav",
+   "kb": 16
+  },
+  {
+   "take": "whizz-e-4.mp3",
+   "seconds": 1.0,
+   "sounding_s": 0.4,
+   "sub_lt120": 0.092,
+   "centroid_hz": 2234,
+   "clip": 0,
+   "falling": [
+    0.88,
+    0.44,
+    359,
+    195
+   ],
+   "source": "fal/whizz-e-4.wav",
+   "kb": 16
+  }
+ ],
+ "debris": [
+  {
+   "take": "debris-1.mp3",
+   "seconds": 1.57,
+   "sounding_s": 1.55,
+   "sub_lt120": 0.0,
+   "centroid_hz": 5264,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/debris-1.wav",
+   "kb": 25
+  },
+  {
+   "take": "debris-2.mp3",
+   "seconds": 1.57,
+   "sounding_s": 1.35,
+   "sub_lt120": 0.0,
+   "centroid_hz": 6292,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/debris-2.wav",
+   "kb": 25
+  },
+  {
+   "take": "debris-3.mp3",
+   "seconds": 1.38,
+   "sounding_s": 1.25,
+   "sub_lt120": 0.0,
+   "centroid_hz": 5725,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/debris-3.wav",
+   "kb": 23
+  },
+  {
+   "take": "debris-4.mp3",
+   "seconds": 1.76,
+   "sounding_s": 1.6,
+   "sub_lt120": 0.0,
+   "centroid_hz": 5534,
+   "clip": 0,
+   "falling": [
+    0.16,
+    0.36,
+    382,
+    343
+   ],
+   "source": "fal/debris-4.wav",
+   "kb": 28
+  }
+ ],
+ "sparks": [
+  {
+   "take": "sparks-1.mp3",
+   "seconds": 1.2,
+   "sounding_s": 1.15,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8453,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/sparks-1.wav",
+   "kb": 20
+  },
+  {
+   "take": "sparks-2.mp3",
+   "seconds": 1.2,
+   "sounding_s": 1.0,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7419,
+   "clip": 0,
+   "falling": [
+    0.17,
+    0.28,
+    562,
+    500
+   ],
+   "source": "fal/sparks-2.wav",
+   "kb": 20
+  },
+  {
+   "take": "sparks-3.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.95,
+   "sub_lt120": 0.0,
+   "centroid_hz": 9027,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/sparks-3.wav",
+   "kb": 20
+  },
+  {
+   "take": "sparks-4.mp3",
+   "seconds": 1.2,
+   "sounding_s": 0.9,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7886,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/sparks-4.wav",
+   "kb": 20
+  }
+ ],
+ "xcrack": [
+  {
+   "take": "xcrack-1.mp3",
+   "seconds": 0.6,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.082,
+   "centroid_hz": 1438,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xcrack-1.wav",
+   "kb": 10
+  },
+  {
+   "take": "xcrack-2.mp3",
+   "seconds": 0.6,
+   "sounding_s": 0.35,
+   "sub_lt120": 0.084,
+   "centroid_hz": 1728,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xcrack-2.wav",
+   "kb": 10
+  },
+  {
+   "take": "xcrack-3.mp3",
+   "seconds": 0.6,
+   "sounding_s": 0.3,
+   "sub_lt120": 0.066,
+   "centroid_hz": 1371,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xcrack-3.wav",
+   "kb": 10
+  },
+  {
+   "take": "xcrack-4.mp3",
+   "seconds": 0.6,
+   "sounding_s": 0.3,
+   "sub_lt120": 0.047,
+   "centroid_hz": 1491,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xcrack-4.wav",
+   "kb": 10
+  }
+ ],
+ "xsub": [
+  {
+   "take": "xsub-1.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.15,
+   "sub_lt120": 0.935,
+   "centroid_hz": 64,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xsub-1.wav",
+   "kb": 39
+  },
+  {
+   "take": "xsub-2.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.35,
+   "sub_lt120": 0.986,
+   "centroid_hz": 55,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xsub-2.wav",
+   "kb": 39
+  },
+  {
+   "take": "xsub-3.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.0,
+   "sub_lt120": 0.993,
+   "centroid_hz": 47,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xsub-3.wav",
+   "kb": 39
+  },
+  {
+   "take": "xsub-4.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.25,
+   "sub_lt120": 0.982,
+   "centroid_hz": 41,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xsub-4.wav",
+   "kb": 39
+  }
+ ],
+ "whizz-k": [
+  {
+   "take": "whizz-k-1.mp3",
+   "seconds": 1.0,
+   "sounding_s": 0.65,
+   "sub_lt120": 0.001,
+   "centroid_hz": 1784,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/whizz-k-1.wav",
+   "kb": 16
+  },
+  {
+   "take": "whizz-k-2.mp3",
+   "seconds": 1.0,
+   "sounding_s": 0.6,
+   "sub_lt120": 0.003,
+   "centroid_hz": 1257,
+   "clip": 0,
+   "falling": [
+    0.29,
+    0.48,
+    695,
+    570
+   ],
+   "source": "fal/whizz-k-2.wav",
+   "kb": 16
+  },
+  {
+   "take": "whizz-k-3.mp3",
+   "seconds": 1.0,
+   "sounding_s": 0.55,
+   "sub_lt120": 0.0,
+   "centroid_hz": 2259,
+   "clip": 0,
+   "falling": [
+    0.24,
+    0.3,
+    664,
+    562
+   ],
+   "source": "fal/whizz-k-3.wav",
+   "kb": 16
+  }
+ ],
+ "groan": [
+  {
+   "take": "groan-1.mp3",
+   "seconds": 3.62,
+   "sounding_s": 2.85,
+   "sub_lt120": 0.332,
+   "centroid_hz": 226,
+   "clip": 0,
+   "falling": [
+    0.11,
+    0.86,
+    109,
+    101
+   ],
+   "source": "fal/groan-1.wav",
+   "kb": 57
+  },
+  {
+   "take": "groan-2.mp3",
+   "seconds": 5.0,
+   "sounding_s": 3.0,
+   "sub_lt120": 0.727,
+   "centroid_hz": 121,
+   "clip": 0,
+   "falling": [
+    0.06,
+    0.4,
+    203,
+    195
+   ],
+   "source": "fal/groan-2.wav",
+   "kb": 79
+  },
+  {
+   "take": "groan-3.mp3",
+   "seconds": 4.27,
+   "sounding_s": 3.0,
+   "sub_lt120": 0.089,
+   "centroid_hz": 208,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/groan-3.wav",
+   "kb": 68
+  }
+ ],
+ "arrive-jump": [
+  {
+   "take": "arrive-jump-1.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.95,
+   "sub_lt120": 0.002,
+   "centroid_hz": 5704,
+   "clip": 0,
+   "falling": [
+    0.14,
+    0.26,
+    687,
+    625
+   ],
+   "source": "fal/arrive-jump-1.wav",
+   "kb": 39
+  },
+  {
+   "take": "arrive-jump-2.mp3",
+   "seconds": 1.95,
+   "sounding_s": 1.75,
+   "sub_lt120": 0.001,
+   "centroid_hz": 3512,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-jump-2.wav",
+   "kb": 32
+  },
+  {
+   "take": "arrive-jump-3.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.6,
+   "sub_lt120": 0.002,
+   "centroid_hz": 3625,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-jump-3.wav",
+   "kb": 39
+  }
+ ],
+ "arrive-conduit": [
+  {
+   "take": "arrive-conduit-1.mp3",
+   "seconds": 2.02,
+   "sounding_s": 1.5,
+   "sub_lt120": 0.154,
+   "centroid_hz": 1928,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-conduit-1.wav",
+   "kb": 33
+  },
+  {
+   "take": "arrive-conduit-2.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.55,
+   "sub_lt120": 0.142,
+   "centroid_hz": 2600,
+   "clip": 0,
+   "falling": [
+    0.17,
+    0.42,
+    70,
+    62
+   ],
+   "source": "fal/arrive-conduit-2.wav",
+   "kb": 39
+  },
+  {
+   "take": "arrive-conduit-3.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.6,
+   "sub_lt120": 0.136,
+   "centroid_hz": 2973,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-conduit-3.wav",
+   "kb": 39
+  }
+ ],
+ "arrive-warp": [
+  {
+   "take": "arrive-warp-1.mp3",
+   "seconds": 1.91,
+   "sounding_s": 1.55,
+   "sub_lt120": 0.617,
+   "centroid_hz": 403,
+   "clip": 0,
+   "falling": [
+    0.32,
+    0.36,
+    78,
+    62
+   ],
+   "source": "fal/arrive-warp-1.wav",
+   "kb": 31
+  },
+  {
+   "take": "arrive-warp-2.mp3",
+   "seconds": 1.66,
+   "sounding_s": 1.2,
+   "sub_lt120": 0.886,
+   "centroid_hz": 88,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-warp-2.wav",
+   "kb": 27
+  },
+  {
+   "take": "arrive-warp-3.mp3",
+   "seconds": 2.05,
+   "sounding_s": 1.4,
+   "sub_lt120": 0.723,
+   "centroid_hz": 178,
+   "clip": 0,
+   "falling": [
+    0.17,
+    0.28,
+    70,
+    62
+   ],
+   "source": "fal/arrive-warp-3.wav",
+   "kb": 33
+  }
+ ],
+ "arrive-rift": [
+  {
+   "take": "arrive-rift-1.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.7,
+   "sub_lt120": 0.562,
+   "centroid_hz": 131,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-rift-1.wav",
+   "kb": 39
+  },
+  {
+   "take": "arrive-rift-2.mp3",
+   "seconds": 2.48,
+   "sounding_s": 2.15,
+   "sub_lt120": 0.867,
+   "centroid_hz": 103,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-rift-2.wav",
+   "kb": 39
+  },
+  {
+   "take": "arrive-rift-3.mp3",
+   "seconds": 2.48,
+   "sounding_s": 2.15,
+   "sub_lt120": 0.826,
+   "centroid_hz": 95,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-rift-3.wav",
+   "kb": 39
+  }
+ ],
+ "arrive-rocket": [
+  {
+   "take": "arrive-rocket-1.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.85,
+   "sub_lt120": 0.423,
+   "centroid_hz": 453,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-rocket-1.wav",
+   "kb": 39
+  },
+  {
+   "take": "arrive-rocket-2.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.85,
+   "sub_lt120": 0.453,
+   "centroid_hz": 348,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-rocket-2.wav",
+   "kb": 39
+  },
+  {
+   "take": "arrive-rocket-3.mp3",
+   "seconds": 2.48,
+   "sounding_s": 1.95,
+   "sub_lt120": 0.392,
+   "centroid_hz": 513,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/arrive-rocket-3.wav",
+   "kb": 39
+  }
+ ],
+ "xdebris": [
+  {
+   "take": "xdebris-1.mp3",
+   "seconds": 4.0,
+   "sounding_s": 2.7,
+   "sub_lt120": 0.008,
+   "centroid_hz": 6553,
+   "clip": 0,
+   "falling": [
+    0.06,
+    0.26,
+    203,
+    195
+   ],
+   "source": "fal/xdebris-1.wav",
+   "kb": 64
+  },
+  {
+   "take": "xdebris-2.mp3",
+   "seconds": 4.0,
+   "sounding_s": 1.75,
+   "sub_lt120": 0.063,
+   "centroid_hz": 2116,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xdebris-2.wav",
+   "kb": 64
+  },
+  {
+   "take": "xdebris-3.mp3",
+   "seconds": 4.0,
+   "sounding_s": 2.2,
+   "sub_lt120": 0.095,
+   "centroid_hz": 1593,
+   "clip": 0,
+   "falling": [
+    0.06,
+    0.28,
+    203,
+    195
+   ],
+   "source": "fal/xdebris-3.wav",
+   "kb": 64
+  }
+ ],
+ "xtail": [
+  {
+   "take": "xtail-1.mp3",
+   "seconds": 6.0,
+   "sounding_s": 3.25,
+   "sub_lt120": 0.441,
+   "centroid_hz": 209,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xtail-1.wav",
+   "kb": 95
+  },
+  {
+   "take": "xtail-2.mp3",
+   "seconds": 6.0,
+   "sounding_s": 3.35,
+   "sub_lt120": 0.486,
+   "centroid_hz": 187,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/xtail-2.wav",
+   "kb": 95
+  },
+  {
+   "take": "xtail-3.mp3",
+   "seconds": 6.0,
+   "sounding_s": 3.45,
+   "sub_lt120": 0.504,
+   "centroid_hz": 186,
+   "clip": 0,
+   "falling": [
+    0.17,
+    0.26,
+    70,
+    62
+   ],
+   "source": "fal/xtail-3.wav",
+   "kb": 95
+  }
+ ],
+ "capital-break": [
+  {
+   "take": "capital-break-1.mp3",
+   "seconds": 9.0,
+   "sounding_s": 5.35,
+   "sub_lt120": 0.218,
+   "centroid_hz": 669,
+   "clip": 0,
+   "falling": [
+    0.06,
+    0.28,
+    203,
+    195
+   ],
+   "source": "fal/capital-break-1.wav",
+   "kb": 141
+  },
+  {
+   "take": "capital-break-2.mp3",
+   "rejected": [
+    "falling low tone (0.58 octaves to 62 Hz in 0.32 s)"
+   ],
+   "seconds": 9.0,
+   "sounding_s": 6.15,
+   "sub_lt120": 0.351,
+   "centroid_hz": 705,
+   "clip": 0,
+   "falling": [
+    0.58,
+    0.32,
+    93,
+    62
+   ],
+   "source": "fal/capital-break-2.wav"
+  },
+  {
+   "take": "capital-break-3.mp3",
+   "seconds": 7.33,
+   "sounding_s": 6.4,
+   "sub_lt120": 0.282,
+   "centroid_hz": 799,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/capital-break-3.wav",
+   "kb": 115
+  }
+ ],
+ "age-end": [
+  {
+   "take": "age-end-1.mp3",
+   "seconds": 12.0,
+   "sounding_s": 7.25,
+   "sub_lt120": 0.326,
+   "centroid_hz": 749,
+   "clip": 0,
+   "falling": [
+    0.29,
+    0.26,
+    85,
+    70
+   ],
+   "source": "fal/age-end-1.wav",
+   "kb": 189
+  },
+  {
+   "take": "age-end-2.mp3",
+   "seconds": 12.0,
+   "sounding_s": 7.55,
+   "sub_lt120": 0.505,
+   "centroid_hz": 413,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/age-end-2.wav",
+   "kb": 189
+  },
+  {
+   "take": "age-end-3.mp3",
+   "seconds": 9.17,
+   "sounding_s": 7.05,
+   "sub_lt120": 0.524,
+   "centroid_hz": 357,
+   "clip": 0,
+   "falling": [
+    0.17,
+    0.34,
+    70,
+    62
+   ],
+   "source": "fal/age-end-3.wav",
+   "kb": 144
+  }
+ ],
+ "ringing": [
+  {
+   "take": "ringing-1.mp3",
+   "seconds": 5.0,
+   "sounding_s": 3.65,
+   "sub_lt120": 0.0,
+   "centroid_hz": 2552,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/ringing-1.wav",
+   "kb": 79
+  },
+  {
+   "take": "ringing-2.mp3",
+   "seconds": 5.0,
+   "sounding_s": 5.0,
+   "sub_lt120": 0.0,
+   "centroid_hz": 7779,
+   "clip": 0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "source": "fal/ringing-2.wav",
+   "kb": 79
+  }
+ ],
+ "vent": [
+  {
+   "take": "vent-1.mp3",
+   "seconds": 3.4,
+   "sounding_s": 3.4,
+   "sub_lt120": 0.0,
+   "centroid_hz": 6491,
+   "clip": 0,
+   "steady_db": 3.3,
+   "falling": [
+    0.14,
+    0.42,
+    664,
+    601
+   ],
+   "seam_raw": [
+    -0.14,
+    0.92,
+    0.3
+   ],
+   "seam": [
+    0.3,
+    0.91,
+    0.8
+   ],
+   "source": "fal/vent-1.wav",
+   "kb": 54
+  },
+  {
+   "take": "vent-2.mp3",
+   "seconds": 3.4,
+   "sounding_s": 3.4,
+   "sub_lt120": 0.006,
+   "centroid_hz": 5849,
+   "clip": 0,
+   "steady_db": 0.9,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.52,
+    0.77,
+    1.2
+   ],
+   "seam": [
+    -0.12,
+    0.53,
+    0.4
+   ],
+   "source": "fal/vent-2.wav",
+   "kb": 54
+  }
+ ],
+ "cockpit-f": [
+  {
+   "take": "cockpit-f-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.691,
+   "centroid_hz": 98,
+   "clip": 0,
+   "steady_db": 5.8,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    0.23,
+    2.1,
+    1.9
+   ],
+   "seam": [
+    -0.85,
+    2.1,
+    0.1
+   ],
+   "source": "fal/cockpit-f-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "cockpit-f-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.573,
+   "centroid_hz": 97,
+   "clip": 0,
+   "steady_db": 4.2,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    3.96,
+    2.8,
+    5.7
+   ],
+   "seam": [
+    1.59,
+    2.74,
+    0.6
+   ],
+   "source": "fal/cockpit-f-2.wav",
+   "kb": 109
+  }
+ ],
+ "cockpit-c": [
+  {
+   "take": "cockpit-c-1.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.773,
+   "centroid_hz": 103,
+   "clip": 0,
+   "steady_db": 3.5,
+   "falling": [
+    0.26,
+    0.36,
+    93,
+    78
+   ],
+   "seam_raw": [
+    -3.37,
+    2.71,
+    1.1
+   ],
+   "seam": [
+    0.43,
+    2.84,
+    0.7
+   ],
+   "source": "fal/cockpit-c-1.wav",
+   "kb": 109
+  },
+  {
+   "take": "cockpit-c-2.mp3",
+   "seconds": 7.4,
+   "sounding_s": 7.4,
+   "sub_lt120": 0.505,
+   "centroid_hz": 118,
+   "clip": 0,
+   "steady_db": 4.1,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.47,
+    3.64,
+    0.4
+   ],
+   "seam": [
+    -2.85,
+    3.8,
+    1.9
+   ],
+   "source": "fal/cockpit-c-2.wav",
+   "kb": 109
+  }
+ ],
+ "ion-fire": [
+  {
+   "take": "ion-fire-2.mp3",
+   "rejected": [
+    "falling low tone (0.81 octaves to 62 Hz in 0.34 s)"
+   ],
+   "kept": false
+  }
+ ],
+ "beam-5": [
+  {
+   "take": "beam-5-1.mp3",
+   "rejected": [
+    "falling low tone (1.05 octaves to 109 Hz in 0.3 s)"
+   ],
+   "kept": false
+  }
+ ],
+ "boom-warp": [
+  {
+   "take": "boom-warp-3.mp3",
+   "rejected": [
+    "falling low tone (0.94 octaves to 101 Hz in 0.36 s)"
+   ],
+   "kept": false
+  }
+ ]
+}

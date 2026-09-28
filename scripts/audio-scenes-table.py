@@ -22,7 +22,7 @@ def main(builds):
             p = r['level_p10_p90_db'] or ['', '']
             print(f"| {s['id']} | {s['name']} | {b} | {r['integrated_lufs']} | {r['true_peak_dbtp']} | {r['clipped_samples']} | {p[0]} / {p[1]} | {r['energy_sub_lt120']:.0%} | {r['energy_low_120_500']:.0%} | {r['energy_mid_500_2k']:.0%} | {r['energy_harsh_2k_8k']:.0%} | {r['voices_mean']} / {r['voices_max']} |")
     print()
-    print('Fly-bys (subject closest approach from the log; rise/fall = level at closest approach minus the 1.4 s window 1.8-3.2 s before/after; pitch = cross-correlated log spectra 0.5 s either side):')
+    print('Fly-bys (subject closest approach from the log; rise/fall = level at closest approach minus the 1.4 s window 1.8-3.2 s before/after; pan when the subject is 60 degrees either side of perpendicular; pitch = cross-correlated log spectra (400 Hz-8 kHz), 0.4 s either side starting half that time away):')
     print()
     print('| # | Build | Closest (u) at s | Rise dB | Fall dB | Max step dB/50 ms | Pan before > at > after | Pitch shift (semitones) | Pass |')
     print('|---|---|---|---|---|---|---|---|---|')

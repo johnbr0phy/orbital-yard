@@ -22,9 +22,10 @@ With --scene (a scene capture and its log) it also measures, over time:
   voices            active voices per tick, from the engine's own stats
 and, when the scene has a subject that passes the camera (min distance in the
 log), the fly-by: the rise and fall of level into and out of the closest
-approach (dB), the pan at 1.5 s before and after, and the pitch shift across
-the closest approach: the log-frequency spectra of 0.5 s before and after
-(1/24 octave, 150 Hz to 8 kHz) are cross-correlated and the best shift is
+approach (dB), the pan when the subject is 60 degrees either side of the perpendicular (t60 =
+distance x tan 60 / speed, from the log), and the pitch shift across the closest
+approach: the log-frequency spectra of 0.4 s before and after, starting t60/2 away
+(1/24 octave, 400 Hz to 8 kHz, above the score's sustained low lines) are cross-correlated and the best shift is
 reported in semitones (negative = a drop).
 
 Numbers only; they don't replace ears.
@@ -126,6 +127,17 @@ def curves(x2, rate, step=.05, win=.1):
         pan.append((r2 - l2) / (r2 + l2) if l2 + r2 > 1e-10 else 0.0)
     return np.array(t), np.array(lev), np.array(pan)
 
+def itd_at(x2, rate, t0, span=.1):
+    """Inter-channel time difference (ms) around t0: the lag (within +-1 ms) that best aligns L and R.
+    Positive when the right channel leads (source on the right). HRTF places low sounds mostly by time,
+    not level, so a level-only pan meter under-reads it."""
+    a, b = int((t0 - span / 2) * rate), int((t0 + span / 2) * rate)
+    if a < 0 or b > len(x2): return None
+    L, R = x2[a:b, 0] - x2[a:b, 0].mean(), x2[a:b, 1] - x2[a:b, 1].mean(); m = int(.001 * rate)
+    if np.sqrt((L ** 2).mean()) < 1e-5: return None
+    c = [np.dot(L[m + k:len(L) - m + k], R[m:len(R) - m]) for k in range(-m, m + 1)]  # k > 0: L lags R
+    return round(float((np.argmax(c) - m) / rate * 1000), 3)
+
 def logspec(x, rate, t0, t1, lo=150, hi=8000, per_oct=24):
     a, b = max(0, int(t0 * rate)), min(len(x), int(t1 * rate))
     seg = x[a:b]
@@ -140,8 +152,9 @@ def logspec(x, rate, t0, t1, lo=150, hi=8000, per_oct=24):
     v = np.array([S[(f >= edges[k]) & (f < edges[k + 1])].sum() for k in range(len(edges) - 1)])
     v = 10 * np.log10(v + 1e-12); return v - v.mean()
 
-def pitch_shift(x, rate, tca, span=.5, gap=.08, per_oct=24):
-    A = logspec(x, rate, tca - gap - span, tca - gap, per_oct=per_oct); B = logspec(x, rate, tca + gap, tca + gap + span, per_oct=per_oct)
+def pitch_shift(x, rate, tca, span=.4, gap=.08, per_oct=24):
+    # 400 Hz-8 kHz: where engines live and the score's sustained low lines don't pin the correlation at zero
+    A = logspec(x, rate, tca - gap - span, tca - gap, lo=400, per_oct=per_oct); B = logspec(x, rate, tca + gap, tca + gap + span, lo=400, per_oct=per_oct)
     if A is None or B is None: return None
     best, arg = -1e9, 0
     for s in range(-per_oct, per_oct + 1):  # +-1 octave
@@ -171,14 +184,22 @@ def scene(p):
             sm = np.convolve(lev, np.ones(5) / 5, mode='same')  # 250 ms smoothing for the envelope
             near = (t > tca - .6) & (t < tca + .6); pre = (t > tca - 3.2) & (t < tca - 1.8); post = (t > tca + 1.8) & (t < tca + 3.2)
             peak = sm[near].max()
-            p_at = lambda tt: float(np.mean(pan[(t > tt - .25) & (t < tt + .25)]))
+            p_at = lambda tt: float(np.mean(pan[(t > tt - .1) & (t < tt + .1)]))
+            # the pass's own time scale: when the subject is 60 degrees off the perpendicular, from its
+            # logged speed near closest approach (a 207 u/s pass at 31 u sweeps in +-0.26 s; 140 u/s at 46 u in +-0.57 s)
+            ks = [i for i in range(len(subj)) if abs(subj[i]['t'] - tca) < .35 and subj[i].get('subj', {}).get('p')]
+            P = np.array([subj[i]['subj']['p'] for i in ks]); T = np.array([subj[i]['t'] for i in ks])
+            speed = float(np.linalg.norm(P[-1] - P[0]) / max(1e-6, T[-1] - T[0])) if len(ks) > 1 else 0
+            t60 = float(np.clip(dmin * 1.732 / speed, .15, 1.5)) if speed > 1 else .5
             steps = np.abs(np.diff(sm[(t > tca - 3) & (t < tca + 3)]))
             out['flyby'] = {'tca': tca, 'distance': dmin,
                             'rise_db': round(float(peak - sm[pre].mean()), 1) if pre.any() else None,
                             'fall_db': round(float(peak - sm[post].mean()), 1) if post.any() else None,
                             'max_step_db_per_50ms': round(float(steps.max()), 1) if len(steps) else None,
-                            'pan_before': round(p_at(tca - 1.5), 2), 'pan_at': round(p_at(tca), 2), 'pan_after': round(p_at(tca + 1.5), 2),
-                            'pitch_shift_semitones': pitch_shift(x, rate, tca)}
+                            'speed': round(speed), 't60': round(t60, 2),
+                            'pan_before': round(p_at(tca - t60), 2), 'pan_at': round(p_at(tca), 2), 'pan_after': round(p_at(tca + t60), 2),
+                            'itd_before_ms': itd_at(x2, rate, tca - t60), 'itd_after_ms': itd_at(x2, rate, tca + t60),
+                            'pitch_shift_semitones': pitch_shift(x, rate, tca, gap=max(.08, .5 * t60))}
     return out
 
 if __name__ == '__main__':

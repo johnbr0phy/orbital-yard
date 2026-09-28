@@ -5,3 +5,4 @@ audio/src/fal/
 scripts/__pycache__/
 bench/audio/scenes/*/*.wav
 bench/audio/probes/
+bench/audio/ledger.csv.lock

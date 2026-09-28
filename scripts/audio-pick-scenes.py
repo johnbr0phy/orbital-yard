@@ -52,8 +52,11 @@ def main(p56, p1011):
     ev = lambda d, typ: [e for e in d['events'] if e['type'] == typ]
     scenes = []
 
-    # 1. Parked camera, a TIE fighter passes 30 units away, left to right, in its straightest 3 s.
-    fid, tc = 28, 51.2
+    # 1. Parked camera, an A-wing passes 30 units away, left to right, at 206 units/s in its straightest 3 s.
+    #    (The first pick, a TIE at 51.2 s, flew in a flight of eight and a hero died beside the camera 3 s
+    #    before it passed: the capture measured the explosion, not the pass. This one has no death within
+    #    1.5 km or 3.5 s.)
+    fid, tc = 70, 21.1
     v = vel(tr, fid, tc); f = norm(np.cross(UP, norm(v * [1, 0, 1]))); p = pos(tr, fid, tc)
     eye = p - f * 30 - UP * 6; look = p - UP * 6
     t_ca, d_ca = closest(tr, fid, eye, tc - 3, tc + 3)
@@ -63,12 +66,13 @@ def main(p56, p1011):
 
     # 2. A Victory-class destroyer (1,005 long) slides overhead: the camera travels under her keel, bow to stern,
     #    gaze up and forward, so the hull slides over and away. Her engines are at the stern; the pass ends in their wash.
+    #    The camera carries on past the stern (14 s, bow + 0.75 L to stern - 0.55 L) so she moves on.
     cid = 4; Lc = meta[cid]['slen']; t0 = 22.0
     def rel2(t, p, f):
-        side = norm(np.cross(f, UP)); u = (t - t0) / 10
-        e = p + f * Lc * (0.75 - 1.35 * u) - UP * Lc * .22 + side * Lc * .05
+        side = norm(np.cross(f, UP)); u = (t - t0) / 14
+        e = p + f * Lc * (0.75 - 1.8 * u) - UP * Lc * .22 + side * Lc * .05
         return e, e + f * Lc * .45 + UP * Lc * .5
-    scenes.append({'id': 2, 'name': 'Capital overhead', **E, 't0': t0, 'seconds': 10, 'subject': cid, 'camera': locked(tr, cid, t0, t0 + 10, rel2)})
+    scenes.append({'id': 2, 'name': 'Capital overhead', **E, 't0': t0, 'seconds': 14, 'subject': cid, 'camera': locked(tr, cid, t0, t0 + 14, rel2)})
 
     # 3. Riding along with an X-wing in the furball: the ship that stays alive longest with enemies within 400 units.
     best = None
