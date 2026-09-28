@@ -20,6 +20,14 @@ Pilots commit to an action for several seconds, with emergency overrides for
 heavy damage and ion warnings. They attack, flank, escort damaged allies,
 regroup, withdraw, evade or search. An ace follows these same rules.
 
+Watching allies die nearby adds shock, which fades over a few seconds and
+feeds fear whatever the enemy's range. A shocked pilot drops posture orders
+(hold, hide, manoeuvre, guard) and picks fight or flight: charge the killer at
+full burn, or scatter away from it on its own line. Courage, aggression and
+doctrine weight the choice; fleets that never retreat always charge. Any loss
+to enemy fire also releases the side's plan posture, so a fleet never holds a
+parade line while something out of range picks it apart.
+
 Sensors have a range, view angle, scan interval and contact limit. Pilots retain
 last observed positions, predict briefly, and eventually forget. Nearby allies
 can share observations, preserving the original observation timestamp. A cloak

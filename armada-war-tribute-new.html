@@ -13312,7 +13312,10 @@ function trafficPilot(s,now){
   const holdingLane=now<(s.trafficUntil||0);
   s.trafficHand=direction;s.trafficKey=key;s.trafficUntil=now+1.2;
   const ahead=Math.max((s.slen||20)*1.5,Math.abs(s.v||0)*4,200);
-  const altitude=other.y+direction*clear;
+  /* small craft pass in a band, not on one plane: without the stagger a whole
+     screen ducking a crown's keel flattened into a single sheet at her belly */
+  const stagger=(s.slen||20)<120?(((s.seed||s.id)>>>4)%9)*28:0;
+  const altitude=other.y+direction*(clear+stagger);
   // Hold the passing lane through a manoeuvre, even when the nearest threat changes.
   const lane=holdingLane&&s.trafficGoal?(direction>0?Math.max(s.trafficGoal[1],altitude):Math.min(s.trafficGoal[1],altitude)):altitude;
   s.trafficGoal=[s.x+Math.cos(s.yaw)*ahead,lane,s.z+Math.sin(s.yaw)*ahead];
@@ -14037,6 +14040,30 @@ function parkTheCrowns(){
     const cy=Math.cos(s.yaw||0),sy=Math.sin(s.yaw||0);
     s.x-=cy*h*0.84;s.z-=sy*h*0.84;
     if(s.stn){s.stn[0]=s.x;s.stn[2]=s.z;}
+  }
+}
+function clearTheCrownBows(){
+  /* the muster is opened and spread after the crowns are parked, so a
+     21 km keel could still end with her bow through her own screen. The
+     screen then spawned inside her hull box, every fighter ducked to the
+     same altitude under her belly, and the collision brake held them
+     there in one flat line. Walk the crown back until the bow is clear. */
+  for(const c of ships){
+    if(c.dead||!c.vao)continue;
+    if((c.hulls||0)<50&&!(RACE_DEFS[c.race]||{}).unique)continue;
+    const h=Math.max(c.exL||0,(c.slen||40)*0.5),cy=Math.cos(c.yaw||0),sy=Math.sin(c.yaw||0);
+    const wide=(c.exZ||c.slen*0.12)+120,tall=(c.exY||c.slen*0.06)+120;
+    let bow=h;
+    for(const s of ships){
+      if(s===c||s.dead||!s.vao||s.side!==c.side||(s.slen||0)>=c.slen*0.5)continue;
+      const dx=s.x-c.x,dz=s.z-c.z,along=dx*cy+dz*sy,r=(s.slen||20)*0.5+150;
+      if(along<=0||along-r>h||Math.abs(-dx*sy+dz*cy)>wide+r||Math.abs(s.y-c.y)>tall+r)continue;
+      bow=Math.min(bow,along-r);
+    }
+    const back=Math.min(h,h-bow);
+    if(back<=0)continue;
+    c.x-=cy*back;c.z-=sy*back;
+    if(c.stn){c.stn[0]=c.x;c.stn[2]=c.z;}
   }
 }
 /* ===================== OPEN THE MUSTER =====================
@@ -15318,6 +15345,7 @@ function onWorkerMsg(e){
     scatterShadows();
     scatterBorg();
     spaceTheFleets();
+    clearTheCrownBows();
     if(!beginIntro()){
       frameTheWar();
       toast("CONTACT IMMINENT");
