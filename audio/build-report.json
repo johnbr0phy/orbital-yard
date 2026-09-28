@@ -5753,6 +5753,64 @@
     1.5
    ],
    "source": "fal/eng-f-22-2.wav"
+  },
+  {
+   "take": "eng-f-22-3.mp3",
+   "seconds": 6.8,
+   "sounding_s": 6.8,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8586,
+   "clip": 0,
+   "steady_db": 1.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.01,
+    0.75,
+    0.8
+   ],
+   "fold": "end",
+   "xfade": 1.2,
+   "seam": [
+    -0.14,
+    0.37,
+    0.8
+   ],
+   "source": "fal/eng-f-22-3.wav",
+   "kb": 100
+  },
+  {
+   "take": "eng-f-22-4.mp3",
+   "seconds": 6.59,
+   "sounding_s": 6.55,
+   "sub_lt120": 0.0,
+   "centroid_hz": 8039,
+   "clip": 0,
+   "steady_db": 3.0,
+   "falling": [
+    0.0,
+    0.0,
+    0,
+    0
+   ],
+   "seam_raw": [
+    -0.42,
+    0.78,
+    1.0
+   ],
+   "fold": "match",
+   "xfade": 0.8,
+   "seam": [
+    0.01,
+    0.95,
+    1.1
+   ],
+   "source": "fal/eng-f-22-4.wav",
+   "kb": 97
   }
  ],
  "eng-m-22": [

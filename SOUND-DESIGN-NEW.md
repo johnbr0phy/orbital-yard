@@ -54,9 +54,9 @@ The sound bible for `armada-war-tribute-new.html`: what plays, how it was made, 
   - When the war ends, the loops fade on the next bar into a coda: victory, or defeat if you were piloting or following a ship on the losing side.
 - **Streaming.**
   - At the first gesture the page fetches the core set (3.01 MB) and the fleets in the war (up to 1.77 MB each; the two largest together are 3.13 MB).
-  - Right after, it streams the tension stem and the capital-death and ion layers (2.52 MB). That's 8.66 MB for the first gesture in the worst two-fleet war, under the 10 MB budget (a test checks it).
-  - The battle stem, the codas and the cockpit beds (2.76 MB) load when the war heats up (intensity over 0.3), or 20 s in, whichever comes first. A late stem joins on the next bar; a cockpit bed joins when it arrives.
-  - Everything else loads on first use. The whole set is 32.75 MB.
+  - Right after, it streams the tension stem and the capital-death and ion layers (2.51 MB). That's 8.66 MB for the first gesture in the worst two-fleet war, under the 10 MB budget (a test checks it).
+  - The battle stem, the codas and the cockpit beds (2.75 MB) load when the war heats up (intensity over 0.3), or 20 s in, whichever comes first. A late stem joins on the next bar; a cockpit bed joins when it arrives.
+  - Everything else loads on first use. The whole set is 32.96 MB.
 - **Fallback.** From `file://`, or for any role without a recording, the synth in `armada-audio-new.js` plays instead: the fighter drone, the synth weapons and explosions, and the pad score. No synthesized tone sits or slides below 150 Hz.
 
 ## Recordings
@@ -217,7 +217,7 @@ Generated with ElevenLabs Sound Effects v2 and ElevenLabs Music on fal.ai by `sc
 | eng-m-21 | Starship engine, continuous and steady, heard from close by: living bio-ship, wet organic throb with chittering | 8.0s |
 | eng-c-21 | Starship engine, continuous and steady, heard from close by: enormous living hive-ship, deep organic heartbeat throb with wet chittering | 8.0s |
 | beamloop-21 | Continuous sustained energy beam, held steady: bio-plasma stream, gurgling acidic hiss | 3.0s |
-| eng-f-22 | Starship engine, continuous and steady, heard from close by: futuristic electric fighter drone, clean high electric motor whine | 8.0s |
+| eng-f-22 | Starship engine, continuous and steady, heard from close by: small futuristic electric fighter at speed, bright clean high-pitched electric motor whine with a light airy hiss, no low rumble (takes 3-4; takes 1-2 of 'futuristic electric fighter drone, clean high electric motor whine' were rejected as sub-heavy) | 8.0s |
 | eng-m-22 | Starship engine, continuous and steady, heard from close by: large rocket in flight, roaring rocket engine thunder | 8.0s |
 | eng-c-22 | Starship engine, continuous and steady, heard from close by: gigantic rocket booster in flight, massive roaring rocket engine thunder with crackle | 8.0s |
 | beamloop-22 | Continuous sustained energy beam, held steady: sustained high-voltage lightning beam, buzzing crackling electrical arc | 3.0s |
@@ -278,7 +278,7 @@ Each prompt is prefixed "Starship engine, continuous and steady, heard from clos
 | 19 | The Dominion | - | fast alien attack ship, aggressive pulsing whine over a humming drone | alien battleship, aggressive deep humming drone with a rhythmic pulse |
 | 20 | Space Marines | heavy armoured gunship, roaring jet engines with a heavy mechanical whine | gothic warship, roaring plasma drive with rumbling machinery | enormous gothic cathedral battleship, deep roaring plasma drive with rumbling heavy machinery and clanking |
 | 21 | Tyranids | swarming alien bio-organism flying, wet buzzing wings and screeching | living bio-ship, wet organic throb with chittering | enormous living hive-ship, deep organic heartbeat throb with wet chittering |
-| 22 | Tesla | futuristic electric fighter drone, clean high electric motor whine | large rocket in flight, roaring rocket engine thunder | gigantic rocket booster in flight, massive roaring rocket engine thunder with crackle |
+| 22 | Tesla | small futuristic electric fighter at speed, bright clean high-pitched electric motor whine with a light airy hiss, no low rumble | large rocket in flight, roaring rocket engine thunder | gigantic rocket booster in flight, massive roaring rocket engine thunder with crackle |
 
 Sustained beams (beamloop-N, 3 s loops) reuse each fleet's beam prompt above, prefixed "Continuous sustained energy beam, held steady:".
 

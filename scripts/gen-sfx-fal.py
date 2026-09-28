@@ -237,7 +237,7 @@ ENGINES = {
  21: ('swarming alien bio-organism flying, wet buzzing wings and screeching',
       'living bio-ship, wet organic throb with chittering',
       'enormous living hive-ship, deep organic heartbeat throb with wet chittering'),
- 22: ('futuristic electric fighter drone, clean high electric motor whine',
+ 22: ('small futuristic electric fighter at speed, bright clean high-pitched electric motor whine with a light airy hiss, no low rumble',  # takes 1-2 of 'clean high electric motor whine' came back sub-heavy (78%, 51% under 120 Hz)
       'large rocket in flight, roaring rocket engine thunder',
       'gigantic rocket booster in flight, massive roaring rocket engine thunder with crackle'),
 }
