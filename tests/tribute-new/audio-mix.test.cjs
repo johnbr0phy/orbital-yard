@@ -167,6 +167,14 @@ test('every loop\'s wrap is inside its own normal movement: the level step acros
  assert.ok(n>=150,n+' loops measured');assert.deepEqual(bad,[]);
 });
 
+test('the first gesture loads under 10 MB: the core set, the two largest fleets and the soon group; the rest waits until needed',()=>{
+ const man=JSON.parse(fs.readFileSync(path.join(root,'audio/manifest.json'),'utf8')),g=man.groups;
+ const size=roles=>[...new Set(roles.flatMap(r=>[].concat(man.roles[r]||[])))].reduce((n,f)=>n+fs.statSync(path.join(root,'audio',f)).size,0);
+ const fleets=Object.values(g.fleet).map(size).sort((x,y)=>y-x);
+ const first=size(g.core)+fleets[0]+fleets[1]+size(g.soon);
+ assert.ok(first<10e6,'first gesture '+(first/1e6).toFixed(2)+' MB');
+ for(const r of ['score-battle','score-victory','score-defeat','cockpit-f','cockpit-c'])assert.ok(g.later.includes(r)&&!g.core.includes(r)&&!g.soon.includes(r),r);
+});
 test('loudness: the 90-second war is -16 LUFS within 1.5 LU, and no scene clips or passes -1 dBTP',()=>{
  const dir=path.join(root,'bench/audio/scenes/after');
  const war=JSON.parse(fs.readFileSync(path.join(dir,'10.report.json'),'utf8'));

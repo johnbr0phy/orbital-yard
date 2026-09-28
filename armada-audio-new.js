@@ -347,7 +347,7 @@
   // loop with its own wrap-around, so any MP3 decoder delay still loops seamlessly). Groups say
   // what loads when: `core` at the first gesture, `fleet[N]` when fleet N is in the war, and
   // everything else on first use.
-  const SMP={},LAZY={},LOOPS=new WeakMap(),pick=a=>a[Math.floor(Math.random()*a.length)];let loadFile=null,manifest=null,loopFiles={};
+  const SMP={},LAZY={},LOOPS=new WeakMap(),pick=a=>a[Math.floor(Math.random()*a.length)];let loadFile=null,manifest=null,loopFiles={},loadedAt=null,laterAsked=false;
   const bytes={loaded:0};
   function want(role){
    const l=LAZY[role];if(!l||l.p||!loadFile)return l&&l.p;
@@ -364,7 +364,7 @@
    if(!ctx||typeof fetch!=='function'||typeof ctx.decodeAudioData!=='function')return[];
    try{
     const r=await fetch(url);if(!r.ok)return[];
-    const man=await r.json(),base=url.replace(/[^/]*$/,''),out={},cache={};manifest=man;loopFiles=man.loops||{};
+    const man=await r.json(),base=url.replace(/[^/]*$/,''),out={},cache={};manifest=man;loadedAt=now();loopFiles=man.loops||{};
     const load=loadFile=f=>cache[f]||(cache[f]=fetch(base+f).then(x=>x.arrayBuffer()).then(b=>{bytes.loaded+=b.byteLength;return ctx.decodeAudioData(b);})
      .then(buf=>{const lp=loopFiles[f];if(buf&&lp)LOOPS.set(buf,lp);return buf;}).catch(()=>null));
     const groups=man.groups,core=groups?new Set(groups.core||[]):null;
@@ -872,9 +872,11 @@
     if(on){
      const role=engineRole(state.fleet,state.cls||'f'),lp=filter('lowpass',state.cls==='f'?420:300,.9);link(lp,graph.insideEng);CK.engLP=lp;
      if(role){const r=sample(role,t,lp,state.cls==='f'?.8:.7,0,true,null,Math.random()*3);if(r){CK.eng=r;aim(r.g.gain,.9,t,.3);}}
-     const bed=state.cls==='f'?'cockpit-f':'cockpit-c';
-     if(has(bed)){const r=sample(bed,t,graph.insideEng,1,0,true,null,Math.random()*3);if(r){CK.bed=r;aim(r.g.gain,.45,t,.3);}}
     }
+   }
+   if(on&&!CK.bed){// the cabin bed streams on first use and joins when it arrives
+    const bed=state.cls==='f'?'cockpit-f':'cockpit-c';
+    if(has(bed)){const r=sample(bed,t,graph.insideEng,1,0,true,null,Math.random()*3);if(r){CK.bed=r;aim(r.g.gain,.45,t,.3);}}
    }
    if(on&&CK.eng){const sp=clamp(num(state.speed,.5),0,1);aim(CK.eng.src.playbackRate,(state.cls==='f'?.75:.66)+.2*sp,t,.2);if(CK.engLP)aim(CK.engLP.frequency,300+500*sp,t,.2);}
    return true;
@@ -933,6 +935,8 @@
   function update(dt){
    if(!unlocked)return;const t=now();prune(t);
    listenerVelocity(num(dt,0));moveEmitters();allocate();frame++;
+   // the battle stem, the codas and the cockpit beds: when the war heats up, or 20 s in
+   if(!laterAsked&&manifest&&manifest.groups&&loadedAt!=null&&(t-loadedAt>20||M.target>.3)){laterAsked=true;for(const r of manifest.groups.later||[])want(r);}
    const k=1-Math.exp(-Math.max(0,num(dt,0))/2);M.level+=(M.target-M.level)*k;
    if(!M.ready||M.sampled)return;if(M.next<t)M.next=t+.05;
    for(let n=0;M.next<t+AHEAD&&n<8;n++){musicStep(M.next);M.next+=STEP;}

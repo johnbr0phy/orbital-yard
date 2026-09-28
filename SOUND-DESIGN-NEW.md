@@ -53,9 +53,10 @@ The sound bible for `armada-war-tribute-new.html`: what plays, how it was made, 
   - They crossfade with the war's intensity (calm below 0.25, tension around 0.5, battle above 0.7), and momentum shifts weight toward battle when the fight is turning.
   - When the war ends, the loops fade on the next bar into a coda: victory, or defeat if you were piloting or following a ship on the losing side.
 - **Streaming.**
-  - At the first gesture the page fetches the core set (2.9 MB) and the fleets in the war (up to 1.69 MB each; the two largest together are 3.07 MB).
-  - Then it streams the rest of the score, the cockpit beds and the capital-death layers (5.06 MB).
-  - Everything else loads on first use. The whole set is 32.63 MB.
+  - At the first gesture the page fetches the core set (3.01 MB) and the fleets in the war (up to 1.77 MB each; the two largest together are 3.13 MB).
+  - Right after, it streams the tension stem and the capital-death and ion layers (2.52 MB). That's 8.66 MB for the first gesture in the worst two-fleet war, under the 10 MB budget (a test checks it).
+  - The battle stem, the codas and the cockpit beds (2.76 MB) load when the war heats up (intensity over 0.3), or 20 s in, whichever comes first. A late stem joins on the next bar; a cockpit bed joins when it arrives.
+  - Everything else loads on first use. The whole set is 32.75 MB.
 - **Fallback.** From `file://`, or for any role without a recording, the synth in `armada-audio-new.js` plays instead: the fighter drone, the synth weapons and explosions, and the pad score. No synthesized tone sits or slides below 150 Hz.
 
 ## Recordings

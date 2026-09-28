@@ -24,7 +24,7 @@ Families (see SOUND-DESIGN-NEW.md for every prompt and take):
 Takes are measured (length that sounds, level steadiness, clipping, sub share) and a take that
 fails is left out of the manifest and listed in audio/build-report.json with the reason.
 manifest.json "groups" says what the page loads when: core at the first gesture, fleet[N] when
-fleet N is in the war, soon right after. Needs numpy and ffmpeg.
+fleet N is in the war, soon right after, later when needed or 20 s in. Needs numpy and ffmpeg.
 """
 import json, struct, sys, argparse, pathlib, shutil, subprocess, math
 import numpy as np
@@ -298,12 +298,15 @@ def groups(roles):
         if n == 17: rs += ['age-end', 'explosion3']  # only a First One dies like that
         fleet[n] = [r for r in rs if r in roles]
     per = {r for rs in fleet.values() for r in rs}
-    # Streamed right after the first gesture: the rest of the score, and what a capital death or an
-    # ion strike needs (neither happens in a war's first seconds).
-    soon = [r for r in ('score-tension', 'score-battle', 'score-victory', 'score-defeat', 'cockpit-f', 'cockpit-c', 'capital-break', 'xtail', 'groan',
-                        'ringing', 'whoosh-1', 'stinger', 'ion-charge', 'ion-fire') if r in roles]
-    core = [r for r in roles if r not in per and r not in soon]
-    return {'core': core, 'soon': soon, 'fleet': fleet}
+    # Streamed right after the first gesture: the tension stem, and what a capital death or an ion
+    # strike needs (neither happens in a war's first seconds).
+    soon = [r for r in ('score-tension', 'capital-break', 'xtail', 'groan', 'ringing', 'whoosh-1', 'stinger', 'ion-charge', 'ion-fire') if r in roles]
+    # Loaded when needed or 20 s in, whichever is first: the battle stem (when the war heats up), the
+    # codas (at the end) and the cockpit beds (in a cockpit). This keeps the first-gesture download,
+    # core + two fleets + soon, under 10 MB.
+    later = [r for r in ('score-battle', 'score-victory', 'score-defeat', 'cockpit-f', 'cockpit-c') if r in roles]
+    core = [r for r in roles if r not in per and r not in soon and r not in later]
+    return {'core': core, 'soon': soon, 'later': later, 'fleet': fleet}
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('--src', default='audio/src'); ap.add_argument('--out', default='audio'); ap.add_argument('--roles', default='')
@@ -390,12 +393,12 @@ def main():
     man['groups'] = groups(man['roles'])
     size = lambda rs: sum((out / f).stat().st_size for r in rs for f in man['roles'].get(r, []))
     g = man['groups']; fl = {n: size(rs) for n, rs in g['fleet'].items()}
-    man['sizes'] = {'core_mb': round(size(g['core']) / 1048576, 2), 'soon_mb': round(size(g['soon']) / 1048576, 2),
+    man['sizes'] = {'core_mb': round(size(g['core']) / 1048576, 2), 'soon_mb': round(size(g['soon']) / 1048576, 2), 'later_mb': round(size(g['later']) / 1048576, 2),
                     'fleet_mb': {n: round(v / 1048576, 2) for n, v in fl.items()}, 'total_mb': round(sum((out / f).stat().st_size for rs in man['roles'].values() for f in rs) / 1048576, 2)}
     (out / 'manifest.json').write_text(json.dumps(man, indent=1) + '\n')
     (out / 'build-report.json').write_text(json.dumps(report, indent=1) + '\n')
     s = man['sizes']; two = sorted(fl.values())[-2:]
-    print(f"{sum(len(v) for v in man['roles'].values())} files, {s['total_mb']} MB; first gesture: core {s['core_mb']} MB + two fleets up to {sum(two) / 1048576:.2f} MB; then {s['soon_mb']} MB streamed")
+    print(f"{sum(len(v) for v in man['roles'].values())} files, {s['total_mb']} MB; first gesture: core {s['core_mb']} MB + two fleets up to {sum(two) / 1048576:.2f} MB; then {s['soon_mb']} MB streamed; {s['later_mb']} MB when needed")
 
 if __name__ == '__main__':
     main()
