@@ -148,14 +148,14 @@
    const B={};for(const k of ['music','weapons','engines','impacts','explosions','ambience','ui'])B[k]=gain(1);
    const D={};for(const k of ['music','weapons','engines','impacts','ambience','explosions'])D[k]=gain(1);// duck stages
    const music=gain(vol.music),musicTrim=gain(.7),sfxVol=gain(vol.sfx),engVol=gain(mixVol.engines);
-   const outsideLP=filter('lowpass',20000,.5),outsideG=gain(1),sfxLP=filter('lowpass',20000),insideSfx=gain(vol.sfx),insideEng=gain(mixVol.engines),inside=gain(0);
+   const outsideLP=filter('lowpass',20000,.5),outsideG=gain(1),sfxLP=filter('lowpass',slow?900:20000),insideSfx=gain(vol.sfx),insideEng=gain(mixVol.engines),inside=gain(0);
    // focus stages: a fighter screaming past pulls the score, the bed and capital rumble back (allocate())
    const F={music:gain(1),ambience:gain(1)};B.rumble=gain(1);
    // capital rumble and explosions keep their weight but not their mud: low shelves under 100 Hz
    // (the bass harmonics built into the recordings carry them on small speakers)
    const rumbleShelf=filter('lowshelf',100,.7),exShelf=filter('lowshelf',90,.7);if(rumbleShelf)set(rumbleShelf.gain,-6,t);if(exShelf)set(exShelf.gain,-3,t);
    link(B.rumble,rumbleShelf,B.engines);
-   link(B.music,D.music,F.music,musicTrim,music,pre);
+   const slowG=gain(slow?.06:1);link(B.music,D.music,slowG,F.music,musicTrim,music,pre);// slow motion has its own stage: it must not cancel a duck
    // slow motion dulls the world (sfxLP) but not the death that caused it: explosions bypass it
    const exVol=gain(vol.sfx),wAuto=gain(1);
    link(B.weapons,D.weapons,wAuto,sfxVol);link(B.impacts,D.impacts,sfxVol);link(B.explosions,D.explosions,exShelf,exVol,outsideLP);
@@ -174,7 +174,7 @@
    // Bus meters for measurement (scripts/capture-audio.cjs --opts '{"meters":true}'): RMS of each bus, post-duck.
    const meters={};if(opt.meters)for(const [k,n] of [['music',D.music],['weapons',D.weapons],['engines',D.engines],['impacts',D.impacts],['explosions',B.explosions],['ambience',D.ambience],['master',pre]]){
     const sp=mk('createChannelSplitter',2);if(!sp)continue;link(n,sp);for(const c of [0,1]){const a=mk('createAnalyser');if(a){a.fftSize=2048;try{sp.connect(a,c);}catch(e){}meters[k+(c?'R':'L')]=a;}}}
-   graph={F,exVol,wAuto,meters,master,comp,music,sfx:sfxVol,sfxLP,duck:D.music,sfxIn:B.weapons,verb,B,D,pre,out,clip,outsideLP,outsideG,inside,insideSfx,insideEng,engVol,farIn:far&&perf.farHall?farIn:null,sends,limiter:null};
+   graph={F,slowG,exVol,wAuto,meters,master,comp,music,sfx:sfxVol,sfxLP,duck:D.music,sfxIn:B.weapons,verb,B,D,pre,out,clip,outsideLP,outsideG,inside,insideSfx,insideEng,engVol,farIn:far&&perf.farHall?farIn:null,sends,limiter:null};
    const sr=num(ctx.sampleRate,44100);
    try{const n=Math.floor(sr*1.5);noise=ctx.createBuffer(1,n,sr);const d=noise.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;}catch(e){noise=null;}
    if(opt.solo!=null)for(const n of [F.music,F.ambience,B.ui])set(n.gain,0,t);// measurement: one ship alone
@@ -431,9 +431,12 @@
    sample(role,at,graph.B.music,1,.7);return {at,role};
   }
   // Ducking: big hits push buses down for a moment, the way a film mix makes room for them.
+  let dipFrom=0,dipUntil=-1;
   function duck(buses,depth,hold,release=.6,t0=now()){
    if(!graph)return;
-   for(const b of buses){const p=P(graph.D[b],'gain');if(!p)continue;call(p,'cancelScheduledValues',t0);aim(p,depth,t0,.03);aim(p,1,t0+hold,release);}
+   // a shallower duck never cuts into a dip in progress: a staged capital death's secondaries each
+   // ducked the score, and each one cancelled the dip, so the score came straight back (scene 6)
+   for(const b of buses){const p=P(graph.D[b],'gain');if(!p||t0<dipUntil&&t0>=dipFrom)continue;call(p,'cancelScheduledValues',t0);aim(p,depth,t0,.03);aim(p,1,t0+hold,release);}
   }
   function duckFor(t,depth,hold){if(!graph||slow)return;duck(['music'],depth,hold,.6,t);}
 
@@ -747,13 +750,13 @@
    return v?{delay,cutoff,gain:g,tier,distance:d,far:false,dip}:false;
   }
   // The dip: the blast lands (0.9 s), then everything, the explosion's own long tail included, falls
-  // ~20 dB for 1.6 s (2.4 s for a First One) under a ringing tone, then the war returns over 2.5 s
+  // ~26 dB for 1.6 s (2.4 s for a First One) under a ringing tone, then the war returns over 2.5 s
   // with the break-up's secondaries. The hall send is taken before the duck, so its tail rolls on.
   let lastDip=-1e9;
   function silenceAfter(t,tier,u){
    if(!graph||t-lastDip<6)return false;lastDip=t;stats.dips++;
-   const depth=.1+.3*smooth(0,.4,u),hold=tier===3?2.4:1.6;
-   duck(['weapons','engines','impacts','ambience','music','explosions'],depth,hold,2.5/3,t+.9);
+   const depth=.05+.35*smooth(0,.4,u),hold=tier===3?2.4:1.6;// -26 dB close: at -20 the explosion's own tail sat only 4 dB under the war before it (scene 6)
+   duck(['weapons','engines','impacts','ambience','music','explosions'],depth,hold,2.5/3,t+.9);dipFrom=t;dipUntil=t+.9+hold+2.5;
    if(SMP.ringing){const r=sample('ringing',t+.8,graph.B.ui,1,.22*(1-u));if(r)voices.push({style:'ring',prio:0,out:r.g,src:[r.src],end:t+.8+r.dur,killed:false});}
    return true;
   }
@@ -930,7 +933,8 @@
    set(P(g,'gain'),0,t);ramp(P(g,'gain'),.09,t+.5);ramp(P(g,'gain'),.07,t+1.8);ramp(P(g,'gain'),0,t+3.1);
    return true;
   }
-  function setSlowMo(on){slow=!!on;if(!graph)return;glide(graph.duck.gain,slow?.06:1,.25);glide(P(graph.sfxLP,'frequency'),slow?900:20000,.2);}
+  // The page calls this every frame; only a change moves anything (each glide cancels what is scheduled).
+  function setSlowMo(on){on=!!on;if(on===slow)return;slow=on;if(!graph)return;glide(P(graph.slowG,'gain'),slow?.06:1,.25);glide(P(graph.sfxLP,'frequency'),slow?900:20000,.2);}
 
   function update(dt){
    if(!unlocked)return;const t=now();prune(t);
@@ -959,7 +963,7 @@
    suspend(){try{const r=ctx&&ctx.suspend&&ctx.suspend();if(r&&r.catch)r.catch(()=>{});}catch(e){}},
    resume(){try{const r=ctx&&unlocked&&ctx.resume&&ctx.resume();if(r&&r.catch)r.catch(()=>{});}catch(e){}},
    styles:WEAPONS.slice(),
-   _debug:{EM,L,S,meters(){const o={},buf=new Float32Array(2048);if(!graph)return o;const e={};for(const k in graph.meters){graph.meters[k].getFloatTimeDomainData(buf);let s2=0;for(let i=0;i<buf.length;i++)s2+=buf[i]*buf[i];e[k]=s2/buf.length;}
+   _debug:{EM,L,S,graph:()=>graph,meters(){const o={},buf=new Float32Array(2048);if(!graph)return o;const e={};for(const k in graph.meters){graph.meters[k].getFloatTimeDomainData(buf);let s2=0;for(let i=0;i<buf.length;i++)s2+=buf[i]*buf[i];e[k]=s2/buf.length;}
     for(const k in e)if(k.endsWith('L')){const b=k.slice(0,-1),l=e[k],r=e[b+'R'];o[b]=+(10*Math.log10((l+r)/2+1e-12)).toFixed(1);o[b+'Pan']=l+r>1e-12?+((r-l)/(r+l)).toFixed(2):0;}return o;}}
   };
   return api;

@@ -44,7 +44,7 @@ The sound bible for `armada-war-tribute-new.html`: what plays, how it was made, 
   - Buses: music, weapons, engines (with a rumble sub-bus), impacts, explosions, ambience and UI, each with a duck stage.
   - Many guns at once each get a little quieter: 16 voices come out 4.8 dB down.
   - A fighter passing within three reference distances pulls the score, the bed and the capital rumble down by up to 6 dB.
-  - Ion strikes duck the weapons and the score. A capital heard close is followed by a dip: 0.9 s after the blast everything falls about 20 dB for 1.6 s under a ringing tone, then the war returns over 2.5 s. There's no stinger over that silence.
+  - Ion strikes duck the weapons and the score. A capital heard close is followed by a dip: 0.9 s after the blast everything falls about 26 dB for 1.6 s under a ringing tone, then the war returns over 2.5 s. There's no stinger over that silence.
   - Slow motion dulls the world, but not the death that caused it.
   - Master: a gentle compressor into a lookahead true-peak limiter (an AudioWorklet), with a -1.5 dBFS ceiling on 4x-oversampled peaks. A soft clipper stands in where worklets are missing.
 - **Cockpit.** In Take control and the Crew interiors you hear the ship's own engine from inside (its loop through a 300-420 Hz lowpass, pitched down), the cabin bed and your own guns dry and centred. The outside world is lowpassed to 1.1 kHz. Leaving crossfades back over a quarter second.

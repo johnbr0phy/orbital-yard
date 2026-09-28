@@ -113,6 +113,10 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
     - A fighter passing within three reference distances is lifted by up to 6 dB, and it pulls the score, the bed and the capital rumble down by up to 6 dB. Film mixes do both for the hero pass.
     - Many guns at once each get quieter (16 voices: -4.8 dB).
     - Ion strikes duck weapons, score and engines.
+    - The dip didn't reach the score, and I only found out from the bus meters in the final captures. Scene 6's music sat at -29 dB right through the "silence", only about 4 dB under the war before the blast. There were two causes:
+      - The page calls `setSlowMo` every frame, and each call cancelled everything scheduled on the score's duck stage. That means no duck ever held on the score: not ion strikes, not capital blasts, not the dip. Slow motion now has its own gain stage and acts only when its state changes.
+      - A staged capital death's secondary blasts each ducked the score more lightly, and each one cancelled the dip. A shallower duck now never cuts into a dip in progress.
+      - Tests hold both fixes. The close dip also went from -20 to -26 dB, because at -20 the explosion's own tail filled it.
     - A capital death heard close gets its dip, and no stinger over it. The stinger (a braam at -10 dB on the music bus) filled the silence the brief asks for, so it now plays only for deaths heard from further off.
     - Slow motion dulls the world but not the death that caused it: explosions bypass the slow-motion lowpass.
   - **Balance was set by measuring each bus's share, not by ear.** The first full war measured 40% of its energy under 120 Hz and a 330 Hz centroid.

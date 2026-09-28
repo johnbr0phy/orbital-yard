@@ -136,9 +136,20 @@ test('a beam sounds for as long as it fires: attack, a held loop, then a release
  assert.ok(v.g.gain.events.some(e=>e[0]==='target'&&e[1]===0&&Math.abs(e[3]-.35/4)<1e-9));
 });
 
+test('slow motion, set every frame by the page, moves its own stage only on a change and never cancels a duck on the score',()=>{
+ const {ctx,a}=setup();const g=a._debug.graph(),mus=g.D.music.gain,sl=g.slowG.gain;
+ a.setSlowMo(true);const n=sl.events.length;a.explosion(2,0,0,-500);const m=mus.events.length;
+ for(let i=0;i<30;i++){a.setSlowMo(true);ctx.currentTime+=1/30;}
+ assert.equal(sl.events.length,n,'no writes while the state holds');assert.equal(mus.events.length,m,'the duck on the score is untouched');
+ a.setSlowMo(false);assert.ok(sl.events.length>n);assert.equal(mus.events.length,m);
+});
 test('a capital death close by is followed by a dip under a ringing tone; a far one is not; neither drops below the test floor',()=>{
  const {ctx,a}=setup();a.useSamples({explosion2:buf(4),ringing:buf(4)});
  const near=a.explosion(2,0,0,-500);assert.ok(near&&near.dip,'close: the dip');
+ const deep=ctx.gains.some(g=>g.gain.events.some(e=>e[0]==='target'&&e[1]>0&&e[1]<=.07));assert.ok(deep,'close: the buses fall at least 23 dB');
+ // a secondary blast inside the dip must not cancel it (each one used to duck the score and wipe the dip)
+ const mus=a._debug.graph().D.music.gain,n=mus.events.length;ctx.currentTime+=1.5;a.explosion(2,0,0,-450);
+ assert.ok(!mus.events.slice(n).some(e=>e[0]==='cancel'),'the dip holds through the secondaries');
  ctx.currentTime+=7;const far=a.explosion(2,0,0,-6000);assert.ok(far&&!far.dip,'far: no dip');
 });
 
