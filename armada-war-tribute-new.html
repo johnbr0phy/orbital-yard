@@ -18849,16 +18849,15 @@ function applyShipLight(now){
 
 /* quality tiers: auto-detected once from a two-second probe, then remembered */
 const qualityParam=typeof location!=="undefined"?new URLSearchParams(location.search).get("quality"):null;
+/* Ultra by default. ?quality= or a tier the viewer picked by hand still wins;
+   an old auto-detected tier does not. */
 let qualityTier=(()=>{
   if(qualityParam&&PX&&PX.TIERS[qualityParam])return qualityParam;
-  try{const saved=JSON.parse(localStorage.getItem("tributeQuality")||"null");if(saved&&PX&&PX.TIERS[saved.tier])return saved.tier;}catch(e){}
-  if(!PX)return "high";
-  const dbg=gl.getExtension&&gl.getExtension("WEBGL_debug_renderer_info");
-  let renderer="";try{renderer=dbg?gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL):"";}catch(e){}
-  return PX.guessTier({coarse:typeof matchMedia==="function"&&matchMedia("(pointer:coarse)").matches,width:innerWidth,cores:navigator.hardwareConcurrency||4,renderer,memory:navigator.deviceMemory||8});
+  try{const saved=JSON.parse(localStorage.getItem("tributeQuality")||"null");if(saved&&!saved.auto&&PX&&PX.TIERS[saved.tier])return saved.tier;}catch(e){}
+  return PX&&PX.TIERS.ultra?"ultra":"high";
 })();
 dprCap=PX?PX.TIERS[qualityTier].dprCap:1.5;dpr=renderPixelRatio(innerWidth,innerHeight,devicePixelRatio);
-let qualityProbe=(()=>{try{return !qualityParam&&!localStorage.getItem("tributeQuality");}catch(e){return false;}})()?{frames:[],from:0}:null;
+let qualityProbe=null; // no frame-time probe: it would step Ultra down on its own
 let quality=PX?PX.TIERS[qualityTier]:{msaa:0,fxaa:false,bloomLevels:0,nebula:0,grain:false,vignette:false,dprCap:1.5,minScale:1,fleet:600,eclipse:true,dust:0};
 function setQuality(tier,remember=true){
   if(!PX||!PX.TIERS[tier])return;
@@ -19908,11 +19907,9 @@ function bcReset(){
   hideEndCard();
   const top=document.getElementById("bcTop");if(top)top.dataset.frame="";
 }
-// Opening matchups chosen for spectacle: two iconic fleets, capitals on both sides.
-const SPECTACLE=[[5,6],[12,10],[8,7],[5,10],[11,10],[9,8],[12,5],[18,10],[19,10],[6,12],[7,9],[21,20],[5,12],[10,8]];
+// The opening war and "next war": fate deals both fleets and both allies.
 function spectacleWar(fresh){
-  const pair=SPECTACLE[(Math.random()*SPECTACLE.length)|0],flip=Math.random()<.5;
-  pickMain=flip?[pair[1],pair[0]]:pair.slice();pickAlly=[-1,-1];
+  pickMain=[-1,-1];pickAlly=[-2,-2];
   buildPicker();
   document.getElementById("pick").classList.remove("on");
   watchMode="action";startWar(fresh);watchMode="action";updateWatchDock();
@@ -20684,8 +20681,8 @@ document.getElementById("qualitySel").addEventListener("change",e=>{setQuality(e
 for(const k of ["master","music","sfx","engines"])document.getElementById("vol_"+k)?.addEventListener("input",e=>{const A=audio();if(A)A.setVolume(k,+e.target.value/100);});
 document.getElementById("audioSpace")?.addEventListener("change",e=>{const A=audio();if(A)A.headphones=e.target.value==="1";});
 document.addEventListener?.("click",e=>{if(e.target.closest&&e.target.closest("button,summary"))ui("click");},{capture:true});
-// Default battle size: measured simulation speed, never the GPU tier.
-{const f=measureSimSpeed(),n=/[?&]size=\d+/.test(location.search)?+location.search.match(/[?&]size=(\d+)/)[1]:realtimeSize(f);setFleetSize(n,false);describeSizes(f);}
+// Default battle size: 600 a side. ?size= still overrides it.
+{const f=measureSimSpeed(),n=/[?&]size=\d+/.test(location.search)?+location.search.match(/[?&]size=(\d+)/)[1]:600;setFleetSize(n,false);describeSizes(f);}
 applyPal();resize();makeStars();
 buildPicker();
 showWarMenu();
