@@ -8,6 +8,11 @@
    slow the simulation), with the Broadcast camera driving the listener.
    --skip fast-forwards the war (silently) before recording starts. */
 const {chromium} = require(process.env.PLAYWRIGHT_PATH || 'playwright');
+/* Scene mode: node scripts/capture-audio.cjs --scene 3 [--dir <checkout>] --out bench/audio/scenes/after/03.wav
+   renders one scene of bench/audio/scenes.json offline (see scripts/audio-scenes.cjs), writes the WAV
+   and a .json log beside it: per tick the camera, the scene subject's distance and radial speed, the
+   engine's voice stats and the JS time spent in the page's audio update. */
+if (process.argv.includes('--scene')) { require('./capture-audio-scene.cjs'); return; }
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const root = path.resolve(__dirname, '..');

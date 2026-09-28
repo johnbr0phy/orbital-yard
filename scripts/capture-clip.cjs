@@ -13,6 +13,10 @@
    from the replay reel are played and recorded with the broadcast HUD.
    Frames are JPEG screenshots piped into Playwright's bundled ffmpeg. */
 const {chromium} = require(process.env.PLAYWRIGHT_PATH || 'playwright');
+/* Scene mode: node scripts/capture-clip.cjs --scene 3 --out bench/audio/scenes/video/03.webm
+   records one scene of bench/audio/scenes.json (silent WebM, 30 fps) from the same seeded war,
+   stepping and camera as the scene's audio (scripts/capture-audio.cjs --scene), so the two sync. */
+if (process.argv.includes('--scene')) { require('./capture-clip-scene.cjs'); return; }
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), {spawn} = require('node:child_process');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const root = path.resolve(__dirname, '..');
