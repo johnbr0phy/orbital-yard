@@ -62,6 +62,8 @@
   // Story orders override a pilot's own choice while they last.
   const ORDER_ACTION={ROUT:'ROUT',PANIC:'PANIC',BERSERK:'ATTACK',RAM:'RAM',RESCUE:'RESCUE',HIDE:'HIDE',MANEUVER:'MANEUVER',
     HOLD:'HOLD',GUARD:'ESCORT',STRIKE:'STRIKE',CONVOY:'CONVOY',RECOVER:'RECOVER',TOW:'TOW',DRIFT:'DRIFT'};
+  // Posture orders a pilot drops once the killing starts. Nobody holds a parade line under fire.
+  const SOFT_ORDERS=new Set(['HOLD','HIDE','MANEUVER','GUARD']);
   const ORDER_REASON={ROUT:'Squadron broken. Running for the edge',PANIC:'Command is gone. Scattering',BERSERK:'Command is gone. Charging',
     RAM:'Doomed. Turning to ram',RESCUE:'Screening a crippled capital',HIDE:'Holding in cover for the ambush',MANEUVER:'Swinging wide on the plan',
     HOLD:'Holding the line',GUARD:'Screening the capitals',STRIKE:'Striking for their flagship',CONVOY:'Running the convoy lane',
@@ -85,6 +87,9 @@
         fear:.05,confidence:.55,action:'SEARCH',reason:'Scanning the approach',nextScan:r()*.35,
         nextThink:r()*.35,lastScan:0,lastThink:0,lastHp:s.hp,until:0,target:-1,orbit:r()<.5?-1:1,
         lane:(r()-.5)*2,vertical:(r()-.5)*2,preferredRange:.48+r()*.52,
+        // Its own axis, hashed from the seed so no pilot's stream shifts. Station
+        // spreads used lane for both x and z, which parked a squadron on a diagonal line.
+        depth:((Math.imul((s.seed||1)^0x2c1b3c6d,0x297a2d39)>>>0)/4294967296-.5)*2,
         actionBias:{ATTACK:r()*.2,FLANK:r()*.2,ESCORT:r()*.2,REGROUP:r()*.2},
         killsSeen:0,plan:null,scanCount:0};
       return s.ai;
@@ -299,7 +304,13 @@
       }
       a.target=target?target.id:-1;
       const weak=a.friends.filter(f=>f.hp/f.hpMax<.58).sort((l,r)=>l.hp/l.hpMax-r.hp/r.hpMax)[0];
-      const order=st?st.order(s,a,now):null;
+      let order=st?st.order(s,a,now):null;
+      // Shock: allies dying around this pilot in the last few seconds. It fades fast.
+      a.shock=(a.shock||0)*Math.exp(-dt/5);
+      const shocked=a.shock>1.1;
+      if(order&&SOFT_ORDERS.has(order.kind)&&(hurt||shocked||a.fear>.55)){
+        a.order=null;order=null;a.breakUntil=now+12;a.until=0;
+      }
       if(order&&!(warning&&!['RAM','ROUT','PANIC'].includes(order.kind))){
         const action=ORDER_ACTION[order.kind]||order.kind;
         if(a.action!==action||a.orderKind!==order.kind){this.stats.decisions++;this.stats.actions[action]=(this.stats.actions[action]||0)+1;}
@@ -308,8 +319,27 @@
         return a;
       }
       a.orderKind=null;
-      if(now<a.until&&!warning&&damaged<.12&&!(a.fear>.78&&a.action!=='RETREAT')&&target){a.weak=weak;return a;}
       const tr=a.traits;
+      // Fight or flight: when the pilots around it are being unmade, a pilot either
+      // throws everything at the killer or runs. Doctrine and nerve decide which.
+      if(shocked&&!warning&&!capital(s)&&(!a.response||now>=a.responseUntil)){
+        const d=st?st.doctrine(s):DOCTRINE[s.race]||DOCTRINE[0];
+        const charge=tr.courage*.7+tr.aggression*.7+d.berserk;
+        const flee=d.retreat?a.fear*.9+(1-tr.courage)*.7+d.panic+(1-hp)*.4:0;
+        a.response=a.rng()*(charge+flee)<charge?'CHARGE':'FLEE';a.responseUntil=now+7+a.rng()*4;
+        a.until=0;
+      }
+      if(a.response&&now>=a.responseUntil&&!shocked)a.response=null;
+      if(a.response&&!warning){
+        const dread=a.contacts.get(a.dread);
+        const action=a.response==='CHARGE'?'ATTACK':'RETREAT';
+        if(a.response==='CHARGE'&&dread)a.target=dread.id;
+        if(a.action!==action){a.since=now;this.stats.decisions++;this.stats.actions[action]=(this.stats.actions[action]||0)+1;}
+        a.action=action;a.weak=weak;a.until=a.responseUntil;
+        a.reason=a.response==='CHARGE'?'Massacre. Throwing everything at the killer':'Massacre. Breaking formation and running';
+        return a;
+      }
+      if(now<a.until&&!warning&&damaged<.12&&!(a.fear>.78&&a.action!=='RETREAT')&&target){a.weak=weak;return a;}
       let action='SEARCH',reason=target?'Reacquiring a lost contact':'Sweeping the approach';
       if(warning){action='EVADE';reason='Ion lock detected. Clearing the firing zone';this.stats.ionDodges++;}
       else if(fresh.length){
@@ -357,7 +387,7 @@
             goal=[cap.x+ux*berth+Math.cos(theta)*120,cap.y+a.vertical*berth*.25,cap.z+uz*berth+Math.sin(theta)*120];
           }else goal=[s.x,s.y,s.z];
           boost=1.1;mode='ESCORT';
-        }else if(order.point){goal=order.point.slice();if(order.spread){goal[0]+=a.lane*order.spread;goal[1]+=a.vertical*order.spread*.3;goal[2]+=a.orbit*a.lane*order.spread;}
+        }else if(order.point){goal=order.point.slice();if(order.spread){goal[0]+=a.lane*order.spread;goal[1]+=a.vertical*order.spread*.45;goal[2]+=a.depth*order.spread;}
           // A tug with a hull on the line crawls: a capital does not tow like a fighter.
           boost=kind==='HIDE'?.9:kind==='HOLD'?.8:kind==='CONVOY'?1:kind==='TOW'&&order.slow?.3:1.15;mode=kind==='CONVOY'?'SEARCH':kind;}
         else if(kind==='STRIKE'){const t=this.byId.get(order.target);goal=t&&alive(t)?[t.x,t.y+a.vertical*80,t.z]:[s.x,s.y,s.z];boost=1.2;mode='ATTACK';}
@@ -370,6 +400,11 @@
         if(length(dx,dy,dz)<5){dx=-Math.sin(s.yaw)*a.orbit;dy=a.vertical*.5;dz=Math.cos(s.yaw)*a.orbit;}
         const n=length(dx,dy,dz)||1,k=warning.radius+radius(s)+240;
         goal=[warning.point[0]+dx/n*k,warning.point[1]+dy/n*k+speed*1.5*a.vertical,warning.point[2]+dz/n*k];boost=1.45;
+      }else if(a.response==='FLEE'&&mode==='RETREAT'){
+        // Scatter away from the killer, each on its own line, so one blast cannot take the group.
+        const d=a.contacts.get(a.dread)||c||(st&&st.sides[1-s.side].center);
+        let ux=d?s.x-d.x:(s.side?1:-1),uz=d?s.z-d.z:0;const n=Math.hypot(ux,uz)||1;ux/=n;uz/=n;
+        goal=[s.x+ux*1800-uz*a.lane*900,s.y+a.vertical*600,s.z+uz*1800+ux*a.lane*900];boost=1.35;
       }else if(mode==='RETREAT'||mode==='REGROUP'||mode==='ESCORT'){
         const friend=mode==='ESCORT'&&a.weak?a.weak:a.friends.find(f=>f.hulls)||a.friends[0];a.anchor=friend?friend.id:-1;
         // Terrain is cover: a pilot falling back puts a rock or the moon between itself and them.
@@ -401,7 +436,7 @@
           goal=[tx+dx/n*berth-dz/n*tangent*a.orbit*pass,ty+a.vertical*(capital?190:90),tz+dz/n*berth+dx/n*tangent*a.orbit*pass];
         }
         if(mode==='EVADE'){goal[0]+=-dz/n*speed*3*a.orbit;goal[1]+=speed*1.8*a.vertical;goal[2]+=dx/n*speed*3*a.orbit;boost=1.30;}
-        else boost=capital?1.10:1.12;
+        else boost=a.response==='CHARGE'?1.35:capital?1.10:1.12;
       }else{
         const bearing=s.side?Math.PI:0,phase=now*.045+a.lane*2;
         const front=(s.side?-1:1)*Math.min(1400,250+now*7);
@@ -735,6 +770,8 @@
       spread=n?spread/n:0;
       const ratio=clamp(pressure,.5,2);
       let fear=base+d.spread*(spread*.45+a.witness*.07)*ratio;
+      // Watching the pilots around you die is frightening at any range, even with no enemy on the scope.
+      fear+=Math.min(.55,(a.shock||0)*.14)*(1.1-a.traits.courage*.5);
       // Encircled: enemies on opposite sides. A closed pincer or a sprung ambush
       // frightens through this, not through a scripted morale hit.
       let sx=0,sz=0,k=0;
@@ -899,7 +936,14 @@
       if(t.hulls||t.slen>=180)st.lostCaps++;
       // Witnesses: allies near the loss take it to heart, weighted by what was lost.
       const weight=t.hulls>=50?2.2:(t.hulls||t.slen>=180)?1.4:t.hero?1.2:.5;
-      for(const s of this.minds.nearby(t,1400))if(s.side===t.side&&s.ai&&distance(s,t)<1400)s.ai.witness=Math.min(4,(s.ai.witness||0)+weight);
+      const hostile=killer&&killer.side!==t.side&&this.live(killer);
+      if(killer&&killer.side!==t.side)st.lossAt=now;
+      for(const s of this.minds.nearby(t,1400))if(s.side===t.side&&s.ai&&distance(s,t)<1400){
+        s.ai.witness=Math.min(4,(s.ai.witness||0)+weight);
+        s.ai.shock=Math.min(5,(s.ai.shock||0)+weight);
+        // The shot that killed a wingman shows where it came from: a report, not a firing lock.
+        if(hostile){s.ai.dread=killer.id;const c=s.ai.contacts.get(killer.id);if(!c||now-c.seen>.5)s.ai.contacts.set(killer.id,{...this.minds.snapshot(killer,now,false),confidence:.8});s.ai.nextThink=0;}
+      }
       // The flagship.
       if(t.id===st.flag){
         st.flag=-1;
@@ -1007,7 +1051,7 @@
         const dir=side?-1:1;
         for(const q of squads){
           if(q.side!==side||q.state!=='steady')continue;
-          const members=q.mem.map(id=>this.ship(id)).filter(m=>this.live(m)&&m.arr&&m.ai&&!(m.ai.order&&['RESCUE','RAM','PANIC','BERSERK','RECOVER','TOW'].includes(m.ai.order.kind)&&now<m.ai.order.until));
+          const members=q.mem.map(id=>this.ship(id)).filter(m=>this.live(m)&&m.arr&&m.ai&&!(m.ai.breakUntil>now)&&!(m.ai.order&&['RESCUE','RAM','PANIC','BERSERK','RECOVER','TOW'].includes(m.ai.order.kind)&&now<m.ai.order.until));
           if(!members.length)continue;
           if(p.state==='forming'&&(q.role==='left'||q.role==='right')){
             const lat=q.role==='left'?-1:1,point=[foe.x-dir*500,foe.y,foe.z+lat*3400];
@@ -1050,6 +1094,8 @@
       const d=length(foe.x-home.x,foe.z-home.z),age=now-p.since;
       if(p.released)return null;
       const release=why=>{p.released=why;return null;};
+      // Ships are dying: whatever the plan said about waiting, the fight is here.
+      if(this.sides[side].lossAt!=null&&now-this.sides[side].lossAt<20)return release('under fire');
       if(p.kind==='HOLD'){if(d<3200)return release('contact');if(age>55)return release('waited');return [home.x+dir*1400,home.y,home.z];}
       if(p.kind==='SIEGE'){if(d<3600)return release('contact');if(age>60)return release('waited');return [home.x+dir*500,home.y,home.z];}
       if(p.kind==='PINCER'){if(p.state!=='forming'||d<2400)return release('closed');return [home.x+dir*1800,home.y,home.z];}
