@@ -193,7 +193,7 @@ def scene(p):
             P = np.array([subj[i]['subj']['p'] for i in ks]); T = np.array([subj[i]['t'] for i in ks])
             speed = float(np.linalg.norm(P[-1] - P[0]) / max(1e-6, T[-1] - T[0])) if len(ks) > 1 else 0
             t60 = float(np.clip(dmin * 1.732 / speed, .15, 1.5)) if speed > 1 else .5
-            steps = np.abs(np.diff(sm[(t > tca - 3) & (t < tca + 3)]))
+            steps = np.abs(np.diff(sm[(t > tca - 3) & (t < tca + 3) & (t > t[0] + .15) & (t < t[-1] - .15)]))  # 'same' smoothing sags at the array ends
             out['flyby'] = {'tca': tca, 'distance': dmin,
                             'rise_db': round(float(peak - sm[pre].mean()), 1) if pre.any() else None,
                             'fall_db': round(float(peak - sm[post].mean()), 1) if post.any() else None,
@@ -202,6 +202,24 @@ def scene(p):
                             'pan_before': round(p_at(tca - t60), 2), 'pan_at': round(p_at(tca), 2), 'pan_after': round(p_at(tca + t60), 2),
                             'itd_before_ms': itd_at(x2, rate, tca - t60), 'itd_after_ms': itd_at(x2, rate, tca + t60),
                             'pitch_shift_semitones': pitch_shift(x, rate, tca, gap=max(.08, .5 * t60))}
+    # Eyes closed, where is the fight? The gain-weighted left/right of every sounding gun and hit (from the
+    # engine) against the pan measured in the audio, per tick where guns are sounding.
+    fx = [(r['t'], r['fight'][0]) for r in log if r.get('fight') and r['fight'][0] is not None and r['fight'][1] > .02]
+    if len(fx) > 30:
+        ft = np.array([a for a, _ in fx]); fv = np.array([b for _, b in fx]); pv = np.interp(ft + .05, t, pan)
+        if fv.std() > 1e-6 and pv.std() > 1e-6: out['fight_vs_pan'] = {'ticks': len(fx), 'correlation': round(float(np.corrcoef(fv, pv)[0, 1]), 2)}
+    # And when something big died: each capital, hero or First One death in the scene, the loudest 400 ms in the
+    # 2.5 s after it against the scene's median level, and the quietest 400 ms after that against the 2 s before it.
+    kills = [(r['t'], k) for r in log for k in r.get('kills', [])]
+    if kills:
+        lv = np.convolve(lev, np.ones(8) / 8, mode='same'); med = float(np.median(lev)); rows = []
+        for tk, k in kills:
+            post = (t >= tk) & (t < tk + 2.5); pre = (t >= tk - 2) & (t < tk)
+            if not post.any(): continue
+            tp = float(t[post][np.argmax(lv[post])]); after = (t > tp + .3) & (t < tp + 4)
+            rows.append({'t': round(tk, 2), 'type': k[0], 'name': k[1], 'distance': k[2], 'peak_over_median_db': round(float(lv[post].max() - med), 1),
+                         'dip_below_before_db': round(float(lv[pre].mean() - lv[after].min()), 1) if pre.any() and after.any() else None})
+        out['big_deaths'] = rows
     # A squadron: how many members' engines were voiced around closest approach, where, and with what Doppler.
     mem = [r for r in log if r.get('members')]
     if mem and 'flyby' in out:

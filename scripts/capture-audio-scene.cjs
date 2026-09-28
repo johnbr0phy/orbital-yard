@@ -25,7 +25,7 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
     const A = bc.audio; A.unlock(); syncAudioSliders?.();
     if (scene.focus != null) audioFocusId = scene.focus;  // the subject a wide shot frames (the page's listener blend)
     const roles = await A.loadSamples?.('audio/manifest.json'); await settle();
-    const subj = scene.subject != null ? ships[scene.subject] : null, log = [];
+    const subj = scene.subject != null ? ships[scene.subject] : null, log = [], seenEv = new Set(bc.log.events);
     let renderMs = 0, resumedAt = 0, jsMs = 0;
     const q = t => Math.round(t * rate / 128) * 128 / rate;
     const tick = k => {
@@ -43,6 +43,12 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
         if (em) row.subj.em = {voiced: !!(em.voice && !em.voice.dying), g: +(em.cur || 0).toFixed(4), aud: +(em.aud || 0).toFixed(4), dop: +(em.dop || 1).toFixed(3), model: em.voice ? em.voice.model : null, role: em.role, dir: em.voice && em.voice.pn && em.voice.pn.__dir ? em.voice.pn.__dir.map(v => +v.toFixed(2)) : null, ex: [em.x, em.y, em.z].map(Math.round), L: [A._debug.L.x, A._debug.L.y, A._debug.L.z].map(Math.round)};
       }
       if (scene.members && A._debug) row.members = scene.members.map(id => { const e = A._debug.EM.get('n' + id); return e ? [id, e.voice && !e.voice.dying ? 1 : 0, +(e.dop || 1).toFixed(3), e.voice && e.voice.pn && e.voice.pn.__dir ? e.voice.pn.__dir.map(v => +v.toFixed(2)) : null, Math.round(e.d || 0)] : [id, 0]; });
+      if (A._debug) {  // where the fight is: the gain-weighted left/right of every sounding gun and hit
+        let w = 0, x = 0; for (const e of A._debug.EM.values()) if (e.voice && !e.voice.dying && e.voice.pn && e.voice.pn.__dir && (e.bus === 'weapons' || e.bus === 'impacts')) { const g = e.cur || 0; w += g; x += g * e.voice.pn.__dir[0]; }
+        row.fight = [w > 0 ? +(x / w).toFixed(3) : null, +w.toFixed(4)];
+      }
+      for (const ev of bc.log.events) if (!seenEv.has(ev)) { seenEv.add(ev); if (/capitalKill|heroKill|firstOneKill/.test(ev.type)) (row.kills ??= []).push([ev.type, ev.name, Math.round(Math.hypot(ev.x - cam.ex, ev.y - cam.ey, ev.z - cam.ez))]); }
+      if (opts.solo != null && A._debug) row.solo = [...A._debug.EM.values()].filter(e => e.ship === opts.solo).map(e => [e.id, e.role, e.voice && !e.voice.dying ? 1 : 0, +(e.cur || 0).toFixed(4), Math.round(e.d || 0)]);
       log.push(row);
     };
     for (let k = 0; k < N; k++) off.suspend(q(k / 30)).then(async () => {

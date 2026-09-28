@@ -298,8 +298,8 @@
    if(!unlocked||!graph||opt.solo!=null)return false;// solo (measurement): no one-shots
    if(!admit(style,prio,limit))return false;
    const t=now(),out=gain(0);if(!out){stats.dropped++;return false;}
-   set(out.gain,g,t);
-   const lp=filter('lowpass',cutoff,.5),pan=panner(pos.d<600&&pos.u<.35?'HRTF':'equalpower',pos);
+   const model=pos.d<600&&pos.u<.35?'HRTF':'equalpower';set(out.gain,g*trimOf(model),t);
+   const lp=filter('lowpass',cutoff,.5),pan=panner(model,pos);
    link(out,lp,pan,graph.B[bus]||graph.sfxIn);
    if(graph.farIn&&pos.u>.25){const fs=gain(.35*smooth(.25,.9,pos.u));link(lp,fs,graph.farIn);}
    const r=build(t,out)||{},v={style,prio,out,src:(r.src||[]).filter(Boolean),end:t+num(r.dur,.5)+.05,killed:false};
@@ -440,6 +440,9 @@
   // ---- emitters and virtual voices ----
   // em: {id,bus,role,buf,loop,x,y,z,vx,vy,vz,ox,oy,oz,cone,R,level,prio,t0,dur,rate,gain,seen,voice,lp,air,phase}
   const EM=new Map();let frame=0;
+  // Chrome's HRTF comes out ~3 dB louder than equal-power at the same gain (measured: +3.1..3.3 dB front
+  // and side, +1.25 behind), so a voice handed between the two models would jump; HRTF voices are trimmed.
+  const HRTF_TRIM=.708,trimOf=m=>m==='HRTF'?HRTF_TRIM:1;
   const groupOf=(b,e)=>b==='engines'?(e&&e.rumble?'rumble':'engines'):b==='impacts'?'impacts':'weapons';
   // rumble is a ceiling for capitals, not a reservation: fighters get whatever engine voices capitals don't use
   let rumbleUsed=0;const capOf=g=>g==='engines'?budget.engines-rumbleUsed:g==='rumble'?Math.min(budget.rumble||0,budget.engines):budget[g]||0;
@@ -472,7 +475,7 @@
    }else{slot=acquire(groupOf(e.bus,e),model,e);if(!slot)return null;({g,lp,pn,fs}=slot);}
    const r=sample(null,t,g,e.rate*(e.dop||1),1,!!e.loop,b,offset,true);if(!r){if(slot)slot.busy=false;return null;}
    const v={src:r.src,g,lp,pn,fs,slot,model,t,cut:slot?slot.cut:0,end:e.loop?Infinity:t+Math.max(.05,(num(b.duration,1)-offset)/Math.max(.1,e.rate)),dying:false};
-   const target=e.cur||0;
+   const target=(e.cur||0)*trimOf(model);
    if(fade>0){set(g.gain,0,t);aim(g.gain,target,t,fade/3);}else set(g.gain,target,t);
    if(e.cone)orient(pn,e);
    stats.played++;return v;
@@ -509,7 +512,7 @@
    // a fighter or frigate passing within three reference distances is lifted by up to 6 dB: the hero pass
    const lift=e.pass&&e.d>0?1+clamp(((e.ref||1)*3/e.d-1)/2,0,1):1;
    e.cur=e.gain*lift*(e.inside?1:e.dg)*(opt.mute&&opt.mute.includes(groupOf(e.bus,e))?0:1);
-   if((!v.fading||t>v.t+XFADE_IN)&&!(Math.abs(e.cur-(v.gv??-1))<.029*Math.max(e.cur,1e-4))){v.gv=e.cur;aim(v.g.gain,e.cur,t,.04);}
+   const gv=e.cur*trimOf(v.model);if((!v.fading||t>v.t+XFADE_IN)&&!(Math.abs(gv-(v.gv??-1))<.029*Math.max(gv,1e-4))){v.gv=gv;aim(v.g.gain,gv,t,.04);}
    const fsv=.5*smooth(.15,.85,e.u||0)*e.gain;if(v.fs&&!(Math.abs(fsv-(v.fsv??-1))<.06*Math.max(fsv,1e-3))){v.fsv=fsv;aim(v.fs.gain,fsv,t,.1);}
   }
   // Every frame: rank each group's emitters, voice the top of each budget, hand off the rest.

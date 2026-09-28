@@ -104,6 +104,11 @@ test('HRTF for the nearest few slow emitters, equal-power for the rest and for f
  a2.headphones=true;assert.equal(a2.headphones,true);
 });
 
+test('an HRTF voice is trimmed 3 dB so a hand-over between HRTF and equal-power does not jump in level',()=>{
+ const run=hrtf=>{const {ctx,a}=setup({quality:'High',hrtf});step(ctx,a,[fighter(1,0,-30)],15);const v=a._debug.EM.get('n1').voice;return [v.model,v.gv];};
+ const [mh,gh]=run(true),[me,ge]=run(false);
+ assert.deepEqual([mh,me],['HRTF','equalpower']);assert.ok(Math.abs(gh/ge-.708)<.01,'ratio '+gh/ge);
+});
 test('panners hear direction in camera space and are moved only when the direction turns',()=>{
  const {ctx,a}=setup();step(ctx,a,[fighter(1,50,0)],2);// straight to the right of an ear facing -z
  const pn=a._debug.EM.get('n1').voice.pn;assert.ok(pn.positionX.value>.99,'right is +x: '+pn.positionX.value);
