@@ -542,6 +542,10 @@
    }
    // HRTF for the nearest few, equal-power for the rest; a model change is a crossfade.
    voiced.sort((a,b)=>a.d-b.d);
+   // A voice that can't change model this frame (a one-shot, or a loop younger than 0.5 s) keeps its
+   // HRTF slot, and counts first: before this, held one-shots let 11 HRTF voices run on a budget of 6.
+   const held=e=>e.voice&&(!e.loop||t-e.voice.t<=.5);
+   for(const e of voiced)if(held(e)&&e.voice.model==='HRTF')hrtfLeft--;
    for(const e of voiced){
     // HRTF for the nearest few that are not sweeping fast: Chrome's HRTF crossfades between azimuths
     // over tens of ms, so a fighter crossing 20 degrees a frame lagged ~100 ms behind its picture
@@ -549,7 +553,7 @@
     const rx=e.x-L.x,ry=e.y-L.y,rz=e.z-L.z,wx=(e.vx||0)-L.vx,wy=(e.vy||0)-L.vy,wz=(e.vz||0)-L.vz,d2=Math.max(1,rx*rx+ry*ry+rz*rz);
     const omega=Math.hypot(ry*wz-rz*wy,rz*wx-rx*wz,rx*wy-ry*wx)/d2;e.omega=omega;
     const hold=e.voice&&e.voice.model==='HRTF'?3:2.4;// hysteresis, rad/s
-    const want=perf.hrtf&&hrtfLeft>0&&!e.inside&&e.d<Math.max(300,e.R*.35)&&omega<hold?'HRTF':'equalpower';if(want==='HRTF')hrtfLeft--;
+    const want=held(e)?e.voice.model:perf.hrtf&&hrtfLeft>0&&!e.inside&&e.d<Math.max(300,e.R*.35)&&omega<hold?'HRTF':'equalpower';if(want==='HRTF'&&!held(e))hrtfLeft--;
     if(!e.voice){
      if(t<e.t0-.02)continue;// a whizz waits for its moment
      const age=t-e.t0,late=!e.loop&&age>.06;if(late){if(!e.list)e.dead=true;continue;}// never start a gun halfway through

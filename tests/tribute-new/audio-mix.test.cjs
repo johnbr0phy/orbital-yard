@@ -109,6 +109,12 @@ test('an HRTF voice is trimmed 3 dB so a hand-over between HRTF and equal-power 
  const [mh,gh]=run(true),[me,ge]=run(false);
  assert.deepEqual([mh,me],['HRTF','equalpower']);assert.ok(Math.abs(gh/ge-.708)<.01,'ratio '+gh/ge);
 });
+test('the HRTF budget holds while guns start and stop close by: held one-shots count against it',()=>{
+ const {ctx,a}=setup({quality:'Low'});let max=0;// 2 HRTF voices on Low
+ // each new gun is nearer than the ones still ringing, so it wins an HRTF slot the held ones never gave back
+ for(let i=0;i<60;i++){a.shot('laser',10,0,-(80-(i%8)*8),5,10,1);a.ships([]);a.update(1/30);ctx.currentTime+=1/30;max=Math.max(max,a.stats().hrtf);}
+ assert.ok(max<=2,'max HRTF voices '+max);
+});
 test('panners hear direction in camera space and are moved only when the direction turns',()=>{
  const {ctx,a}=setup();step(ctx,a,[fighter(1,50,0)],2);// straight to the right of an ear facing -z
  const pn=a._debug.EM.get('n1').voice.pn;assert.ok(pn.positionX.value>.99,'right is +x: '+pn.positionX.value);
