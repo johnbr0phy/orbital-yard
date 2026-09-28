@@ -1,4 +1,64 @@
-# The Tribute War, as stories: a writeup
+# The Tribute War, as sound: a writeup
+
+This pass had one job: make the war sound like sitting in a cinema. Before it, the sound was a flat stereo mix that clipped.
+- The broadside and the capital death clipped (20 and 24 overs).
+- The 90-second war ran 3 dB hot, at -13.3 LUFS.
+- A fighter passing the camera didn't change pitch or move across the image.
+- A destroyer overhead was only the score and the bed.
+
+The first thing I built was a way to hear it without ears: ten scripted scenes (`bench/audio/scenes.json`), each rendered sample-accurate to its picture, then measured and plotted. Every claim below is checked against those. The numbers are in AUDIO.md, the reasoning in DECISIONS.md, and every sound and prompt in SOUND-DESIGN-NEW.md. You can listen to before and after over the picture in `audio/scenes.html`.
+
+## What changed
+
+**Ships are sound sources, not events.**
+- Every ship near the camera is an emitter: fighters and frigates have their nozzles, capitals have their nozzles and two hull rumbles.
+- Each gun shot, beam, hit and whizz-by is an emitter too.
+- The engine voices the loudest of each kind within a budget (8 engines, 16 weapons, 12 impacts on High) and crossfades as they change hands, so nothing pops in or out.
+
+**It's 3D.** The nearest six slow sources are HRTF, so on headphones you hear front, back and above; the rest are equal-power. It follows the camera, with Doppler on everything that moves, exaggerated but clamped.
+
+**A close fly-by is a real event.** It swells, drops pitch and crosses the image. The fighter from scene 1, heard alone, rises 66 dB, falls 42 dB and drops 4.5 semitones. In the full mix the drop is 6.5 semitones.
+
+**Every fleet sounds like itself.**
+- Fighter, frigate and capital engines for each fleet.
+- Close and far guns, and held beams.
+- Hits that ring on shields and clang on hulls.
+- Arrivals and exits, and death styles.
+
+**Deaths land.** A capital death is layered: a crack, a recorded low thump, debris, a hall tail and the break-up. Heard close, it's followed by a dip: the war falls away under a ringing tone for a second and a half, then comes back.
+
+**The score follows the war.** Calm, tension and battle stems in one key and tempo crossfade with intensity, and end on a victory or defeat coda.
+
+**The master can't clip.** A lookahead true-peak limiter holds every scene at or under -1.15 dBTP, and the war sits at -16.2 LUFS.
+
+**You can set it.** There's a new Engines & ambience slider and a Headphones/Speakers switch. It's still silent until your first click or key.
+
+## What it cost
+
+- **Generation:** $5.52 of the $10 cap, 321 generations, every one logged with its prompt in `bench/audio/ledger.csv`.
+- **Download:** the first click loads 8.66 MB at worst, and the rest streams when needed.
+- **Runtime:** about 0.2 ms of script a frame, and 7% of a core for the audio thread in real time.
+
+## What didn't work
+
+- **Two fly-by criteria I set myself fail in the full mix.** Scene 1's level only falls 6.4 dB after the pass, because the war keeps going around it. The squadron in scene 5 passes overhead, so left/right barely moves. The solo captures show the passes themselves are right. I kept the criteria as I wrote them.
+- **The destroyer doesn't leave.** Its engines move from ahead, to overhead, to behind, with a 3.5-semitone drop, but the scene ends with the camera still under its 1.6-km hull. It's also 57% sub, over the 45% I allowed.
+- **I shipped four bugs into my own "final" run and only the measurements caught them.**
+  - HRTF was 3 dB louder than equal-power.
+  - The first click loaded 11.3 MB.
+  - The per-frame slow-motion call cancelled every duck on the score, so the post-death "silence" still had the score at full level.
+  - The HRTF budget leaked to 11 voices.
+
+  Each one now has a test.
+- **Thirty-one generated takes were rejected by measurement,** mostly falling low tones and sub-heavy engine loops.
+
+## What's next
+
+- A longer destroyer scene, starting before its bow, so the pass can be heard to end.
+- A measure of front/back that doesn't need ears: an HRTF-aware direction estimate from the render.
+- Listening on real headphones. Everything here is measured, not heard.
+
+# The Tribute War, as stories
 
 This pass had one job: make every war a story. Before it, the minds were busy but the story was flat:
 - thousands of evasions per war, but only 5 to 7 kinds of event in the log;

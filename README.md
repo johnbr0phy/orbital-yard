@@ -89,8 +89,11 @@ tension, the kill and the reaction, and slows time for big kills it can see.
 On screen you get a strength bar, a kill feed, the pilots' thoughts, and
 instant replay (`R`). Time runs from pause to 4× (`Space`, `1`–`5`). When the
 war ends, a result card with an MVP and the story of the battle comes up,
-along with highlights you can save as a card or WebM clip. Audio is
-synthesized; there are no samples. `?` lists the keys, `?perf=1` shows where
+along with highlights you can save as a card or WebM clip. Sound is an
+object-based 3D mix of recordings generated for the page: engines, guns, hits and
+fly-bys come from where the ships are, with Doppler, and HRTF on headphones. From
+`file://` it falls back to a synth. Hear it before and after in
+[audio/scenes.html](audio/scenes.html) and see [AUDIO.md](AUDIO.md). `?` lists the keys, `?perf=1` shows where
 each frame goes, and `?quality=low|medium|high|ultra` overrides the automatic
 tier. See [DECISIONS.md](DECISIONS.md), [PERFORMANCE.md](PERFORMANCE.md) and
 [WRITEUP.md](WRITEUP.md).
