@@ -1,0 +1,106 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tribute War Scene Player</title>
+<meta name="description" content="Ten scripted scenes from the Tribute War, each with its picture and its sound before and after the object-based audio pass.">
+<style>
+:root{--bg:#0a0c10;--fg:#e9ecf2;--mut:#8d95a7;--card:#12161e;--line:#232a37;--acc:#f0b35a;--acc2:#7fb3ff;--ok:#6fd49a;--bad:#ff8a7a}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f5f6f9;--fg:#141821;--mut:#5b6275;--card:#fff;--line:#dfe3ea;--acc:#b86e00;--acc2:#1f5fd1;--ok:#11824a;--bad:#c0392b}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg)}
+body{font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;max-width:1120px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:22px;margin:0 0 4px;letter-spacing:.01em}.lede{color:var(--mut);margin:0 0 18px;max-width:760px}
+nav{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+nav button,.seg button{background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+nav button[aria-pressed="true"]{border-color:var(--acc);color:var(--acc)}
+.scene{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.scene h2{font-size:17px;margin:0}.scene .what{color:var(--mut);margin:0;font-size:14px}
+.stage{position:relative;background:#000;border-radius:10px;overflow:hidden;aspect-ratio:16/9}
+.stage video{width:100%;height:100%;display:block}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.play{background:var(--acc);color:#111;border:0;border-radius:10px;padding:9px 16px;font:600 14px system-ui;cursor:pointer;min-width:92px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:8px 14px}.seg button[aria-pressed="true"]{background:var(--acc2);color:#fff}
+.seg button:disabled{opacity:.35;cursor:default}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--acc)}
+.time{font:12px ui-monospace,monospace;color:var(--mut);min-width:84px;text-align:right}
+.hint{font-size:12px;color:var(--mut)}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:500}td.n{font-variant-numeric:tabular-nums}
+.pass{color:var(--ok);font-weight:600}.fail{color:var(--bad);font-weight:600}
+details{border-top:1px solid var(--line);padding-top:8px}summary{cursor:pointer;color:var(--mut)}
+.plots{display:grid;gap:8px;margin-top:8px}.plots img{width:100%;border-radius:8px;border:1px solid var(--line);background:#101318}
+.plots figcaption{font-size:12px;color:var(--mut)}
+@media (max-width:640px){.time{min-width:0}table{font-size:12px}}
+</style></head><body>
+<h1>Tribute War: the scene set</h1>
+<p class="lede">Ten scripted moments from seeded wars, each with its picture and its sound. <b>Before</b> is the build that shipped with pull requests 7 and 8; <b>After</b> is the object-based mix. For the two fly-bys, <b>Ship alone</b> is the same capture with only the passing ship audible. Headphones recommended (the nearest few sounds are rendered with HRTF). Space plays and pauses, B and A switch.</p>
+<nav id="nav" aria-label="Scenes"></nav>
+<section id="scene" class="scene" aria-live="polite"></section>
+<script>
+const base='../bench/audio/scenes/';
+const pad=n=>String(n).padStart(2,'0'),fmt=t=>{t=Math.max(0,t||0);return Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0')+'.'+Math.floor(t*10%10);};
+const WHAT={1:'The camera is parked. An A-wing crosses left to right, 31 units away at 208 units a second. Listen for it coming, the swell, the drop in pitch, and it fading behind.',
+ 2:'The camera travels under a 1-km Victory-class destroyer, bow to stern and on past her. A wall of rumble overhead, her engines at the stern, then she moves on.',
+ 3:'Riding behind an X-wing through the furball: its own engine, guns around you, bolts past your ears.',
+ 4:'Off the beam of a Sovereign-class flagship while she fights: her phasers held on target, Klingon fire hitting shields.',
+ 5:'Ten TIEs scream over a parked camera 46 units below their path. Each engine in its own place with its own Doppler.',
+ 6:'The Victory-class destroyer dies 800 units away. The loudest, deepest moment, then a breath of ringing near-silence before the war comes back.',
+ 7:'An ion cannon charges, then fires on a point 330 units from the camera.',
+ 8:'A wide Broadcast shot pulling back from a skirmish to 4,000 units. The ear follows part of the way toward the subject; the rest recedes into the distant battle.',
+ 9:'Take control of an X-wing: its engine from inside, your own guns, the outside world muffled.',
+ 10:'Ninety seconds of the war in Broadcast, as a viewer would watch it.'};
+let S=[],R={},cur=null;
+async function load(){
+ S=await (await fetch(base.replace(/scenes\/$/,'')+'scenes.json')).json();
+ await Promise.all(S.map(async s=>{for(const b of ['before','after','solo']){try{const r=await fetch(base+b+'/'+pad(s.id)+'.report.json');if(r.ok)(R[s.id]??={})[b]=await r.json();}catch(e){}}}));
+ const nav=document.getElementById('nav');
+ for(const s of S){const b=document.createElement('button');b.textContent=s.id+'. '+s.name;b.onclick=()=>show(s.id);b.dataset.id=s.id;nav.append(b);}
+ show(+(location.hash.slice(1))||1);
+}
+function row(label,b,a,good){const t=document.createElement('tr');t.innerHTML=`<th>${label}</th><td class="n">${b??'–'}</td><td class="n">${a??'–'}</td>`+(good!=null?`<td class="${good?'pass':'fail'}">${good?'pass':'fail'}</td>`:'<td></td>');return t;}
+function show(id){
+ if(cur)cur.stop();location.hash=id;
+ for(const b of document.querySelectorAll('nav button'))b.setAttribute('aria-pressed',String(+b.dataset.id===id));
+ const s=S.find(x=>x.id===id),el=document.getElementById('scene'),hasSolo=!!(R[id]&&R[id].solo);el.innerHTML='';
+ const h=document.createElement('h2');h.textContent=id+'. '+s.name;const p=document.createElement('p');p.className='what';p.textContent=WHAT[id]||'';
+ const stage=document.createElement('div');stage.className='stage';const v=document.createElement('video');v.src=base+'video/'+pad(id)+'.webm';v.muted=true;v.playsInline=true;v.preload='auto';stage.append(v);
+ const tracks={};for(const b of ['before','after'].concat(hasSolo?['solo']:[])){const a=new Audio(base+b+'/'+pad(id)+'.m4a');a.preload='auto';a.muted=b!=='after';tracks[b]=a;}
+ const bar=document.createElement('div');bar.className='bar';
+ const play=document.createElement('button');play.className='play';play.textContent='Play';
+ const seg=document.createElement('div');seg.className='seg';seg.setAttribute('role','group');seg.setAttribute('aria-label','Which sound');
+ let which='after';const pick=w=>{which=w;for(const [k,a] of Object.entries(tracks))a.muted=k!==w;for(const b of seg.children)b.setAttribute('aria-pressed',String(b.dataset.w===w));};
+ for(const [w,l] of [['before','Before'],['after','After'],['solo','Ship alone']]){const b=document.createElement('button');b.textContent=l;b.dataset.w=w;b.disabled=!tracks[w];b.onclick=()=>pick(w);seg.append(b);}
+ const seek=document.createElement('input');seek.type='range';seek.min=0;seek.max=1000;seek.value=0;seek.setAttribute('aria-label','Position');
+ const time=document.createElement('span');time.className='time';
+ bar.append(play,seg,seek,time);
+ const hint=document.createElement('div');hint.className='hint';hint.textContent='All three sounds play together in lock-step with the picture; switching only changes which one you hear.';
+ // keep every track on the video's clock
+ const all=()=>Object.values(tracks);
+ const sync=()=>{for(const a of all())if(Math.abs(a.currentTime-v.currentTime)>.05)a.currentTime=v.currentTime;};
+ const go=async()=>{sync();try{await Promise.all([v.play(),...all().map(a=>a.play())]);}catch(e){}play.textContent='Pause';};
+ const halt=()=>{v.pause();all().forEach(a=>a.pause());play.textContent='Play';};
+ play.onclick=()=>v.paused?go():halt();
+ v.addEventListener('ended',()=>{all().forEach(a=>a.pause());play.textContent='Play again';});
+ let tick=null;const loop=()=>{if(!v.paused)sync();if(v.duration){seek.value=String(Math.round(v.currentTime/v.duration*1000));time.textContent=fmt(v.currentTime)+' / '+fmt(v.duration);}tick=requestAnimationFrame(loop);};loop();
+ seek.oninput=()=>{if(!v.duration)return;v.currentTime=seek.value/1000*v.duration;all().forEach(a=>a.currentTime=v.currentTime);};
+ const onKey=e=>{if(e.target.tagName==='INPUT'&&e.key!==' ')return;if(e.key===' '){e.preventDefault();v.paused?go():halt();}else if(e.key==='b'||e.key==='B')pick('before');else if(e.key==='a'||e.key==='A')pick('after');else if((e.key==='s'||e.key==='S')&&tracks.solo)pick('solo');};
+ addEventListener('keydown',onKey);
+ cur={stop(){halt();cancelAnimationFrame(tick);removeEventListener('keydown',onKey);all().forEach(a=>{a.src='';});v.removeAttribute('src');v.load();}};
+ pick('after');
+ // numbers
+ const rb=R[id]?.before||{},ra=R[id]?.after||{},tb=document.createElement('table');
+ tb.innerHTML='<tr><th></th><th>Before</th><th>After</th><th></th></tr>';
+ tb.append(row('Integrated loudness (LUFS)',rb.integrated_lufs,ra.integrated_lufs,id===10?Math.abs(ra.integrated_lufs+16)<=1.5:null));
+ tb.append(row('True peak (dBTP)',rb.true_peak_dbtp,ra.true_peak_dbtp,ra.true_peak_dbtp!=null?ra.true_peak_dbtp<=-1:null));
+ tb.append(row('Clipped samples',rb.clipped_samples,ra.clipped_samples,ra.clipped_samples!=null?ra.clipped_samples===0:null));
+ tb.append(row('Energy under 120 Hz',rb.energy_sub_lt120!=null?Math.round(rb.energy_sub_lt120*100)+'%':null,ra.energy_sub_lt120!=null?Math.round(ra.energy_sub_lt120*100)+'%':null));
+ tb.append(row('Voices, mean / max',rb.voices_mean!=null?rb.voices_mean+' / '+rb.voices_max:null,ra.voices_mean!=null?ra.voices_mean+' / '+ra.voices_max:null));
+ const fb=rb.flyby,fa=ra.flyby,fs=R[id]?.solo?.flyby;
+ if(fa){const pf=f=>f?`rise ${f.rise_db} dB, fall ${f.fall_db} dB; pan ${f.pan_before} → ${f.pan_after}; pitch ${f.pitch_shift_semitones} st`:null;
+  tb.append(row('Fly-by (whole mix)',pf(fb),pf(fa)));if(fs)tb.append(row('Fly-by (ship alone)',null,pf(fs)+`; ITD ${fs.itd_before_ms} → ${fs.itd_after_ms} ms`));}
+ const det=document.createElement('details');const sum=document.createElement('summary');sum.textContent='Spectrograms: level, pan and voices over time';det.append(sum);
+ const plots=document.createElement('div');plots.className='plots';
+ for(const [b,l] of [['before','Before'],['after','After']].concat(hasSolo?[['solo','Ship alone']]:[])){const f=document.createElement('figure');f.style.margin='0';const im=document.createElement('img');im.loading='lazy';im.alt=l+' spectrogram, level, pan and voices for scene '+id;im.src=base+b+'/'+pad(id)+'.png';const c=document.createElement('figcaption');c.textContent=l;f.append(im,c);plots.append(f);}
+ det.append(plots);
+ el.append(h,p,stage,bar,hint,tb,det);
+}
+load();
+</script></body></html>

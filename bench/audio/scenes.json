@@ -2967,10 +2967,10 @@
   "size": 50,
   "t0": 27.0,
   "seconds": 12,
-  "subject": 70,
+  "subject": 99,
   "camera": {
    "type": "pilot",
-   "ship": 70,
+   "ship": 99,
    "keys": [
     {
      "t": 27.1,

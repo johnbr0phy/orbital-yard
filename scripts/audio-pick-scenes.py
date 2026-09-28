@@ -129,8 +129,9 @@ def main(p56, p1011):
     scenes.append({'id': 8, 'name': 'Wide Broadcast pull-back', **E, 't0': t0, 'seconds': 12, 'subject': wid, 'focus': wid,
                    'camera': locked(tr, wid, t0, t0 + 12, rel8)})
 
-    # 9. Take control of an X-wing: throttle up, fire in bursts, a turn.
-    pid = rid; t0 = rt0 + 2
+    # 9. Take control of the hero freighter: throttle up, fire in bursts, a turn. (The first pick, an X-wing,
+    #    was shot down 5.3 s into the scene with the player flying it straight into the furball.)
+    pid = [i for i, m in meta.items() if 'YT-1300' in m['klass']][0]; t0 = rt0 + 2
     keys = [{'t': round(t0 + .1, 2), 'down': ['w']}, {'t': round(t0 + 1.5, 2), 'down': [' ']}, {'t': round(t0 + 3.5, 2), 'up': [' ']},
             {'t': round(t0 + 4.5, 2), 'down': ['a']}, {'t': round(t0 + 6, 2), 'up': ['a']}, {'t': round(t0 + 6.5, 2), 'down': [' ']},
             {'t': round(t0 + 9, 2), 'up': [' ', 'w']}, {'t': round(t0 + 10, 2), 'down': [' ']}, {'t': round(t0 + 11.5, 2), 'up': [' ']}]

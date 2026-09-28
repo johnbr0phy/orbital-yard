@@ -1,33 +1,46 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tribute Sound Board</title>
+<meta name="description" content="Every recording the Tribute War plays, by role and take, with measured rejects.">
 <style>
-:root{--bg:#0b0d12;--fg:#e8eaf0;--mut:#8a91a3;--card:#151923;--line:#252b38;--acc:#7fb3ff}
-@media (prefers-color-scheme:light){:root{--bg:#f6f7fa;--fg:#161a22;--mut:#5a6173;--card:#fff;--line:#dfe3ea;--acc:#1f5fd1}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,sans-serif;padding:16px;max-width:980px;margin:auto}
+:root{--bg:#0b0d12;--fg:#e8eaf0;--mut:#8a91a3;--card:#151923;--line:#252b38;--acc:#7fb3ff;--bad:#ff8a7a}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f6f7fa;--fg:#161a22;--mut:#5a6173;--card:#fff;--line:#dfe3ea;--acc:#1f5fd1;--bad:#c0392b}}
+*{box-sizing:border-box}html,body{background:var(--bg);color:var(--fg)}body{margin:0 auto;font:15px/1.4 system-ui,sans-serif;padding:16px;max-width:1080px}
 h1{font-size:20px;margin:0 0 4px}p{color:var(--mut);margin:0 0 16px}h2{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:24px 0 8px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
 .c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}.c b{display:block;margin-bottom:6px}
-.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}.row span{color:var(--mut);font-size:12px;width:52px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}.row span{color:var(--mut);font-size:12px;width:64px}
 button{background:transparent;color:var(--acc);border:1px solid var(--line);border-radius:6px;padding:5px 9px;font:inherit;font-size:13px;cursor:pointer}
-button.on{background:var(--acc);color:var(--bg)}
+button.on{background:var(--acc);color:var(--bg)}.rej{font-size:12px;color:var(--bad)}
 </style></head><body>
-<h1>Tribute Sound Board</h1><p>Every recording the battle page uses. Tap to play; tap again to stop.</p>
+<h1>Tribute Sound Board</h1><p>Every recording the battle page uses, by role and take. Tap to play; tap again to stop. Loops play seamlessly on their measured loop points. Takes rejected by measurement are listed under their role.</p>
 <div id="app"></div>
 <script>
 const FLEETS=["The Yard Fleet","The Shoal","The Lattice","The Drift","The Choir","The Imperial Starfleet","The Rebel Alliance","The Minbari Federation","The Shadows","EarthForce","The Federation","The Klingon Empire","The Borg Collective","The Mondoshawan","The USCM Task Force","The Engineers","The Yautja Clans","The First Ones","Romulan Star Empire","The Dominion","Space Marines","Tyranids","Tesla"];
-let cur=null,curB=null;
-function btn(label,file,loop){const b=document.createElement('button');b.textContent=label;b.onclick=()=>{
- if(cur){cur.pause();curB.classList.remove('on');if(curB===b){cur=null;return;}}
- cur=new Audio(file);cur.loop=!!loop;cur.play();curB=b;b.classList.add('on');cur.onended=()=>b.classList.remove('on');};return b;}
-function row(label,files,loop){const r=document.createElement('div');r.className='row';const s=document.createElement('span');s.textContent=label;r.append(s);(files||[]).forEach((f,i)=>r.append(btn(String(i+1),f,loop)));return r;}
-fetch('manifest.json').then(r=>r.json()).then(({roles})=>{
- const app=document.getElementById('app'),sec=(t,cards)=>{const h=document.createElement('h2');h.textContent=t;const g=document.createElement('div');g.className='grid';cards.forEach(c=>g.append(c));app.append(h,g);};
- const card=(title,rows)=>{const c=document.createElement('div');c.className='c';const b=document.createElement('b');b.textContent=title;c.append(b,...rows);return c;};
- sec('Score and bed',[card('Orchestral battle score',[row('loop',roles.music,true)]),card('Distant battle bed',[row('loop',roles.ambience,true)]),card('Capital-kill stinger',[row('hit',roles.stinger)])]);
- sec('Fleets',FLEETS.map((n,i)=>card(n,[row('gun',roles['shot-'+i]),row('beam',roles['beam-'+i]),row('engine',roles['engine-'+i],true)])));
- sec('Explosions',[0,1,2,3].map(t=>card(['Fighter','Frigate','Capital','First One'][t],[row('blast',roles['explosion'+t])])));
- sec('Death styles',Object.keys(roles).filter(k=>k.startsWith('boom-')).map(k=>card(k.slice(5),[row('layer',roles[k])])));
- sec('Fly-bys',[card('Fighter pass',[row('whoosh',roles['whoosh-0'])]),card('Capital pass',[row('whoosh',roles['whoosh-1'])])]);
- sec('Shared hardware',['arc','rail','ion-charge','ion-fire'].map(k=>card(k,[row('shot',roles[k])])));
+let ctx=null,cur=null,curB=null;const cache={};
+async function play(file,loop,b){
+ ctx??=new (window.AudioContext||window.webkitAudioContext)();await ctx.resume();
+ if(cur){try{cur.stop();}catch(e){}curB.classList.remove('on');const same=curB===b;cur=null;if(same)return;}
+ const buf=await (cache[file]??=fetch(file).then(r=>r.arrayBuffer()).then(a=>ctx.decodeAudioData(a)));
+ const s=ctx.createBufferSource();s.buffer=buf;const lp=loop&&MAN.loops[file];
+ if(loop){s.loop=true;if(lp){s.loopStart=lp[0];s.loopEnd=lp[1];}}s.connect(ctx.destination);s.start(0,lp?lp[0]:0);
+ cur=s;curB=b;b.classList.add('on');s.onended=()=>{if(cur===s){b.classList.remove('on');cur=null;}};
+}
+let MAN={},REP={};
+function row(label,files,loop){const r=document.createElement('div');r.className='row';const s=document.createElement('span');s.textContent=label;r.append(s);
+ (files||[]).forEach(f=>{const b=document.createElement('button');b.textContent=(f.match(/-(\d+)\.mp3$/)||[,'?'])[1];b.title=f;b.onclick=()=>play(f,loop,b);r.append(b);});
+ if(!files||!files.length){const x=document.createElement('span');x.textContent='none';x.style.width='auto';r.append(x);}return r;}
+function rejects(roles){const out=[];for(const r of roles)for(const t of REP[r]||[])if(t.rejected){const d=document.createElement('div');d.className='rej';d.textContent=t.take+': '+t.rejected.join('; ');out.push(d);}return out;}
+Promise.all([fetch('manifest.json').then(r=>r.json()),fetch('build-report.json').then(r=>r.ok?r.json():{}).catch(()=>({}))]).then(([man,rep])=>{
+ MAN=man;REP=rep;const roles=man.roles,app=document.getElementById('app');
+ const sec=(t,cards)=>{const h=document.createElement('h2');h.textContent=t;const g=document.createElement('div');g.className='grid';cards.forEach(c=>g.append(c));app.append(h,g);};
+ const card=(title,rows,rej=[])=>{const c=document.createElement('div');c.className='c';const b=document.createElement('b');b.textContent=title;c.append(b,...rows,...rej);return c;};
+ sec('Score (D minor, 96 BPM)',[card('Stems',[row('calm',roles['score-calm'],true),row('tension',roles['score-tension'],true),row('battle',roles['score-battle'],true)]),card('Codas',[row('victory',roles['score-victory']),row('defeat',roles['score-defeat'])]),card('Distant battle bed',[row('loop',roles.ambience,true)],rejects(['ambience'])),card('Capital-kill stinger',[row('hit',roles.stinger)])]);
+ sec('Fleets',FLEETS.map((n,i)=>card(i+'. '+n,[row('gun',roles['shot-'+i]),row('gun far',roles['shotfar-'+i]),row('beam',roles['beam-'+i]),row('beam held',roles['beamloop-'+i],true),row('fighter',roles['eng-f-'+i],true),row('frigate',roles['eng-m-'+i],true),row('capital',roles['eng-c-'+i],true)],rejects(['shot-'+i,'beam-'+i,'beamloop-'+i,'eng-f-'+i,'eng-m-'+i,'eng-c-'+i]))));
+ sec('Impacts',[['Hull, light','hit-light'],['Hull, heavy','hit-heavy'],['Shield that rings','shield-ring'],['Shield that buzzes','shield-hum'],['Machine barrier','shield-crackle'],['Bolt whizz-by','whizz-e'],['Round whizz-by','whizz-k'],['Debris','debris'],['Metal groan','groan'],['Sparks','sparks']].map(([t,r])=>card(t,[row('take',roles[r])],rejects([r]))).concat([card('Venting (loop)',[row('loop',roles.vent,true)])]));
+ sec('Arrivals and exits',['hyper','jump','warp','conduit','rift','rocket'].map(k=>card(k,[row('arrive',roles['arrive-'+k]),row('exit',roles['exit-'+k])],rejects(['arrive-'+k]))));
+ sec('Explosions, layered',[0,1,2,3].map(t=>card(['Fighter','Frigate','Capital','First One'][t]+' body',[row('blast',roles['explosion'+t])])).concat([['Crack','xcrack'],['Low thump','xsub'],['Debris tail','xdebris'],['Hall tail','xtail'],['Capital break-up','capital-break'],['End of an age','age-end'],['Ringing','ringing']].map(([t,r])=>card(t,[row('layer',roles[r])],rejects([r])))));
+ sec('Death styles',Object.keys(roles).filter(k=>k.startsWith('boom-')).map(k=>card(k.slice(5),[row('layer',roles[k])],rejects([k]))));
+ sec('Fly-bys and cockpit',[card('Fighter pass',[row('whoosh',roles['whoosh-0'])],rejects(['whoosh-0'])),card('Capital pass',[row('whoosh',roles['whoosh-1'])]),card('Cockpit',[row('fighter',roles['cockpit-f'],true),row('bridge',roles['cockpit-c'],true)])]);
+ sec('Shared hardware',['arc','rail','ion-charge','ion-fire'].map(k=>card(k,[row('shot',roles[k])],rejects([k]))));
 });
 </script></body></html>

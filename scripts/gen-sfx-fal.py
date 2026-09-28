@@ -336,7 +336,16 @@ def doc():
     print('\n## Shared\n\n| Role | Prompt | Length |\n|---|---|---|')
     for r, (p, s, _) in ROLES.items():
         if not r.split('-')[0] in ('shot', 'beam', 'engine', 'boom'): print(f'| {r} | {p} | {s}s |')
-    print(f'\nEvery prompt ends with: "{STYLE}".')
+    print(f'\nThese Version 4 prompts end with: "{STYLE}".')
+    print('\n## Version 5: engines by size class (eng-f/m/c-N, seamless 8 s loops)\n')
+    print('Each prompt is prefixed "Starship engine, continuous and steady, heard from close by:" and ends with the loop style below. A dash marks a class the fleet does not field.\n')
+    print('| # | Fleet | Fighter (under 50 units) | Frigate (50-180) | Capital (180 and up) |\n|---|---|---|---|---|')
+    for n, trio in ENGINES.items(): print(f'| {n} | {FLEETS[n][0]} | ' + ' | '.join(t or '-' for t in trio) + ' |')
+    print('\nSustained beams (beamloop-N, 3 s loops) reuse each fleet\'s beam prompt above, prefixed "Continuous sustained energy beam, held steady:".')
+    print('\n## Version 5: impacts, arrivals, explosion layers, interiors\n\n| Role | Prompt | Length | Loop |\n|---|---|---|---|')
+    for r, (pr, sec, lp) in V5.items(): print(f'| {r} | {pr} | {sec}s | {"yes" if lp else ""} |')
+    print('\nStyle suffixes by family:\n')
+    for k, v in STYLE_FOR.items(): print(f'- {k}: "{v}" (prompt influence {INFLUENCE[k]})')
 
 def main():
     ap = argparse.ArgumentParser()

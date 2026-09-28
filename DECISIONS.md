@@ -85,6 +85,53 @@ The brief put the viewer first: someone who clicks a link from X and wants to wa
 
 ## Audio
 
+- **Version 5: an object-based spatial mix.** The owner asked for the sound of sitting in a cinema watching a space battle: hearing each ship's engines near the camera, guns from where the guns are, passes that swell, drop in pitch and fade, deaths that shake the room and then a breath of silence. Measurements and the log of what worked and what didn't are in `AUDIO.md`; every role, prompt and processing step is in `SOUND-DESIGN-NEW.md`.
+  - **Scenes before sound.** I built the scene set before changing a line (`bench/audio/scenes.json`, `scripts/audio-scenes.cjs`) and captured the baseline, so every change has a before and an after.
+    - Cameras are computed from probed trajectories, so the pass really happens where the camera waits.
+    - Audio renders on an OfflineAudioContext suspended every 1/30 s, which makes it sample-accurate to the picture and independent of machine speed. The picture renders the same stepped war, and every capture checks that both passes end at the same battle time with the same ships alive.
+    - Scene 1 was re-picked once: the first pick's TIE flew in a flight of eight, and a hero died beside the camera 3 s before the pass, so the capture measured the explosion. Scene 2 was extended past the destroyer's stern so she can move on.
+    - Both baselines were re-captured from the old build, which is kept in a git worktree.
+  - **Pass criteria are stated before the work, and reported as stated.** They're measured on the whole mix, where the rest of the war is in the windows. I also report the same pass rendered *solo* (only the subject ship audible), labelled as added later, because a wingman passing a second behind isn't a failure of the pass. I didn't change the criteria after seeing results.
+  - **Emitters and virtual voices.**
+    - The page declares the emitters near the ear every frame. The engine ranks them by loudness at the ear (distance law, source level, cone estimate, and the louder of now and 0.5 s ahead along the radial velocity) and voices the top of each budget, with 3 dB of hysteresis.
+    - The brief gave High/Ultra and Low. Medium sits between them: engines 6, weapons 12, impacts 9.
+    - Capital rumble is a ceiling inside the engine budget (3 of 8 on High, 1 of 4 on Low), not a reservation. Before the ceiling, a sky of destroyers (the 19-km Executor's radius alone was 97,000 units) held every engine voice while a fighter passed 46 units away.
+    - One-shots (explosions, arrivals, ion fire, the stinger) keep the old priority pool.
+  - **The legacy API is kept, and the existing tests pass unchanged.** `weapon`, `explosion`, `flyby`, `engine` and the synth still work as before; the page uses them where there are no recordings (`file://`). `volumes()` still returns master, music and effects. The new Engines & ambience level is stored under its own key and read with `volumes(true)`, because the existing persistence test pins the old object exactly.
+  - **3D.**
+    - PannerNodes: HRTF for the nearest few *slow* emitters, equal-power for the rest. Chrome's HRTF crossfades between azimuths over tens of milliseconds, and a fighter crossing 20° a frame lagged about 100 ms behind its picture (measured), so anything sweeping faster than about 140°/s uses equal-power. A model change is a crossfade to a second voice.
+    - HRTF is made for headphones and narrows the image on speakers, so Settings has a 3D sound switch (Headphones or Speakers). It defaults to Headphones, as the brief asks, and is remembered.
+    - The Web Audio listener never moves. Each panner gets its source's direction in camera space, and only when it has turned more than 1.5° (0.75° for HRTF). Moving panner or listener params every frame put Chrome on its per-sample panning path: scene 1's render thread went from 80% to 34% of real time on that change alone. The microbenchmark: 26 moving panners 9.8%, 26 still ones 3.3%.
+    - Voice chains (gain, air lowpass, panner, far send) are pooled, and a shot creates only its buffer source. The measured saving was small, but it removes about 150 node creations a second.
+  - **Distance.** Emitters use inverse distance from a reference set by size, under a window that is exactly zero at the hearing radius. The old curve kept everything at full level to a tenth of the radius, which made the mix a flat wall: a fighter 180 units away was only 6 dB under one at 30.
+    - Fighter and frigate engines are at full level within three ship lengths. That's the distance at which a pass should feel like arm's length.
+    - Guns: 40 + 6·√length units. Capital nozzles: 0.3 of their length; hulls: 0.25, capped at 1,200 units of length.
+    - Beyond 1,200 units of length, hearing radii grow by the square root, not linearly.
+  - **Doppler** uses a virtual speed of sound of 1,200 units/s, clamped to 0.78-1.25×. At 900 units/s and 0.72-1.32×, a 207 units/s pass measured a 9.5-semitone drop, which is too much. The fly-by whoosh layer skips it because the recording has its own.
+  - **Mix choices, stated as such.**
+    - A fighter passing within three reference distances is lifted by up to 6 dB, and it pulls the score, the bed and the capital rumble down by up to 6 dB. Film mixes do both for the hero pass.
+    - Many guns at once each get quieter (16 voices: -4.8 dB).
+    - Ion strikes duck weapons, score and engines.
+    - A capital death heard close gets its dip, and no stinger over it. The stinger (a braam at -10 dB on the music bus) filled the silence the brief asks for, so it now plays only for deaths heard from further off.
+    - Slow motion dulls the world but not the death that caused it: explosions bypass the slow-motion lowpass.
+  - **Balance was set by measuring each bus's share, not by ear.** The first full war measured 40% of its energy under 120 Hz and a 330 Hz centroid.
+    - Muting each bus in turn showed it wasn't capital rumble (-16.1 LUFS with it muted, from -16.2) but fighter and frigate engines (-21.7 LUFS and a 1,315 Hz centroid with them muted).
+    - Engines went down and guns up and further, until the war measured -16.0 LUFS with a 495 Hz centroid.
+    - The earlier pass deliberately cut harshness, so I left the war on the warm side of that.
+  - **The master.** A gentle compressor, then a lookahead true-peak limiter in an AudioWorklet (loaded from a Blob, so there's no extra file). It detects peaks on the samples and on three interpolated points between each pair, takes the running minimum of the gain it needs over a 3 ms lookahead and box-smooths it over the same span, which provably keeps the delayed sample under the -1.5 dBFS ceiling.
+    - Where worklets are missing, the soft clipper stays.
+    - The existing test counts exactly one DynamicsCompressor at unlock, so the limiter couldn't be a second one. It's better as a worklet anyway.
+  - **Capitals are three emitters:** the nozzles with a cone, and two decorrelated hull rumbles either side of the keel point nearest the ear. A destroyer overhead is wide, not a point.
+  - **Recordings.**
+    - **The score.** It's one composition plan, so the tension and battle stems share one performance, key and tempo. The plan was in key and on tempo (96.00 BPM measured) but ignored its section lengths, so the calm stem was generated on its own from the same key, tempo and motif.
+    - **Codas.** The coda is victory unless the ship you're piloting or following lost.
+    - **Loops** are padded with their own wrap-around, so MP3 decoder delay can't open a seam. The test checks every decoded loop for a zero-lag match.
+    - **Engine WAVs are dropped.** The old engine loops mixed fighter and capital in one prompt and shipped as 9 MB of WAV, so they and the old two-minute score were removed.
+    - **Take rejection.** Every take is measured, and takes carrying the falling low tone are rejected. That found six takes shipped by the earlier pass (an Imperial gun, a Borg gun, an Imperial beam, a fighter whoosh, a warp-breach layer, an ion-fire take) and five new ones (a Borg gun, a bed, two engine loops, a capital break-up). Every one of those roles still has at least one clean take.
+    - **Two unused Tesla guns.** Two new Tesla gun takes used the earlier pass's prompt "tesla-coil snap". A Tesla coil is a generic device, but the fleet is named after the brand, so I kept them out of the set (`unused` in `roles.json`, and marked in the ledger). Their $0.003 stays counted.
+  - **Streaming.** The first gesture fetches the core set and the fleets in the war; the rest of the score, the cockpit beds and the capital-death layers stream right after. Everything else loads on first use.
+  - **Determinism.** Audio reads the simulation and never writes to it. Its only randomness (take choice, pitch and gain jitter, the halls' noise) is `Math.random`, never the simulation's streams. The hooks in `weaponImpact`, the tracer hit path, `dyingCapitals`, `arrivalEffect` and `departureEffect` are no-ops without an unlocked engine, as in the headless tests.
+  - **Evidence files.** Scene WAVs aren't committed (32-bit float, about 70 MB per build); the AAC encodes the listening page plays are. The engine has three measurement switches, used by the capture tool and inert otherwise: bus meters, `solo` and `mute`.
 - **Recorded sound set, generated for this page (Version 4).** The owner wanted Hollywood-quality sound, so every role now has recordings generated with ElevenLabs Sound Effects v2 on fal.ai (`scripts/gen-sfx-fal.py`), and the score is a two-minute orchestral battle loop from ElevenLabs Music on fal. The synth below stays as the fallback for any role without a recording and for UI blips. Prompts describe sounds and never name a franchise, so nothing is copied from anyone's library. Full sound bible: `SOUND-DESIGN-NEW.md`.
   - **Every fleet sounds like itself.** Each of the 23 fleets has its own gun (`shot-N`, 3 takes), beam (`beam-N`, 2 takes) and engine loop (`engine-N`), where N is the race index. Shared hardware (arc, rail, ion charge and fire) keeps shared roles. Each fleet's death style (`RACE_DEFS[].boom`: warp, shatter, burst and so on) adds a `boom-X` layer over the generic explosion; `cookoff` is the generic blast. Kill events now carry `race` so the audio knows who died.
   - **Weapons are matched by loudness, not peak.** `build-audio.py` sets the RMS of the sounding part of each gun and beam to -17 dBFS, with peaks capped at -1. Before this, peak-normalized takes ranged from -28 to -8 dB RMS, and the Lattice guns would have vanished next to the Minbari beam.

@@ -172,7 +172,9 @@ def scene(p):
     log = meta.get('log', [])
     t, lev, pan = curves(x2, rate)
     out['curves'] = {'t': [round(v, 2) for v in t], 'level_db': [round(v, 1) for v in lev], 'pan': [round(v, 3) for v in pan],
-                     'voices': [r.get('voices', 0) for r in log], 'engines': [r.get('engines') for r in log] if log and 'engines' in log[0] else None}
+                     # all real voices: the one-shot pool plus (Version 5) the engine, weapon and impact emitters
+                     'voices': [r.get('voices', 0) + (r.get('engines') or 0) + (r.get('weapons') or 0) + (r.get('impacts') or 0) for r in log],
+                     'engines': [r.get('engines') for r in log] if log and 'engines' in log[0] else None}
     out['voices_max'] = max(out['curves']['voices']) if log else None
     out['voices_mean'] = round(float(np.mean(out['curves']['voices'])), 1) if log else None
     out['render_share'] = meta.get('renderShare'); out['js_ms_per_frame'] = meta.get('jsMsPerFrame')
@@ -200,6 +202,21 @@ def scene(p):
                             'pan_before': round(p_at(tca - t60), 2), 'pan_at': round(p_at(tca), 2), 'pan_after': round(p_at(tca + t60), 2),
                             'itd_before_ms': itd_at(x2, rate, tca - t60), 'itd_after_ms': itd_at(x2, rate, tca + t60),
                             'pitch_shift_semitones': pitch_shift(x, rate, tca, gap=max(.08, .5 * t60))}
+    # A squadron: how many members' engines were voiced around closest approach, where, and with what Doppler.
+    mem = [r for r in log if r.get('members')]
+    if mem and 'flyby' in out:
+        tca = out['flyby']['tca']; near = [r for r in mem if abs(r['t'] - tca) <= .5]
+        voiced = {m[0] for r in near for m in r['members'] if len(m) > 2 and m[1]}
+        dops = [m[2] for r in near for m in r['members'] if len(m) > 2 and m[1]]
+        dirs = [m[3] for r in near for m in r['members'] if len(m) > 3 and m[1] and m[3]]
+        out['squadron'] = {'members': len(mem[0]['members']), 'engines_voiced_near_pass': len(voiced),
+                           'doppler_range': [min(dops), max(dops)] if dops else None,
+                           'direction_spread': {'left_right': [min(d[0] for d in dirs), max(d[0] for d in dirs)], 'front_back': [min(d[2] for d in dirs), max(d[2] for d in dirs)], 'up': [min(d[1] for d in dirs), max(d[1] for d in dirs)]} if dirs else None}
+    # The Doppler the engine applied to the subject's own engine voice across its pass (from the log).
+    em = [r for r in log if r.get('subj', {}).get('em')]
+    if em and 'flyby' in out:
+        tca = out['flyby']['tca']; b4 = [r['subj']['em']['dop'] for r in em if tca - .6 <= r['t'] <= tca - .2]; af = [r['subj']['em']['dop'] for r in em if tca + .2 <= r['t'] <= tca + .6]
+        if b4 and af: out['flyby']['applied_doppler'] = [round(float(np.mean(b4)), 3), round(float(np.mean(af)), 3), round(float(12 * np.log2(np.mean(af) / np.mean(b4))), 2)]
     return out
 
 if __name__ == '__main__':

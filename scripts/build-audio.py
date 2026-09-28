@@ -132,11 +132,27 @@ def level(x, rate, target, kind):
     if p > 10 ** (-1 / 20): x = x * (10 ** (-1 / 20) / p)
     return x
 
-def fold(x, rate, xfade, tail=None):
-    """Seamless loop: the tail (after the loop's end) is laid over the head with an equal-power crossfade."""
+def best_end(x, rate, X):
+    """Where to end a generated loop: the point in its last 2.5 s whose next 0.5 s best matches its first
+    0.5 s (normalized cross-correlation by FFT), leaving X samples after it for the crossfade. Folding
+    material that already resembles the head is what keeps a rhythmic loop (a heartbeat, a pulse) from
+    doubling a beat at the seam."""
+    m = x.mean(axis=1); W = int(.5 * rate); n = len(m)
+    lo, hi = max(W, n - int(2.5 * rate)), n - max(X, W)
+    if hi <= lo: return n - X
+    seg = m[lo:hi + W]; ref = m[:W] - m[:W].mean()
+    N = 1 << int(np.ceil(np.log2(len(seg) + W)))
+    c = np.fft.irfft(np.fft.rfft(seg, N) * np.conj(np.fft.rfft(ref, N)), N)[:hi - lo]
+    e = np.sqrt(np.convolve(seg ** 2, np.ones(W), 'valid')[:hi - lo]) * np.sqrt((ref ** 2).sum()) + 1e-12
+    return lo + int(np.argmax(c / e))
+
+def fold(x, rate, xfade, tail=None, match=True):
+    """Seamless loop: the tail (after the loop's end) is laid over the head with an equal-power crossfade.
+    A generated loop ends either at its own end or where it best matches its start (match)."""
     X = int(xfade * rate)
-    if tail is None:  # generated loop: the last X samples become the tail
-        body, tail = x[:-X], x[-X:]
+    if tail is None:
+        if match: L = best_end(x, rate, X); body, tail = x[:L], x[L:L + X]
+        else: body, tail = x[:-X], x[-X:]
     else: body = x
     X = min(X, len(tail), len(body) // 3)
     t = np.linspace(0, np.pi / 2, X)[:, None]
@@ -152,13 +168,14 @@ def seam(y, rate):
     d = np.abs(np.diff(y, axis=0)).mean() + 1e-12; jump = float(np.abs(y[0] - y[-1]).max() / d)
     return [round(float(step), 2), round(float(inner), 2), round(jump, 1)]
 
-def bass_harmonics(x, rate):
-    """Makes a rumble read on small speakers: the sub band (under 110 Hz) is lowered 4 dB and its soft-saturated
-    copy, band-limited to 120-500 Hz, is mixed back at -12 dB. Only harmonics are added; no tone is synthesized."""
+def bass_harmonics(x, rate, cut=4, level=-12):
+    """Makes a rumble read on small speakers: the sub band (under 110 Hz) is lowered `cut` dB and its soft-saturated
+    copy, band-limited to 120-500 Hz, is mixed back at `level` dB. Only harmonics are added; no tone is synthesized.
+    Capital engines take cut 7 / level -8: at 4 / -12 a capital overhead still measured 62% of its energy under 120 Hz."""
     sub = zero_phase(x, rate, lp=110, order=4); rest = x - sub
     drive = sub / (np.abs(sub).max() + 1e-9) * 4; h = zero_phase(np.tanh(drive), rate, hp=120, lp=500, order=4)
-    h *= np.sqrt((sub ** 2).mean()) / (np.sqrt((h ** 2).mean()) + 1e-12) * 10 ** (-12 / 20)
-    return rest + sub * 10 ** (-4 / 20) + h
+    h *= np.sqrt((sub ** 2).mean()) / (np.sqrt((h ** 2).mean()) + 1e-12) * 10 ** (level / 20)
+    return rest + sub * 10 ** (-cut / 20) + h
 
 def far(x, rate):
     """A gun heard from far off: darker (low-pass 2.2 kHz), a little lower and slower (x0.86), its attack
@@ -223,12 +240,22 @@ def process(x, rate, role, e):
     x = zero_phase(x, out_rate, hp=hp, lp=400 if role == 'xsub' else None)
     if tail is not None: tail = zero_phase(tail, out_rate, hp=hp)
     if role.startswith(('eng-c-', 'eng-m-')) or role == 'cockpit-c':
-        x = bass_harmonics(x, out_rate)
-        if tail is not None: tail = bass_harmonics(tail, out_rate)
+        k = (7, -8) if role.startswith('eng-c-') else (4, -12)
+        x = bass_harmonics(x, out_rate, *k)
+        if tail is not None: tail = bass_harmonics(tail, out_rate, *k)
     info = {}
     if is_loop(role):
         info['seam_raw'] = seam(x, out_rate)
-        x = fold(x, out_rate, e.get('xfade', .6 if not role.startswith('score-') else 2.5), tail)
+        if role.startswith('score-'):
+            x = fold(x, out_rate, e.get('xfade', 2.5), tail)
+        else:  # try both fold methods at three lengths; keep the least audible wrap (measured, not assumed)
+            best = None
+            for match in (False, True):
+                for xf in (.4, .8, 1.2):
+                    y = fold(x, out_rate, xf, None, match); y = y - y.mean(axis=0); sm = seam(y, out_rate)
+                    score = (max(0.0, abs(sm[0]) - sm[1]), abs(sm[0]))
+                    if best is None or score < best[0]: best = (score, y, {'fold': 'match' if match else 'end', 'xfade': xf})
+            x = best[1]; info.update(best[2])
         x = x - x.mean(axis=0)
         info['seam'] = seam(x, out_rate)
     else:

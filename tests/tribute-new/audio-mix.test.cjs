@@ -155,6 +155,13 @@ test('every engine, beam, cockpit and score loop in the manifest is seamless as 
  assert.deepEqual(bad,[]);
 });
 
+test('every loop\'s wrap is inside its own normal movement: the level step across the seam is no bigger than its 95th-percentile step between neighbouring 100 ms windows',()=>{
+ const rep=JSON.parse(fs.readFileSync(path.join(root,'audio/build-report.json'),'utf8')),man=JSON.parse(fs.readFileSync(path.join(root,'audio/manifest.json'),'utf8'));
+ const shipped=new Set(Object.values(man.roles).flat()),bad=[];let n=0;
+ for(const [role,takes] of Object.entries(rep))for(const t of takes){if(!t.seam||t.rejected||!shipped.has(t.take))continue;n++;if(Math.abs(t.seam[0])>t.seam[1]+1e-9)bad.push(t.take+' '+t.seam);}
+ assert.ok(n>=150,n+' loops measured');assert.deepEqual(bad,[]);
+});
+
 test('loudness: the 90-second war is -16 LUFS within 1.5 LU, and no scene clips or passes -1 dBTP',()=>{
  const dir=path.join(root,'bench/audio/scenes/after');
  const war=JSON.parse(fs.readFileSync(path.join(dir,'10.report.json'),'utf8'));

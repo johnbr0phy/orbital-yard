@@ -100,7 +100,7 @@
  function create(options){
   const opt=options||{},maxVoices=Math.max(1,Math.floor(num(opt.maxVoices,24)));
   let ctx=opt.context||null,unlocked=false,graph=null,noise=null,slow=false,lastStinger=-1e9;
-  const vol={...DEFAULTS},mixVol={...MIX_DEFAULTS},voices=[],recent={},stats={dropped:0,culled:0,played:0,peak:0,handoffs:0,modelSwaps:0};
+  const vol={...DEFAULTS},mixVol={...MIX_DEFAULTS},voices=[],recent={},stats={dropped:0,culled:0,played:0,peak:0,handoffs:0,modelSwaps:0,whizz:0,hits:0,shields:0,arrivals:0,beams:0,dips:0};
   const L={x:0,y:0,z:0,fx:0,fy:0,fz:-1,ux:0,uy:1,uz:0,vx:0,vy:0,vz:0,px:null,py:0,pz:0};
   const M={ready:false,next:0,step:0,chord:0,level:0,target:0,pads:[]};
   let budget=opt.budgets||BUDGETS[opt.quality]||BUDGETS.High,drone=null;
@@ -150,11 +150,15 @@
    const music=gain(vol.music),musicTrim=gain(.7),sfxVol=gain(vol.sfx),engVol=gain(mixVol.engines);
    const outsideLP=filter('lowpass',20000,.5),outsideG=gain(1),sfxLP=filter('lowpass',20000),insideSfx=gain(vol.sfx),insideEng=gain(mixVol.engines),inside=gain(0);
    // focus stages: a fighter screaming past pulls the score, the bed and capital rumble back (allocate())
-   const F={music:gain(1),ambience:gain(1)};B.rumble=gain(1);link(B.rumble,B.engines);
+   const F={music:gain(1),ambience:gain(1)};B.rumble=gain(1);
+   // capital rumble and explosions keep their weight but not their mud: low shelves under 100 Hz
+   // (the bass harmonics built into the recordings carry them on small speakers)
+   const rumbleShelf=filter('lowshelf',100,.7),exShelf=filter('lowshelf',90,.7);if(rumbleShelf)set(rumbleShelf.gain,-6,t);if(exShelf)set(exShelf.gain,-3,t);
+   link(B.rumble,rumbleShelf,B.engines);
    link(B.music,D.music,F.music,musicTrim,music,pre);
    // slow motion dulls the world (sfxLP) but not the death that caused it: explosions bypass it
    const exVol=gain(vol.sfx),wAuto=gain(1);
-   link(B.weapons,D.weapons,wAuto,sfxVol);link(B.impacts,D.impacts,sfxVol);link(B.explosions,D.explosions,exVol,outsideLP);
+   link(B.weapons,D.weapons,wAuto,sfxVol);link(B.impacts,D.impacts,sfxVol);link(B.explosions,D.explosions,exShelf,exVol,outsideLP);
    link(B.engines,D.engines,engVol);link(B.ambience,D.ambience,F.ambience,engVol);
    link(sfxVol,sfxLP,outsideLP);link(engVol,sfxLP);link(outsideLP,outsideG,pre);
    link(B.ui,pre);link(inside,pre);link(insideSfx,inside);link(insideEng,inside);
@@ -174,6 +178,7 @@
    const sr=num(ctx.sampleRate,44100);
    try{const n=Math.floor(sr*1.5);noise=ctx.createBuffer(1,n,sr);const d=noise.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;}catch(e){noise=null;}
    if(opt.solo!=null)for(const n of [F.music,F.ambience,B.ui])set(n.gain,0,t);// measurement: one ship alone
+   for(const k of opt.mute||[]){const n=k==='music'?music:k==='ambience'?F.ambience:k==='explosions'?exVol:k==='weapons'?D.weapons:B[k];if(n)set(n.gain,0,t);}// measurement: a bus's share of the mix
    loadLimiter();
   }
   // Swap the soft clipper for the worklet limiter once it has loaded (ceiling -1.5 dBFS on 4x peaks).
@@ -405,7 +410,7 @@
     const bar=2.5,at=Math.max(t+.05,S.t0+Math.ceil((t+.05-S.t0)/bar)*bar),r=sample(k,at,graph.B.music,1,0,true,null,at-S.t0);
     if(r){S.src[k]=r.src;S.g[k]=r.g;}}
    if(!S.on&&SMP.music&&!B.music){const r=sample('music',t+.05,graph.duck,1,0,true);if(r){B.music=r.src;B.musicG=r.g;aim(P(r.g,'gain'),.5,t,2);M.sampled=true;if(M.pad)aim(P(M.pad,'gain'),0,t,.5);}}
-   if(SMP.ambience&&!B.amb){const r=sample('ambience',t+.05,graph.B.ambience,1,0,true);if(r){B.amb=r.src;B.ambG=r.g;aim(P(r.g,'gain'),.03+.3*distant,t,2);}}
+   if(SMP.ambience&&!B.amb){const r=sample('ambience',t+.05,graph.B.ambience,1,0,true);if(r){B.amb=r.src;B.ambG=r.g;aim(P(r.g,'gain'),.05+.6*distant,t,2);}}
    if(S.on)mixStems(2);
   }
   // Calm below intensity 0.25, tension around 0.5, full battle above 0.7; momentum (who is
@@ -501,7 +506,9 @@
    const cut=e.inside?e.cut||18000:Math.min(e.cut||18000,18000*Math.pow(1200/18000,e.u||0));
    // a plain value (an automated biquad frequency recomputes its coefficients every sample), only when it moves
    if(v.lp&&!(Math.abs(cut-(v.cut||0))<.03*cut)){v.cut=cut;if(v.slot)v.slot.cut=cut;try{v.lp.frequency.value=cut;}catch(er){}}
-   e.cur=e.gain*(e.inside?1:e.dg);
+   // a fighter or frigate passing within three reference distances is lifted by up to 6 dB: the hero pass
+   const lift=e.pass&&e.d>0?1+clamp(((e.ref||1)*3/e.d-1)/2,0,1):1;
+   e.cur=e.gain*lift*(e.inside?1:e.dg)*(opt.mute&&opt.mute.includes(groupOf(e.bus,e))?0:1);
    if((!v.fading||t>v.t+XFADE_IN)&&!(Math.abs(e.cur-(v.gv??-1))<.029*Math.max(e.cur,1e-4))){v.gv=e.cur;aim(v.g.gain,e.cur,t,.04);}
    const fsv=.5*smooth(.15,.85,e.u||0)*e.gain;if(v.fs&&!(Math.abs(fsv-(v.fsv??-1))<.06*Math.max(fsv,1e-3))){v.fsv=fsv;aim(v.fs.gain,fsv,t,.1);}
   }
@@ -583,12 +590,12 @@
     const cls=s.cls||'f',lvl=cls==='c'?1.15:cls==='m'?.85:1,rate=cls==='f'?.92+.2*sp:.96+.08*sp;
     const tail=len*(cls==='c'?.45:.4),nx=s.x-f[0]*tail,ny=s.y-f[1]*tail,nz=s.z-f[2]*tail;
     emitter('n'+s.id,{ship:s.id,list:true,bus:'engines',role,loop:true,x:nx,y:ny,z:nz,vx:s.vx,vy:s.vy,vz:s.vz,ox:-f[0],oy:-f[1],oz:-f[2],cone:[110,250,cls==='c'?.45:.55],
-     R,ref:cls==='c'?Math.min(len,1200)*.3:Math.max(12,len*2),level:lvl,gain:(cls==='f'?2.6:cls==='m'?1.6:1.3)*(.75+.25*sp),rate,prio:0,rumble:cls==='c',phase:(s.id*1.37)%7,cut:cls==='c'?9000:16000});n++;
+     R,ref:cls==='c'?Math.min(len,1200)*.3:Math.max(12,len*3),level:lvl,gain:(cls==='f'?1:.6)*(.75+.25*sp),pass:cls!=='c',rate,prio:0,rumble:cls==='c',phase:(s.id*1.37)%7,cut:cls==='c'?9000:16000});n++;
     if(cls==='c'){// the hull: two decorrelated rumbles either side of the keel point nearest the ear, so a
      // destroyer overhead is wide as well as deep; darker than the nozzles and with no cone
      const ax=L.x-s.x,ay=L.y-s.y,az=L.z-s.z,k=clamp(ax*f[0]+ay*f[1]+az*f[2],-len*.5,len*.5),sx=-f[2],sz=f[0],sl=Math.hypot(sx,sz)||1,w=Math.min(len,1200)*.16;
      for(const [side,id] of [[-1,'h'],[1,'g']])emitter(id+s.id,{ship:s.id,list:true,bus:'engines',role,loop:true,x:s.x+f[0]*k+side*w*sx/sl,y:s.y+f[1]*k,z:s.z+f[2]*k+side*w*sz/sl,vx:s.vx,vy:s.vy,vz:s.vz,
-      R:R*.8,ref:Math.min(len,1200)*.25,level:1,gain:.55,rate:rate*(side<0?.84:.8),prio:0,rumble:true,phase:(s.id*2.71)%7+(side<0?3.1:5.3),cut:1500});n+=2;}
+      R:R*.8,ref:Math.min(len,1200)*.25,level:1,gain:.35,rate:rate*(side<0?.84:.8),prio:0,rumble:true,phase:(s.id*2.71)%7+(side<0?3.1:5.3),cut:3000});n+=2;}
    }
    return n;
   }
@@ -607,7 +614,7 @@
    if(!role)return weapon(style,x,y,z,g,fleet,size);// no recording: the synth, in the one-shot pool
    const c=clock(),key=role;const r=(recent[key]||[]).filter(t=>c-t<.03);recent[key]=r;if(r.length>=3){stats.dropped++;return false;}r.push(c);
    const big=num(size,20)>=180;
-   emitter('w'+(++seq),{bus:'weapons',role,x,y,z,vx:0,vy:0,vz:0,R,ref:25+4*Math.sqrt(Math.max(1,num(size,20))),level:1+(big?.6:0),prio:big?.5:0,gain:clamp(num(g,1),0,2)*.85*jit(1,.12),rate:jit(1,.05),dur:2,inside:!!o.own,cut:o.own?9000:18000});
+   emitter('w'+(++seq),{bus:'weapons',role,x,y,z,vx:0,vy:0,vz:0,R,ref:40+6*Math.sqrt(Math.max(1,num(size,20))),level:1+(big?.6:0),prio:big?.5:0,gain:clamp(num(g,1),0,2)*(o.own?.6:2)*jit(1,.12),rate:jit(1,.05),dur:2,inside:!!o.own,cut:o.own?4000:18000});
    return true;
   }
   let seq=0;
@@ -619,7 +626,7 @@
    for(const b of list||[]){
     const id='b'+b.key,loop=has('beamloop-'+b.fleet)?'beamloop-'+b.fleet:null;if(!loop)continue;
     const ex=b.bx-b.ax,ey=b.by-b.ay,ez=b.bz-b.az,l2=ex*ex+ey*ey+ez*ez||1,k=clamp(((L.x-b.ax)*ex+(L.y-b.ay)*ey+(L.z-b.az)*ez)/l2,0,1);
-    const x=b.ax+ex*k,y=b.ay+ey*k,z=b.az+ez*k,R=range('beam',b.len)*1.1,fresh=!EM.has(id);
+    const x=b.ax+ex*k,y=b.ay+ey*k,z=b.az+ez*k,R=range('beam',b.len)*1.1,fresh=!EM.has(id);if(fresh)stats.beams++;
     emitter(id,{list:true,bus:'weapons',role:loop,loop:true,x,y,z,vx:0,vy:0,vz:0,R,ref:30+5*Math.sqrt(Math.max(1,num(b.len,20))),level:1.1,gain:.4,prio:num(b.len,20)>=180?.5:.1,attack:.06,release:.35,phase:Math.random()*2});n++;
     if(fresh&&Math.hypot(x-L.x,y-L.y,z-L.z)<R&&has('beam-'+b.fleet))emitter('a'+(++seq),{bus:'weapons',role:'beam-'+b.fleet,x:b.ax,y:b.ay,z:b.az,vx:0,vy:0,vz:0,R,ref:30+5*Math.sqrt(Math.max(1,num(b.len,20))),level:1.2,prio:.1,gain:.7,rate:jit(1,.04),dur:2});
    }
@@ -636,7 +643,8 @@
    const R=kind==='groan'?range('drive',size)*.7:kind==='debris'?range('debris',size):range('hit',size)*(kind==='heavy'?1.6:1),d=Math.hypot(x-L.x,y-L.y,z-L.z);
    if(d>=R){stats.culled++;return false;}
    const c=clock(),r=(recent[role]||[]).filter(t=>c-t<.06);recent[role]=r;if(r.length>=2){stats.dropped++;return false;}r.push(c);
-   emitter('i'+(++seq),{bus:'impacts',role,x,y,z,vx:0,vy:0,vz:0,R,ref:40+.2*Math.max(1,num(size,20)),level:kind==='heavy'||kind==='groan'?1.4:1,prio:kind==='groan'?.4:0,gain:clamp(g,0,2)*(kind==='groan'?.8:.7)*jit(1,.12),rate:jit(1,.06),dur:6});
+   emitter('i'+(++seq),{bus:'impacts',role,x,y,z,vx:0,vy:0,vz:0,R,ref:40+.2*Math.max(1,num(size,20)),level:kind==='heavy'||kind==='groan'?1.4:1,prio:kind==='groan'?.4:0,gain:clamp(g,0,2)*(kind==='groan'?.8:1)*jit(1,.12),rate:jit(1,.06),dur:6});
+   stats.hits++;if(/^shield/.test(kind))stats.shields++;
    return true;
   }
   // A bolt that passes close by: a moving emitter along its path, lined up so the whizz peaks
@@ -653,7 +661,7 @@
    if(!unlocked||!graph)return false;const role=kinetic&&has('whizz-k')?'whizz-k':has('whizz-e')?'whizz-e':null;if(!role)return false;
    const buf=pick(SMP[role]),pk=peakAt(buf),t=now(),lead=Math.max(0,num(tca,0)-pk);
    const e=emitter('z'+(++seq),{bus:'impacts',role,buf,x,y,z,vx,vy,vz,R:range('whizz'),ref:30,level:1.3,prio:.2,gain:.65*jit(1,.1),rate:jit(1,.05),dur:num(buf.duration,1)+lead});
-   e.t0=t+lead;e.moving={x,y,z,vx,vy,vz,t0:t};return true;
+   e.t0=t+lead;e.moving={x,y,z,vx,vy,vz,t0:t};stats.whizz++;return true;
   }
   // Damaged ships near the ear hiss and spark. list: [{id,x,y,z,len,hull(0..1)}]
   function damage(list){
@@ -740,7 +748,7 @@
   // with the break-up's secondaries. The hall send is taken before the duck, so its tail rolls on.
   let lastDip=-1e9;
   function silenceAfter(t,tier,u){
-   if(!graph||t-lastDip<6)return false;lastDip=t;
+   if(!graph||t-lastDip<6)return false;lastDip=t;stats.dips++;
    const depth=.1+.3*smooth(0,.4,u),hold=tier===3?2.4:1.6;
    duck(['weapons','engines','impacts','ambience','music','explosions'],depth,hold,2.5/3,t+.9);
    if(SMP.ringing){const r=sample('ringing',t+.8,graph.B.ui,1,.22*(1-u));if(r)voices.push({style:'ring',prio:0,out:r.g,src:[r.src],end:t+.8+r.dur,killed:false});}
@@ -762,7 +770,7 @@
    if(!unlocked||!graph)return false;
    const role=(exit?'exit-':'arrive-')+style;if(!has(role))return false;
    const pos=place(x,y,z,range('gun',size)*1.6);if(!pos.heard){stats.culled++;return false;}
-   const big=num(size,20)>=180;
+   const big=num(size,20)>=180;stats.arrivals++;
    return !!voice(role,1.5+(1-pos.u)+(big?1:0),pos,(big?.9:.6)*pos.gain,pos.cutoff,(t,o)=>{const r=sample(role,t,o,jit(big?.9:1.05,.05),1);return r?{src:[r.src],dur:r.dur}:{src:[],dur:0};},true,'explosions');
   }
 
@@ -782,7 +790,7 @@
     const big=num(size,30)>150,wh=has('whoosh-'+(big?1:0))?'whoosh-'+(big?1:0):null;if(!wh)return false;
     const Rr=range('flyby',size),pc=place(num(x,0)+num(vx,0)*tca,num(y,0)+num(vy,0)*tca,num(z,0)+num(vz,0)*tca,Rr);if(!pc.heard){stats.culled++;return false;}
     const buf=pick(SMP[wh]),t=now(),lead=Math.max(0,clamp(num(tca,.5),0,2)-peakAt(buf)),wx=num(vx,0)+L.vx,wy=num(vy,0)+L.vy,wz=num(vz,0)+L.vz;
-    const e=emitter('f'+(++seq),{ship:opts.ship,bus:'engines',role:wh,buf,x,y,z,vx:wx,vy:wy,vz:wz,R:Rr,ref:Math.max(20,num(size,20)*2),level:1.3,prio:.8,gain:big?.5:.35,rate:jit(1,.04),noDoppler:true,dur:num(buf.duration,1)+lead});// the recording has its own Doppler
+    const e=emitter('f'+(++seq),{ship:opts.ship,bus:'engines',role:wh,buf,x,y,z,vx:wx,vy:wy,vz:wz,R:Rr,ref:Math.max(20,num(size,20)*2),level:1.3,prio:.8,gain:big?.4:.2,rate:jit(1,.04),noDoppler:true,dur:num(buf.duration,1)+lead});// the recording has its own Doppler
     e.t0=t+lead;e.moving={x:num(x,0),y:num(y,0),z:num(z,0),vx:wx,vy:wy,vz:wz,t0:t};return {tca,gain:pc.gain,distance:pc.d};
    }
    const Rr=range('flyby',size),at=k=>[num(x,0)+num(vx,0)*k,num(y,0)+num(vy,0)*k,num(z,0)+num(vz,0)*k];
@@ -896,7 +904,7 @@
   // The distant bed follows how much of the war is beyond hearing: pull the camera back and the
   // single shots fall away while the far battle swells; fly into a furball and it recedes.
   let distant=0;
-  function setDistant(v){distant=clamp(num(v,0),0,1);if(B.ambG)aim(P(B.ambG,'gain'),.03+.3*distant,now(),1.2);}
+  function setDistant(v){distant=clamp(num(v,0),0,1);if(B.ambG)aim(P(B.ambG,'gain'),.05+.6*distant,now(),1.2);}
   function setIntensity(v,mom){M.target=clamp(num(v,0),0,1);if(mom!=null)momentum=clamp(num(mom,0),-1,1);if(!M.ready)return;const i=M.target,t=now();
    if(S.on){mixStems();return;}
    if(B.musicG)aim(P(B.musicG,'gain'),.4+.25*i,t,2.5);
@@ -940,7 +948,7 @@
    get budgets(){return {...budget};},
    volumes:all=>all?{...vol,...mixVol}:{...vol},
    stats(){prune();const g=groupStats();return{voices:voices.filter(v=>!v.killed).length,maxVoices,dropped:stats.dropped,culled:stats.culled,played:stats.played,peak:stats.peak,
-    engines:g.engines,weapons:g.weapons,impacts:g.impacts,hrtf:g.hrtf,fading:g.fading,emitters:EM.size,handoffs:stats.handoffs,modelSwaps:stats.modelSwaps,bytes:bytes.loaded,limiter:!!(graph&&graph.limiter)};},
+    engines:g.engines,weapons:g.weapons,impacts:g.impacts,hrtf:g.hrtf,fading:g.fading,emitters:EM.size,handoffs:stats.handoffs,modelSwaps:stats.modelSwaps,bytes:bytes.loaded,limiter:!!(graph&&graph.limiter),whizz:stats.whizz,hits:stats.hits,shields:stats.shields,arrivals:stats.arrivals,beams:stats.beams,dips:stats.dips,cockpit:CK.on,focus:+(focus.v||1).toFixed(2)};},
    suspend(){try{const r=ctx&&ctx.suspend&&ctx.suspend();if(r&&r.catch)r.catch(()=>{});}catch(e){}},
    resume(){try{const r=ctx&&unlocked&&ctx.resume&&ctx.resume();if(r&&r.catch)r.catch(()=>{});}catch(e){}},
    styles:WEAPONS.slice(),
