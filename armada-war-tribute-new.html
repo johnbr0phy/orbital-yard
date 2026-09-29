@@ -12520,8 +12520,10 @@ function fieldContacts(){
          remembers which way is out for two seconds (a hull nosed into a rock at a crawl could not turn out) */
       const nx=dx/d,ny=dy/d,nz=dz/d,vx=Math.cos(s.yaw||0)*(s.v||0),vz=Math.sin(s.yaw||0)*(s.v||0),vy=s.vy||0,into=vx*nx+vy*ny+vz*nz;
       if(into<0&&(fightsAsCrown(s)||(s.slen||20)>=300)){s.v=(s.v||0)*.6;s.vy=(s.vy||0)*.5;s.trafficBrakeUntil=battleTime+.6;}
+      // a mid-size hull keeps most of its way on and slides along the rock while it turns off it
+      else if(into<0&&(s.slen||20)>=80){s.v=(s.v||0)*.92;s.vy=(s.vy||0)*.8;s.trafficBrakeUntil=battleTime+.6;}
       else if(into<0){
-        // a small hull skids along the rock: the motion into it is lost, the rest carries on (a little slower)
+        // a small craft (under 80 m) skids along the rock: the motion into it is lost, the rest carries on (a little slower)
         let tx=vx-nx*into,ty=vy-ny*into,tz=vz-nz*into;const sp=Math.hypot(vx,vy,vz),tl=Math.hypot(tx,ty,tz);
         if(tl<sp*.2){tx=-nz*sp*.5;ty=0;tz=nx*sp*.5;} // head-on: glance off to one side
         const h=Math.hypot(tx,tz);s.v=h*.85;s.vy=ty*.85;if(h>.5)s.yaw=Math.atan2(tz,tx);s.trafficBrakeUntil=battleTime+.6;
@@ -17635,6 +17637,8 @@ function simStep(now,dt){
       const wk=boat?null:battleAI.wake(s,now),wakeY=wk&&!wk[0]?wk[1]:null;
       if(wakeY!=null)dy=wakeY-s.y;
       if(aw>0&&s.avY!=null&&!debris)dy+=(s.avY-s.goalY)*aw;
+      // a traffic lane that would still take it back through its own wake (ending near it, or across it) gives way to the wake
+      if(wakeY!=null&&(Math.abs(s.y+dy-wk[2])<wk[3]*2||(s.y+dy-wk[2])*(s.y-wk[2])<0))dy=wakeY-s.y;
       const rail=Math.hypot(dx,dz)||1;
       let dyaw=Math.atan2(dz,dx)-s.yaw;
       /* a whisker of private heading, never a drunk crab that walks the chevron off the line */
@@ -17648,7 +17652,7 @@ function simStep(now,dt){
          commitment is for flying a line, not for a knife fight */
       const mk=plan.target>=0?ships[plan.target]:null;
       const knife=!boat&&!s.hulls&&(s.slen||20)<80&&mk&&!mk.dead&&['ATTACK','FLANK','STRIKE','EVADE'].includes(plan.mode)&&gapTo(s,mk)<1600;
-      battleAI.helmTurn(s,dyaw,dt,now,{max:s.turn*(1+0.5*(boost-1))*(stunned?.4:1),boost:1+0.5*(boost-1),formed,lining:liningUp,free:knife||escape,escape,clean:boat,jink});
+      battleAI.helmTurn(s,dyaw,dt,now,{max:s.turn*(1+0.5*(boost-1))*(stunned?.4:1),boost:1+0.5*(boost-1),formed,lining:liningUp,free:knife,escape,clean:boat,jink});
       battleAI.helmBank(s,dt,now,{});
       if(!formed&&!s.hulls&&!boat&&s.slen<120&&now>=s.brUntil&&
          ((now-s.hurtT<1.6&&combatRandom()<dt*0.8)||combatRandom()<dt*0.012)){

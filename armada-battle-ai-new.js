@@ -1580,9 +1580,9 @@
       // A formation leader turns the squadron as one wide arc.
       {const lf=this.leadsFormation(s);if(lf)mx=Math.min(mx,lf.turnCap);}
       // Clawing off a rock, a hull may turn at up to 0.09 rad/s whatever its speed (a slow pivot, never a spin).
-      if(o.escape)mx=Math.max(mx,Math.min(.09,w));
+      if(o.escape)mx=Math.max(mx,Math.min(.085,w));
       let slowCap=null;
-      if(L>=80&&!o.escape){const vf=Math.abs(s.v||0)/Math.max(1,s.spdMax||s.spd||20);if(vf<.2)mx=Math.min(mx,slowCap=Math.max(.02,.08*vf/.2));}
+      if(L>=80){const vf=Math.abs(s.v||0)/Math.max(1,s.spdMax||s.spd||20);if(vf<.2)mx=Math.min(mx,slowCap=o.escape?.085:Math.max(.02,.08*vf/.2));}
       let cmd=clamp(err*kp,-mx,mx);
       if(!o.clean){
         const k=h.weave*w*.06*(o.formed?.6:1)*(L>=80?.35:1);
@@ -1592,6 +1592,7 @@
       // The weave and a hurt pilot's jink ride on top, but never carry a committed pilot back past its limit.
       // Nothing 80 m or longer pivots at a crawl, weave and jink included.
       if(slowCap!=null)cmd=clamp(cmd,-slowCap,slowCap);
+      if(o.escape&&L>=80)cmd=clamp(cmd,-.085,.085);
       if(hy.lim!=null){const back=Math.max(0,(hy.u-hy.lim)*hy.dir)/(tau*3);cmd=hy.dir>0?Math.max(cmd,-back):Math.min(cmd,back);}
       const amax=Math.max(.02,w)/(tau*1.1),jmax=amax/(tau*1.4);
       const want=clamp((cmd-(s.yawV||0))/tau,-amax,amax);
@@ -1603,7 +1604,7 @@
     /* A pilot's own wake: nobody flies back through their own track head-on. Every 0.2 s the pilot
        notes where it was and which way it flew; if the next 0.5 to 2 s would bring it back across a
        point of the last 1 to 10 s flying the other way, it passes that point two and a half tolerances over or under
-       it (whichever way it is already climbing or diving), or (when the old track was steep) to the side it is already on. Returns [side, altitude] or null. */
+       it (on the side it would cross at), or (when the old track was steep) to the side it is already on. Returns [side, altitude, old altitude, tolerance] or null. */
     wake(s,now){
       const L=s.slen||20,tol=Math.max(20,L*.5),w=s.helmWake||(s.helmWake={b:new Float64Array(50*7),i:0,n:0,next:0,y:null,until:0});
       const v=Math.abs(s.v||0),vy=s.vy||0,sp=Math.hypot(v,vy);
@@ -1623,7 +1624,7 @@
             if(un<1){ux=0;uy=s.y>=w.b[e+1]?1:-1;uz=0;un=1;}
             // a steep old track is passed to the side (a heading nudge), a level one over or under
             const steep=Math.abs(ody)>.5;
-            w.p=[steep?Math.sign(Math.cos(s.yaw)*uz/un-Math.sin(s.yaw)*ux/un)||1:0,steep?s.y:w.b[e+1]+(Math.abs(vy)>5?Math.sign(vy):s.y>=w.b[e+1]?1:-1)*tol*2.5];w.until=now+1.5;break scan;
+            w.p=[steep?Math.sign(Math.cos(s.yaw)*uz/un-Math.sin(s.yaw)*ux/un)||1:0,steep?s.y:w.b[e+1]+(qy>=w.b[e+1]?1:-1)*tol*2.5,w.b[e+1],tol];w.until=now+1.5;break scan;
           }
         }
       }
