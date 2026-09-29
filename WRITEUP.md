@@ -1,3 +1,29 @@
+# The Tribute War, as flight: a writeup
+
+The owner's complaint was specific: the Rebel frigates flew like donkeys. They turned round on the spot, went back and forth, and never committed to a line. The brief behind it was bigger: make every ship look flown by someone, make squadrons breathe, give capitals weight, and make fleets recognisable from their motion alone.
+
+I started by building a way to see motion without watching it. `scripts/motion-lib.cjs` records every ship at every step. `scripts/motion-report.cjs` turns that into eleven pass criteria over ten scenes and a 24-war sweep of all 23 fleets. I wrote the criteria down and measured main against them before touching the flight code. Main failed all eight that can be scored on a single build (jerk and the classifier are measured against main itself). MOTION.md has every number; the clips are on the watch page at `design/tribute-new/review/motion/index.html`.
+
+## What changed
+
+- **The donkey had a cause.** Nothing could *arrive* at a point. A pilot given a hold point flew straight at it, overshot, turned round and did it again, and Rebel corvettes turn inside their own length. Now no point is ever flown at: fighters loiter on a lazy circle, frigates run a racetrack across the enemy's line, and a capital brakes over its spool and stops. Gunboat and capital reversals went from 13 to none.
+- **A helm under every ship.** Physics limits by hull (turning circles, spool, climb). Then a pilot filter: a reaction delay on intents only, second-order stick and bank, a weave and a throttle rhythm, and a commitment rule so nobody swings straight back after a hard turn. Then intent, with hysteresis and a log of every goal change. Frigate angular jerk fell to 4% of main's.
+- **Each fleet has a hand.** A handling row per fleet (smoothing, bank, overshoot, rhythm, weave, reaction, attack geometry, formation shape), spread by rank so no two fleets sit on the same numbers. Each pilot's hand is drawn around its fleet's row. A classifier that sees only motion now names the fleet 42% of the time; main scored 25%, and chance is 6%.
+- **Squadrons are formations.** They have a leader and a shape, fly on the leader's own track, turn as one arc, break in a furball and re-form. They sit in the cohesion band 70% of the time (main: 43%).
+- **Capitals have weight.** Transit burns build over the spool (main's accelerated at 18× the limit and braked at 466×), and a capital stops without pivoting.
+
+## What didn't work
+
+- **Three criteria still fail:** a few fighters' gun passes cross their own line (shuttle), cohesion is 70% against 80%, and in big squadrons some pair of pilots ends up with near-identical signatures. MOTION.md has the evidence for each and why I stopped there.
+- **Formations cost the story, and I had to give some of it back.** Fixed-gun wingmen can't aim from a slot. My first formations cut kills, and with them routs, last stands and rescues, by 15–30%. Wingmen now leave their slot for a gun pass. The story is still 10–25% under main on several moments, partly because far fewer ships now fly into each other. BEHAVIOUR.md has the numbers, and I've called it a regression, because it is one.
+- **Many of my own fixes were wrong first time.** Delay inside the feedback loop made wingmen snake. Rigid formation frames made wingmen loop. A rhythm that only subtracted cost 12% of speed. A formation cap near full burn pinned ships at the clamp. MOTION.md's log lists each one.
+
+## What's next
+
+- A squadron attack phase: the whole squadron commits to one gun pass on the leader's mark, then breaks into pairs rather than individuals. That is the fix for both cohesion in combat and the pass shuttling.
+- A lag re-entry for gun passes, so the next run comes in on an offset line instead of through the same point.
+- Let the story's HOLD posture release on first sensor contact rather than first loss, so a standoff can't sit out half a war.
+
 # The Tribute War, as sound: a writeup
 
 This pass had one job: make the war sound like sitting in a cinema. Before it, the sound was a flat stereo mix that clipped.

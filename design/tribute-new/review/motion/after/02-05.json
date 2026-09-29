@@ -1,0 +1,88 @@
+{
+ "scene": "02-05",
+ "name": "Gunboat screen: Empire",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 398,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 2.9853826189179573,
+   "hold": 0.024369626621033764,
+   "spins": 0,
+   "minutes": 103.76
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.04518559443749226,
+    "hold": 0.21037463976945245,
+    "spins": 0,
+    "minutes": 1.29
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.03758374042884443,
+    "hold": 0.28860738394866237,
+    "spins": 0,
+    "minutes": 6.06
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 1.7988709151287874,
+    "hold": 0.012588747688085435,
+    "spins": 0,
+    "minutes": 8.82
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.45185594437492216,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 13.84
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 3.58921934645005,
+    "hold": 0.002438436991992293,
+    "spins": 0,
+    "minutes": 72.07
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 5.308844442309879,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 1.67
+   }
+  },
+  "focus": {
+   "ships": 4,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.8623435722411832,
+  "individualityMin": 0.21920318738321143
+ },
+ "errors": []
+}

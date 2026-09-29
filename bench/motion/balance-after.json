@@ -1,0 +1,446 @@
+[
+ {
+  "race": 0,
+  "races": [
+   0,
+   1
+  ],
+  "counts": [
+   21,
+   15
+  ],
+  "spawned": [
+   49,
+   49
+  ],
+  "winner": null,
+  "share": [
+   0.46526780683433977,
+   0.5347321931656601
+  ],
+  "capitalsFired": [
+   {
+    "L": 142,
+    "fired": true
+   },
+   {
+    "L": 164,
+    "fired": true
+   },
+   {
+    "L": 129,
+    "fired": false
+   },
+   {
+    "L": 317,
+    "fired": true
+   },
+   {
+    "L": 226,
+    "fired": true
+   }
+  ],
+  "lead": 1,
+  "how": "share at 150 s"
+ },
+ {
+  "race": 2,
+  "races": [
+   2,
+   3
+  ],
+  "counts": [
+   1,
+   17
+  ],
+  "spawned": [
+   49,
+   49
+  ],
+  "winner": null,
+  "share": [
+   0.47070620930020046,
+   0.5292937906997996
+  ],
+  "capitalsFired": [
+   {
+    "L": 302,
+    "fired": true
+   },
+   {
+    "L": 206,
+    "fired": true
+   }
+  ],
+  "lead": 1,
+  "how": "share at 150 s"
+ },
+ {
+  "race": 4,
+  "races": [
+   4,
+   5
+  ],
+  "counts": [
+   37,
+   16
+  ],
+  "spawned": [
+   49,
+   49
+  ],
+  "winner": null,
+  "share": [
+   0.5367463326029971,
+   0.46325366739700297
+  ],
+  "capitalsFired": [
+   {
+    "L": 388,
+    "fired": true
+   },
+   {
+    "L": 189,
+    "fired": true
+   },
+   {
+    "L": 238,
+    "fired": true
+   },
+   {
+    "L": 22474,
+    "fired": false
+   },
+   {
+    "L": 1783,
+    "fired": false
+   },
+   {
+    "L": 1734,
+    "fired": false
+   }
+  ],
+  "lead": 0,
+  "how": "share at 150 s"
+ },
+ {
+  "race": 6,
+  "races": [
+   6,
+   7
+  ],
+  "counts": [
+   23,
+   24
+  ],
+  "spawned": [
+   49,
+   49
+  ],
+  "winner": null,
+  "share": [
+   0.2991762106891207,
+   0.7008237893108794
+  ],
+  "capitalsFired": [
+   {
+    "L": 1225,
+    "fired": true
+   },
+   {
+    "L": 136,
+    "fired": true
+   },
+   {
+    "L": 1336,
+    "fired": true
+   },
+   {
+    "L": 758,
+    "fired": true
+   },
+   {
+    "L": 1092,
+    "fired": true
+   },
+   {
+    "L": 997,
+    "fired": true
+   },
+   {
+    "L": 636,
+    "fired": true
+   },
+   {
+    "L": 526,
+    "fired": false
+   },
+   {
+    "L": 308,
+    "fired": true
+   },
+   {
+    "L": 626,
+    "fired": true
+   },
+   {
+    "L": 625,
+    "fired": false
+   },
+   {
+    "L": 546,
+    "fired": true
+   },
+   {
+    "L": 576,
+    "fired": false
+   },
+   {
+    "L": 320,
+    "fired": false
+   },
+   {
+    "L": 636,
+    "fired": true
+   },
+   {
+    "L": 332,
+    "fired": false
+   },
+   {
+    "L": 329,
+    "fired": false
+   },
+   {
+    "L": 589,
+    "fired": false
+   }
+  ],
+  "lead": 1,
+  "how": "share at 150 s"
+ },
+ {
+  "race": 8,
+  "races": [
+   8,
+   9
+  ],
+  "counts": [
+   14,
+   1
+  ],
+  "spawned": [
+   33,
+   49
+  ],
+  "winner": null,
+  "share": [
+   0.6880411804817859,
+   0.31195881951821414
+  ],
+  "capitalsFired": [
+   {
+    "L": 3160,
+    "fired": true
+   },
+   {
+    "L": 1835,
+    "fired": true
+   },
+   {
+    "L": 1771,
+    "fired": true
+   },
+   {
+    "L": 1645,
+    "fired": true
+   },
+   {
+    "L": 1768,
+    "fired": false
+   },
+   {
+    "L": 8065,
+    "fired": true
+   }
+  ],
+  "lead": 0,
+  "how": "share at 150 s"
+ },
+ {
+  "race": 10,
+  "races": [
+   10,
+   11
+  ],
+  "counts": [
+   5,
+   35
+  ],
+  "spawned": [
+   49,
+   49
+  ],
+  "winner": null,
+  "share": [
+   0.40877138099973354,
+   0.5912286190002665
+  ],
+  "capitalsFired": [
+   {
+    "L": 674,
+    "fired": true
+   },
+   {
+    "L": 411,
+    "fired": true
+   },
+   {
+    "L": 382,
+    "fired": true
+   },
+   {
+    "L": 173,
+    "fired": true
+   }
+  ],
+  "lead": 1,
+  "how": "share at 150 s"
+ },
+ {
+  "race": 12,
+  "races": [
+   12,
+   13
+  ],
+  "counts": [
+   42,
+   0
+  ],
+  "spawned": [
+   49,
+   49
+  ],
+  "winner": 0,
+  "share": [
+   1,
+   0
+  ],
+  "capitalsFired": [
+   {
+    "L": 3536,
+    "fired": false
+   },
+   {
+    "L": 220,
+    "fired": true
+   },
+   {
+    "L": 194,
+    "fired": true
+   },
+   {
+    "L": 643,
+    "fired": false
+   },
+   {
+    "L": 583,
+    "fired": false
+   },
+   {
+    "L": 632,
+    "fired": false
+   }
+  ],
+  "lead": 0,
+  "how": "declared"
+ },
+ {
+  "race": 14,
+  "races": [
+   14,
+   15
+  ],
+  "counts": [
+   34,
+   29
+  ],
+  "spawned": [
+   49,
+   49
+  ],
+  "winner": 1,
+  "share": [
+   0.2984104937724839,
+   0.7015895062275159
+  ],
+  "capitalsFired": [
+   {
+    "L": 451,
+    "fired": true
+   },
+   {
+    "L": 313,
+    "fired": true
+   }
+  ],
+  "lead": 1,
+  "how": "declared"
+ },
+ {
+  "race": 16,
+  "races": [
+   16,
+   17
+  ],
+  "counts": [
+   0,
+   8
+  ],
+  "spawned": [
+   49,
+   8
+  ],
+  "winner": 1,
+  "share": [
+   0,
+   1
+  ],
+  "capitalsFired": [
+   {
+    "L": 2600,
+    "fired": false
+   },
+   {
+    "L": 2200,
+    "fired": true
+   },
+   {
+    "L": 2000,
+    "fired": true
+   },
+   {
+    "L": 2100,
+    "fired": false
+   },
+   {
+    "L": 3400,
+    "fired": false
+   },
+   {
+    "L": 1600,
+    "fired": true
+   },
+   {
+    "L": 1800,
+    "fired": true
+   },
+   {
+    "L": 1900,
+    "fired": false
+   }
+  ],
+  "lead": 1,
+  "how": "declared"
+ }
+]

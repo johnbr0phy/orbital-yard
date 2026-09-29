@@ -1,0 +1,88 @@
+{
+ "scene": "02-07",
+ "name": "Gunboat screen: Minbari",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 431,
+ "metrics": {
+  "all": {
+   "perMin": 0.18120683753800304,
+   "strictPerMin": 0,
+   "shuttleMax": 0.14,
+   "angP95": 7.85235634610071,
+   "hold": 0.24417191349575687,
+   "spins": 0,
+   "minutes": 82.78
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.518800038928961,
+    "hold": 0.6074415921546006,
+    "spins": 0,
+    "minutes": 1.93
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.3427677865464501,
+    "hold": 0.2619582110170955,
+    "spins": 0,
+    "minutes": 15.22
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 6.3826348619054825,
+    "hold": 0.34239405706567616,
+    "spins": 0,
+    "minutes": 6.58
+   },
+   "fighter": {
+    "perMin": 0.247302395874066,
+    "strictPerMin": 0,
+    "shuttleMax": 0.14,
+    "angP95": 9.885530946569391,
+    "hold": 0.20765100777277876,
+    "spins": 0,
+    "minutes": 52.57
+   },
+   "hero": {
+    "perMin": 1.1097410604192355,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 11.350108156723143,
+    "hold": 0.31792073520964964,
+    "spins": 0,
+    "minutes": 1.8
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.31519076827765,
+    "hold": 0.4130202774813234,
+    "spins": 0,
+    "minutes": 4.68
+   }
+  },
+  "focus": {
+   "ships": 16,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.4103299856527977,
+  "individualityMin": 0.2145303963004454
+ },
+ "errors": []
+}

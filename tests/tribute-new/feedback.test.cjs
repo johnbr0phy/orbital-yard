@@ -94,9 +94,10 @@ test('the swarm has guns: hive ships hunt instead of holding, and spit seeking v
   const held=J(b,`ships.filter(s=>s.race===21&&s.slen>=180&&s.ai&&!s.dead&&s.ai.order&&s.ai.order.kind==='HOLD').length`);
   assert.equal(J(b,'battleAI.story.objective&&battleAI.story.objective.kind'),'STATION','a station war, where capitals used to sit on the station');
   assert.equal(held,0,'no hive ship holds ground');
-  // A brawl: the hive ships march in and reach their bio-cannons' 1,150 m by about 80 s.
+  // A brawl: the hive ships march in and reach their bio-cannons' 1,150 m. Since the motion pass both
+  // fleets loiter on their hold points instead of drifting off them, so contact comes later (about 150 s here).
   const w=loadBattle({cores:1,modules:true});w.start(21,5,3303,40);
-  w.run(hook);w.step(100);
+  w.run(hook);for(let t=0;t<200&&!(J(w,'__v').cap);t+=10)w.step(10);w.step(10);
   const v=J(w,'__v');
   assert.equal(v.cap,7,'a hive ship spits seven spores '+JSON.stringify(v));
   assert.equal(v.small,2,JSON.stringify(v));

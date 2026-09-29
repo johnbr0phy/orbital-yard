@@ -1,0 +1,185 @@
+01 before frames 150 T 23.0 367 ms/frame
+01 before frames 300 T 28.0 388 ms/frame
+01 before frames 450 T 33.0 376 ms/frame
+01 before frames 600 T 38.0 367 ms/frame
+01 before frames 750 T 43.0 366 ms/frame
+01 before frames 900 T 48.0 365 ms/frame
+{"scene":"01","name":"Rebel frigate screen","label":"before","clip":[18,48],"frames":900,"seconds":30,"msPerFrame":378,"errors":[]}
+[1/31] 01 ok 348 s
+02-00 before frames 150 T 19.0 393 ms/frame
+02-00 before frames 300 T 24.0 391 ms/frame
+{"scene":"02-00","name":"Gunboat screen: Yard","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":415,"errors":[]}
+[2/31] 02-00 ok 163 s
+02-01 before frames 150 T 19.0 304 ms/frame
+02-01 before frames 300 T 24.0 309 ms/frame
+{"scene":"02-01","name":"Gunboat screen: Shoal","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":358,"errors":[]}
+[3/31] 02-01 ok 136 s
+02-02 before frames 150 T 19.0 297 ms/frame
+02-02 before frames 300 T 24.0 338 ms/frame
+{"scene":"02-02","name":"Gunboat screen: Lattice","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":352,"errors":[]}
+[4/31] 02-02 ok 135 s
+02-03 before frames 150 T 19.0 300 ms/frame
+02-03 before frames 300 T 24.0 337 ms/frame
+{"scene":"02-03","name":"Gunboat screen: Drift","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":376,"errors":[]}
+[5/31] 02-03 ok 144 s
+02-04 before frames 150 T 19.0 330 ms/frame
+02-04 before frames 300 T 24.0 365 ms/frame
+{"scene":"02-04","name":"Gunboat screen: Choir","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":403,"errors":[]}
+[6/31] 02-04 ok 151 s
+02-05 before frames 150 T 19.0 481 ms/frame
+02-05 before frames 300 T 24.0 536 ms/frame
+{"scene":"02-05","name":"Gunboat screen: Empire","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":570,"errors":[]}
+[7/31] 02-05 ok 214 s
+02-06 before frames 150 T 19.0 355 ms/frame
+02-06 before frames 300 T 24.0 417 ms/frame
+{"scene":"02-06","name":"Gunboat screen: Rebels","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":446,"errors":[]}
+[8/31] 02-06 ok 167 s
+02-07 before frames 150 T 19.0 370 ms/frame
+02-07 before frames 300 T 24.0 416 ms/frame
+{"scene":"02-07","name":"Gunboat screen: Minbari","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":431,"errors":[]}
+[9/31] 02-07 ok 163 s
+02-09 before frames 150 T 19.0 462 ms/frame
+02-09 before frames 300 T 24.0 451 ms/frame
+{"scene":"02-09","name":"Gunboat screen: EarthForce","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":466,"errors":[]}
+[10/31] 02-09 ok 175 s
+02-10 before frames 150 T 19.0 345 ms/frame
+02-10 before frames 300 T 24.0 363 ms/frame
+{"scene":"02-10","name":"Gunboat screen: Federation","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":385,"errors":[]}
+[11/31] 02-10 ok 148 s
+02-11 before frames 150 T 19.0 392 ms/frame
+02-11 before frames 300 T 24.0 408 ms/frame
+{"scene":"02-11","name":"Gunboat screen: Klingons","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":421,"errors":[]}
+[12/31] 02-11 ok 159 s
+02-12 before frames 150 T 19.0 396 ms/frame
+02-12 before frames 300 T 24.0 403 ms/frame
+{"scene":"02-12","name":"Gunboat screen: Borg","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":432,"errors":[]}
+[13/31] 02-12 ok 163 s
+02-13 before frames 150 T 19.0 388 ms/frame
+02-13 before frames 300 T 24.0 391 ms/frame
+{"scene":"02-13","name":"Gunboat screen: Mondoshawan","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":408,"errors":[]}
+[14/31] 02-13 ok 154 s
+02-14 before frames 150 T 19.0 341 ms/frame
+02-14 before frames 300 T 24.0 343 ms/frame
+{"scene":"02-14","name":"Gunboat screen: USCM","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":369,"errors":[]}
+[15/31] 02-14 ok 140 s
+02-15 before frames 150 T 19.0 570 ms/frame
+02-15 before frames 300 T 24.0 571 ms/frame
+{"scene":"02-15","name":"Gunboat screen: Engineers","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":604,"errors":[]}
+[16/31] 02-15 ok 228 s
+02-16 before frames 150 T 19.0 296 ms/frame
+02-16 before frames 300 T 24.0 362 ms/frame
+{"scene":"02-16","name":"Gunboat screen: Yautja","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":386,"errors":[]}
+[17/31] 02-16 ok 147 s
+02-17 before frames 150 T 19.0 268 ms/frame
+02-17 before frames 300 T 24.0 303 ms/frame
+{"scene":"02-17","name":"Gunboat screen: First Ones","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":322,"errors":[]}
+[18/31] 02-17 ok 123 s
+02-18 before frames 150 T 19.0 343 ms/frame
+02-18 before frames 300 T 24.0 376 ms/frame
+{"scene":"02-18","name":"Gunboat screen: Romulans","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":394,"errors":[]}
+[19/31] 02-18 ok 151 s
+02-19 before frames 150 T 19.0 441 ms/frame
+02-19 before frames 300 T 24.0 424 ms/frame
+{"scene":"02-19","name":"Gunboat screen: Dominion","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":419,"errors":[]}
+[20/31] 02-19 ok 160 s
+02-20 before frames 150 T 19.0 347 ms/frame
+02-20 before frames 300 T 24.0 367 ms/frame
+{"scene":"02-20","name":"Gunboat screen: Space Marines","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":374,"errors":[]}
+[21/31] 02-20 ok 142 s
+02-21 before frames 150 T 19.0 459 ms/frame
+02-21 before frames 300 T 24.0 450 ms/frame
+{"scene":"02-21","name":"Gunboat screen: Tyranids","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":465,"errors":[]}
+[22/31] 02-21 ok 176 s
+02-22 before frames 150 T 19.0 351 ms/frame
+02-22 before frames 300 T 24.0 369 ms/frame
+{"scene":"02-22","name":"Gunboat screen: Tesla","label":"before","clip":[14,26],"frames":360,"seconds":12,"msPerFrame":393,"errors":[]}
+[23/31] 02-22 ok 150 s
+03 before frames 150 T 9.0 380 ms/frame
+03 before frames 300 T 14.0 413 ms/frame
+03 before frames 450 T 19.0 444 ms/frame
+03 before frames 600 T 24.0 449 ms/frame
+03 before frames 750 T 29.0 470 ms/frame
+03 before frames 900 T 34.0 469 ms/frame
+03 before frames 1050 T 39.0 466 ms/frame
+03 before frames 1200 T 44.0 465 ms/frame
+{"scene":"03","name":"Imperial squadron: form, attack, re-form","label":"before","clip":[4,48],"frames":1320,"seconds":44,"msPerFrame":478,"errors":[]}
+[24/31] 03 ok 639 s
+04 before frames 150 T 9.0 418 ms/frame
+04 before frames 300 T 14.0 456 ms/frame
+04 before frames 450 T 19.0 435 ms/frame
+04 before frames 600 T 24.0 434 ms/frame
+04 before frames 750 T 29.0 452 ms/frame
+04 before frames 900 T 34.0 465 ms/frame
+04 before frames 1050 T 39.0 470 ms/frame
+04 before frames 1200 T 44.0 466 ms/frame
+{"scene":"04","name":"Rebel squadron: form, attack, re-form","label":"before","clip":[4,48],"frames":1320,"seconds":44,"msPerFrame":466,"errors":[]}
+[25/31] 04 ok 625 s
+05 before frames 150 T 9.0 633 ms/frame
+05 before frames 300 T 14.0 633 ms/frame
+05 before frames 450 T 19.0 618 ms/frame
+05 before frames 600 T 24.0 619 ms/frame
+05 before frames 750 T 29.0 628 ms/frame
+05 before frames 900 T 34.0 619 ms/frame
+05 before frames 1050 T 39.0 619 ms/frame
+{"scene":"05","name":"Borg cube and escorts closing","label":"before","clip":[4,40],"frames":1080,"seconds":36,"msPerFrame":626,"errors":[]}
+[26/31] 05 ok 683 s
+06 before frames 150 T 17.0 408 ms/frame
+06 before frames 300 T 22.0 445 ms/frame
+06 before frames 450 T 27.0 425 ms/frame
+06 before frames 600 T 32.0 416 ms/frame
+06 before frames 750 T 37.0 410 ms/frame
+06 before frames 900 T 42.0 409 ms/frame
+06 before frames 1050 T 47.0 410 ms/frame
+06 before frames 1200 T 52.0 407 ms/frame
+06 before frames 1350 T 57.0 404 ms/frame
+06 before frames 1500 T 62.0 406 ms/frame
+06 before frames 1650 T 67.0 410 ms/frame
+06 before frames 1800 T 72.0 415 ms/frame
+06 before frames 1950 T 77.0 421 ms/frame
+06 before frames 2100 T 82.0 426 ms/frame
+{"scene":"06","name":"Capital handling: broadside pass, 180 degree turn, stop","label":"before","clip":[12,84],"frames":2160,"seconds":72,"msPerFrame":432,"errors":[]}
+[27/31] 06 ok 941 s
+07 before frames 150 T 25.0 539 ms/frame
+07 before frames 300 T 30.0 592 ms/frame
+07 before frames 450 T 35.0 593 ms/frame
+07 before frames 600 T 40.0 594 ms/frame
+07 before frames 750 T 45.0 593 ms/frame
+07 before frames 900 T 50.0 595 ms/frame
+{"scene":"07","name":"Dogfight: Empire v Shoal","label":"before","clip":[20,50],"frames":900,"seconds":30,"msPerFrame":606,"errors":[]}
+[28/31] 07 ok 557 s
+08 before frames 150 T 33.0 418 ms/frame
+08 before frames 300 T 38.0 511 ms/frame
+08 before frames 450 T 43.0 471 ms/frame
+08 before frames 600 T 48.0 444 ms/frame
+08 before frames 750 T 53.0 430 ms/frame
+08 before frames 900 T 58.0 423 ms/frame
+{"scene":"08","name":"A rout and a rally","label":"before","clip":[28,62],"frames":1020,"seconds":34,"msPerFrame":414,"errors":[]}
+[29/31] 08 ok 430 s
+09 before frames 150 T 27.0 535 ms/frame
+09 before frames 300 T 32.0 588 ms/frame
+09 before frames 450 T 37.0 616 ms/frame
+09 before frames 600 T 42.0 614 ms/frame
+09 before frames 750 T 47.0 626 ms/frame
+09 before frames 900 T 52.0 633 ms/frame
+{"scene":"09","name":"A holding line breaks under First One fire","label":"before","clip":[22,54],"frames":960,"seconds":32,"msPerFrame":636,"errors":[]}
+[30/31] 09 ok 618 s
+10 before frames 150 T 5.0 619 ms/frame
+10 before frames 300 T 10.0 676 ms/frame
+10 before frames 450 T 15.0 582 ms/frame
+10 before frames 600 T 20.0 578 ms/frame
+10 before frames 750 T 25.0 604 ms/frame
+10 before frames 900 T 30.0 621 ms/frame
+10 before frames 1050 T 35.0 641 ms/frame
+10 before frames 1200 T 40.0 673 ms/frame
+10 before frames 1350 T 45.0 699 ms/frame
+10 before frames 1500 T 50.0 713 ms/frame
+10 before frames 1650 T 55.0 711 ms/frame
+10 before frames 1800 T 60.0 692 ms/frame
+10 before frames 1950 T 65.0 671 ms/frame
+10 before frames 2100 T 70.0 662 ms/frame
+10 before frames 2250 T 75.0 655 ms/frame
+10 before frames 2400 T 80.0 651 ms/frame
+10 before frames 2550 T 85.0 643 ms/frame
+10 before frames 2700 T 90.0 632 ms/frame
+{"scene":"10","name":"A full war, Broadcast, 600 a side","label":"before","clip":[0,90],"frames":2700,"seconds":90,"msPerFrame":635,"errors":[]}
+[31/31] 10 ok 1730 s

@@ -1,0 +1,88 @@
+{
+ "scene": "02-16",
+ "name": "Gunboat screen: Yautja",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 386,
+ "metrics": {
+  "all": {
+   "perMin": 0.2009152807232951,
+   "strictPerMin": 0.057794188473270176,
+   "shuttleMax": 0.74,
+   "angP95": 9.660508789898142,
+   "hold": 0.193325290679535,
+   "spins": 0,
+   "minutes": 99.54
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.17579236139586932,
+    "hold": 0.5355902777777778,
+    "spins": 0,
+    "minutes": 1.88
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.2065380155810531,
+    "hold": 0.3677287342882197,
+    "spins": 0,
+    "minutes": 5.14
+   },
+   "frigate": {
+    "perMin": 0.0972184715095868,
+    "strictPerMin": 0.0972184715095868,
+    "shuttleMax": 0.06,
+    "angP95": 9.885530946569391,
+    "hold": 0.22363050483351235,
+    "spins": 0,
+    "minutes": 10.29
+   },
+   "light": {
+    "perMin": 0.7223113964687,
+    "strictPerMin": 0,
+    "shuttleMax": 0.74,
+    "angP95": 9.885530946569391,
+    "hold": 0.2390764745281904,
+    "spins": 0,
+    "minutes": 13.84
+   },
+   "fighter": {
+    "perMin": 0.13498425183728563,
+    "strictPerMin": 0,
+    "shuttleMax": 0.06,
+    "angP95": 10.351421666793431,
+    "hold": 0.1515176937156802,
+    "spins": 0,
+    "minutes": 66.67
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 20.183663636815595,
+    "hold": 0.41926182237600923,
+    "spins": 0,
+    "minutes": 1.72
+   }
+  },
+  "focus": {
+   "ships": 8,
+   "reversals": 2,
+   "shuttleMax": 0.06,
+   "spins": 0
+  },
+  "cohesion": 0.5490196078431373,
+  "individualityMin": 0.1817184459795702
+ },
+ "errors": []
+}

@@ -1,0 +1,88 @@
+{
+ "scene": "02-00",
+ "name": "Gunboat screen: Yard",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 415,
+ "metrics": {
+  "all": {
+   "perMin": 0.23831905625653724,
+   "strictPerMin": 0,
+   "shuttleMax": 0.02,
+   "angP95": 12.161860006463654,
+   "hold": 0.19517878973105135,
+   "spins": 0,
+   "minutes": 83.92
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.2264644307593062,
+    "hold": 0.4478172882335935,
+    "spins": 0,
+    "minutes": 1.82
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.3427677865464501,
+    "hold": 0.29064327485380115,
+    "spins": 0,
+    "minutes": 4.75
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 7.328245331389044,
+    "hold": 0.3351472232575475,
+    "spins": 0,
+    "minutes": 13.92
+   },
+   "fighter": {
+    "perMin": 0.34378043889302695,
+    "strictPerMin": 0,
+    "shuttleMax": 0.02,
+    "angP95": 14.621771744567154,
+    "hold": 0.14974290185557787,
+    "spins": 0,
+    "minutes": 58.18
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 16.40589773199539,
+    "hold": 0.05907906168549088,
+    "spins": 0,
+    "minutes": 1.5
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 9.660508789898142,
+    "hold": 0.3613333333333334,
+    "spins": 0,
+    "minutes": 3.75
+   }
+  },
+  "focus": {
+   "ships": 0,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.46382978723404256,
+  "individualityMin": 0.29596644978164
+ },
+ "errors": []
+}

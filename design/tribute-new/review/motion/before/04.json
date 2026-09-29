@@ -1,0 +1,88 @@
+{
+ "scene": "04",
+ "name": "Rebel squadron: form, attack, re-form",
+ "label": "before",
+ "clip": [
+  4,
+  48
+ ],
+ "frames": 1320,
+ "seconds": 44,
+ "msPerFrame": 466,
+ "metrics": {
+  "all": {
+   "perMin": 0.46468668070288144,
+   "strictPerMin": 0,
+   "shuttleMax": 0.12,
+   "angP95": 11.350108156723143,
+   "hold": 0.1999078362249717,
+   "spins": 0,
+   "minutes": 96.84
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.18407720014689563,
+    "hold": 0.46907993966817496,
+    "spins": 0,
+    "minutes": 2.43
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.4027170343254591,
+    "hold": 0.27814235234729934,
+    "spins": 0,
+    "minutes": 6.75
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.06,
+    "angP95": 9.440608762859226,
+    "hold": 0.28707788561803166,
+    "spins": 0,
+    "minutes": 13.81
+   },
+   "light": {
+    "perMin": 0.06879156156844761,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 7.498942093324558,
+    "hold": 0.2780064162805016,
+    "spins": 0,
+    "minutes": 14.54
+   },
+   "fighter": {
+    "perMin": 0.7064567079883215,
+    "strictPerMin": 0,
+    "shuttleMax": 0.12,
+    "angP95": 13.33521432163324,
+    "hold": 0.15132491003253914,
+    "spins": 0,
+    "minutes": 58.04
+   },
+   "hero": {
+    "perMin": 2.3529411764705883,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 16.032453906900418,
+    "hold": 0.15572125035847437,
+    "spins": 0,
+    "minutes": 1.27
+   }
+  },
+  "focus": {
+   "ships": 8,
+   "reversals": 0,
+   "shuttleMax": 0.12,
+   "spins": 0
+  },
+  "cohesion": 0.5139593908629442,
+  "individualityMin": 0.21505377038209386
+ },
+ "errors": []
+}

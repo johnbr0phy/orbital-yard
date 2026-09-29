@@ -1,0 +1,88 @@
+{
+ "scene": "02-02",
+ "name": "Gunboat screen: Lattice",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 369,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0.04,
+   "angP95": 2.7227013080779154,
+   "hold": 0.045734079670674485,
+   "spins": 0,
+   "minutes": 108.15
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.04518559443749226,
+    "hold": 0.45599305153445285,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.019275249131909367,
+    "hold": 0.23781733294426613,
+    "spins": 0,
+    "minutes": 5.06
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.04,
+    "angP95": 3.67282300498085,
+    "hold": 0.012322204478775953,
+    "spins": 0,
+    "minutes": 73
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.38459178204535355,
+    "hold": 0.055632235711670086,
+    "spins": 0,
+    "minutes": 19.72
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.10592537251772886,
+    "hold": 0.10741709560374652,
+    "spins": 0,
+    "minutes": 6.58
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 3.3496543915782793,
+    "hold": 0.05269219694788367,
+    "spins": 0,
+    "minutes": 1.86
+   }
+  },
+  "focus": {
+   "ships": 5,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.910913140311804,
+  "individualityMin": 0.3108111683900801
+ },
+ "errors": []
+}

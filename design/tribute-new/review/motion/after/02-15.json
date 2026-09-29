@@ -1,0 +1,88 @@
+{
+ "scene": "02-15",
+ "name": "Gunboat screen: Engineers",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 559,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 1.9724227361148534,
+   "hold": 0.032303660936599574,
+   "spins": 0,
+   "minutes": 97.23
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.036728230049808464,
+    "hold": 0.2974063400576369,
+    "spins": 0,
+    "minutes": 1.62
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.036728230049808464,
+    "hold": 0.4002926829268293,
+    "spins": 0,
+    "minutes": 5.41
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.0785235634610071,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 10.41
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.9225714271547638,
+    "hold": 0.006069766892609998,
+    "spins": 0,
+    "minutes": 23.5
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 2.786121168629772,
+    "hold": 0.0033320747592977163,
+    "spins": 0,
+    "minutes": 54.78
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 3.198895109691397,
+    "hold": 0.0622236260265319,
+    "spins": 0,
+    "minutes": 1.5
+   }
+  },
+  "focus": {
+   "ships": 10,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.8790123456790123,
+  "individualityMin": 0.1477473382520509
+ },
+ "errors": []
+}

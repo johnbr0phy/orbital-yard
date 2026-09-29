@@ -1,0 +1,88 @@
+{
+ "scene": "01",
+ "name": "Rebel frigate screen",
+ "label": "after",
+ "clip": [
+  18,
+  48
+ ],
+ "frames": 900,
+ "seconds": 30,
+ "msPerFrame": 371,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0.02,
+   "angP95": 3.9355007545577805,
+   "hold": 0.021187420628319412,
+   "spins": 0,
+   "minutes": 126.13
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.027861211686297693,
+    "hold": 0.2841693511274735,
+    "spins": 0,
+    "minutes": 2.02
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.0785235634610071,
+    "hold": 0.28234387047031606,
+    "spins": 0,
+    "minutes": 6.07
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 1.7579236139586931,
+    "hold": 0.005346878759524127,
+    "spins": 0,
+    "minutes": 14.04
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.02,
+    "angP95": 4.623810213992603,
+    "hold": 0.0009761580784476129,
+    "spins": 0,
+    "minutes": 87.5
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.216965034285822,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 2.38
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.32734069487883793,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 14.11
+   }
+  },
+  "focus": {
+   "ships": 12,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.831766917293233,
+  "individualityMin": 0.1778991284474356
+ },
+ "errors": []
+}

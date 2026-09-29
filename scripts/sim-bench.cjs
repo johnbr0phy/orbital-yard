@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless simulation cost and state trace. CPU only: no rendering, no GPU.
    Usage:
-     node scripts/sim-bench.cjs [--matchup 5,6] [--size 300] [--seed 1234] [--from 38] [--to 48]
+     node scripts/sim-bench.cjs [--matchup 5,6] [--size 300] [--seed 1234] [--from 38] [--to 48] [--profile]
      node scripts/sim-bench.cjs --trace [--out trace.txt]
    Cost mode reports ms of CPU per simulated second over [from, to] of war time.
    Trace mode runs three fixed battles and prints a SHA-256 of every ship's
@@ -22,6 +22,16 @@ function cost() {
   const n = b.start(a, c, seed, size);
   stepTo(b, from);
   const alive0 = b.run('ships.filter(s=>!s.dead).length');
+  // --profile: also time the minds and the helm (AI decisions, destinations, formations, capital
+  // movement, traffic and the throttle), so the flight code's own cost is visible beside the total.
+  // The harness's performance.now is frozen (determinism); the profile reads the real clock.
+  if (has('profile')) b.context.__realNow = require('node:perf_hooks').performance.now.bind(require('node:perf_hooks').performance);
+  if (has('profile')) b.run(`globalThis.__prof={ms:0,calls:0,depth:0};(function(){
+    // Only the outermost call is timed, so a destination() inside moveCapital() is not counted twice.
+    const timed=f=>function(){if(__prof.depth++)try{return f.apply(this,arguments);}finally{__prof.depth--;}const t=__realNow();try{return f.apply(this,arguments);}finally{__prof.depth--;__prof.ms+=__realNow()-t;__prof.calls++;}};
+    const P=Object.getPrototypeOf(battleAI);for(const k of ['destination','moveCapital','command','helmTurn','helmBank','helmClimb','helmSpeed','helmStation','helmDelay','avoidBlend','leadCap','rhythm'])if(P[k])battleAI[k]=timed(P[k]);
+    for(const k of ['trafficPilot','throttle','craftWant','fighterPassGoal'])if(typeof globalThis[k]==='function')globalThis[k]=timed(globalThis[k]);
+  })();`);
   const c0 = process.cpuUsage(), w0 = Date.now(), t0 = warTime(b);
   // Mean live ships over the window, sampled each simulated second (the
   // sampling costs a few ms, not counted separately), so wars that engage
@@ -32,6 +42,7 @@ function cost() {
   const out = {matchup: [a, c], size, seed, ships: n, aliveAtStart: alive0, window: [from, to], simSeconds: +sim.toFixed(2),
     msCpuPerSimSecond: Math.round((cpu.user + cpu.system) / 1000 / Math.max(.001, sim)),
     meanAlive: Math.round(aliveSum / Math.max(1, samples)), goneAtEnd: n - b.run('ships.filter(s=>!s.dead).length'), wallMs: Date.now() - w0};
+  if (has('profile')) { const p = b.run('__prof'); out.flightMsPerSimSecond = Math.round(p.ms / Math.max(.001, sim)); out.flightCalls = p.calls; }
   console.log(JSON.stringify(out));
   return out;
 }

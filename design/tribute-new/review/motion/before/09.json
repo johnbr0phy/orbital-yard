@@ -1,0 +1,88 @@
+{
+ "scene": "09",
+ "name": "A holding line breaks under First One fire",
+ "label": "before",
+ "clip": [
+  22,
+  54
+ ],
+ "frames": 960,
+ "seconds": 32,
+ "msPerFrame": 636,
+ "metrics": {
+  "all": {
+   "perMin": 0.12938935413147398,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 7.328245331389044,
+   "hold": 0.2639302871971105,
+   "spins": 0,
+   "minutes": 30.91
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.1188502227437019,
+    "hold": 0.8365669187767181,
+    "spins": 0,
+    "minutes": 1.69
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.26607250597988114,
+    "hold": 0.5822574459925859,
+    "spins": 0,
+    "minutes": 8.52
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 8.810488730080147,
+    "hold": 0.07150518412584912,
+    "spins": 0,
+    "minutes": 1.54
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 6.531305526474716,
+    "hold": 0.21166306695464365,
+    "spins": 0,
+    "minutes": 2.04
+   },
+   "fighter": {
+    "perMin": 0.2388614271970275,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 11.350108156723143,
+    "hold": 0.06923669512743148,
+    "spins": 0,
+    "minutes": 16.75
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 5.188000389289609,
+    "hold": 0.37283236994219654,
+    "spins": 0,
+    "minutes": 0.38
+   }
+  },
+  "focus": {
+   "ships": 24,
+   "reversals": 3,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.6963350785340314,
+  "individualityMin": 0.1408749363993378
+ },
+ "errors": []
+}

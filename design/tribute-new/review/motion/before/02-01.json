@@ -1,0 +1,88 @@
+{
+ "scene": "02-01",
+ "name": "Gunboat screen: Shoal",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 358,
+ "metrics": {
+  "all": {
+   "perMin": 0.10454707159296339,
+   "strictPerMin": 0,
+   "shuttleMax": 0.08,
+   "angP95": 11.885022274370165,
+   "hold": 0.1888983500549159,
+   "spins": 0,
+   "minutes": 76.52
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.36728230049808464,
+    "hold": 0.4594202898550725,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.2483133105295573,
+    "hold": 0.20091377694470477,
+    "spins": 0,
+    "minutes": 4.5
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 9.885530946569391,
+    "hold": 0.3673490068909606,
+    "spins": 0,
+    "minutes": 5.46
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 12.735030810166604,
+    "hold": 0.19254043349103311,
+    "spins": 0,
+    "minutes": 8.43
+   },
+   "fighter": {
+    "perMin": 0.14457976485707685,
+    "strictPerMin": 0,
+    "shuttleMax": 0.08,
+    "angP95": 13.645831365889238,
+    "hold": 0.16522073450010863,
+    "spins": 0,
+    "minutes": 55.33
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.04,
+    "angP95": 12.445146117713843,
+    "hold": 0.17629815745393637,
+    "spins": 0,
+    "minutes": 0.89
+   }
+  },
+  "focus": {
+   "ships": 2,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.49355432780847147,
+  "individualityMin": 0.22609121671323423
+ },
+ "errors": []
+}

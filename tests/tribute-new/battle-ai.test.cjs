@@ -118,7 +118,11 @@ test('out-of-contact ships pursue the occupied enemy sector without gaining a fi
 });
 
 test('steady capitals use transit burn while preserving their gentle turn rate',()=>{
+ // The motion pass: a transit burn builds over the hull's spool (16 s for 1.6 km), it no longer snaps in 3 s.
  const b=new AI.FleetMinds(definitions),s=ship(1,0,5,{x:-9000,slen:1600,hulls:50,steadyCapital:true,spd:25,spdMax:35,turn:.025,v:25}),foe=ship(2,1,6,{x:8000});
- for(let i=0;i<90;i++){const t=10+i/30;b.index([s,foe],t);b.moveCapital(s,t,1/30);}
- assert.ok(s.v>50);assert.ok(Math.abs(s.yawV)<=.025);assert.ok(Math.abs(s.pitch)<.026);
+ const spool=Math.min(30,8+1600/200);let last=s.v,maxAcc=0;
+ for(let i=0;i<270;i++){const t=10+i/30;b.index([s,foe],t);b.moveCapital(s,t,1/30);maxAcc=Math.max(maxAcc,(s.v-last)*30);last=s.v;
+  assert.ok(Math.abs(s.yawV)<=.025);assert.ok(Math.abs(s.pitch)<.026);}
+ assert.ok(s.v>50,'transit speed reached within a spool: '+s.v);
+ assert.ok(maxAcc<=s.fullBurn/spool*1.05,'acceleration within the spool: '+maxAcc);
 });

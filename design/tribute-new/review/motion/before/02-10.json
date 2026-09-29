@@ -1,0 +1,88 @@
+{
+ "scene": "02-10",
+ "name": "Gunboat screen: Federation",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 385,
+ "metrics": {
+  "all": {
+   "perMin": 0.08287238310718821,
+   "strictPerMin": 0,
+   "shuttleMax": 0.1,
+   "angP95": 8.035261221856176,
+   "hold": 0.3016734012649332,
+   "spins": 0,
+   "minutes": 84.47
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.10839269140212039,
+    "hold": 0.37041317538283725,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.4216965034285822,
+    "hold": 0.26354480941656405,
+    "spins": 0,
+    "minutes": 12.73
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 10.351421666793431,
+    "hold": 0.47360013452160754,
+    "spins": 0,
+    "minutes": 13.22
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.120975190973304,
+    "hold": 0.4020257529227949,
+    "spins": 0,
+    "minutes": 18.87
+   },
+   "fighter": {
+    "perMin": 0.1939267080171764,
+    "strictPerMin": 0,
+    "shuttleMax": 0.1,
+    "angP95": 10.592537251772876,
+    "hold": 0.21832622800929752,
+    "spins": 0,
+    "minutes": 36.1
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.31519076827765,
+    "hold": 0.42015593416113195,
+    "spins": 0,
+    "minutes": 1.63
+   }
+  },
+  "focus": {
+   "ships": 21,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.5239567233384853,
+  "individualityMin": 0.16072596690769642
+ },
+ "errors": []
+}

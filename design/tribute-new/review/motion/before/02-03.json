@@ -1,0 +1,88 @@
+{
+ "scene": "02-03",
+ "name": "Gunboat screen: Drift",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 376,
+ "metrics": {
+  "all": {
+   "perMin": 0.28796314071798823,
+   "strictPerMin": 0,
+   "shuttleMax": 0.36,
+   "angP95": 12.161860006463654,
+   "hold": 0.18629895058770327,
+   "spins": 0,
+   "minutes": 86.82
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.5069907082747045,
+    "hold": 0.4780092592592593,
+    "spins": 0,
+    "minutes": 1.91
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.32734069487883793,
+    "hold": 0.3333723653395784,
+    "spins": 0,
+    "minutes": 4.73
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.36,
+    "angP95": 8.609937521845998,
+    "hold": 0.208717100128009,
+    "spins": 0,
+    "minutes": 14.27
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 9.660508789898142,
+    "hold": 0.27789307243798794,
+    "spins": 0,
+    "minutes": 5.62
+   },
+   "fighter": {
+    "perMin": 0.42450427334301827,
+    "strictPerMin": 0,
+    "shuttleMax": 0.16,
+    "angP95": 13.963683610559363,
+    "hold": 0.15619707647522493,
+    "spins": 0,
+    "minutes": 58.89
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.06,
+    "angP95": 17.579236139586893,
+    "hold": 0.17121300058038308,
+    "spins": 0,
+    "minutes": 1.39
+   }
+  },
+  "focus": {
+   "ships": 2,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.4664586583463339,
+  "individualityMin": 0.321756192974896
+ },
+ "errors": []
+}

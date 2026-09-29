@@ -12515,7 +12515,20 @@ function fieldContacts(){
       const dy=s.y-o.center[1];if(dy>r||dy<-r)continue;const dz=s.z-o.center[2];if(dz>r||dz<-r)continue;
       const d=Math.sqrt(dx*dx+dy*dy+dz*dz);if(d>=r)continue;
       const k=d>1e-6?(r-d)/d:0;if(d<=1e-6){s.y+=r;continue;}
-      s.x+=dx*k;s.y+=dy*k;s.z+=dz*k;s.v=(s.v||0)*.6;s.vy=(s.vy||0)*.5;s.trafficBrakeUntil=battleTime+.6;
+      s.x+=dx*k;s.y+=dy*k;s.z+=dz*k;
+      /* the rock stops only the motion into it: a pilot already pulling away is not braked again, and it
+         remembers which way is out for two seconds (a hull nosed into a rock at a crawl could not turn out) */
+      const nx=dx/d,ny=dy/d,nz=dz/d,vx=Math.cos(s.yaw||0)*(s.v||0),vz=Math.sin(s.yaw||0)*(s.v||0),vy=s.vy||0,into=vx*nx+vy*ny+vz*nz;
+      if(into<0&&(fightsAsCrown(s)||(s.slen||20)>=300)){s.v=(s.v||0)*.6;s.vy=(s.vy||0)*.5;s.trafficBrakeUntil=battleTime+.6;}
+      // a mid-size hull keeps most of its way on and slides along the rock while it turns off it
+      else if(into<0&&(s.slen||20)>=80){s.v=(s.v||0)*.92;s.vy=(s.vy||0)*.8;s.trafficBrakeUntil=battleTime+.6;}
+      else if(into<0){
+        // a small craft (under 80 m) skids along the rock: the motion into it is lost, the rest carries on (a little slower)
+        let tx=vx-nx*into,ty=vy-ny*into,tz=vz-nz*into;const sp=Math.hypot(vx,vy,vz),tl=Math.hypot(tx,ty,tz);
+        if(tl<sp*.2){tx=-nz*sp*.5;ty=0;tz=nx*sp*.5;} // head-on: glance off to one side
+        const h=Math.hypot(tx,tz);s.v=h*.85;s.vy=ty*.85;if(h>.5)s.yaw=Math.atan2(tz,tx);s.trafficBrakeUntil=battleTime+.6;
+      }
+      s.rockN=[nx,ny,nz];s.rockUntil=battleTime+2;
     }
   }
 }
@@ -13298,6 +13311,8 @@ function trafficPilot(s,now){
   for(const t of sweptCandidates(horizon,now,lo,hi)){
     if(t===s||t.id===s.id||t.dead||t.grace||t.debris?.shatter)continue;
     if(isStarDestroyer(s)&&t.debris&&shieldCanClear(s,t.debris))continue;
+    /* two squadmates in formation: the junior gives way, the senior holds the line (both yielding locked pairs into a crawl) */
+    if(s.form&&t.form&&s.squad>=0&&t.squad===s.squad&&s.id<t.id)continue;
     const other=trafficBodies.get(t.id)||trafficBox(t,now),ov=other.velocity||trafficVelocity(other.o);
     const relative=V.sub(vel,ov),delta=V.sub(start,[other.o.x,other.o.y,other.o.z]),vv=V.dot(relative,relative),time=vv?Math.max(0,Math.min(horizon,-V.dot(delta,relative)/vv)):0;
     if(V.len(V.add(delta,V.mul(relative,time)))>own.radius+other.radius+20)continue;
@@ -13308,9 +13323,11 @@ function trafficPilot(s,now){
   if(!threat){if(now>(s.trafficUntil||0))s.trafficGoal=null;return;}
   const other=threat.o,clear=threat.e.reduce((v,e,i)=>v+e*Math.abs(threat.axes[i][1]),0)+Math.hypot(own.e[1],own.e[2])+55;
   const key=other.uid!=null?'w'+other.uid:'s'+other.id;
-  const direction=now<(s.trafficUntil||0)&&s.trafficHand?s.trafficHand:s.y>other.y+5?1:s.y<other.y-5?-1:s.id<(other.id??other.uid)?1:-1;
+  /* a pilot who has chosen to pass over keeps passing over for a few seconds, even when the
+     next threat is a different hull: flipping sides per threat made hulls porpoise */
+  const direction=now<(s.trafficHandUntil||0)&&s.trafficHand?s.trafficHand:s.y>other.y+5?1:s.y<other.y-5?-1:s.id<(other.id??other.uid)?1:-1;
   const holdingLane=now<(s.trafficUntil||0);
-  s.trafficHand=direction;s.trafficKey=key;s.trafficUntil=now+1.2;
+  s.trafficHand=direction;s.trafficKey=key;s.trafficUntil=now+1.2;s.trafficHandUntil=now+4;
   const ahead=Math.max((s.slen||20)*1.5,Math.abs(s.v||0)*4,200);
   /* small craft pass in a band, not on one plane: without the stagger a whole
      screen ducking a crown's keel flattened into a single sheet at her belly */
@@ -13320,6 +13337,8 @@ function trafficPilot(s,now){
   const lane=holdingLane&&s.trafficGoal?(direction>0?Math.max(s.trafficGoal[1],altitude):Math.min(s.trafficGoal[1],altitude)):altitude;
   s.trafficGoal=[s.x+Math.cos(s.yaw)*ahead,lane,s.z+Math.sin(s.yaw)*ahead];
   s.trafficBrake=soon<.15?.4:soon<.4?.65:.9;
+  // Giving way to a squadmate in formation is a step up or down in the stack, not a brake.
+  if(s.form&&other.form&&s.squad>=0&&other.squad===s.squad&&soon>=.15)s.trafficBrake=1;
   if(other.uid!=null){s.debrisTarget=other.uid;s.debrisAction='Clearing collision course';}
   if(s.ai)s.ai.reason=other.uid!=null?'Evading incoming wreckage':'Yielding to crossing traffic';
 }
@@ -13802,7 +13821,7 @@ function updateHullDamage(s,now){
   s.damageStage=stage;
   const factors=[1,.85,.65],factor=factors[stage]/factors[old];
   s.spd*=factor;s.spdMax*=factor;
-  if(s.v!=null)s.v=Math.min(s.v,s.spdMax);
+  // No instant stop: the throttle now wants less and the engines brake to it.
   for(let j=old;j<stage;j++){
     const f=s.damagePods?.[j];if(!f)continue;
     s.leakPort=[f.ox,f.oy,f.oz];
@@ -13917,9 +13936,10 @@ function craftWant(s,now,sq,mood,dist,boost){
    - each pilot's hand drifts the throttle a few percent, slowly.
    All inputs are simulation state: deterministic, no randomness. */
 const THROTTLE_MOODS={ATTACK:1,FLANK:1,STRIKE:1,SEARCH:1};
-function throttle(s,now,want,prefer,mood){
+function throttle(s,now,want,prefer,mood,slotted){
   const cruise=s.spd||20,dash=s.spdMax||cruise*1.3,t=prefer>=0?ships[prefer]:null;
-  if(t&&!t.dead&&THROTTLE_MOODS[mood]&&!(s.ai&&s.ai.order&&['ROUT','PANIC','RAM','TOW','RESCUE'].includes(s.ai.order.kind))){
+  // A wingman holding station takes its pace from the formation, not from a target it is not chasing.
+  if(!slotted&&t&&!t.dead&&THROTTLE_MOODS[mood]&&!(s.ai&&s.ai.order&&['ROUT','PANIC','RAM','TOW','RESCUE'].includes(s.ai.order.kind))){
     const gap=gapTo(s,t),pocket=s.slen<60?160:260,tv=Math.abs(t.v||0);
     // Close at up to dash from far off; inside the pocket, sit on the target's own speed.
     const chase=tv+(gap-pocket)*.35;
@@ -13931,22 +13951,26 @@ function throttle(s,now,want,prefer,mood){
   // Holding station in a squadron: a wingman who has fallen behind the squadron's
   // centre (along his heading) opens up, one who has run ahead eases off.
   const sq=s.squad>=0?squads[s.squad]:null;
-  if(sq&&sq.cx!=null&&(mood==='SEARCH'||!THROTTLE_MOODS[mood])){
+  if(!slotted&&sq&&sq.cx!=null&&(mood==='SEARCH'||!THROTTLE_MOODS[mood])){
     const along=(s.x-sq.cx)*Math.cos(s.yaw)+(s.z-sq.cz)*Math.sin(s.yaw);
     want*=1+Math.max(-.18,Math.min(.25,-along/500));
   }
-  // The pilot's hand feathers the throttle, even at full burn: 84-100% of the
-  // wanted speed, on two slow waves of his own.
-  const hand=.92+.05*Math.sin(now*(.23+.1*(s.wfx||.9))+(s.wf||0)*3.1)+.03*Math.sin(now*(.61+.2*(s.wfy||.7))+(s.wf2||s.wf||0));
-  return Math.max(cruise*.3,Math.min(dash*(.62+.38*hp),want))*hand;
+  // The pilot's hand feathers the throttle, even at full burn, in the rhythm of
+  // their fleet's handling (depth and frequency drawn per pilot).
+  const hand=battleAI.rhythm(s,now);
+  // Held under full burn by the rhythm's own depth, so the hand never flattens against the stop.
+  return Math.min(dash,Math.max(cruise*.3,Math.min(dash*(.62+.38*hp)*.88,want))*hand);
 }
 /* Engines have limits: a fighter reaches full burn in about 1.5 s, a frigate
    in about 4 s, and braking is a little quicker than accelerating. */
 function approachSpeed(s,want,dt,k=1){
-  const dash=s.spdMax||(s.spd||20)*1.3,spool=s.slen<60?1.5:s.slen<180?4:Math.min(30,8+s.slen/200);
-  const acc=dash/spool*k,dec=acc*1.5,v=s.v||0;
-  const dv=(want-v)*Math.min(1,dt*3);
-  return v+Math.max(-dec*dt,Math.min(acc*dt,dv));
+  // The burn builds and eases (a jerk limit) inside the same spool and braking limits.
+  return battleAI.helmSpeed(s,want,dt,k);
+}
+function enemyAxis(s){
+  const st=battleAI.story&&battleAI.story.sides;if(!st)return null;
+  const a=st[s.side].center,b=st[1-s.side].center;if(!a||!b)return null;
+  const x=b.x-a.x,z=b.z-a.z,n=Math.hypot(x,z);return n>1?[x/n,z/n]:null;
 }
 function skinOf(t){
   /* the hittable hull, not the origin buried in a 2 km body */
@@ -14040,6 +14064,40 @@ function parkTheCrowns(){
     const cy=Math.cos(s.yaw||0),sy=Math.sin(s.yaw||0);
     s.x-=cy*h*0.84;s.z-=sy*h*0.84;
     if(s.stn){s.stn[0]=s.x;s.stn[2]=s.z;}
+  }
+}
+/* Escort squadrons jump in in formation, like the fighter chevrons. The line of battle deals
+   escorts one per berth, 560 m apart and often a rank apart, so a squadron of frigates could
+   start a kilometre and more wide and spend the whole approach assembling at frigate speed.
+   Each escort squadron is laid out round its leader in the shape and spacing the helm flies
+   (a column for frigates), facing the enemy. The muster's own spacing checks run after. */
+function formTheSquadrons(){
+  for(const q of squads){
+    const mem=q.mem.map(id=>ships[id]).filter(s=>s&&!s.dead&&s.vao);
+    if(mem.length<2||q.hero||mem.some(s=>s.band!==1))continue;
+    const lead=mem[0],h=battleAI.hand(lead),lens=mem.map(s=>s.slen||20).sort((a,b)=>a-b),L=lens[lens.length>>1];
+    const crown=fightsAsCrown(lead),gun=isGunboat(lead)&&!crown,shape=gun||crown?"column":h.shape;
+    const d=ArmadaBattleAI.formationSpacing(shape,mem.length-1,L,mem.reduce((a,s)=>a+(s.slen||20),0)/mem.length,crown,h.tight);
+    const yaw=lead.side?Math.PI:0,c=Math.cos(yaw),sn=Math.sin(yaw);
+    /* ...but every hull keeps a clear jump corridor: a wingman moves to its formation spot (or the
+       spot at a wider spacing) only if its lane along the jump axis stays clear of every other lane */
+    const lane=q=>Math.hypot(q.exY||5,q.exZ||5)+(q.exL||10)*.15+24;
+    const clear=(s,y,z)=>ships.every(o=>o===s||o.dead||!o.vao||o.side!==s.side||Math.hypot(o.y-y,o.z-z)+.001>=lane(o)+lane(s));
+    mem.slice(1).forEach((s,i)=>{
+      const o=ArmadaBattleAI.slotOffset(shape,i,mem.length-1);
+      // A blocked lane is cleared by stepping the wingman up or down the stack before widening the spacing.
+      const step=lane(s)*2;let placed=false;
+      for(const k of [1,1.3,1.6]){
+        for(const up of [0,1,-1,2,-2]){
+          const x=o[0]*d*k,z=o[2]*d*k,ny=lead.y+o[1]*d*k+up*step,nz=lead.z+sn*x+c*z;
+          if(!clear(s,ny,nz))continue;
+          s.x=lead.x+c*x-sn*z;s.y=ny;s.z=nz;s.yaw=lead.yaw;
+          if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
+          placed=true;break;
+        }
+        if(placed)break;
+      }
+    });
   }
 }
 function clearTheCrownBows(){
@@ -15333,6 +15391,8 @@ function onWorkerMsg(e){
     seatBattleMounts(s);
     setShipPace(s);
     battleAI.equip(s);
+    // Hull classes the helm needs: frigates, corvettes and transports; slicer and cutter small craft.
+    s.gunboat=isGunboat(s)&&!fightsAsCrown(s);s.midcraft=!s.gunboat&&!s.hero&&!fightsAsCrown(s)&&(s.slen||0)>=80;
     forged++;
     if(s.reliefBatch!=null)reliefBatches[s.reliefBatch].remaining--;
     if(s.reliefBatch==null&&warT0!==Infinity&&(RACE_DEFS[s.race]||{}).fire==="cutter")scatterBorg();
@@ -15345,6 +15405,7 @@ function onWorkerMsg(e){
     scatterShadows();
     scatterBorg();
     spaceTheFleets();
+    formTheSquadrons();
     clearTheCrownBows();
     if(!beginIntro()){
       frameTheWar();
@@ -15563,29 +15624,8 @@ function cutHold(s,now,dt){
     }else s.cutUntil=0;
   }else s.cutUntil=0;
 }
-function pickPatrol(s,now){
-  const fc=fleetCentroid(s.side),ec=fleetCentroid(1-s.side);
-  const ax=ec[0]-fc[0],az=ec[2]-fc[2];
-  const gap=Math.max(400,Math.hypot(ax,az)||1);
-  const ux=ax/gap,uz=az/gap,sx=-uz,sz=ux;
-  if(!s.brSgn)s.brSgn=((s.seed>>>3)&1)?1:-1;
-  const u=0.20+((s.seed>>>7)&15)/15*0.48;
-  const lat=s.brSgn*(240+((s.seed>>>11)&31)*22)+((s.id&7)-3.5)*90;
-  s.patW=[
-    fc[0]+ux*Math.min(gap*u,gap-220)+sx*lat,
-    s.y+((s.id%5)-2)*18,
-    fc[2]+uz*Math.min(gap*u,gap-220)+sz*lat
-  ];
-  s.patUntil=now+8+((s.seed>>>5)&7)*1.6;
-  s.brSgn*=(combatRandom()<0.22?-1:1);
-  return s.patW;
-}
-function gunboatGoal(s,now){
-  const need=!s.patW||now>(s.patUntil||0)||
-    Math.hypot((s.patW[0]-s.x),(s.patW[2]-s.z))<Math.max(110,s.slen*0.55);
-  if(need)pickPatrol(s,now);
-  return s.patW;
-}
+/* The old gunboat patrol (pickPatrol / gunboatGoal) is gone: nothing called it, and a
+   back-and-forth patrol is what the helm's racetracks replace. */
 function nameOf(t){
   if(!t||t.dead||!t.meta)return null;
   if(t.hero)return t.meta.desig||"the hero";
@@ -16269,9 +16309,14 @@ function fighterPassGoal(s,t,now){
   if(s.passTarget!==key){s.passTarget=key;s.passUntil=0;}
   if(now<(s.passUntil||0))return s.passGoal;
   if(gap<55){
-    const distance=Math.max(200,(s.v||s.spd)*2.2);
-    s.passGoal=[s.x+Math.cos(s.yaw)*distance,s.y+(s.vy||0)*2.2,s.z+Math.sin(s.yaw)*distance];
-    s.passUntil=now+2.2;
+    /* break past her to the pilot's own side, so the next run comes in on a new line
+       instead of back down the one just flown */
+    /* a hard break (66-80 degrees, by the pilot's overshoot) and a short extension (by their commitment):
+       the next run comes in across the last one, never back down it, and just as soon */
+    const hd=battleAI.hand(s),ext=1.2+.6*hd.commit;
+    const distance=Math.max(160,(s.v||s.spd)*ext),brk=s.yaw+(s.brkS||1)*(1.15+.25*hd.overshoot);
+    s.passGoal=[s.x+Math.cos(brk)*distance,s.y+(s.vy||0)*ext,s.z+Math.sin(brk)*distance];
+    s.passUntil=now+ext*battleAI.extendK(s);
     return s.passGoal;
   }
   return interceptPoint(s,t,weaponProfile(s).speed);
@@ -17549,61 +17594,66 @@ function simStep(now,dt){
     const sq=s.squad>=0?squads[s.squad]:null;
     const plan=battleAI.destination(s,now,false);
     let goal=plan.goal;const boost=plan.boost;
-    let liningUp=false;
-    if(weaponProfile(s).fixed&&['ATTACK','FLANK'].includes(plan.mode)){
+    let liningUp=false,passing=weaponProfile(s).fixed&&['ATTACK','FLANK'].includes(plan.mode)&&!plan.slot;
+    if(passing){
       const target=ships[plan.target];
       if(target&&!target.dead&&battleAI.fireable(s,target,now)&&gapTo(s,target)<1250){
         goal=fighterPassGoal(s,target,now);liningUp=now>=(s.passUntil||0);
       }
     }
-    if(s.debrisGoal&&now<s.debrisUntil){goal=s.debrisGoal;liningUp=false;}
-    if(s.trafficGoal&&now<s.trafficUntil){goal=[goal[0],s.trafficGoal[1],goal[2]];liningUp=false;}
     const mood=craftMood(s,now);s.mood=mood;
     let prefer=plan.target;
-    s.form=plan.mode==="REGROUP"||plan.mode==="ESCORT";
+    s.form=plan.mode==="REGROUP"||plan.mode==="ESCORT"||!!plan.slot;
     if(goal){
-
-      let dx=goal[0]-s.x,dy=goal[1]-s.y,dz=goal[2]-s.z;
-      /* the cautious hand: traffic and drifting bone bend the flown line */
-      let avM=0;
-      if(s.avT&&now-s.avT<0.3){
-        avM=Math.hypot(s.avx,s.avy,s.avz);
-        const cl=avM>90?90/avM:1;
-        dx+=s.avx*cl;dy+=s.avy*cl;dz+=s.avz*cl;
+      /* The helm, bottom to top: the hull's limits, the pilot's hands, the mind's intent.
+         The intent arrives here as a goal; the pilot sees it late by their own reaction
+         delay, holds a station by loitering instead of shuttling, blends avoidance in and
+         out, and steers through their own response time, damping and weave. */
+      const boat=!!s.gunboat,formed=!!s.form,hurt=now-s.hurtT<1.6;
+      const urgent=liningUp||hurt||plan.mode==="EVADE"||plan.mode==="RAM";
+      if(!plan.slot)goal=battleAI.helmDelay(s,goal,urgent);
+      let loiter=null;
+      /* a fixed-gun fighter on an attack flies gun passes (close, run in, extend, come round), never an orbit */
+      if(!liningUp&&!passing&&!urgent&&!plan.slot&&(plan.station||plan.orbit))loiter=battleAI.helmStation(s,goal,{orbit:plan.orbit,axis:enemyAxis(s)});
+      else s.helmLoiter=null;
+      if(loiter)goal=loiter.p;
+      const avoiding=!!(s.trafficGoal&&now<s.trafficUntil);
+      if(avoiding)s.avY=s.trafficGoal[1];
+      const aw=battleAI.avoidBlend(s,avoiding,avoiding?s.trafficBrake:1,dt);
+      const debris=!!(s.debrisGoal&&now<s.debrisUntil);
+      if(debris)goal=s.debrisGoal;
+      /* the pilot does not chase every altitude twitch of the mark: the height it steers for is
+         smoothed over about a second and a half (a sensor refresh must not make it porpoise) */
+      s.goalY=s.goalY==null||urgent?goal[1]:s.goalY+(goal[1]-s.goalY)*Math.min(1,dt/1.5);
+      let dx=goal[0]-s.x,dy=s.goalY-s.y,dz=goal[2]-s.z;
+      /* nosed into a rock: slide along its surface and away from it, never through it */
+      let escape=false;
+      if(now<(s.rockUntil||0)&&s.rockN){
+        const n=s.rockN,fx=Math.cos(s.yaw),fz=Math.sin(s.yaw),fn=fx*n[0]+fz*n[2];
+        if(fn<.3){const tx=fx-n[0]*fn,tz=fz-n[2]*fn,tn=Math.hypot(tx,tz)||1;
+          dx=(tx/tn)*250+n[0]*250;dz=(tz/tn)*250+n[2]*250;dy=Math.max(dy,n[1]*250+40);escape=true;}
       }
+      /* never back through its own wake head-on: pass it a little to the side it is already on */
+      const wk=boat?null:battleAI.wake(s,now),wakeY=wk&&!wk[0]?wk[1]:null;
+      if(wakeY!=null)dy=wakeY-s.y;
+      if(aw>0&&s.avY!=null&&!debris)dy+=(s.avY-s.goalY)*aw;
+      // a traffic lane that would still take it back through its own wake (ending near it, or across it) gives way to the wake
+      if(wakeY!=null&&(Math.abs(s.y+dy-wk[2])<wk[3]*2||(s.y+dy-wk[2])*(s.y-wk[2])<0))dy=wakeY-s.y;
       const rail=Math.hypot(dx,dz)||1;
       let dyaw=Math.atan2(dz,dx)-s.yaw;
-      /* a private crab: she does not hold the same heading as her
-         neighbour even when they share a waypoint. Gunboats keep a
-         clean track — the weave is what made the frigates nod. */
-      const boat=isGunboat(s);
-      const formed=!!s.form;
-      /* a whisker of private heading — never a drunk crab that walks
-         the whole chevron off the line */
-      if(!boat&&!formed&&!liningUp)dyaw+=(s.crab||0)*Math.min(1,rail/420)*0.35;
+      /* a whisker of private heading, never a drunk crab that walks the chevron off the line */
+      if(!boat&&!formed&&!liningUp&&!loiter)dyaw+=(s.crab||0)*Math.min(1,rail/420)*0.35;
       dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
-      /* angular inertia: she rolls INTO the turn, peaks, and eases out —
-         the difference between a servo and a pilot. The jink and the
-         wander live in the desired RATE, so even evasion flows. */
-      const mx=s.turn*(1+0.5*(boost-1));
-      let wantRate=Math.max(-mx,Math.min(mx,dyaw*(boat?1.15:formed?1.05:1.55)));
-      if((boat||formed)&&Math.abs(dyaw)<0.05)wantRate=0;
-      /* hands on the stick: a living line, not a drunk. Formation is
-         almost still; a dogfight is a light weave, never a jerk */
-      const wfx=s.wfx||0.9,wfy=s.wfy||0.7,wfz=s.wfz||0.5,wf2=s.wf2||s.wf;
-      const h1=Math.sin(now*wfx*0.55+s.wf);
-      const h2=Math.sin(now*wfy*0.50+wf2);
-      const h3=Math.sin(now*wfz*0.45+s.wf);
-      const hand=s.hand||1;
-      const weaveK=formed?0.06:s.hero?0.12:s.slen<42?0.16:s.slen<80?0.08:0.03;
-      wantRate+=h1*s.turn*(0.05+0.04*hand)*weaveK;
-      if(!boat&&now-s.hurtT<1.6)wantRate+=Math.sin(now*2.2+s.wf*2.0)*s.turn*0.35;
-      s.yawV+=(wantRate-s.yawV)*Math.min(1,dt*(boat?2.4:formed?1.4:1.7+0.6*hand));
-      if(boat||formed)s.yawV*=Math.max(0,1-dt*(formed?1.6:1.2));
-      s.yaw+=s.yawV*dt;
-      const bankT=Math.max(-0.85,Math.min(0.85,
-        -(s.yawV/Math.max(0.15,s.turn))*0.7+h2*(0.04+0.03*hand)*weaveK));
-      s.roll+=(bankT-s.roll)*Math.min(1,dt*(1.4+1.2*(s.hot||1)));
+      if(wk&&wk[0])dyaw+=wk[0]*.4;
+      const stunned=!!(s.stunT&&now<s.stunT);
+      const jink=!boat&&hurt?Math.sin(now*2.2+s.wf*2.0)*battleAI.turnLimit(s)*0.35:0;
+      /* gunboats keep a clean track: the weave is what made the frigates nod */
+      /* in a dogfight (a small craft on a live mark within 1.6 km) the pilot is free to haul round onto it:
+         commitment is for flying a line, not for a knife fight */
+      const mk=plan.target>=0?ships[plan.target]:null;
+      const knife=!boat&&!s.hulls&&(s.slen||20)<80&&mk&&!mk.dead&&['ATTACK','FLANK','STRIKE','EVADE'].includes(plan.mode)&&gapTo(s,mk)<1600;
+      battleAI.helmTurn(s,dyaw,dt,now,{max:s.turn*(1+0.5*(boost-1))*(stunned?.4:1),boost:1+0.5*(boost-1),formed,lining:liningUp,free:knife,escape,clean:boat,jink});
+      battleAI.helmBank(s,dt,now,{});
       if(!formed&&!s.hulls&&!boat&&s.slen<120&&now>=s.brUntil&&
          ((now-s.hurtT<1.6&&combatRandom()<dt*0.8)||combatRandom()<dt*0.012)){
         const r9=combatRandom(),sg9=combatRandom()<0.5?-1:1;
@@ -17612,27 +17662,31 @@ function simStep(now,dt){
         else{s.brFlick=false;s.brAmp=sg9*12.566;s.brT=1.3+combatRandom()*0.5;}
         s.brUntil=now+s.brT;
       }
-      const climb=s.trafficGoal&&now<s.trafficUntil?.65:liningUp?.75:boat||formed?.10:.22;
+      const hd=battleAI.hand(s);
+      const climb=aw>.05||wakeY!=null?.65:liningUp?.75:boat||formed?.10:.22;
+      const bob=boat?0:Math.sin(now*hd.weaveHz*4.1+hd.ph[1])*s.spd*.02*hd.weave*(formed?.4:1);
       const wv=Math.max(-s.spd*climb,Math.min(s.spd*climb,
-        liningUp?dy/rail*Math.max(18,Math.abs(s.v)):dy*(boat?.08:formed?.10:.18)+h3*s.spd*(.018+.012*hand)*weaveK));
-      s.vy+=(wv-s.vy)*Math.min(1,dt*(1.2+0.8*hand));
-      s.pitch+=(Math.atan2(s.vy,Math.max(18,Math.abs(s.v)))-s.pitch)*Math.min(1,dt*(1.6+1.0*(s.hot||1)));
+        wakeY!=null?dy*.9:liningUp?dy/rail*Math.max(18,Math.abs(s.v)):dy*(boat?.08:formed?.10:.18)+bob));
+      battleAI.helmClimb(s,wv,dt,{fast:liningUp||aw>.05||wakeY!=null||escape,urgent:liningUp||wakeY!=null||escape||(avoiding&&(s.trafficBrake||1)<.7)});
       const dist=Math.hypot(dx,dy,dz);
       let want=craftWant(s,now,sq,mood,dist,boost);
-      if(dist<26)want=Math.min(want,s.spd*(boat?0.78:0.20+0.12*hand));
-      else if(!boat&&prefer>=0&&dist<150)want*=0.84+0.18*Math.sin(now*wfx+s.wf);
-      if(avM>48)want=Math.min(want,s.spd*(0.58+0.12*hand));
-      if(now-s.hurtT<1.6)
-        want=Math.min(s.spdMax||s.spd*1.3,want*1.22+5);
-
-      if(s.debrisGoal&&now<s.debrisUntil)want*=s.debrisBrake;
-      if(s.trafficGoal&&now<s.trafficUntil)want*=s.trafficBrake;
-      if(now<(s.trafficBrakeUntil||0))want*=.65;
-      if(s.stunT&&now<s.stunT){
-        want*=0.36;
-        s.yawV*=Math.max(0,1-dt*2.4);
+      /* a station is loitered lazily; an attack orbit is flown at the pilot's own pace, carrying
+         momentum round the circle, never matched down to a slow target into a pirouette */
+      /* a formation leader loiters at 0.8 of cruise: a squadron needs way on to hold its shape round the circle */
+      if(loiter)want=plan.orbit&&plan.target>=0?s.spd*(boat?.75:.95):Math.min(want,s.spd*(battleAI.leadsFormation(s)?.8:boat?.62:.8));
+      else if(dist<26)want=Math.min(want,s.spd*(boat?0.62:0.35));
+      if(plan.slot){
+        /* holding station: match the leader, close the gap along the heading */
+        want=plan.slot.want;
       }
-      want=throttle(s,now,want,prefer,mood);
+      const lead=battleAI.leadCap(s,now);if(lead<want)want=lead;
+      if(hurt)want=Math.min(s.spdMax||s.spd*1.3,want*1.22+5);
+      if(debris)want*=s.debrisBrake;
+      want*=s.avBrake??1;
+      if(now<(s.trafficBrakeUntil||0))want*=.65;
+      if(stunned)want*=0.36;
+      want=throttle(s,now,want,prefer,mood,!!plan.slot||!!(loiter&&plan.orbit));
+      s.throttleWant=want;
       s.v=approachSpeed(s,want,dt,s.hero?1.5:1);
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
     }

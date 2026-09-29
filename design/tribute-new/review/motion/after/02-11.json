@@ -1,0 +1,88 @@
+{
+ "scene": "02-11",
+ "name": "Gunboat screen: Klingons",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 375,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 3.3496543915782793,
+   "hold": 0.027761434703972455,
+   "spins": 0,
+   "minutes": 99.4
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.04841723675840994,
+    "hold": 0.3333333333333333,
+    "spins": 0,
+    "minutes": 1.9
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.12445146117713844,
+    "hold": 0.3451543571707699,
+    "spins": 0,
+    "minutes": 5.22
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.2851018267503907,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 9.41
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 2.16271852372702,
+    "hold": 0.013439800210304942,
+    "spins": 0,
+    "minutes": 16.86
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.216965034285822,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 64.09
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.5185594437492265,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 1.92
+   }
+  },
+  "focus": {
+   "ships": 9,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.8764331210191083,
+  "individualityMin": 0.21161285990973364
+ },
+ "errors": []
+}

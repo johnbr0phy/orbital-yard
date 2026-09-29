@@ -1,0 +1,88 @@
+{
+ "scene": "02-17",
+ "name": "Gunboat screen: First Ones",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 315,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 2.9853826189179573,
+   "hold": 0.13367558317571826,
+   "spins": 0,
+   "minutes": 30.67
+  },
+  "classes": {
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.013031667784522987,
+    "hold": 0.46267046767855763,
+    "spins": 0,
+    "minutes": 7.21
+   },
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.012735030810166616,
+    "hold": 0.44941008223096174,
+    "spins": 0,
+    "minutes": 1.55
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.30549211132155124,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 0.82
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 3.126079367123956,
+    "hold": 0.045324971493728626,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.120975190973304,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 18.81
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 2.01836636368156,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 0.35
+   }
+  },
+  "focus": {
+   "ships": 0,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.7087912087912088,
+  "individualityMin": 0.2652727117569407
+ },
+ "errors": []
+}

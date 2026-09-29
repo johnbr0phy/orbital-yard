@@ -1,0 +1,88 @@
+{
+ "scene": "02-22",
+ "name": "Gunboat screen: Tesla",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 416,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 3.7583740428844434,
+   "hold": 0.03909458650651147,
+   "spins": 0,
+   "minutes": 106.02
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.17988709151287874,
+    "hold": 0.32493483927019984,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.01333521432163324,
+    "hold": 0.6115065821550464,
+    "spins": 0,
+    "minutes": 5.5
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.32734069487883793,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 6.59
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 1.8407720014689544,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 17.79
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.31519076827765,
+    "hold": 0.0013860744713707822,
+    "spins": 0,
+    "minutes": 72.3
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 7.161434102129013,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 1.93
+   }
+  },
+  "focus": {
+   "ships": 4,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.9460067491563554,
+  "individualityMin": 0.1920081636937596
+ },
+ "errors": []
+}
