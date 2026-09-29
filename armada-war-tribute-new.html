@@ -13945,7 +13945,8 @@ function throttle(s,now,want,prefer,mood,slotted){
   // The pilot's hand feathers the throttle, even at full burn, in the rhythm of
   // their fleet's handling (depth and frequency drawn per pilot).
   const hand=battleAI.rhythm(s,now);
-  return Math.min(dash,Math.max(cruise*.3,Math.min(dash*(.62+.38*hp),want))*hand);
+  // Held under full burn by the rhythm's own depth, so the hand never flattens against the stop.
+  return Math.min(dash,Math.max(cruise*.3,Math.min(dash*(.62+.38*hp)*.88,want))*hand);
 }
 /* Engines have limits: a fighter reaches full burn in about 1.5 s, a frigate
    in about 4 s, and braking is a little quicker than accelerating. */
@@ -14071,12 +14072,17 @@ function formTheSquadrons(){
     const clear=(s,y,z)=>ships.every(o=>o===s||o.dead||!o.vao||o.side!==s.side||Math.hypot(o.y-y,o.z-z)+.001>=lane(o)+lane(s));
     mem.slice(1).forEach((s,i)=>{
       const o=ArmadaBattleAI.slotOffset(shape,i,mem.length-1);
+      // A blocked lane is cleared by stepping the wingman up or down the stack before widening the spacing.
+      const step=lane(s)*2;let placed=false;
       for(const k of [1,1.3,1.6]){
-        const x=o[0]*d*k,z=o[2]*d*k,ny=lead.y+o[1]*d*k,nz=lead.z+sn*x+c*z;
-        if(!clear(s,ny,nz))continue;
-        s.x=lead.x+c*x-sn*z;s.y=ny;s.z=nz;s.yaw=lead.yaw;
-        if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
-        break;
+        for(const up of [0,1,-1,2,-2]){
+          const x=o[0]*d*k,z=o[2]*d*k,ny=lead.y+o[1]*d*k+up*step,nz=lead.z+sn*x+c*z;
+          if(!clear(s,ny,nz))continue;
+          s.x=lead.x+c*x-sn*z;s.y=ny;s.z=nz;s.yaw=lead.yaw;
+          if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
+          placed=true;break;
+        }
+        if(placed)break;
       }
     });
   }
@@ -16292,10 +16298,10 @@ function fighterPassGoal(s,t,now){
   if(gap<55){
     /* break past her to the pilot's own side, so the next run comes in on a new line
        instead of back down the one just flown */
-    /* a hard break (57-75 degrees, by the pilot's overshoot) and a short extension (by their commitment):
+    /* a hard break (66-80 degrees, by the pilot's overshoot) and a short extension (by their commitment):
        the next run comes in across the last one, never back down it, and just as soon */
     const hd=battleAI.hand(s),ext=1.2+.6*hd.commit;
-    const distance=Math.max(160,(s.v||s.spd)*ext),brk=s.yaw+(s.brkS||1)*(1+.3*hd.overshoot);
+    const distance=Math.max(160,(s.v||s.spd)*ext),brk=s.yaw+(s.brkS||1)*(1.15+.25*hd.overshoot);
     s.passGoal=[s.x+Math.cos(brk)*distance,s.y+(s.vy||0)*ext,s.z+Math.sin(brk)*distance];
     s.passUntil=now+ext*battleAI.extendK(s);
     return s.passGoal;

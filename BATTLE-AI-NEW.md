@@ -81,29 +81,29 @@ Each pilot then gets their own hand around the row, from a random stream seeded 
 
 | Fleet | Formation | Attack | Stick smoothing | Bank | Overshoot | Throttle rhythm (Hz / depth) | Tightness | Breaks away | Re-forms | Reaction (s) | Weave (depth / Hz) | Commitment | Why |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Yard | finger-four | slash | 0.61 | 0.8 | 0.45 | 0.22 / 0.068 | 0.78 | 0.3 | 0.7 | 0.47 | 0.5 / 0.59 | 0.55 | A drilled yard navy flies the textbook: clean banked turns, fingers held, passes by the manual. |
-| Shoal | swarm | swarm | 0.19 | 1.19 | 0.86 | 0.46 / 0.122 | 0.3 | 0.75 | 0.4 | 0.17 | 0.95 / 1.11 | 0.25 | A social swarm: quick hands, big swings past the mark, surging together like a current. |
-| Lattice | line abreast | orbit | 0.81 | 0.28 | 0.12 | 0.14 / 0.049 | 0.95 | 0.08 | 0.95 | 0.53 | 0.14 / 0.33 | 0.8 | A coordinated lattice: exact rails, almost no weave, the line snaps back at once. |
-| Drift | cluster | stalk | 0.42 | 0.91 | 0.74 | 0.38 / 0.107 | 0.5 | 0.5 | 0.5 | 0.6 | 0.82 / 0.89 | 0.4 | Salvagers: loose and wary, always ready to slide off the line and come back. |
-| Choir | wedge | orbit | 0.92 | 0.46 | 0.33 | 0.08 / 0.095 | 0.75 | 0.3 | 0.6 | 0.68 | 0.68 / 0.29 | 0.6 | A patient choir: long slow swells on the throttle, silky turns. |
-| Empire | wedge | joust | 0.38 | 0.85 | 0.16 | 0.28 / 0.057 | 0.9 | 0.1 | 0.9 | 0.28 | 0.18 / 0.76 | 0.7 | Drilled aggression: crisp and precise, tight wedges, straight in and re-formed fast. |
-| Rebels | finger-four | slash | 0.46 | 1.14 | 0.78 | 0.36 / 0.111 | 0.52 | 0.78 | 0.55 | 0.4 | 0.86 / 0.98 | 0.35 | Creative and loose: deep banks, wide fingers, quick to break off and help a friend. |
-| Minbari | wedge | slash | 0.88 | 0.4 | 0.08 | 0.12 / 0.06 | 0.85 | 0.2 | 0.8 | 0.42 | 0.09 / 0.46 | 0.75 | Composed and exact: no wasted motion, long clean passes, nothing swings past the mark. |
-| Shadows | swarm | dive | 0.15 | 0.11 | 0.82 | 0.48 / 0.126 | 0.35 | 0.6 | 0.5 | 0.15 | 0.91 / 1.15 | 0.4 | Chaos with a purpose: sudden surges and swoops, little bank, predatory dives. |
-| EarthForce | finger-four | slash | 0.65 | 0.74 | 0.49 | 0.24 / 0.072 | 0.8 | 0.35 | 0.75 | 0.5 | 0.55 / 0.68 | 0.55 | EarthForce flies by the book and holds its fingers. |
-| Federation | line abreast | orbit | 0.73 | 0.51 | 0.2 | 0.18 / 0.076 | 0.75 | 0.45 | 0.7 | 0.55 | 0.41 / 0.5 | 0.55 | Measured and aware: wide orbits, a steady rhythm, peels off to cover a friend. |
-| Klingons | wedge | joust | 0.27 | 1.02 | 0.69 | 0.42 / 0.118 | 0.6 | 0.5 | 0.45 | 0.2 | 0.59 / 0.85 | 0.95 | They commit and do not look back: long dwell on a choice, hard banks, surging burns. |
-| Borg | cluster | joust | 0.96 | 0 | 0 | 0.06 / 0.053 | 0.95 | 0 | 1 | 0.7 | 0 / 0.2 | 0.9 | Cold, unhurried certainty: no bank, no weave, no overshoot, a slow even pulse. |
-| Mondoshawan | line abreast | orbit | 0.84 | 0.34 | 0.24 | 0.1 / 0.087 | 0.8 | 0.3 | 0.7 | 0.65 | 0.27 / 0.37 | 0.6 | A protective convoy: slow, careful, wide turns. |
-| USCM | finger-four | slash | 0.5 | 0.97 | 0.37 | 0.32 / 0.08 | 0.8 | 0.35 | 0.8 | 0.35 | 0.64 / 0.81 | 0.6 | Marines: skilled and disciplined, sharp fingers, quick re-forms. |
-| Engineers | cluster | dive | 0.77 | 0.17 | 0.53 | 0.16 / 0.099 | 0.6 | 0.3 | 0.6 | 0.57 | 0.32 / 0.42 | 0.65 | Inventive and composed: slow deliberate dives, little bank. |
-| Yautja | swarm | stalk | 0.54 | 1.08 | 0.61 | 0.34 / 0.103 | 0.35 | 0.8 | 0.35 | 0.23 | 0.73 / 0.93 | 0.7 | Hunters: independent loose packs that stalk from behind and commit. |
-| First Ones | cluster | orbit | 1 | 0.06 | 0.04 | 0.04 / 0.045 | 0.5 | 0.5 | 0.5 | 0.63 | 0.04 / 0.24 | 0.9 | Ancient and absolute: they move as if nothing can touch them. |
-| Romulans | wedge | stalk | 0.69 | 0.57 | 0.41 | 0.2 / 0.091 | 0.7 | 0.3 | 0.7 | 0.45 | 0.46 / 0.55 | 0.6 | Patient ambushers: smooth, controlled, quick to slip away. |
-| Dominion | line abreast | joust | 0.57 | 0.68 | 0.57 | 0.3 / 0.084 | 0.85 | 0.15 | 0.8 | 0.3 | 0.36 / 0.72 | 0.8 | Relentless: straight lines in, no hesitation. |
-| Space Marines | wedge | joust | 0.3 | 0.63 | 0.29 | 0.26 / 0.064 | 0.85 | 0.2 | 0.85 | 0.38 | 0.23 / 0.63 | 0.8 | Fearless and drilled: tight wedges, straight at the enemy. |
-| Tyranids | swarm | swarm | 0.23 | 0.23 | 0.9 | 0.44 / 0.13 | 0.28 | 0.55 | 0.6 | 0.33 | 1 / 1.06 | 0.3 | The swarm: organic weaving and wild overshoots; synapse pulls it back together. |
-| Tesla | finger-four | slash | 0.34 | 1.25 | 0.66 | 0.4 / 0.115 | 0.6 | 0.5 | 0.6 | 0.25 | 0.77 / 1.02 | 0.4 | A startup fleet: fast hands, eager banks, improvised lines. |
+| Yard | finger-four | slash | 0.57 | 0.95 | 0.47 | 0.3 / 0.087 | 0.78 | 0.3 | 0.7 | 0.51 | 0.7 / 0.72 | 0.55 | A drilled yard navy flies the textbook: clean banked turns, fingers held, passes by the manual. |
+| Shoal | swarm | swarm | 0.09 | 1.43 | 0.91 | 0.67 / 0.186 | 0.3 | 0.75 | 0.4 | 0.18 | 1.34 / 1.53 | 0.25 | A social swarm: quick hands, big swings past the mark, surging together like a current. |
+| Lattice | line abreast | orbit | 0.78 | 0.34 | 0.13 | 0.18 / 0.052 | 0.95 | 0.08 | 0.95 | 0.56 | 0.19 / 0.32 | 0.8 | A coordinated lattice: exact rails, almost no weave, the line snaps back at once. |
+| Drift | cluster | stalk | 0.35 | 1.09 | 0.78 | 0.55 / 0.158 | 0.5 | 0.5 | 0.5 | 0.64 | 1.15 / 1.2 | 0.4 | Salvagers: loose and wary, always ready to slide off the line and come back. |
+| Choir | wedge | orbit | 0.91 | 0.55 | 0.34 | 0.09 / 0.137 | 0.75 | 0.3 | 0.6 | 0.72 | 0.95 / 0.26 | 0.6 | A patient choir: long slow swells on the throttle, silky turns. |
+| Empire | wedge | joust | 0.31 | 1.02 | 0.17 | 0.4 / 0.066 | 0.9 | 0.1 | 0.9 | 0.29 | 0.26 / 0.99 | 0.7 | Drilled aggression: crisp and precise, tight wedges, straight in and re-formed fast. |
+| Rebels | finger-four | slash | 0.4 | 1.36 | 0.82 | 0.52 / 0.165 | 0.52 | 0.78 | 0.55 | 0.42 | 1.21 / 1.33 | 0.35 | Creative and loose: deep banks, wide fingers, quick to break off and help a friend. |
+| Minbari | wedge | slash | 0.87 | 0.48 | 0.09 | 0.15 / 0.073 | 0.85 | 0.2 | 0.8 | 0.45 | 0.13 / 0.52 | 0.75 | Composed and exact: no wasted motion, long clean passes, nothing swings past the mark. |
+| Shadows | swarm | dive | 0.05 | 0.14 | 0.86 | 0.7 / 0.193 | 0.35 | 0.6 | 0.5 | 0.15 | 1.27 / 1.6 | 0.4 | Chaos with a purpose: sudden surges and swoops, little bank, predatory dives. |
+| EarthForce | finger-four | slash | 0.61 | 0.89 | 0.52 | 0.34 / 0.094 | 0.8 | 0.35 | 0.75 | 0.53 | 0.76 / 0.86 | 0.55 | EarthForce flies by the book and holds its fingers. |
+| Federation | line abreast | orbit | 0.7 | 0.61 | 0.22 | 0.24 / 0.101 | 0.75 | 0.45 | 0.7 | 0.59 | 0.57 / 0.59 | 0.55 | Measured and aware: wide orbits, a steady rhythm, peels off to cover a friend. |
+| Klingons | wedge | joust | 0.18 | 1.23 | 0.73 | 0.61 / 0.179 | 0.6 | 0.5 | 0.45 | 0.2 | 0.83 / 1.13 | 0.95 | They commit and do not look back: long dwell on a choice, hard banks, surging burns. |
+| Borg | cluster | joust | 0.96 | 0 | 0 | 0.06 / 0.059 | 0.95 | 0 | 1 | 0.75 | 0 / 0.12 | 0.9 | Cold, unhurried certainty: no bank, no weave, no overshoot, a slow even pulse. |
+| Mondoshawan | line abreast | orbit | 0.83 | 0.41 | 0.26 | 0.12 / 0.123 | 0.8 | 0.3 | 0.7 | 0.69 | 0.38 / 0.39 | 0.6 | A protective convoy: slow, careful, wide turns. |
+| USCM | finger-four | slash | 0.44 | 1.16 | 0.39 | 0.46 / 0.108 | 0.8 | 0.35 | 0.8 | 0.37 | 0.89 / 1.06 | 0.6 | Marines: skilled and disciplined, sharp fingers, quick re-forms. |
+| Engineers | cluster | dive | 0.74 | 0.2 | 0.56 | 0.21 / 0.144 | 0.6 | 0.3 | 0.6 | 0.61 | 0.45 / 0.46 | 0.65 | Inventive and composed: slow deliberate dives, little bank. |
+| Yautja | swarm | stalk | 0.48 | 1.29 | 0.65 | 0.49 / 0.151 | 0.35 | 0.8 | 0.35 | 0.23 | 1.02 / 1.26 | 0.7 | Hunters: independent loose packs that stalk from behind and commit. |
+| First Ones | cluster | orbit | 1 | 0.07 | 0.04 | 0.03 / 0.045 | 0.5 | 0.5 | 0.5 | 0.67 | 0.06 / 0.19 | 0.9 | Ancient and absolute: they move as if nothing can touch them. |
+| Romulans | wedge | stalk | 0.66 | 0.68 | 0.43 | 0.27 / 0.13 | 0.7 | 0.3 | 0.7 | 0.48 | 0.64 / 0.66 | 0.6 | Patient ambushers: smooth, controlled, quick to slip away. |
+| Dominion | line abreast | joust | 0.53 | 0.82 | 0.6 | 0.43 / 0.115 | 0.85 | 0.15 | 0.8 | 0.31 | 0.51 / 0.93 | 0.8 | Relentless: straight lines in, no hesitation. |
+| Space Marines | wedge | joust | 0.22 | 0.75 | 0.3 | 0.36 / 0.08 | 0.85 | 0.2 | 0.85 | 0.4 | 0.32 / 0.79 | 0.8 | Fearless and drilled: tight wedges, straight at the enemy. |
+| Tyranids | swarm | swarm | 0.14 | 0.27 | 0.95 | 0.64 / 0.2 | 0.28 | 0.55 | 0.6 | 0.34 | 1.4 / 1.47 | 0.3 | The swarm: organic weaving and wild overshoots; synapse pulls it back together. |
+| Tesla | finger-four | slash | 0.27 | 1.5 | 0.69 | 0.58 / 0.172 | 0.6 | 0.5 | 0.6 | 0.26 | 1.08 / 1.4 | 0.4 | A startup fleet: fast hands, eager banks, improvised lines. |
 
 
 ### The helm, bottom to top

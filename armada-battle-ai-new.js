@@ -1315,7 +1315,7 @@
   /* The rows above are the authored characters. So that fleets read apart from motion alone, each motion
      parameter is then spread across its range by rank: every fleet keeps its place in the order (the Borg
      still bank least, the swarms still weave hardest), but near-twins no longer sit on the same number. */
-  const SPREAD={smooth:[.1,1],bank:[0,1.4],overshoot:[0,.95],rhythmHz:[.03,.6],rhythm:[.045,.16],weave:[0,1.2],weaveHz:[.15,1.4],react:[.15,.75]};
+  const SPREAD={smooth:[.05,1],bank:[0,1.5],overshoot:[0,.95],rhythmHz:[.03,.7],rhythm:[.045,.2],weave:[0,1.4],weaveHz:[.12,1.6],react:[.15,.75]};
   for(const key of Object.keys(SPREAD)){
     const [lo,hi]=SPREAD[key],order=HANDLING.map((row,i)=>[row[key],i]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
     order.forEach(([,i],j)=>{HANDLING[i][key]=+(lo+(hi-lo)*j/(order.length-1)).toFixed(3);});
@@ -1641,7 +1641,7 @@
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return null;
       let n=0,L=0;for(const id of sq.mem){const m=this.byId.get(id);if(m&&alive(m)&&m.arr){n++;L=Math.max(L,m.slen||20);}}
       // The circle must be big enough that the squadron's depth wraps no more than 1.2 rad of it.
-      return n>1?{n,span:Math.max(42,L*3,(fm.back||0)/1.2),turnCap:fm.turnCap||.35,lat:(fm.turnCap?.35*20/fm.turnCap:0)}:null;
+      return n>1?{n,span:Math.max(Math.max(42,L*3)*(1+.5*n),(fm.back||0)/1.2),turnCap:fm.turnCap||.35,lat:(fm.turnCap?.35*20/fm.turnCap:0)}:null;
     },
     // A formation leader flies slow enough for the slowest wingman to hold station.
     leadCap(s,now){
