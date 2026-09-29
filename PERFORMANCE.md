@@ -129,7 +129,7 @@ Squadron morale and capital crises are bucketed by ship id across steps; plans, 
 
 ## Behaviour change, new trace
 
-The story changes the war on purpose, so the trace changes. `bench/story/trace-before.txt` is the baseline (`16ea5e01…`). The story pass recorded `945a530c…`; the owner-feedback round (throttle, First Ones, Tyranid spores) changes the war again, and `bench/story/trace-after.txt` is now the current build (`034d4243…`), recorded twice with identical output.
+The story changes the war on purpose, so the trace changes. `bench/story/trace-before.txt` is the baseline (`16ea5e01…`). The story pass recorded `945a530c…`; the owner-feedback round (throttle, First Ones, Tyranid spores) changes the war again, and `bench/story/trace-after.txt` was `034d4243…`. The motion pass (MOTION.md) changes how every ship flies, so the war changes again on purpose: the trace is now `15001052…`, recorded twice with identical output, and `scripts/determinism-browser.cjs` still finds the same war however it is watched.
 
 ## Re-measured after the owner-feedback round
 
