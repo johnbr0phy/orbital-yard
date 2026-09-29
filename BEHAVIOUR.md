@@ -178,19 +178,23 @@ The motion pass changes how every ship flies, so it changes every war. I re-meas
 
 | moment | BEHAVIOUR.md, 60 | main, 60 | motion, 60 | BEHAVIOUR.md, 300 | main, 300 | motion, 300 |
 |---|---|---|---|---|---|---|
-| wars decided | 9 | 10 | 6 | 6 | 4 | 5 |
-| ships lost | 897 | 900 | 834 | 2645 | 2808 | 2029 |
-| routs | 61 | 72 | 66 | 312 | 417 | 263 |
-| rallies | 1 | 2 | 5 | 40 | 47 | 21 |
-| last stands | 72 | 59 | 65 | 76 | 75 | 70 |
-| rescues | 48 | 43 | 47 | 29 | 36 | 28 |
-| aces | 12 | 15 | 10 | 31 | 27 | 25 |
-| vendettas | 32 | 37 | 26 | 44 | 39 | 31 |
-| flagships lost | 9 | 5 | 6 | 0 | 0 | 1 |
-| plan switches | 34 | 27 | 31 | 25 | 19 | 18 |
-| pods launched | 16 | 9 | 11 | 11 | 13 | 14 |
+| wars decided | 9 | 10 | 7 | 6 | 4 | 3 |
+| ships lost | 897 | 900 | 822 | 2645 | 2808 | 2026 |
+| routs | 61 | 72 | 59 | 312 | 417 | 260 |
+| rallies | 1 | 2 | 2 | 40 | 47 | 14 |
+| last stands | 72 | 59 | 55 | 76 | 75 | 61 |
+| rescues | 48 | 43 | 47 | 29 | 36 | 29 |
+| aces | 12 | 15 | 17 | 31 | 27 | 24 |
+| vendettas | 32 | 37 | 35 | 44 | 39 | 28 |
+| flagships lost | 9 | 5 | 9 | 0 | 0 | 1 |
+| plan switches | 34 | 27 | 31 | 25 | 19 | 17 |
+| pods launched | 16 | 9 | 16 | 11 | 13 | 17 |
 
-**At 300 a side this is a regression, and I'm reporting it as one.** The brief said the story must not regress. At 60 a side the motion build is at or near BEHAVIOUR.md's rates: routs, rallies, rescues, rams and plan switches match or beat them, and last stands, aces and vendettas are 10–20% under. At 300 a side, routs are 16% under BEHAVIOUR.md (37% under main), rallies half, aces a fifth under, and 23% fewer ships die in the 120 s window. Every named moment still happens in the same wars. They happen less often because fewer ships die, and routs, rallies and last stands are all driven by losses.
+**This is a regression, and I'm reporting it as one.** The brief said the story must not regress. The numbers above are from the final build.
+- **At 60 a side** the motion build is near BEHAVIOUR.md's rates: rescues, aces, rallies, vendettas, flagships lost and pods match or beat them. Routs are 3% under, plan switches 9% under, and last stands 24% under.
+- **At 300 a side** routs are 17% under BEHAVIOUR.md (38% under main), rallies about a third, last stands a fifth under, and 28% fewer ships die in the 120 s window.
+
+Every named moment still happens in the same wars. They happen less often because fewer ships die, and routs, rallies and last stands are all driven by losses.
 
 Where the losses went, from the per-war rows and the kill attributions I took on Empire v Rebels and three other matchups:
 

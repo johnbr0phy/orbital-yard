@@ -11,6 +11,11 @@ bench/motion/dev2/
 bench/motion/d*/
 bench/motion/px/
 bench/motion/sw/
+bench/motion/sw2/
+bench/motion/sh/
 bench/motion/dbg/
 bench/motion/quick-*.json
 bench/motion/story/quick-*.json
+bench/motion/sw3/
+bench/motion/sw4/
+bench/motion/sw5/

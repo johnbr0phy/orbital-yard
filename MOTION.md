@@ -6,27 +6,27 @@ This file measures motion quality: whether ships commit to lines, whether squadr
 
 I wrote these before changing a line of the flight code. The brief set the targets. Where it asked me to define a band or a threshold, I fixed it here first and then measured the baseline against it.
 
-**Status on the final commit: 8 of the 11 motion criteria pass (main passed none of the eight that can be scored on one build). Shuttle, cohesion and individuality do not; "The three criteria that did not pass" below gives the evidence. Of the other checks, tests, determinism, cost and balance pass, and the story is below BEHAVIOUR.md's rates at 300 a side (BEHAVIOUR.md, "The motion pass").**
+**Status on the final commit: 9 of the 11 motion criteria pass (main passed none of the eight that can be scored on one build). Cohesion and individuality do not; "The criteria that did not pass" below gives the evidence. Of the other checks, tests, determinism and cost pass. The story is below BEHAVIOUR.md's rates, and two fleet-balance pairings shift in ways I can't yet explain (both below).**
 
 <!-- CRITERIA-TABLE -->
 | # | criterion | target | baseline (main) | final | result |
 |---|---|---|---|---|---|
-| 1 | Reversals, gunboats and capitals (every fleet), per ship-minute | 0 | 13 in 1972 ship-min; worst Yautja frigate 0.079, Federation frigate 0.036, Empire frigate 0.022 | 0 in 2046 ship-min; worst none | **PASS** |
-| 2 | Reversals, any class in any fleet, per ship-minute | < 0.2 | worst Tesla hero 1.679; overall 0.212; 38 fleet-classes at or over 0.2 | worst Shadows fighter 0.069; overall 0.004 | **PASS** |
-| 3 | Shuttle: worst share of any 10 s window, any ship | <= 5% | 88.0%; 324 ships over 5% | 12.0%; 17 ships over 5% | **FAIL** |
-| 4 | p95 angular jerk per class (rad/s^3), at or below baseline | <= baseline | leviathan 0.38; capital 0.32; light 9.02; fighter 11.89; hero 11.89; frigate 10.84; mid 13.03 | leviathan 0.38 -> 0.09; capital 0.32 -> 0.06; light 9.02 -> 2.79; fighter 11.89 -> 5.69; hero 11.89 -> 5.43; frigate 10.84 -> 0.39; mid 13.03 -> 1.33 | **PASS** |
+| 1 | Reversals, gunboats and capitals (every fleet), per ship-minute | 0 | 13 in 1972 ship-min; worst Yautja frigate 0.079, Federation frigate 0.036, Empire frigate 0.022 | 0 in 2032 ship-min; worst none | **PASS** |
+| 2 | Reversals, any class in any fleet, per ship-minute | < 0.2 | worst Tesla hero 1.679; overall 0.212; 38 fleet-classes at or over 0.2 | worst Tesla fighter 0.021; overall 0.000 | **PASS** |
+| 3 | Shuttle: worst share of any 10 s window, any ship | <= 5% | 88.0%; 324 ships over 5% | 4.0%; 0 ships over 5% | **PASS** |
+| 4 | p95 angular jerk per class (rad/s^3), at or below baseline | <= baseline | leviathan 0.38; capital 0.32; light 9.02; fighter 11.89; hero 11.89; frigate 10.84; mid 13.03 | leviathan 0.38 -> 0.08; capital 0.32 -> 0.06; light 9.02 -> 2.72; fighter 11.89 -> 5.82; hero 11.89 -> 5.56; frigate 10.84 -> 0.39; mid 13.03 -> 1.88 | **PASS** |
 | 5 | p95 angular jerk, frigates | <= 50% of baseline | - | 10.84 -> 0.39 (4%) | **PASS** |
 | 6 | Spinning in place, hulls of 80 m or longer (events) | 0 | 64 (148.8 s) | 0 (0.0 s) | **PASS** |
-| 7 | Speed holds of 5 s or more, small and mid-size craft | <= 10% | fighter 15.8%; light 23.2%; mid 10.7%; frigate 32.8%; hero 19.7% | fighter 0.7%; light 2.5%; mid 7.0%; frigate 1.6%; hero 1.9% | **PASS** |
+| 7 | Speed holds of 5 s or more, small and mid-size craft | <= 10% | fighter 15.8%; light 23.2%; mid 10.7%; frigate 32.8%; hero 19.7% | fighter 0.6%; light 1.4%; mid 1.0%; frigate 1.7%; hero 1.2% | **PASS** |
 | 8 | Capitals: max turn rate, acceleration and braking against the hull's limits; reversals | <= 1.05x each; 0 reversals | turn 1.00x, accel 18.26x, brake 465.73x; 0 reversals | turn 1.00x, accel 1.00x, brake 1.00x; 0 reversals | **PASS** |
-| 9 | Squadron cohesion inside the band, share of squad-time outside dogfights and routs | >= 80% overall and in every fleet | 43.2% overall; worst Minbari 12.4% (parade 0%, dissolved 74%) | 70.0% overall; worst Minbari 24.4% (parade 0%, dissolved 64%) | **FAIL** |
-| 10 | Squadmates' motion signatures: smallest pairwise distance in any squad (feature sd units) | >= 0.25 in every squad | min 0.032, median squad min 0.363; 202 of 915 squads below | min 0.084, median squad min 0.381; 159 of 915 squads below | **FAIL** |
-| 11 | Fleet from motion alone: held-out accuracy (per-class models, ship identity hidden) | >= 3x chance and >= baseline +15 points and 1.5x baseline | 24.6% vs chance 5.6% (4.40x) | 42.3% vs chance 5.6% (7.56x); baseline 24.6% | **PASS** |
+| 9 | Squadron cohesion inside the band, share of squad-time outside dogfights and routs | >= 80% overall and in every fleet | 43.2% overall; worst Minbari 12.4% (parade 0%, dissolved 74%) | 69.1% overall; worst Minbari 24.0% (parade 0%, dissolved 67%) | **FAIL** |
+| 10 | Squadmates' motion signatures: smallest pairwise distance in any squad (feature sd units) | >= 0.25 in every squad | min 0.032, median squad min 0.363; 202 of 915 squads below | min 0.087, median squad min 0.389; 169 of 915 squads below | **FAIL** |
+| 11 | Fleet from motion alone: held-out accuracy (per-class models, ship identity hidden) | >= 3x chance and >= baseline +15 points and 1.5x baseline | 24.6% vs chance 5.6% (4.40x) | 40.2% vs chance 5.6% (7.19x); baseline 24.6% | **PASS** |
 | 12 | All existing tests plus the new motion tests (tests/tribute-new) | 0 failures | main: 293 pass, 1 skipped | 299 pass, 0 fail, 1 skipped (300, incl. tests/tribute-new/motion.test.cjs) | **PASS** |
-| 13 | Determinism: sim-bench trace recorded twice, and determinism-browser.cjs (same war however watched) | identical | trace 034d4243 | trace d2e52a09 identical twice; browser: same final hash and story events at 1x, 2x/0.5x, slow motion and 1 vs 3 forge workers | **PASS** |
-| 14 | Simulation cost at 600 a side (sim-bench, Empire v Rebels, 38-48 s, median of 3, interleaved on one machine) | within 5% of main | 5723 ms CPU per sim s | 4051 ms (29% cheaper) | **PASS** |
-| 15 | Fleet-balance winners (the nine fleet-balance pairings, 48 a side, 150 s) | unchanged or justified | see bench/motion/balance-main.json | 7 of 9 unchanged; Choir v Empire and USCM v Engineers were near-even on main (0.48/0.52, 0.52/0.48) and flip | **PASS** |
-| 16 | Story moments at BEHAVIOUR.md rates or better (story-metrics.cjs, 30 wars) | >= BEHAVIOUR.md | 60/300 a side: routs 61/312, last stands 72/76, rescues 48/29, aces 12/31 | routs 66/263, last stands 65/70, rescues 47/28, aces 10/25 (BEHAVIOUR.md, 'The motion pass') | **FAIL** |
+| 13 | Determinism: sim-bench trace recorded twice, and determinism-browser.cjs (same war however watched) | identical | trace 034d4243 | trace 28cdea4f identical twice; browser: same final hash and story events at 1x, 2x/0.5x, slow motion and 1 vs 3 forge workers | **PASS** |
+| 14 | Simulation cost at 600 a side (sim-bench, Empire v Rebels, 38-48 s, median of 3, interleaved on one machine) | within 5% of main | 5394 ms CPU per sim s (median of 3, interleaved) | 3926 ms (27% cheaper) | **PASS** |
+| 15 | Fleet-balance winners (the nine fleet-balance pairings, 48 a side, 150 s) | unchanged or justified | 5 seeds per pairing, bench/motion/balance-main-5.json | majority winner over 5 seeds unchanged in 5 of 9; 0v1 (3-2 to 2-3) and 14v15 (2-3 to 3-2) are near-even coin flips; Lattice v Drift (2-3 to 4-1) and Choir v Empire (1-4 to 5-0) shift and are not yet explained | **FAIL** |
+| 16 | Story moments at BEHAVIOUR.md rates or better (story-metrics.cjs, 30 wars) | >= BEHAVIOUR.md | 60/300 a side: routs 61/312, last stands 72/76, rescues 48/29, aces 12/31 | routs 59/260, last stands 55/61, rescues 47/29, aces 17/24 (BEHAVIOUR.md, 'The motion pass') | **FAIL** |
 
 Measured by `scripts/motion-report.cjs` over 56 runs (32 scenes and the 24-war sweep), baseline on main 7f82d45, final on this branch. Rows 12 onward are measured outside the motion report; see "How to re-run".
 <!-- /CRITERIA-TABLE -->
@@ -74,65 +74,87 @@ All measurements use the recorder in `scripts/motion-lib.cjs`. It samples every 
 <!-- SCENE-TABLE -->
 | scene | reversals /min (before → after) | gunboat + capital reversals /min | worst shuttle | frigate p95 angular jerk | cohesion in band | smallest squadmate distance |
 |---|---|---|---|---|---|---|
-| 01 Rebel frigate screen | 0.179 → 0.016 | 0.000 / 0.000 → 0.000 / 0.000 | 40% → 2% | 9.44 → 0.34 | 48% → 84% | 0.074 → 0.185 |
-| 02-00 Gunboat screen: Yard | 0.141 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 4% → 10% | 11.61 → 0.44 | 47% → 79% | 0.177 → 0.203 |
-| 02-01 Gunboat screen: Shoal | 0.197 → 0.024 | 0.000 / 0.000 → 0.000 / 0.000 | 16% → 10% | 10.59 → 0.90 | 50% → 71% | 0.247 → 0.237 |
-| 02-02 Gunboat screen: Lattice | 0.321 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 24% → 4% | 7.67 → 0.11 | 66% → 91% | 0.193 → 0.23 |
-| 02-03 Gunboat screen: Drift | 0.140 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 36% → 0% | 9.23 → 0.44 | 50% → 79% | 0.213 → 0.181 |
-| 02-04 Gunboat screen: Choir | 0.161 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 22% → 0% | 8.22 → 0.21 | 43% → 74% | 0.149 → 0.172 |
-| 02-05 Gunboat screen: Empire | 0.185 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 0% → 0% | 2.16 → 0.44 | 59% → 87% | 0.086 → 0.129 |
-| 02-06 Gunboat screen: Rebels | 0.332 → 0.000 | 0.064 / 0.000 → 0.000 / 0.000 | 32% → 0% | 8.61 → 0.39 | 50% → 74% | 0.195 → 0.184 |
-| 02-07 Gunboat screen: Minbari | 0.149 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 10% → 0% | 5.43 → 0.07 | 39% → 68% | 0.168 → 0.157 |
-| 02-09 Gunboat screen: EarthForce | 0.127 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 24% → 0% | 4.03 → 0.14 | 66% → 82% | 0.232 → 0.194 |
-| 02-10 Gunboat screen: Federation | 0.047 → 0.000 | 0.076 / 0.000 → 0.000 / 0.000 | 2% → 6% | 9.23 → 0.07 | 54% → 79% | 0.225 → 0.168 |
-| 02-11 Gunboat screen: Klingons | 0.232 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 82% → 0% | 6.10 → 0.29 | 58% → 88% | 0.098 → 0.207 |
-| 02-12 Gunboat screen: Borg | 0.259 → 0.012 | 0.000 / 0.000 → 0.000 / 0.000 | 54% → 6% | 12.45 → 1.16 | 21% → 53% | 0.294 → 0.25 |
-| 02-13 Gunboat screen: Mondoshawan | 0.265 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 70% → 0% | 5.31 → 0.20 | 49% → 69% | 0.133 → 0.166 |
-| 02-14 Gunboat screen: USCM | 0.070 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 10% → 2% | 7.85 → 0.56 | 53% → 77% | 0.213 → 0.236 |
-| 02-15 Gunboat screen: Engineers | 0.067 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 58% → 0% | 6.38 → 0.08 | 30% → 87% | 0.142 → 0.145 |
-| 02-16 Gunboat screen: Yautja | 0.333 → 0.009 | 0.000 / 0.000 → 0.000 / 0.000 | 76% → 0% | 10.12 → 0.34 | 49% → 88% | 0.147 → 0.236 |
-| 02-17 Gunboat screen: First Ones | 0.177 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 0% → 0% | 9.23 → 0.31 | 69% → 71% | 0.169 → 0.265 |
-| 02-18 Gunboat screen: Romulans | 0.021 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 0% → 0% | 1.76 → 0.15 | 64% → 74% | 0.032 → 0.23 |
-| 02-19 Gunboat screen: Dominion | 0.044 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 18% → 0% | 12.74 → 0.54 | 61% → 78% | 0.08 → 0.207 |
-| 02-20 Gunboat screen: Space Marines | 0.020 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 0% → 0% | 19.28 → 0.10 | 34% → 77% | 0.074 → 0.27 |
-| 02-21 Gunboat screen: Tyranids | 0.137 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 10% → 0% | 6.53 → 1.19 | 40% → 68% | 0.176 → 0.181 |
-| 02-22 Gunboat screen: Tesla | 0.529 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 76% → 0% | 5.96 → 0.33 | 46% → 95% | 0.174 → 0.197 |
-| 03 Imperial squadron: form, attack, re-form | 0.406 → 0.017 | 0.072 / 0.000 → 0.000 / 0.000 | 12% → 0% | 9.44 → 0.45 | 51% → 74% | 0.173 → 0.155 |
-| 04 Rebel squadron: form, attack, re-form | 0.406 → 0.017 | 0.072 / 0.000 → 0.000 / 0.000 | 12% → 0% | 9.44 → 0.45 | 51% → 74% | 0.173 → 0.155 |
-| 05 Borg cube and escorts closing | 0.391 → 0.000 | 0.041 / 0.000 → 0.000 / 0.000 | 12% → 0% | 14.96 → 0.16 | 35% → 63% | 0.189 → 0.251 |
-| 06 Capital handling: broadside pass, 180 degree turn, stop | 0.123 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 48% → 0% | 14.29 → 0.34 | 54% → 59% | 0.379 → 0.4 |
-| 07 Dogfight: Empire v Shoal | 0.186 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 28% → 4% | 14.96 → 0.84 | 72% → 86% | 0.253 → 0.244 |
-| 08 A rout and a rally | 0.080 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 8% → 0% | 11.61 → 0.25 | 38% → 60% | 0.177 → 0.119 |
-| 09 A holding line breaks under First One fire | 0.130 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 0% → 0% | 8.22 → 0.50 | 70% → 60% | 0.14 → 0.359 |
-| 10 A full war, Broadcast, 600 a side | 0.099 → 0.006 | 0.008 / 0.000 → 0.000 / 0.000 | 20% → 2% | 7.00 → 0.38 | 43% → 74% | 0.115 → 0.084 |
+| 01 Rebel frigate screen | 0.179 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 40% → 0% | 9.44 → 0.32 | 48% → 84% | 0.074 → 0.132 |
+| 02-00 Gunboat screen: Yard | 0.141 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 4% → 0% | 11.61 → 0.46 | 47% → 76% | 0.177 → 0.148 |
+| 02-01 Gunboat screen: Shoal | 0.197 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 16% → 0% | 10.59 → 0.82 | 50% → 69% | 0.247 → 0.118 |
+| 02-02 Gunboat screen: Lattice | 0.321 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 24% → 0% | 7.67 → 0.11 | 66% → 90% | 0.193 → 0.264 |
+| 02-03 Gunboat screen: Drift | 0.140 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 36% → 0% | 9.23 → 0.43 | 50% → 81% | 0.213 → 0.218 |
+| 02-04 Gunboat screen: Choir | 0.161 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 22% → 0% | 8.22 → 0.27 | 43% → 70% | 0.149 → 0.253 |
+| 02-05 Gunboat screen: Empire | 0.185 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 0% → 0% | 2.16 → 0.33 | 59% → 85% | 0.086 → 0.186 |
+| 02-06 Gunboat screen: Rebels | 0.332 → 0.000 | 0.064 / 0.000 → 0.000 / 0.000 | 32% → 0% | 8.61 → 0.43 | 50% → 72% | 0.195 → 0.167 |
+| 02-07 Gunboat screen: Minbari | 0.149 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 10% → 0% | 5.43 → 0.07 | 39% → 69% | 0.168 → 0.143 |
+| 02-09 Gunboat screen: EarthForce | 0.127 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 24% → 0% | 4.03 → 0.13 | 66% → 81% | 0.232 → 0.111 |
+| 02-10 Gunboat screen: Federation | 0.047 → 0.000 | 0.076 / 0.000 → 0.000 / 0.000 | 2% → 0% | 9.23 → 0.07 | 54% → 80% | 0.225 → 0.173 |
+| 02-11 Gunboat screen: Klingons | 0.232 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 82% → 0% | 6.10 → 0.29 | 58% → 89% | 0.098 → 0.114 |
+| 02-12 Gunboat screen: Borg | 0.259 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 54% → 0% | 12.45 → 0.70 | 21% → 53% | 0.294 → 0.251 |
+| 02-13 Gunboat screen: Mondoshawan | 0.265 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 70% → 0% | 5.31 → 0.20 | 49% → 70% | 0.133 → 0.23 |
+| 02-14 Gunboat screen: USCM | 0.070 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 10% → 0% | 7.85 → 0.53 | 53% → 82% | 0.213 → 0.236 |
+| 02-15 Gunboat screen: Engineers | 0.067 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 58% → 0% | 6.38 → 0.11 | 30% → 90% | 0.142 → 0.128 |
+| 02-16 Gunboat screen: Yautja | 0.333 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 76% → 0% | 10.12 → 0.33 | 49% → 91% | 0.147 → 0.226 |
+| 02-17 Gunboat screen: First Ones | 0.177 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 0% → 0% | 9.23 → 0.30 | 69% → 77% | 0.169 → 0.331 |
+| 02-18 Gunboat screen: Romulans | 0.021 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 0% → 0% | 1.76 → 0.15 | 64% → 76% | 0.032 → 0.152 |
+| 02-19 Gunboat screen: Dominion | 0.044 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 18% → 0% | 12.74 → 0.60 | 61% → 73% | 0.08 → 0.185 |
+| 02-20 Gunboat screen: Space Marines | 0.020 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 0% → 0% | 19.28 → 0.10 | 34% → 76% | 0.074 → 0.122 |
+| 02-21 Gunboat screen: Tyranids | 0.137 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 10% → 0% | 6.53 → 0.86 | 40% → 68% | 0.176 → 0.144 |
+| 02-22 Gunboat screen: Tesla | 0.529 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 76% → 0% | 5.96 → 0.34 | 46% → 94% | 0.174 → 0.247 |
+| 03 Imperial squadron: form, attack, re-form | 0.406 → 0.000 | 0.072 / 0.000 → 0.000 / 0.000 | 12% → 0% | 9.44 → 0.42 | 51% → 70% | 0.173 → 0.147 |
+| 04 Rebel squadron: form, attack, re-form | 0.406 → 0.000 | 0.072 / 0.000 → 0.000 / 0.000 | 12% → 0% | 9.44 → 0.42 | 51% → 70% | 0.173 → 0.147 |
+| 05 Borg cube and escorts closing | 0.391 → 0.000 | 0.041 / 0.000 → 0.000 / 0.000 | 12% → 0% | 14.96 → 0.20 | 35% → 61% | 0.189 → 0.329 |
+| 06 Capital handling: broadside pass, 180 degree turn, stop | 0.123 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 48% → 0% | 14.29 → 0.18 | 54% → 62% | 0.379 → 0.221 |
+| 07 Dogfight: Empire v Shoal | 0.186 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 28% → 0% | 14.96 → 0.88 | 72% → 85% | 0.253 → 0.2 |
+| 08 A rout and a rally | 0.080 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 8% → 0% | 11.61 → 0.37 | 38% → 58% | 0.177 → 0.151 |
+| 09 A holding line breaks under First One fire | 0.130 → 0.000 | 0.000 / 0.000 → 0.000 / 0.000 | 0% → 0% | 8.22 → 0.80 | 70% → 71% | 0.14 → 0.294 |
+| 10 A full war, Broadcast, 600 a side | 0.099 → 0.000 | 0.008 / 0.000 → 0.000 / 0.000 | 20% → 0% | 7.00 → 0.41 | 43% → 75% | 0.115 → 0.087 |
 <!-- /SCENE-TABLE -->
 
-## The three criteria that did not pass
+## The criteria that did not pass
 
-The goal was every criterion green. Three are not, and I haven't touched their definitions. This is what they measure now, and why.
+The goal was every criterion green. Two motion criteria are not (cohesion and individuality), and neither is row 16, the story rates. I haven't touched any definitions. This is what they measure now, and why.
 
-### Shuttle (17 of 6,656 ships over 5%, worst 12%)
+### Squadron cohesion (69.1% overall; worst fleet Minbari 24%)
 
-On main, 324 ships shuttled over 5% and the worst spent 88% of a window on ground it had just crossed. After this pass no gunboat or capital shuttles, and the Rebel screen (scene 02-06) flies lines and wide arcs.
+Main measured 43.2%, worst fleet 12.4%. In-band share by formation phase now: CRUISE 74%, FORM 63%, REFORM 30%, BREAK 27%. By fleet in the sweep: Klingons 90%, Engineers and Yautja 87%, USCM 83%. Every other fleet is between 46% and 75%, except Borg (37%) and Minbari (20%).
 
-The 17 ships left are all small craft: 7 fighters in attack or flank runs, 4 retreating, 3 routing, 2 escorting, and one capital on a HOLD. The attack cases are gun passes. A fighter runs through its mark, breaks away 66 to 80 degrees, comes round and runs through the mark again, and the second run crosses the first within 20 m at more than 120 degrees. The criterion excludes nothing but contact, so a dogfight counts.
-
-I tried a wider break (over 1.15 rad) with a longer extension. It left 1 to 2 shuttlers in the test wars, but fighters took a third longer between runs and small-craft kills fell by a quarter, which fed the story regression (BEHAVIOUR.md). The break now is the compromise. What would fix it: a proper re-attack geometry that comes back on an offset line (a "lag" re-entry) instead of through the same point.
-
-### Squadron cohesion (70.0% overall; worst fleet Minbari 24%)
-
-Main measured 43.2%, worst fleet 12.4%. In-band share by formation phase now: CRUISE 74%, FORM 63%, REFORM 34%, BREAK 26%.
-
-- **Some squadrons have no band to be in.** The floor is 1.5 mean hull lengths and the ceiling is 700 m, so a squadron whose hulls average over 467 m is out of band whatever it does. The Minbari field crowns of 526–636 m in squadrons with a single frigate. Those squadrons are 12% of Minbari squad-time, and they are either stacked on each other or dissolved. I won't stack capitals to pass a number.
+- **Some squadrons have no band to be in.** The floor is 1.5 mean hull lengths and the ceiling is 700 m, so a squadron whose hulls average over 467 m is out of band whatever it does. In the final sweep that is 15% of Minbari squad-time (squadrons of four capitals of 300–636 m). Another 31% is in squadrons whose band is under 200 m wide (mean hull 333–466 m). With 15% out of reach, the Minbari can reach 85% only if every other squadron is in band every second. I won't stack capitals to pass a number.
+- **Frigate squadrons in cruise are the biggest single loss:** 7.6% of all sweep squad-time is out of band in all-frigate squadrons (55% in band), and another 3.6% in mixed squadrons led by frigates. Frigates fly a line-ahead column with slots 360–570 m apart. They arrive by jump in a clump, top out at 11–17 m/s, and a hull of 80 m or more never slows below four-fifths of the formation's pace (so it can't pivot on the spot). So the tail of a four-ship column takes minutes to drop 1.3 km back to its slot. Meanwhile the clump is under the 1.5-hull-length floor, or its speeds spread over the 0.35 limit.
+  - I tried letting a big hull that is well ahead of its slot, and on its line, slow to 45% of the pace.
+  - Separately, I tried dealing slots by where the pilots are (nearest pilot to each slot, front to back) instead of roster order.
+  - Neither moved cohesion on four test wars (49.7% → 49.8%), so neither is in.
 - **Breaking and re-forming.** A squadron in a furball is exempt only while half or more of it is dogfighting. The seconds either side of that, when some pilots are on their passes and some are coming back, are counted, and they are mostly out of band on heading.
 - **The story trade.** Holding wingmen in formation until they were inside 0.5–0.85 km of their marks put cohesion at 72.6% in the fleet sweep, but fixed-gun wingmen can't aim from a slot. Kills, routs and last stands fell 15–30%. Wingmen now leave their slot when their mark is within gun-pass range, which bought the story back and costs about 3 points of cohesion.
-- **Speed spread in cruise** (`CRUISE.cvHigh`): fleets whose squadrons mix hulls with very different top speeds (Borg, Shadows, Romulans) run a coefficient of variation over 0.35 while stragglers catch up.
+- **Speed spread in cruise** (`CRUISE.cvHigh`): fleets whose squadrons mix hulls with very different top speeds (Borg, Shadows, Romulans) run a coefficient of variation over 0.35 while stragglers catch up. Squadrons led by a capital with small craft in them are in band 4% of their cruise time.
 
-### Individuality (159 of 915 squadrons below 0.25; median squadron minimum 0.38)
+### Individuality (169 of 915 squadrons below 0.25; median squadron minimum 0.39)
 
 Main had 202 of 915 below and a median of 0.36.
 
-The criterion is the smallest distance between any two squadmates. A squadron of 8 has 28 pairs, so it fails if any one pair is close. Failures by squadron size: 2 to 3 ships, 2 of 60 (3%); 4 to 5, 25 of 345 (7%); 6 or more, 132 of 510 (26%). Pilots' hands are dealt from a golden-ratio sequence on the ship id, so their weave, rhythm and bank differ by design. In formation, though, eight pilots fly one track, and the flight itself pulls their signatures together. Widening the per-pilot spread further cost the fleet classifier 5 points (fleets blur into each other) and didn't move this number.
+The criterion is the smallest distance between any two squadmates. A squadron of 8 has 28 pairs, so it fails if any one pair is close. Failures by squadron size: 2 to 3 ships, 1 of 60; 4 to 5, 22 of 345 (6%); 6 or more, 146 of 510 (29%).
+
+Pilots' hands are dealt from a golden-ratio sequence on the ship id, so their weave, rhythm and now bank differ by design. Spreading the bank the same way cut failures on six test wars from 22 to 15 of 83. In formation, though, eight pilots fly one track, and the flight itself pulls their signatures together.
+
+Widening the weave and throttle-rhythm spreads as well made no further difference (15 of 83). An earlier, wider spread cost the fleet classifier 5 points (fleets blur into each other). The classifier is now at 40.2% against a 39.6% floor, so there is no room to widen further.
+
+### Fleet balance (row 15)
+
+With one seed per pairing, 4 of the 9 fleet-balance pairings kept main's leader. A single 48-a-side war is close to a coin flip when the fleets are even, so I ran five seeds per pairing on main and on this build (`node scripts/motion-balance.cjs --seeds 5`; `bench/motion/balance-main-5.json` and `balance-after-5.json`). Wins for the first fleet, main → motion:
+
+| pairing | main | motion |
+|---|---|---|
+| Yard v Shoal | 3-2 | 2-3 |
+| Lattice v Drift | 2-3 | 4-1 |
+| Choir v Empire | 1-4 | 5-0 |
+| Rebels v Minbari | 1-4 | 1-4 |
+| Shadows v EarthForce | 5-0 | 4-1 |
+| Federation v Klingons | 4-1 | 3-2 |
+| Borg v Mondoshawan | 5-0 | 3-2 |
+| USCM v Engineers | 2-3 | 3-2 |
+| Yautja v First Ones | 0-5 | 0-5 |
+
+Yard v Shoal and USCM v Engineers were 3-2 and 2-3 on main and are 2-3 and 3-2 now: coin flips either way. Lattice v Drift and Choir v Empire are real shifts. Choir v Empire went from Empire winning four in five to the Choir winning all five. I haven't found the mechanism, so I'm not calling them justified. Borg v Mondoshawan narrows from 5-0 to 3-2 but keeps its winner.
+
+### Story rates (row 16)
+
+See BEHAVIOUR.md, "The motion pass". Fewer ships die in the 120 s window, mostly because fewer fly into each other. Routs, rallies and last stands are driven by losses, so at 300 a side they fall below BEHAVIOUR.md's rates.
 
 ## The final question
 
@@ -182,6 +204,15 @@ What I tried, in order, and what the numbers said. Rejected approaches stay here
 18. **Rejected: a throttle rhythm that only subtracts.** It cost 10–15% of speed on average. Centred on the demand, it clipped against full burn instead (the same speed-hold plateau), so the demand is held under 0.88 of full burn before the rhythm is applied.
 19. **The muster keeps jump lanes clear** (the Dominion arrival test). Laying a squadron out in formation put wingmen on their leader's jump lane; blocked wingmen stayed scattered, which cost 10 points of cohesion. They are now stepped up or down the stack until their lane is clear.
 20. **Rank-spread handling rows** took the fleet classifier from 34–35% to 40–42%. Each widening of the spread was checked against jerk (fighters p95 7.0 against 11.9 on main).
+21. **A pilot's own wake.** Most shuttling left after item 20 was gun passes coming back through the first pass (the report had 17 ships over 5%, worst 12%). Every pilot now keeps 10 s of its own track (a point every 0.2 s with its direction). If the next 0.5 to 2.5 s, flown along the arc it is turning on, would bring it within 1.8 tolerances of an old point, flying the other way, it passes that point 2.5 tolerances over or under. It passes on the side it would cross at, and holds that side while the rule is active. When the old track was steeper than 45°, it passes to the side instead. A traffic lane that would take it back through the wake gives way to the wake.
+    - **Rejected: steering to a point beside the old track.** It pulled pilots across their own line and made things worse.
+    - **Rejected: choosing over or under from the current climb rate.** It went straight through the track.
+    - **Rejected: letting the rule re-pick its side on every trigger.** A fighter circling in a dogfight flipped between over and under and cleared neither.
+22. **Rocks.** A ship brushing a rock was braked hard and could sit pinned against it (one hull 70 s at 2.6 m/s, all of it shuttle and spin). Hulls under 80 m now skid along the surface. Mid-size hulls slide at 0.92 of their speed. A pinned hull claws off along the tangent at up to 0.085 rad/s, under the spin threshold and inside the commitment rule. Wingmen's slots route round rocks.
+23. **The commitment rule held too briefly.** It limited a pilot to 75° past any heading it had swung 100° away from, but it measured the swing from the current heading. A pilot easing back under 100° lost the limit and could finish the S-turn (the Tesla hero, 0.24 reversals a minute). The limit now holds until the heading it came from is 7 s old.
+24. **Furball pirouettes.** A fighter slowed to 40 m/s in a knife fight circled on an 18 m radius, so every half-turn crossed its own path (8% shuttle). Small craft now circle no tighter than 30 m. That limit only binds at a crawl, because at combat speed it is above their turn rate. With 21 to 24, shuttle went from 17 ships over 5% to none (worst 4%).
+25. **Bank per pilot** is dealt from the golden-ratio sequence like weave and rhythm (±0.25 about the fleet's row). Individuality went from 180 to 169 of 915 squadrons below 0.25. The classifier went from 41.9% to 40.2%, still over its 39.6% floor.
+26. **Rejected for cohesion: slots dealt by position, and a lower speed floor for big hulls ahead of their slot.** Neither moved cohesion (see above).
 
 ## How to re-run
 
@@ -193,7 +224,7 @@ node scripts/motion-capture-all.cjs --label after
 node scripts/motion-watch.cjs                         # design/tribute-new/review/motion/index.html
 node scripts/motion-doc.cjs                           # the tables in this file, from bench/motion/*/summary.json and checks.json
 node scripts/sim-bench.cjs --size 600 --matchup 5,6 --seed 1234 --from 38 --to 48   # cost (three runs, median)
-node scripts/motion-balance.cjs --out bench/motion/balance-after.json            # fleet-balance winners (add --root for main)
+node scripts/motion-balance.cjs --seeds 5 --out bench/motion/balance-after-5.json   # fleet-balance winners over 5 seeds (add --root ../orbital-yard-main for main)
 node scripts/story-metrics.cjs --label after --out bench/motion/story/full-after.json
 NODE_PATH=/opt/node22/lib/node_modules node scripts/determinism-browser.cjs
 ```
