@@ -409,7 +409,7 @@
         if(kind==='BERSERK'&&c){const n=distance(s,c)||1;goal=[c.x+(s.x-c.x)/n*60,c.y,c.z+(s.z-c.z)/n*60];boost=1.35;}
         // A squadron keeps its shape on a posture order: the leader takes the point, the wingmen their slots.
         let slot=null;
-        if(goal&&!capital&&FORMATION_ORDERS.has(kind)&&this.formed(s,now)){slot=this.slotFor(s,sq,now);if(slot)goal=slot.goal;}
+        if(goal&&(!capital||sq)&&FORMATION_ORDERS.has(kind)&&this.formed(s,now)){slot=this.slotFor(s,sq,now);if(slot)goal=slot.goal;}
         if(goal){a.plan={goal:slot?goal:this.avoidField(s,goal),boost,mode,target:a.target,reason:a.reason,slot,orbit:slot?null:orbit,station:!slot&&kind!=='ROUT'&&kind!=='PANIC'&&kind!=='RAM'&&kind!=='STRIKE'&&kind!=='BERSERK'};return a.plan;}
       }
       if(warning){
@@ -425,7 +425,7 @@
       }else if(mode==='RETREAT'||mode==='REGROUP'||mode==='ESCORT'){
         const friend=mode==='ESCORT'&&a.weak?a.weak:a.friends.find(f=>f.hulls)||a.friends[0];a.anchor=friend?friend.id:-1;
         // Terrain is cover: a pilot falling back puts a rock or the moon between itself and them.
-        const cover=mode!=='ESCORT'&&!capital&&st?this.coverFor(s,c):null;
+        const cover=mode!=='ESCORT'&&!capital&&st&&!this.formed(s,now)?this.coverFor(s,c):null;
         if(cover){goal=cover;a.anchor=-2;boost=mode==='RETREAT'?1.2:.95;a.plan={goal:this.avoidField(s,goal),boost,mode,target:a.target,reason:a.reason='Falling back behind cover'};return a.plan;}
         if(friend){
           const theta=(s.seed%628)/100+now*(capital?.022:.085)*a.orbit;
@@ -477,7 +477,8 @@
       // intent, until contact breaks it. A pilot with its own emergency, or one whose nature is to
       // break off for a friend, is free.
       let slot=null;
-      if(!capital&&!warning&&!a.response&&this.formed(s,now)&&!(s.vendetta)&&!(mode==='ESCORT'&&a.weak&&this.hand(s).breakaway>.55)&&mode!=='EVADE'){
+      if((!capital||sq)&&!warning&&!a.response&&this.formed(s,now)&&!(s.vendetta)&&!(a.order&&now<a.order.until&&SOLO_ORDERS.has(a.order.kind))&&!(mode==='ESCORT'&&a.weak&&this.hand(s).breakaway>.55)&&mode!=='EVADE'
+        &&!(mode==='RETREAT'&&(s.hp/Math.max(1,s.hpMax)<.45||a.fear>.7))){
         slot=this.slotFor(s,sq,now);if(slot){goal=slot.goal;boost=1;orbit=null;}
       }
       // Command holds a squadron together; without it they spread.
@@ -503,11 +504,10 @@
       // Formation keeping: fly the slot's own velocity (the leader's, plus the formation's turn
       // carrying the slot round its arc), corrected by the pilot toward the slot. The correction
       // along the heading is floored, so a wingman ahead of its slot eases off; it never turns round.
-      const lv=lead.v||0,lx=Math.cos(lead.yaw)*lv,lz=Math.sin(lead.yaw)*lv,w=fm.rate||0;
-      const svx=lx-w*(p[2]-lead.z),svz=lz+w*(p[0]-lead.x),sv=Math.hypot(svx,svz);
-      const fx=sv>2?svx/sv:Math.cos(fm.hdg),fz=sv>2?svz/sv:Math.sin(fm.hdg);
+      // The slot moves along the leader's track at the leader's pace.
+      const sv=lead.v||0,fx=p0[4],fz=p0[5],svx=fx*sv,svz=fz*sv;
       const rx=p[0]-s.x,rz=p[2]-s.z,along=rx*fx+rz*fz,side=-rx*fz+rz*fx,off=Math.hypot(rx,rz);
-      const k=.25+.35*h.reform,spd=s.spd||20,top=s.spdMax||spd*1.3;
+      const k=(.12+.18*h.reform)*(off>p[3]*1.5?1.6:1),spd=s.spd||20,top=s.spdMax||spd*1.3;
       // Far from the slot: fly an intercept on where it will be, at full pace, and ignore its turns.
       // Close: match its velocity. Hysteresis between the two, so the choice does not flicker.
       const farOn=p[3]*3,farOff=p[3]*1.8;
@@ -522,8 +522,13 @@
       }
       // Easing off to let the slot come back is for small corrections; a real rejoin is flown at pace, as an arc.
       const floor=off<p[3]*1.2?Math.max(spd*.35,sv*.55):Math.max(spd*.6,sv*.7);
-      const va=clamp(sv+along*k,floor,top),vl=clamp(side*k,-top*.6,top*.6);
-      const reach=Math.max(60,(s.slen||20)*2,va*1.2),ang=Math.atan2(vl,va);
+      // Sideways correction scales with forward pace: at a crawl a small error must not swing the nose.
+      // Near the slot a pilot closes gently: never more than 30% off the formation's pace.
+      const corr=off<p[3]*2?clamp(along*k,-.3*Math.max(sv,spd*.5),.3*Math.max(sv,spd*.5)):along*k;
+      const va=clamp(sv+corr,floor,top),lmax=va*(off<p[3]*1.2?.35:.7),vl=clamp(side*k,-lmax,lmax);
+      // Each pilot's own slow wander on the line: a squadron never flies as one autopilot.
+      const wander=(.044+.061*(1-this.hand(lead).tight))*Math.sin(now*(.4+.5*h.breath)+h.ph[4]);
+      const reach=Math.max(60,(s.slen||20)*2,va*1.2),ang=Math.atan2(vl,va)+wander;
       const gx=Math.cos(ang)*fx-Math.sin(ang)*fz,gz=Math.sin(ang)*fx+Math.cos(ang)*fz;
       return {goal:[s.x+gx*reach,p[1],s.z+gz*reach],point:p,along,off,want:Math.min(top,Math.hypot(va,vl)),spacing:p[3],reform:h.reform};
     }
@@ -571,12 +576,15 @@
       let velocity=clamp(s.spd*p.boost,s.spd*.65,dash);
       // The muster parks a 19 km ship well behind its screen. A sustained transit burn
       // gets it into the fight; it builds over the spool like any burn, and sheds on contact.
-      const transit=p.mode==='SEARCH'&&dist>1600;
+      const transit=p.mode==='SEARCH'&&dist>1600&&!p.slot;
       const transitV=Math.min(180,s.spd*(2.4+a.budget[2]/40));
       if(transit){velocity=transitV;a.reason='Transit burn. Closing to sensor contact';}
       // An emergency burn: a doomed hull spends everything it has left on the ram.
       if(p.mode==='RAM'&&s.v!==0){velocity=Math.max(dash*1.25,Math.min(90,Math.max(40,(s.slen||300)*.06)));}
       if(p.mode==='DRIFT')velocity=0;
+      // A cruiser in a squadron holds its station: the slot's pace, inside its own engines.
+      if(p.slot)velocity=clamp(p.slot.want,s.spd*.35,dash);
+      velocity=Math.min(velocity,this.leadCap(s,now));
       if(debris){velocity*=s.debrisBrake;a.reason="Avoiding debris corridor";}
       velocity*=s.avBrake??1;
       if(now<(s.trafficBrakeUntil||0))velocity*=.65;
@@ -1296,6 +1304,7 @@
     dive:{r:1,extend:1.25,climb:.6},stalk:{r:.9,extend:1.1,climb:0},swarm:{r:1.05,extend:1,climb:.2}};
   // Slot offsets in units of spacing: x forward, y up, z right. i is the wingman's rank (0 first).
   function slotOffset(shape,i,n){
+    if(shape==='column'){const sd=i&1?1:-1;return [-(i+1),.08*sd,.14*sd];}
     if(shape==='wedge'){const r=(i>>1)+1,sd=i&1?1:-1;return [-r*.9,.14*r*sd,sd*r*.95];}
     if(shape==='line abreast'){const r=(i>>1)+1,sd=i&1?1:-1;return [-.16*r,.12*sd*r,sd*r*1.25];}
     if(shape==='swarm'){const a=i*2.399+.7,rr=.9+.5*Math.sqrt(i+1);return [-.45-rr*.75*Math.abs(Math.cos(a)),Math.sin(a*1.7)*.85,Math.sin(a)*rr*1.1];}
@@ -1305,8 +1314,10 @@
     const off=j===0?[0,0,0]:j===1?[-.8,.12,-1.0]:j===2?[-.8,-.12,1.0]:[-1.6,.22,2.0];
     return [base[0]+off[0],base[1]+off[1],base[2]+off[2]];
   }
-  const EMERGENCY_ORDERS=new Set(['ROUT','PANIC','BERSERK','RAM','TOW','RECOVER','STRIKE','DRIFT','CONVOY']);
-  const FORMATION_ORDERS=new Set(['HOLD','HIDE','MANEUVER','GUARD','RESCUE']);
+  // Orders a pilot carries out alone: they free that pilot from the formation, not the squadron.
+  const SOLO_ORDERS=new Set(['ROUT','PANIC','BERSERK','RAM','TOW','RECOVER','DRIFT','CONVOY']);
+  // Orders a squadron carries out together: the leader flies the order, the wingmen hold their slots.
+  const FORMATION_ORDERS=new Set(['HOLD','HIDE','MANEUVER','GUARD','RESCUE','STRIKE']);
   Object.assign(FleetMinds.prototype,{
     // A pilot's own hands: drawn once from a stream seeded by the hull, never shared.
     hand(s){
@@ -1342,49 +1353,79 @@
         const members=[];for(const id of sq.mem){const m=this.byId.get(id);if(m&&alive(m)&&m.arr)members.push(m);}
         const fm=sq.fm||(sq.fm={phase:'FORM',since:now,calm:now,lead:-1,hdg:null});
         if(!members.length){fm.lead=-1;continue;}
-        if(fm.lead<0||!members.some(m=>m.id===fm.lead)){fm.lead=members[0].id;if(fm.phase==='CRUISE')fm.phase='FORM',fm.since=now;}
+        // The leader is the first member not busy with an order of their own.
+        const busy=m=>m.ai&&m.ai.order&&now<m.ai.order.until&&SOLO_ORDERS.has(m.ai.order.kind);
+        const cur=members.find(m=>m.id===fm.lead);
+        if(!cur||busy(cur)){const next=members.find(m=>!busy(m))||members[0];if(next.id!==fm.lead){fm.lead=next.id;fm.trail=null;if(fm.phase==='CRUISE')fm.phase='FORM',fm.since=now;}}
         const lead=this.byId.get(fm.lead),h=this.hand(lead);
-        // How fast the whole formation may turn: its outer slots must never need more than
-        // 40% of the slowest wingman's cruise to swing round the arc.
-        {let slow=Infinity,L=0;for(const m of members){slow=Math.min(slow,m.spd||20);L=Math.max(L,m.slen||20);}
-         const span=Math.max(42,L*3)*(1+.5*members.length)*.5;fm.turnCap=clamp(.4*slow/Math.max(60,span),.05,.35);}
-        const big=members.some(m=>m.gunboat);
-        let engaged=false,routing=sq.state==='routing';
-        for(const m of members){
-          const a=m.ai;if(!a)continue;
-          if(now-(m.hurtT||-99)<2){engaged=true;break;}
-          const c=a.contacts.get(a.target);
-          if(c&&now-c.seen<2&&surface(m,c)<(big?1500:1000)*GEOMETRY[h.geometry].r){engaged=true;break;}
-          if(a.order&&now<a.order.until&&EMERGENCY_ORDERS.has(a.order.kind)&&a.order.kind!=='CONVOY'){engaged=true;break;}
+        // Shape and spacing: frigates fly a line-ahead column (they commit to a line and hold it);
+        // everyone else flies their fleet's shape. Ranks follow the squadron's own order.
+        // Spacing comes from the typical hull, not the biggest: a hero leading fighters must not spread them a kilometre apart.
+        let slow=Infinity;for(const m of members)slow=Math.min(slow,m.spd||20);
+        const lens=members.map(m=>m.slen||20).sort((x,y)=>x-y),L=lens[lens.length>>1];
+        fm.shape=lead.gunboat?'column':h.shape;
+        // Spacing by hull: fighters a few lengths apart, frigates in column, cruisers about a length and a half.
+        fm.d=fm.shape==='column'?Math.max(40,L*1.8)*(1.3-.5*h.tight):capital(lead)?L*1.5*(1.3-.5*h.tight):Math.max(42,L*3)*(1.55-.75*h.tight);
+        fm.rank=new Map();let n=0;for(const m of members)if(m.id!==fm.lead)fm.rank.set(m.id,n++);fm.n=n;
+        let lat=0,back=0;for(let i=0;i<n;i++){const o=slotOffset(fm.shape,i,n);lat=Math.max(lat,Math.abs(o[2])*fm.d);back=Math.max(back,-o[0]*fm.d);}
+        fm.back=back;
+        // How fast the formation may turn: the outside lane never needs more than 35% more speed.
+        fm.turnCap=clamp(.35*slow*.9/Math.max(40,lat),.05,.35);
+        // Only a fight at close quarters breaks a formation (or a rout): about half the squadron within
+        // fighting range of its targets (the leader counts one and a half). Frigates fight as a line and do not break at all. A formation under long-range
+        // fire keeps its shape; the pilot who is hit evades on their own and comes back.
+        const routing=sq.state==='routing';let engaged=false;
+        if(!lead.gunboat){
+          const r=1000*GEOMETRY[h.geometry].r;let k=0;
+          for(const m of members){const a=m.ai;if(!a)continue;const c=a.contacts.get(a.target);if(c&&now-c.seen<2&&surface(m,c)<r)k+=m===lead?1.5:1;}
+          engaged=k>=Math.max(1,members.length/2);
         }
         if(routing||engaged){if(fm.phase!=='BREAK'){fm.phase='BREAK';fm.since=now;}fm.calm=now;continue;}
-        if(fm.phase==='BREAK'&&now-fm.calm>2+7*(1-h.reform)){fm.phase='REFORM';fm.since=now;}
+        if(fm.phase==='BREAK'&&now-fm.calm>1.5+4*(1-h.reform)){fm.phase='REFORM';fm.since=now;}
         if(fm.phase==='FORM'||fm.phase==='REFORM'){
-          let near=0,n=0;for(const m of members){if(m.id===fm.lead)continue;n++;const p=this.slotPoint(m,sq,now);if(p&&length(p[0]-m.x,p[1]-m.y,p[2]-m.z)<p[3]*1.2)near++;}
-          if(!n||near>=Math.ceil(n*.75)||now-fm.since>30){fm.phase='CRUISE';fm.since=now;}
+          let near=0;for(const m of members){if(m.id===fm.lead)continue;const p=this.slotPoint(m,sq,now);if(p&&length(p[0]-m.x,p[1]-m.y,p[2]-m.z)<p[3]*1.2)near++;}
+          if(n&&(near>=Math.ceil(n*.75)||now-fm.since>30)){fm.phase='CRUISE';fm.since=now;}
         }
       }
     },
     formed(s,now){
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
-      return !!(fm&&fm.phase!=='BREAK'&&fm.lead>=0&&fm.lead!==s.id&&this.byId.get(fm.lead)&&alive(this.byId.get(fm.lead)));
+      return !!(fm&&fm.phase!=='BREAK'&&fm.d&&fm.lead>=0&&fm.lead!==s.id&&fm.rank&&fm.rank.has(s.id)&&this.byId.get(fm.lead)&&alive(this.byId.get(fm.lead)));
     },
-    // The world position of a wingman's slot, with its spacing in [3].
+    // The leader's recent track, kept as breadcrumbs: slots are laid along it, not on a rigid plank.
+    trail(fm,lead,now){
+      if(fm.trailAt===now)return fm.trail;fm.trailAt=now;
+      let T=fm.trail;const last=T&&T[T.length-1];
+      if(!T||fm.trailLead!==lead.id){fm.trail=T=[[lead.x,lead.y,lead.z,0]];fm.trailLead=lead.id;return T;}
+      const dd=length(lead.x-last[0],lead.y-last[1],lead.z-last[2]);
+      if(dd>=4)T.push([lead.x,lead.y,lead.z,last[3]+dd]);
+      const top=T[T.length-1][3],keep=(fm.back||0)+240;
+      while(T.length>2&&top-T[1][3]>keep)T.shift();
+      return T;
+    },
+    /* A wingman's slot: [x, y, z, spacing, tangent x, tangent z]. It sits on the leader's own track,
+       set back by the slot's depth, and out to the side of the track's direction there, so in a turn
+       the squadron flows round the curve like lanes on a road. With no track yet (just formed), it
+       hangs off the leader's heading. */
     slotPoint(s,sq,now){
-      const fm=sq.fm,lead=this.byId.get(fm.lead);if(!lead||!alive(lead))return null;
-      const h=this.hand(s),lh=this.hand(lead);
-      let i=0,n=0,Lmax=0;
-      for(const id of sq.mem){const m=this.byId.get(id);if(!m||!alive(m)||!m.arr)continue;Lmax=Math.max(Lmax,m.slen||20);if(id===fm.lead)continue;if(id===s.id)i=n;n++;}
-      const d=Math.max(42,Lmax*3)*(1.55-.75*lh.tight)*(1.08-.16*h.tight);
-      // The squadron's heading follows the leader's, but a turn is flown, not snapped.
+      const fm=sq.fm,lead=this.byId.get(fm.lead);if(!lead||!alive(lead)||!fm.d||!fm.rank||!fm.rank.has(s.id))return null;
+      const h=this.hand(s),lh=this.hand(lead),d=fm.d*(1.08-.16*h.tight);
       if(fm.hdg==null)fm.hdg=lead.yaw;
-      if(fm.hdgAt!==now){const dt=clamp(now-(fm.hdgAt??now),0,.1),cap=fm.turnCap||.35,turn=clamp(angle(lead.yaw-fm.hdg),-cap*dt,cap*dt);fm.hdg+=turn;fm.rate=dt>0?turn/dt:0;fm.hdgAt=now;}
-      const o=slotOffset(lh.shape,i,n),loose=1.25-lh.tight;
+      if(fm.hdgAt!==now){const dt=clamp(now-(fm.hdgAt??now),0,.1),cap=fm.turnCap||.35,turn=clamp(angle(lead.yaw-fm.hdg),-cap*dt,cap*dt);fm.hdg+=turn;fm.hdgAt=now;}
+      const o=slotOffset(fm.shape,fm.rank.get(s.id),fm.n),loose=1.25-lh.tight;
       // A living slot: each pilot's own offset, breathing slowly.
-      const b=Math.sin(now*(.21+.1*h.breath)+h.ph[3])*h.breath*loose;
-      const x=(o[0]+h.slot[0]*.22*loose+b)*d,y=(o[1]+h.slot[1]*.16)*d,z=(o[2]+h.slot[2]*.22*loose-b*.5)*d;
-      const c=Math.cos(fm.hdg),sn=Math.sin(fm.hdg);
-      return [lead.x+c*x-sn*z,lead.y+y,lead.z+sn*x+c*z,d];
+      const br=Math.sin(now*(.21+.1*h.breath)+h.ph[3])*h.breath*loose;
+      const back=Math.max(0,(-o[0]+h.slot[0]*.18*loose+br)*d),up=(o[1]+h.slot[1]*.16)*d,side=(o[2]+h.slot[2]*.22*loose-br*.5)*d;
+      const T=this.trail(fm,lead,now),last=T[T.length-1];
+      const head=length(lead.x-last[0],lead.y-last[1],lead.z-last[2]),want=last[3]+head-back;
+      let px,py,pz,tx,tz;
+      if(want>=T[0][3]&&T.length>1){
+        let j=T.length-1;
+        if(want>=last[3]){const u=head>1e-6?(want-last[3])/head:0;px=last[0]+(lead.x-last[0])*u;py=last[1]+(lead.y-last[1])*u;pz=last[2]+(lead.z-last[2])*u;tx=lead.x-last[0];tz=lead.z-last[2];}
+        else{while(j>0&&T[j-1][3]>want)j--;const A=T[Math.max(0,j-1)],B=T[j],span=Math.max(1e-6,B[3]-A[3]),u=clamp((want-A[3])/span);px=A[0]+(B[0]-A[0])*u;py=A[1]+(B[1]-A[1])*u;pz=A[2]+(B[2]-A[2])*u;tx=B[0]-A[0];tz=B[2]-A[2];}
+        const tn=Math.hypot(tx,tz);if(tn<1e-6){tx=Math.cos(fm.hdg);tz=Math.sin(fm.hdg);}else{tx/=tn;tz/=tn;}
+      }else{tx=Math.cos(fm.hdg);tz=Math.sin(fm.hdg);px=lead.x-tx*back;py=lead.y;pz=lead.z-tz*back;}
+      return [px-tz*side,py+up,pz+tx*side,d,tx,tz];
     },
     /* ----- the helm: pilot filter and physics limits ----- */
     // Reaction delay: the stick sees the demanded point late, by the pilot's own delay. Only ever
@@ -1454,11 +1495,11 @@
        limits, plus the pilot's weave. o.max is the rate the hull allows now. */
     helmTurn(s,err,dt,now,o){
       const h=this.hand(s),L=s.slen||20,w=this.turnLimit(s);
-      const tau=(.16+.5*h.smooth)*(1+Math.min(2.2,L/200))*(o.formed?1.1:1)*(o.lining?.7:1);
+      const tau=(.32+.5*h.smooth)*(1+Math.min(2.2,L/200))*(o.formed?1.1:1)*(o.lining?.75:1);
       const zeta=1.05-.5*h.overshoot,kp=1/(4*zeta*zeta*tau);
       let mx=Math.min(o.max,w*(o.boost||1));
       // A formation leader turns the squadron as one wide arc.
-      if(!o.capital){const lf=this.leadsFormation(s);if(lf)mx=Math.min(mx,lf.turnCap);}
+      {const lf=this.leadsFormation(s);if(lf)mx=Math.min(mx,lf.turnCap);}
       if(L>=80){const vf=Math.abs(s.v||0)/Math.max(1,s.spdMax||s.spd||20);if(vf<.2)mx=Math.min(mx,Math.max(.02,.08*vf/.2));}
       let cmd=clamp(err*kp,-mx,mx);
       if(!o.clean){
@@ -1466,7 +1507,7 @@
         cmd+=k*(Math.sin(now*h.weaveHz*6.283+h.ph[0])+.4*Math.sin(now*h.weaveHz*14.4+h.ph[1]));
       }
       if(o.jink)cmd+=o.jink;
-      const amax=Math.max(.02,w)/(tau*.9),jmax=amax/(tau*.45);
+      const amax=Math.max(.02,w)/(tau*1.1),jmax=amax/(tau*1.4);
       const want=clamp((cmd-(s.yawV||0))/tau,-amax,amax);
       s.yawA=(s.yawA||0)+clamp(want-(s.yawA||0),-jmax*dt,jmax*dt);
       s.yawV=clamp((s.yawV||0)+s.yawA*dt,-Math.max(mx,Math.abs(cmd))*1.05,Math.max(mx,Math.abs(cmd))*1.05);
@@ -1478,7 +1519,7 @@
       const h=this.hand(s),L=s.slen||20,w=this.turnLimit(s);
       const size=L>=80?.45:1;
       const target=clamp(-h.bank*.8*size*(s.yawV||0)/Math.max(.15,w)+(o.extra||0),-.95,.95);
-      const wn=(L>=80?.55:1)/(.12+.32*h.smooth);
+      const wn=(L>=80?.55:1)/(.26+.4*h.smooth);
       s.rollV=(s.rollV||0)+(wn*wn*(target-(s.roll||0))-2*wn*(s.rollV||0))*dt;
       s.roll=(s.roll||0)+s.rollV*dt;
     },
@@ -1512,14 +1553,14 @@
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return null;
       let n=0,L=0;for(const id of sq.mem){const m=this.byId.get(id);if(m&&alive(m)&&m.arr){n++;L=Math.max(L,m.slen||20);}}
-      return n>1?{n,span:Math.max(42,L*3)*(1+.5*n),turnCap:fm.turnCap||.35}:null;
+      return n>1?{n,span:Math.max(42,L*3)*(1+.5*n),turnCap:fm.turnCap||.35,lat:(fm.turnCap?.35*20/fm.turnCap:0)}:null;
     },
     // A formation leader flies slow enough for the slowest wingman to hold station.
     leadCap(s,now){
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return Infinity;
       let slow=Infinity;for(const id of sq.mem){if(id===s.id)continue;const m=this.byId.get(id);if(m&&alive(m)&&m.arr)slow=Math.min(slow,m.spd||20);}
-      return slow===Infinity?Infinity:slow*(fm.phase==='CRUISE'?.9:.72);
+      return slow===Infinity?Infinity:slow*(fm.phase==='CRUISE'?.9:.55);
     },
     // How long a fixed-gun pilot extends past the target after a pass, by attack geometry.
     extendK(s){return (GEOMETRY[this.hand(s).geometry]||GEOMETRY.slash).extend;},

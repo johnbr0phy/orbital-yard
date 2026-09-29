@@ -47,3 +47,19 @@ All measurements use the recorder in `scripts/motion-lib.cjs`. It samples every 
   9. an Imperial holding line under First One fire (PR #10's scenario);
   10. a full 90 s war at 600 a side.
 - **Sweep.** Every fleet in a measured 150 s war at 48 a side, twice (two seeds). That's 12 pairings: (0,1), (2,3) … (20,21) and (22,0). `fleet-balance.cjs` runs 9.
+
+## Why the Rebel frigates shuttled: the cause, with evidence
+
+The brief listed five suspects. I measured before changing anything. `bench/motion/evidence/donkey-baseline-02-06.png` is the clearest case: two Rebel corvettes in the baseline's scene 02-06, which is the Rebels' gunboat screen.
+
+- **The cause: a fixed point, and no way to arrive at it.** The story's plan posture gives every pilot a HOLD point, and ambushes give HIDE points: the plan's point plus the pilot's own lane, spread up to 420 m. Neither the page nor the minds had any way to *arrive* at a point. A ship steered straight at it, and within 26 m the page cut its speed to 78% for gunboats and 20–32% for others. Near the point the ship overshoots, turns round, overshoots again: a pendulum. Frigate 17 (93 m) reaches its hold point at t≈24 s, pivots 165° in 4 s, and pivots back when the order lapses at 28 s. Frigate 18 never turns but rocks on the spot, its speed pulsing between 10 and 25 m/s as the "within 26 m" cut switches on and off.
+- **What made it a donkey rather than a lazy loop: Rebel gunboats pivot inside their own length.** Their turn rates are 0.53–1.03 rad/s at 23–47 m/s. That is a turning circle of 37–59 m for hulls 85–155 m long (measured from the forge, `ships.filter(isGunboat)`). An Imperial 576 m frigate turns at 0.12 rad/s and swings wide, so the same pendulum looks like an orbit. On a Rebel corvette it is a hull swinging back and forth on the spot.
+- **Across the whole baseline**, frigates' shuttle windows over 5% came overwhelmingly from HOLD (12 of 35), then attack standoffs (the attack goal is a point `berth` metres short of the target on the ship's own side, which flips when the ship passes it), then fight or flight. Fighters and light craft show the same pattern in HOLD, HIDE and screening orbits.
+
+The other suspects, checked:
+
+- **The gunboat patrol turning at its ends:** not the cause. `gunboatGoal()` and `pickPatrol()` are dead code on main; nothing calls them. The racetrack in this pass replaces them.
+- **Brakes 1.5× stronger than acceleration:** not a cause of reversals. It shortens a ship's stop, but ships here always move along their hull, so braking cannot reverse them. It did make the "within 26 m" cut bite hard, which is part of frigate 18's rocking.
+- **The 0.3 s traffic-avoidance offset that flickers:** dead code. `s.avT` is read in two places and written nowhere. The avoidance that does run is the traffic pilot's passing altitude, held for 1.2 s and switched on and off with a brake of 0.4, 0.65 or 0.9. That switching is real, and it now blends.
+- **Commit timers flipping goals:** real, but secondary. A pilot re-decides every 1.3–5.5 s. When ATTACK and FLANK aim at opposite sides of a target, the goal can swap sides mid-turn. There are now hysteresis and dwell times.
+- **Patrol waypoints close to the turning radius:** the same thing as the first cause, in another form. Every point goal smaller than a few turning circles makes the hull turn round on it.

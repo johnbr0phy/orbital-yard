@@ -6,3 +6,4 @@ scripts/__pycache__/
 bench/audio/scenes/*/*.wav
 bench/audio/probes/
 bench/audio/ledger.csv.lock
+bench/motion/dev/

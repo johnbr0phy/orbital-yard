@@ -337,7 +337,7 @@ function cohesion(rec, bySq) {
       const band = hsd >= BAND.head[0] && hsd <= BAND.head[1] && cv >= BAND.cv[0] && cv <= BAND.cv[1] && rad <= BAND.radiusMax && rad >= BAND.radiusMinHulls * L;
       if (band) inb++; else if (parade) par++; else if (dissolved) dis++;
       { const at = rec.squadsAt[Math.floor(k / 30)], ph = at && at.k === k && at.sq[id] ? at.sq[id][3] || '-' : '?'; const w = why.phase[ph] || (why.phase[ph] = [0, 0]); w[0]++; if (band) w[1]++; }
-      if (!band) { for (const S of live) { const key = MODES[S.get(k, 12)] + ((S.flags[k] & FLAG.formed) ? '+slot' : ''); why.modes[key] = (why.modes[key] || 0) + 1; } }
+      if (!band) { const at = rec.squadsAt[Math.floor(k / 30)], ph = at && at.sq[id] ? at.sq[id][3] || '-' : '?'; for (const S of live) { const key = ph + ' ' + MODES[S.get(k, 12)] + ((S.flags[k] & FLAG.formed) ? '+slot' : ''); why.modes[key] = (why.modes[key] || 0) + 1; } }
       if (!band) { const at = rec.squadsAt[Math.floor(k / 30)], ph = at && at.sq[id] ? at.sq[id][3] || '-' : '?'; const r = why.byPhase[ph] || (why.byPhase[ph] = {head: 0, cvHigh: 0, far: 0, near: 0, headLow: 0}); r.head += hsd > BAND.head[1] ? 1 : 0; r.cvHigh += cv > BAND.cv[1] ? 1 : 0; r.far += rad > BAND.radiusMax ? 1 : 0; r.near += rad < BAND.radiusMinHulls * L ? 1 : 0; r.headLow += hsd < BAND.head[0] ? 1 : 0; }
       if (!band) { why.head += hsd > BAND.head[1] ? 1 : 0; why.headLow += hsd < BAND.head[0] ? 1 : 0; why.cvLow += cv < BAND.cv[0] ? 1 : 0; why.cvHigh += cv > BAND.cv[1] ? 1 : 0; why.far += rad > BAND.radiusMax ? 1 : 0; why.near += rad < BAND.radiusMinHulls * L ? 1 : 0; }
     }

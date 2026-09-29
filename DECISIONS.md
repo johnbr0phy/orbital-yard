@@ -375,3 +375,16 @@ The owner's words: "tyranids dont seem to have any guns".
 - One button in the speed bar (⛶), or U, hides everything but the battle itself.
 - A faint "Show UI · U" appears when the pointer moves; it, U or Esc brings the UI back.
 - Menus and the fleet picker always bring the UI back first, so nothing opens invisible.
+
+# Motion pass: how the ships fly
+
+Calls I made on the flight and pilot pass (MOTION-BRIEF.md) without being able to ask. MOTION.md has the numbers.
+
+## Process
+
+- **Branch.** The session was set up to develop on `claude/tribute-war-flight-pass-878bjr`. The `/goal` named `claude/motion-pass` as the pull request's head, so the work is on `claude/motion-pass`, branched from main. The brief itself was first saved and pushed to the session branch.
+- **The baseline comes from a worktree of main (7f82d45)**, with the final measurement scripts copied in. The metric definitions had to be corrected twice while building the tooling (below). Measuring main from its own checkout meant no flight change could leak into the "before" numbers, however often I re-ran it.
+- **Metric corrections, applied to baseline and after alike, before the baseline was recorded:**
+  - A shuttle retrace only counts if the ship travelled at least the tolerance in between. The first version flagged a 976 m capital that dipped 2 m and came back up, because its direction at near-zero speed was all vertical. Its tolerance was half its length (488 m).
+  - The capital spool limit counts transit burns against their own full burn. The first version excluded transit burns altogether, which hid a real violation: main's transit burn accelerates with no spool clamp, and a damage stage cut speed from 117 to 58.6 m/s in one step.
+- **Criteria were fixed before any flight change.** Where the brief asked me to define a band or a threshold (cohesion, individuality, "well above baseline"), MOTION.md states it with a reason, and I have not changed any of them since. Diagnostic breakdowns (why a squad-second fell out of the band, which formation phase it was in) were added to the tooling later. They report; they don't change what passes.

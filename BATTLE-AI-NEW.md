@@ -56,6 +56,96 @@ and contact counts. **SHOW SENSORS** draws its horizontal view sector and links
 to contacts. Solid links indicate observations; broken links indicate memory
 or reports. The overlay is a horizontal guide to a three-dimensional sensor.
 
+## How the ships fly: handling and the helm
+
+The fleet minds decide *what* to do. Since the motion pass (MOTION.md), a second table and a layered controller decide *how* each ship flies it. Both live in `armada-battle-ai-new.js`, and the page calls them for every small craft and capital.
+
+### Handling per fleet
+
+Each fleet has a handling row beside its pilot profile. Each pilot draws their own values around the row from a random stream seeded by their own hull. Nothing else reads that stream, so a squadron shares a style but never a stick. Spreads per pilot: ±0.12 on smoothing, ±0.18 on bank, ±0.15 on overshoot, weave and re-forming, ±0.10 on tightness, ±0.20 on breaking away, ×0.6–1.4 on reaction delay, ×0.7–1.35 on rhythm frequency and depth, ×0.7–1.4 on weave frequency. **These are game rules, my readings of how each fleet is portrayed on screen, not claims about canon.**
+
+- **Formation**: the shape its fighter squadrons fly. Frigate squadrons always fly a line-ahead column.
+- **Attack**: preferred attack geometry. *Slash* works a wide circle and extends long after a pass. *Joust* closes tight and extends short. *Orbit* circles wide. *Dive* comes in from above. *Stalk* comes in from astern. *Swarm* comes in from each pilot's own bearing.
+- **Stick smoothing** sets the yaw response time (0.32 + 0.5 × smoothing s, longer for bigger hulls).
+- **Bank**: how far a pilot rolls into a turn.
+- **Overshoot**: the tolerance for swinging past a heading (damping 1.05 at 0, 0.55 at 1).
+- **Throttle rhythm**: the frequency and depth of the pilot's own feathering on the throttle.
+- **Tightness**: formation spacing.
+- **Breaks away**: willingness to leave the formation to cover a damaged friend.
+- **Re-forms**: how soon after a fight the squadron re-forms, and how hard wingmen close.
+- **Reaction**: the delay before a new demand reaches the stick.
+- **Weave**: stick weave depth and frequency.
+- **Commitment**: the hysteresis margin and dwell time before a pilot changes its mind.
+
+| Fleet | Formation | Attack | Stick smoothing | Bank | Overshoot | Throttle rhythm (Hz / depth) | Tightness | Breaks away | Re-forms | Reaction (s) | Weave (depth / Hz) | Commitment | Why |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Yard | finger-four | slash | 0.6 | 0.75 | 0.3 | 0.16 / 0.055 | 0.78 | 0.3 | 0.7 | 0.34 | 0.3 / 0.5 | 0.55 | A drilled yard navy flies the textbook: clean banked turns, fingers held, passes by the manual. |
+| Shoal | swarm | swarm | 0.22 | 1.15 | 0.8 | 0.42 / 0.1 | 0.3 | 0.75 | 0.4 | 0.2 | 0.9 / 0.95 | 0.25 | A social swarm: quick hands, big swings past the mark, surging together like a current. |
+| Lattice | line abreast | orbit | 0.85 | 0.45 | 0.08 | 0.1 / 0.045 | 0.95 | 0.08 | 0.95 | 0.4 | 0.1 / 0.3 | 0.8 | A coordinated lattice: exact rails, almost no weave, the line snaps back at once. |
+| Drift | cluster | stalk | 0.5 | 0.8 | 0.6 | 0.3 / 0.08 | 0.5 | 0.5 | 0.5 | 0.48 | 0.6 / 0.7 | 0.4 | Salvagers: loose and wary, always ready to slide off the line and come back. |
+| Choir | wedge | orbit | 0.9 | 0.6 | 0.25 | 0.07 / 0.07 | 0.75 | 0.3 | 0.6 | 0.6 | 0.35 / 0.25 | 0.6 | A patient choir: long slow swells on the throttle, silky turns. |
+| Empire | wedge | joust | 0.42 | 0.78 | 0.14 | 0.2 / 0.05 | 0.9 | 0.1 | 0.9 | 0.24 | 0.14 / 0.6 | 0.7 | Drilled aggression: crisp and precise, tight wedges, straight in and re-formed fast. |
+| Rebels | finger-four | slash | 0.5 | 1 | 0.62 | 0.26 / 0.08 | 0.52 | 0.78 | 0.55 | 0.3 | 0.65 / 0.8 | 0.35 | Creative and loose: deep banks, wide fingers, quick to break off and help a friend. |
+| Minbari | wedge | slash | 0.88 | 0.55 | 0.05 | 0.09 / 0.05 | 0.85 | 0.2 | 0.8 | 0.3 | 0.08 / 0.35 | 0.75 | Composed and exact: no wasted motion, long clean passes, nothing swings past the mark. |
+| Shadows | swarm | dive | 0.2 | 0.3 | 0.72 | 0.45 / 0.12 | 0.35 | 0.6 | 0.5 | 0.16 | 0.8 / 1.1 | 0.4 | Chaos with a purpose: sudden surges and swoops, little bank, predatory dives. |
+| EarthForce | finger-four | slash | 0.6 | 0.72 | 0.3 | 0.18 / 0.055 | 0.8 | 0.35 | 0.75 | 0.34 | 0.3 / 0.55 | 0.55 | EarthForce flies by the book and holds its fingers. |
+| Federation | line abreast | orbit | 0.75 | 0.6 | 0.2 | 0.12 / 0.055 | 0.75 | 0.45 | 0.7 | 0.4 | 0.25 / 0.4 | 0.55 | Measured and aware: wide orbits, a steady rhythm, peels off to cover a friend. |
+| Klingons | wedge | joust | 0.35 | 0.9 | 0.5 | 0.32 / 0.09 | 0.6 | 0.5 | 0.45 | 0.2 | 0.3 / 0.65 | 0.95 | They commit and do not look back: long dwell on a choice, hard banks, surging burns. |
+| Borg | cluster | joust | 1 | 0 | 0 | 0.05 / 0.045 | 0.95 | 0 | 1 | 0.7 | 0 / 0.2 | 0.9 | Cold, unhurried certainty: no bank, no weave, no overshoot, a slow even pulse. |
+| Mondoshawan | line abreast | orbit | 0.85 | 0.5 | 0.2 | 0.08 / 0.06 | 0.8 | 0.3 | 0.7 | 0.55 | 0.2 / 0.3 | 0.6 | A protective convoy: slow, careful, wide turns. |
+| USCM | finger-four | slash | 0.5 | 0.8 | 0.25 | 0.22 / 0.055 | 0.8 | 0.35 | 0.8 | 0.26 | 0.3 / 0.6 | 0.6 | Marines: skilled and disciplined, sharp fingers, quick re-forms. |
+| Engineers | cluster | dive | 0.8 | 0.4 | 0.3 | 0.1 / 0.07 | 0.6 | 0.3 | 0.6 | 0.45 | 0.2 / 0.3 | 0.65 | Inventive and composed: slow deliberate dives, little bank. |
+| Yautja | swarm | stalk | 0.5 | 0.9 | 0.4 | 0.24 / 0.07 | 0.35 | 0.8 | 0.35 | 0.2 | 0.5 / 0.7 | 0.7 | Hunters: independent loose packs that stalk from behind and commit. |
+| First Ones | cluster | orbit | 1 | 0.2 | 0 | 0.04 / 0.04 | 0.5 | 0.5 | 0.5 | 0.5 | 0 / 0.2 | 0.9 | Ancient and absolute: they move as if nothing can touch them. |
+| Romulans | wedge | stalk | 0.65 | 0.6 | 0.28 | 0.14 / 0.06 | 0.7 | 0.3 | 0.7 | 0.3 | 0.25 / 0.45 | 0.6 | Patient ambushers: smooth, controlled, quick to slip away. |
+| Dominion | line abreast | joust | 0.5 | 0.7 | 0.3 | 0.2 / 0.055 | 0.85 | 0.15 | 0.8 | 0.25 | 0.2 / 0.55 | 0.8 | Relentless: straight lines in, no hesitation. |
+| Space Marines | wedge | joust | 0.4 | 0.6 | 0.2 | 0.18 / 0.05 | 0.85 | 0.2 | 0.85 | 0.28 | 0.15 / 0.5 | 0.8 | Fearless and drilled: tight wedges, straight at the enemy. |
+| Tyranids | swarm | swarm | 0.3 | 0.4 | 0.9 | 0.4 / 0.12 | 0.28 | 0.55 | 0.6 | 0.25 | 1 / 0.9 | 0.3 | The swarm: organic weaving and wild overshoots; synapse pulls it back together. |
+| Tesla | finger-four | slash | 0.4 | 1.2 | 0.45 | 0.3 / 0.08 | 0.6 | 0.5 | 0.6 | 0.22 | 0.5 / 0.85 | 0.4 | A startup fleet: fast hands, eager banks, improvised lines. |
+
+
+### The helm, bottom to top
+
+1. **Physics limits by hull.**
+   - Turn rate, spool and top speed come from the forge and the engines allocation.
+   - A frigate, corvette or transport cannot turn tighter than 1.4 of its own lengths at cruise. A slicer or cutter small craft is limited to 0.9 of its lengths.
+   - Any hull of 80 m or more turns at no more than 0.08 rad/s below 20% of top speed. Nothing that size pivots on the spot.
+   - Angular acceleration and angular jerk are limited by the pilot's response time.
+   - Speed changes through an acceleration that builds under a jerk limit, inside the spool: 1.5 s for fighters, 4 s for mid-size ships, 8–30 s for capitals, and braking 1.5× quicker. A transit burn builds and sheds over the same spool, against its own full burn.
+2. **The pilot filter.**
+   - The pilot sees a new *intent* (a point in the world) late, by their own reaction delay. The delay never sits on an aim computed from the ship's own position, so it cannot make the ship oscillate.
+   - The stick follows the heading error through the pilot's response time and damping.
+   - The weave rides on top (never on a frigate: that is what made them nod).
+   - The ship banks into the turn through a critically damped roll.
+   - Climb and pitch are second-order.
+   - The throttle carries the pilot's rhythm.
+3. **Intent.**
+   - The goal comes from the minds, with hysteresis. A new goal has to beat the current one by a margin (0.06 + 0.14 × commitment) and keep beating it for a dwell that grows with the hull: 0.5 s + length / 120 m, capped at 5 s, × (0.6 + 0.8 × commitment), × 1.4 for crowns. Being hit hard (12% of the hull in one decision), terror, a crippled hull or an ion lock override it.
+   - Every goal change is logged on the pilot (`ai.goalLog`) with its reason.
+
+### Stations, orbits and lines
+
+- **No point is ever held by flying at it.** Near a point it must hold, a fighter orbits it on a lazy circle (no faster than 0.5 rad/s), and a formation leader slower still. A frigate flies a racetrack across the enemy's line, with legs several turning circles long and wide banked arcs at the ends.
+- **The direction is chosen from how the ship is already moving**, so arriving is never a reversal.
+- **The circle's size comes from the hull and the loiter pace, not the current speed.**
+- **Attack standoffs are orbits** around the target at the pilot's own range.
+- **Screens circle the threat side of their capital.**
+- **A capital holding a point** runs its way in, brakes over its spool and stops. It does not circle or pivot.
+
+### Living formations
+
+- **Every squadron has a leader and a shape**: its fleet's for fighters, a column for frigates, and about a length and a half of spacing for cruisers.
+- **Slots sit on the leader's own recent track**, set back by the slot's depth and out to the side of the track's direction there. In a turn the squadron flows round the curve like lanes on a road, instead of pivoting like a plank. Each pilot's slot carries its own offset and a slow breathing, and each wingman wanders a few degrees on the line.
+- **The formation's turn rate is capped by its width**, so the outside lane never needs more than 35% more speed. The leader flies no faster than the slowest wingman allows.
+- **Phases:**
+  - FORM: after the jump.
+  - CRUISE: at least three quarters of the wingmen are in their slots.
+  - BREAK: the leader, or a third of the squadron, is within fighting range of its target.
+  - REFORM: after 2–9 s of calm, by the fleet's re-form value.
+  - Frigate columns never break: they fight as a line.
+- **Wingmen keep station on the slot's velocity**, corrected toward the slot. A wingman ahead of its slot eases off and never turns round for it. One far off flies an intercept that slows as it arrives.
+- **A pilot hit, evading an ion lock, on its own order** (a ram, a tow, a rescue of pods), on a vendetta, in its own fight or flight, or breaking away to cover a damaged friend leaves the formation. It rejoins afterwards.
+
 ## Fleet profiles
 
 Profiles are deliberately overlapping distributions, not rules that force every

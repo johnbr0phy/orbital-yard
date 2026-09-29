@@ -13919,7 +13919,8 @@ function craftWant(s,now,sq,mood,dist,boost){
 const THROTTLE_MOODS={ATTACK:1,FLANK:1,STRIKE:1,SEARCH:1};
 function throttle(s,now,want,prefer,mood,slotted){
   const cruise=s.spd||20,dash=s.spdMax||cruise*1.3,t=prefer>=0?ships[prefer]:null;
-  if(t&&!t.dead&&THROTTLE_MOODS[mood]&&!(s.ai&&s.ai.order&&['ROUT','PANIC','RAM','TOW','RESCUE'].includes(s.ai.order.kind))){
+  // A wingman holding station takes its pace from the formation, not from a target it is not chasing.
+  if(!slotted&&t&&!t.dead&&THROTTLE_MOODS[mood]&&!(s.ai&&s.ai.order&&['ROUT','PANIC','RAM','TOW','RESCUE'].includes(s.ai.order.kind))){
     const gap=gapTo(s,t),pocket=s.slen<60?160:260,tv=Math.abs(t.v||0);
     // Close at up to dash from far off; inside the pocket, sit on the target's own speed.
     const chase=tv+(gap-pocket)*.35;
@@ -15568,29 +15569,8 @@ function cutHold(s,now,dt){
     }else s.cutUntil=0;
   }else s.cutUntil=0;
 }
-function pickPatrol(s,now){
-  const fc=fleetCentroid(s.side),ec=fleetCentroid(1-s.side);
-  const ax=ec[0]-fc[0],az=ec[2]-fc[2];
-  const gap=Math.max(400,Math.hypot(ax,az)||1);
-  const ux=ax/gap,uz=az/gap,sx=-uz,sz=ux;
-  if(!s.brSgn)s.brSgn=((s.seed>>>3)&1)?1:-1;
-  const u=0.20+((s.seed>>>7)&15)/15*0.48;
-  const lat=s.brSgn*(240+((s.seed>>>11)&31)*22)+((s.id&7)-3.5)*90;
-  s.patW=[
-    fc[0]+ux*Math.min(gap*u,gap-220)+sx*lat,
-    s.y+((s.id%5)-2)*18,
-    fc[2]+uz*Math.min(gap*u,gap-220)+sz*lat
-  ];
-  s.patUntil=now+8+((s.seed>>>5)&7)*1.6;
-  s.brSgn*=(combatRandom()<0.22?-1:1);
-  return s.patW;
-}
-function gunboatGoal(s,now){
-  const need=!s.patW||now>(s.patUntil||0)||
-    Math.hypot((s.patW[0]-s.x),(s.patW[2]-s.z))<Math.max(110,s.slen*0.55);
-  if(need)pickPatrol(s,now);
-  return s.patW;
-}
+/* The old gunboat patrol (pickPatrol / gunboatGoal) is gone: nothing called it, and a
+   back-and-forth patrol is what the helm's racetracks replace. */
 function nameOf(t){
   if(!t||t.dead||!t.meta)return null;
   if(t.hero)return t.meta.desig||"the hero";
