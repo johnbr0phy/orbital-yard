@@ -17619,7 +17619,8 @@ function simStep(now,dt){
       let want=craftWant(s,now,sq,mood,dist,boost);
       /* a station is loitered lazily; an attack orbit is flown at the pilot's own pace, carrying
          momentum round the circle, never matched down to a slow target into a pirouette */
-      if(loiter)want=plan.orbit&&plan.target>=0?s.spd*(boat?.75:.95):Math.min(want,s.spd*(boat?.62:.8));
+      /* a formation leader loiters at 0.8 of cruise: a squadron needs way on to hold its shape round the circle */
+      if(loiter)want=plan.orbit&&plan.target>=0?s.spd*(boat?.75:.95):Math.min(want,s.spd*(battleAI.leadsFormation(s)?.8:boat?.62:.8));
       else if(dist<26)want=Math.min(want,s.spd*(boat?0.62:0.35));
       if(plan.slot){
         /* holding station: match the leader, close the gap along the heading */

@@ -243,7 +243,9 @@
       }
       for(const [id,c] of a.contacts){
         c.confidence=clamp((c.direct?1:.72)-(now-c.seen)/(7+a.traits.skill*9));
-        if(c.confidence<=0||now-c.seen>16)a.contacts.delete(id);
+        // A contact seen to die (or jump out) is struck off at once: nobody keeps attacking a wreck.
+        const t=this.byId.get(id);
+        if(c.confidence<=0||now-c.seen>16||(t&&t.dead))a.contacts.delete(id);
       }
       if(a.contacts.size>36){const keep=[...a.contacts.values()].sort((l,r)=>r.seen-l.seen).slice(0,36);a.contacts=new Map(keep.map(c=>[c.id,c]));}
     }
@@ -517,7 +519,8 @@
         const t=clamp(off/Math.max(10,top-sv*.5),0,8),ix=p[0]+svx*t,iz=p[2]+svz*t,dx=ix-s.x,dz=iz-s.z,dn=Math.hypot(dx,dz)||1;
         const reach=Math.max(60,(s.slen||20)*2,top*1.2);
         // Arrival: close at a pace that falls with the distance left, so the slot is met, not overflown.
-        const want=clamp(sv+(.25+.25*h.reform)*off,spd*.35,top);
+        // ...and never more than 1.6 times the formation's own pace, so the squadron still reads as one.
+        const want=clamp(sv+(.25+.25*h.reform)*off,spd*.35,Math.min(top,Math.max(sv*1.6,spd*.7)));
         return {goal:[s.x+dx/dn*reach,p[1],s.z+dz/dn*reach],point:p,along,off,want,spacing:p[3],reform:h.reform,far:true};
       }
       // Easing off to let the slot come back is for small corrections; a real rejoin is flown at pace, as an arc.
@@ -1404,12 +1407,14 @@
         // fire keeps its shape; the pilot who is hit evades on their own and comes back.
         const routing=sq.state==='routing';let engaged=false;
         if(!lead.gunboat){
-          const r=1000*GEOMETRY[h.geometry].r;let k=0;
-          for(const m of members){const a=m.ai;if(!a)continue;const c=a.contacts.get(a.target);if(c&&now-c.seen<2&&surface(m,c)<r)k+=m===lead?1.5:1;}
+          // Close quarters means a dogfight: small craft within about 1.4 km of their marks. Frigates and
+          // cruisers in a mixed squadron hold their line and do not count.
+          const r=600*GEOMETRY[h.geometry].r;let k=0;
+          for(const m of members){const a=m.ai;if(!a||m.gunboat||capital(m))continue;const c=a.contacts.get(a.target);if(c&&now-c.seen<2&&surface(m,c)<r)k+=m===lead?1.5:1;}
           engaged=k>=Math.max(1,members.length/2);
         }
         if(routing||engaged){if(fm.phase!=='BREAK'){fm.phase='BREAK';fm.since=now;}fm.calm=now;continue;}
-        if(fm.phase==='BREAK'&&now-fm.calm>1.5+4*(1-h.reform)){fm.phase='REFORM';fm.since=now;}
+        if(fm.phase==='BREAK'&&now-fm.calm>.8+1.6*(1-h.reform)){fm.phase='REFORM';fm.since=now;}
         if(fm.phase==='FORM'||fm.phase==='REFORM'){
           let near=0;for(const m of members){if(m.id===fm.lead)continue;const p=this.slotPoint(m,sq,now);if(p&&length(p[0]-m.x,p[1]-m.y,p[2]-m.z)<p[3]*1.2)near++;}
           if(n&&(near>=Math.ceil(n*.75)||now-fm.since>30)){fm.phase='CRUISE';fm.since=now;}

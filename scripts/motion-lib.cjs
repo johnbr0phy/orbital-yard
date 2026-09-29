@@ -528,7 +528,7 @@ function compactLog(rec, every = 3, opts = {}) {
   for (let i = 0; i < rec.tracks.length; i++) {
     const tr = rec.tracks[i]; if (!tr) continue; const m = rec.meta[i];
     if (opts.keep && !opts.keep(m)) continue;
-    const cols = {x: [], y: [], z: [], yaw: [], v: [], roll: [], f: [], m: []};
+    const cols = {x: [], y: [], z: [], yaw: [], v: [], roll: [], f: [], m: [], g: [], r: []};
     let first = -1;
     for (let k = 0; k < rec.n; k += every) {
       const o = k * rec.F;
@@ -536,7 +536,7 @@ function compactLog(rec, every = 3, opts = {}) {
       if (first < 0) first = k;
       cols.x.push(Math.round(tr[o])); cols.y.push(Math.round(tr[o + 1])); cols.z.push(Math.round(tr[o + 2]));
       cols.yaw.push(+tr[o + 3].toFixed(3)); cols.v.push(+tr[o + 6].toFixed(1)); cols.roll.push(+tr[o + 5].toFixed(2));
-      cols.f.push(tr[o + 11]); cols.m.push(tr[o + 12]);
+      cols.f.push(tr[o + 11]); cols.m.push(tr[o + 12]); cols.g.push(Math.round(tr[o + 9])); cols.r.push(tr[o + 13]);
     }
     if (first < 0) continue;
     ships.push({...m, first, ...cols});
