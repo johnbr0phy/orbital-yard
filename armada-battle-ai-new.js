@@ -567,7 +567,8 @@
       const avoiding=!!(s.trafficGoal&&now<s.trafficUntil);
       if(avoiding)s.avY=s.trafficGoal[1];
       const aw=this.avoidBlend(s,avoiding,avoiding?s.trafficBrake:1,dt);
-      const debris=s.debrisGoal&&now<s.debrisUntil;
+      // Passing traffic takes precedence over a debris corridor, as it always has: it only changes altitude.
+      const debris=!avoiding&&s.debrisGoal&&now<s.debrisUntil;
       const goal=debris?s.debrisGoal:[p.goal[0],aw>0&&s.avY!=null?p.goal[1]+(s.avY-p.goal[1])*aw:p.goal[1],p.goal[2]];
       let dx=goal[0]-s.x,dy=goal[1]-s.y,dz=goal[2]-s.z;
       for(const other of (s.trafficScan!=null?[]:a.friends.slice(0,10))){
@@ -1507,7 +1508,8 @@
       else R=s.gunboat?Math.max(rt*1.6,L*1.1):Math.max(rt*2,v*.8/wmax,40);
       if(lead)R=Math.max(R,lead.span);
       const dx=s.x-ax,dz=s.z-az,d=Math.hypot(dx,dz),st=s.helmLoiter;
-      const enter=o.orbit?R*1.5:Math.max(R*2.2,rt*3),leave=enter*1.7;
+      // Close enough to count as arrived: a circle's width plus a little, never kilometres off for a big circle.
+      const enter=o.orbit?R*1.5:Math.max(Math.min(R*2.2,R+600),rt*3),leave=enter*1.7;
       if(!st&&d>enter)return null;
       if(st&&(d>leave||Math.hypot(st.x-ax,st.z-az)>R*2.5)){s.helmLoiter=null;if(d>enter)return null;}
       let lo=s.helmLoiter;
@@ -1616,7 +1618,8 @@
       // The fleet's slow swell, plus a quicker touch of the hand (a 3-5 s beat of at least 8%), so no
       // pilot sits on one number: a live hand on a throttle is never perfectly still.
       const h=this.hand(s),f=h.rhythmHz*6.283,g=6.283/(3+2*h.breath/.2);
-      return 1-h.rhythm*(.5+.5*Math.sin(now*f+h.ph[2]))-Math.max(.08,h.rhythm*.6)*(.5+.5*Math.sin(now*g+h.ph[4]));
+      // Centred on the demand: the hand breathes above and below it, it does not just hold back.
+      return 1+h.rhythm*.5*Math.sin(now*f+h.ph[2])+Math.max(.08,h.rhythm*.6)*.5*Math.sin(now*g+h.ph[4]);
     },
     // Engines: spool by size, braking a little quicker, and a burn that builds rather than snaps.
     helmSpeed(s,want,dt,k=1){
@@ -1635,14 +1638,16 @@
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return null;
       let n=0,L=0;for(const id of sq.mem){const m=this.byId.get(id);if(m&&alive(m)&&m.arr){n++;L=Math.max(L,m.slen||20);}}
       // The circle must be big enough that the squadron's depth wraps no more than 1.2 rad of it.
-      return n>1?{n,span:Math.max(Math.max(42,L*3)*(1+.5*n),(fm.back||0)/1.2),turnCap:fm.turnCap||.35,lat:(fm.turnCap?.35*20/fm.turnCap:0)}:null;
+      return n>1?{n,span:Math.max(42,L*3,(fm.back||0)/1.2),turnCap:fm.turnCap||.35,lat:(fm.turnCap?.35*20/fm.turnCap:0)}:null;
     },
     // A formation leader flies slow enough for the slowest wingman to hold station.
     leadCap(s,now){
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return Infinity;
-      let slow=Infinity;for(const id of (fm.rank?fm.rank.keys():[])){const m=this.byId.get(id);if(m&&alive(m)&&m.arr)slow=Math.min(slow,m.spd||20);}
-      return slow===Infinity?Infinity:slow*(fm.phase==='CRUISE'?.9:.55);
+      // Formed, it may close at 0.85 of its slowest wingman's full burn (leaving that wingman room to hold
+      // its slot); forming up, at 0.55 of the slowest cruise so the stragglers catch up.
+      let slow=Infinity,dash=Infinity;for(const id of (fm.rank?fm.rank.keys():[])){const m=this.byId.get(id);if(m&&alive(m)&&m.arr){slow=Math.min(slow,m.spd||20);dash=Math.min(dash,m.spdMax||(m.spd||20)*1.3);}}
+      return slow===Infinity?Infinity:fm.phase==='CRUISE'?dash*.85:slow*.55;
     },
     // How long a fixed-gun pilot extends past the target after a pass, by attack geometry.
     extendK(s){return (GEOMETRY[this.hand(s).geometry]||GEOMETRY.slash).extend;},

@@ -25,6 +25,9 @@ test('when the First Ones start unmaking a holding line, it breaks: pilots charg
   const b=loadBattle();b.start(5,17,42,48);b.step(29.5);
   const before=b.run(`ships.filter(s=>s.side===0&&!s.dead&&s.arr&&s.ai&&!s.hulls&&s.slen<120&&s.ai.action==='HOLD').length`);
   assert.ok(before>0,'the fixture holds a line before the first strike');
+  // The motion pass: the First Ones' drives now spool (16-28 s for their hulls), so the first strike lands
+  // a few seconds later than it used to (about 38 s, not 31). Wait for it, then give the line 4 s.
+  for(let t=0;t<30&&!b.run('ships.some(s=>s.side===0&&s.dead)');t++)b.step(1);
   b.step(4);
   const r=b.run(`(()=>{const f=ships.filter(s=>s.side===0&&!s.dead&&s.arr&&s.ai&&!s.hulls&&s.slen<120);
     return {n:f.length,hold:f.filter(s=>s.ai.action==='HOLD').length,charge:f.filter(s=>s.ai.response==='CHARGE').length,

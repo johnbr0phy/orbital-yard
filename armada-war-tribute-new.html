@@ -13945,7 +13945,7 @@ function throttle(s,now,want,prefer,mood,slotted){
   // The pilot's hand feathers the throttle, even at full burn, in the rhythm of
   // their fleet's handling (depth and frequency drawn per pilot).
   const hand=battleAI.rhythm(s,now);
-  return Math.max(cruise*.3,Math.min(dash*(.62+.38*hp),want))*hand;
+  return Math.min(dash,Math.max(cruise*.3,Math.min(dash*(.62+.38*hp),want))*hand);
 }
 /* Engines have limits: a fighter reaches full burn in about 1.5 s, a frigate
    in about 4 s, and braking is a little quicker than accelerating. */
@@ -14065,10 +14065,19 @@ function formTheSquadrons(){
     const crown=fightsAsCrown(lead),gun=isGunboat(lead)&&!crown,shape=gun||crown?"column":h.shape;
     const d=ArmadaBattleAI.formationSpacing(shape,mem.length-1,L,mem.reduce((a,s)=>a+(s.slen||20),0)/mem.length,crown,h.tight);
     const yaw=lead.side?Math.PI:0,c=Math.cos(yaw),sn=Math.sin(yaw);
+    /* ...but every hull keeps a clear jump corridor: a wingman moves to its formation spot (or the
+       spot at a wider spacing) only if its lane along the jump axis stays clear of every other lane */
+    const lane=q=>Math.hypot(q.exY||5,q.exZ||5)+(q.exL||10)*.15+24;
+    const clear=(s,y,z)=>ships.every(o=>o===s||o.dead||!o.vao||o.side!==s.side||Math.hypot(o.y-y,o.z-z)+.001>=lane(o)+lane(s));
     mem.slice(1).forEach((s,i)=>{
-      const o=ArmadaBattleAI.slotOffset(shape,i,mem.length-1),x=o[0]*d,z=o[2]*d;
-      s.x=lead.x+c*x-sn*z;s.y=lead.y+o[1]*d;s.z=lead.z+sn*x+c*z;s.yaw=lead.yaw;
-      if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
+      const o=ArmadaBattleAI.slotOffset(shape,i,mem.length-1);
+      for(const k of [1,1.3,1.6]){
+        const x=o[0]*d*k,z=o[2]*d*k,ny=lead.y+o[1]*d*k,nz=lead.z+sn*x+c*z;
+        if(!clear(s,ny,nz))continue;
+        s.x=lead.x+c*x-sn*z;s.y=ny;s.z=nz;s.yaw=lead.yaw;
+        if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
+        break;
+      }
     });
   }
 }
