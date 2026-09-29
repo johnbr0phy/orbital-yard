@@ -13298,6 +13298,8 @@ function trafficPilot(s,now){
   for(const t of sweptCandidates(horizon,now,lo,hi)){
     if(t===s||t.id===s.id||t.dead||t.grace||t.debris?.shatter)continue;
     if(isStarDestroyer(s)&&t.debris&&shieldCanClear(s,t.debris))continue;
+    /* two squadmates in formation: the junior gives way, the senior holds the line (both yielding locked pairs into a crawl) */
+    if(s.form&&t.form&&s.squad>=0&&t.squad===s.squad&&s.id<t.id)continue;
     const other=trafficBodies.get(t.id)||trafficBox(t,now),ov=other.velocity||trafficVelocity(other.o);
     const relative=V.sub(vel,ov),delta=V.sub(start,[other.o.x,other.o.y,other.o.z]),vv=V.dot(relative,relative),time=vv?Math.max(0,Math.min(horizon,-V.dot(delta,relative)/vv)):0;
     if(V.len(V.add(delta,V.mul(relative,time)))>own.radius+other.radius+20)continue;
@@ -13322,6 +13324,8 @@ function trafficPilot(s,now){
   const lane=holdingLane&&s.trafficGoal?(direction>0?Math.max(s.trafficGoal[1],altitude):Math.min(s.trafficGoal[1],altitude)):altitude;
   s.trafficGoal=[s.x+Math.cos(s.yaw)*ahead,lane,s.z+Math.sin(s.yaw)*ahead];
   s.trafficBrake=soon<.15?.4:soon<.4?.65:.9;
+  // Giving way to a squadmate in formation is a step up or down in the stack, not a brake.
+  if(s.form&&other.form&&s.squad>=0&&other.squad===s.squad&&soon>=.15)s.trafficBrake=1;
   if(other.uid!=null){s.debrisTarget=other.uid;s.debrisAction='Clearing collision course';}
   if(s.ai)s.ai.reason=other.uid!=null?'Evading incoming wreckage':'Yielding to crossing traffic';
 }

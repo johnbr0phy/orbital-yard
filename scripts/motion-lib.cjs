@@ -363,7 +363,8 @@ function individuality(bySq, series, coh) {
     if (got.length < 2) continue;
     let min = Infinity, sum = 0, c = 0, pair = null;
     for (let i = 0; i < got.length; i++) for (let j = 0; j < i; j++) { const d = dist(got[i][1], got[j][1]); sum += d; c++; if (d < min) { min = d; pair = [got[i][0], got[j][0]]; } }
-    perSquad.push({squad: id, race: members[0].meta.race, n: got.length, min, mean: sum / c, pair});
+    perSquad.push({squad: id, race: members[0].meta.race, n: got.length, min, mean: sum / c, pair,
+      sig: got.map(([sid, g]) => [sid, ...SIG_KEYS.map(key => +(g[key] / sd[key]).toFixed(3))])});
   }
   return {perSquad, sigs};
 }

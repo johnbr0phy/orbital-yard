@@ -1309,12 +1309,21 @@
     HD('swarm','swarm',       .30,.40,.90,.40,.12,.28,.55,.60,.25,1.00,.90,.30,'The swarm: organic weaving and wild overshoots; synapse pulls it back together.'),
     HD('finger-four','slash', .40,1.20,.45,.30,.08,.60,.50,.60,.22,.50,.85,.40,'A startup fleet: fast hands, eager banks, improvised lines.')
   ];
+  /* The rows above are the authored characters. So that fleets read apart from motion alone, each motion
+     parameter is then spread across its range by rank: every fleet keeps its place in the order (the Borg
+     still bank least, the swarms still weave hardest), but near-twins no longer sit on the same number. */
+  const SPREAD={smooth:[.15,1],bank:[0,1.25],overshoot:[0,.9],rhythmHz:[.04,.48],rhythm:[.045,.13],weave:[0,1],weaveHz:[.2,1.15],react:[.15,.7]};
+  for(const key of Object.keys(SPREAD)){
+    const [lo,hi]=SPREAD[key],order=HANDLING.map((row,i)=>[row[key],i]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+    order.forEach(([,i],j)=>{HANDLING[i][key]=+(lo+(hi-lo)*j/(order.length-1)).toFixed(3);});
+  }
   // Attack geometry: orbit radius, extend after a pass, climb before a run.
   const GEOMETRY={slash:{r:1.25,extend:1.45,climb:0},joust:{r:.8,extend:1,climb:0},orbit:{r:1.4,extend:.8,climb:0},
     dive:{r:1,extend:1.25,climb:.6},stalk:{r:.9,extend:1.1,climb:0},swarm:{r:1.05,extend:1,climb:.2}};
   // Slot offsets in units of spacing: x forward, y up, z right. i is the wingman's rank (0 first).
   function slotOffset(shape,i,n){
-    if(shape==='column'){const sd=i&1?1:-1;return [-(i+1),.08*sd,.14*sd];}
+    // Line ahead with a stagger that grows down the line, so no two ships sit on the same offset.
+    if(shape==='column'){const sd=i&1?1:-1;return [-(i+1),.08*sd,(.12+.1*(i>>1))*sd];}
     if(shape==='wedge'){const r=(i>>1)+1,sd=i&1?1:-1;return [-r*.9,.14*r*sd,sd*r*.95];}
     if(shape==='line abreast'){const r=(i>>1)+1,sd=i&1?1:-1;return [-.16*r,.12*sd*r,sd*r*1.25];}
     if(shape==='swarm'){const a=i*2.399+.7,rr=.9+.5*Math.sqrt(i+1);return [-.45-rr*.75*Math.abs(Math.cos(a)),Math.sin(a*1.7)*.85,Math.sin(a)*rr*1.1];}
@@ -1350,10 +1359,14 @@
       const row=HANDLING[s.race]||HANDLING[0];
       const r=random(((s.seed||1)^0x6a09e667^Math.imul((s.race|0)+3,0x9E3779B1))>>>0);
       const u=(m,d,lo=0,hi=1)=>clamp(m+(r()+r()-1)*d,lo,hi),k=(m,lo,hi)=>m*(lo+(hi-lo)*r());
+      /* The draws that make a pilot's motion signature are spread over the squadron, not left to chance:
+         squadmates have consecutive ids, and a golden-ratio sequence on the id puts neighbours far apart
+         (a little jitter on top), so no two pilots in a squadron fly the same hand. */
+      const g=(j,lo,hi)=>{const q=((s.id+1)*[.6180339,.7548776,.5698403,.8191725,.4142136,.5436890][j]+r()*.08)%1;return lo+(hi-lo)*q;};
       a.hand={row,shape:row.shape,geometry:row.geometry,smooth:u(row.smooth,.12),bank:u(row.bank,.18,0,1.4),overshoot:u(row.overshoot,.15),
-        rhythmHz:k(row.rhythmHz,.7,1.35),rhythm:k(row.rhythm,.75,1.3),tight:u(row.tight,.10),breakaway:u(row.breakaway,.20),reform:u(row.reform,.15),
-        react:Math.min(.9,k(row.react,.6,1.4)),weave:u(row.weave,.15),weaveHz:k(row.weaveHz,.7,1.4),commit:u(row.commit,.12),
-        ph:[r()*6.283,r()*6.283,r()*6.283,r()*6.283,r()*6.283],slot:[r()*2-1,r()*2-1,r()*2-1],breath:.08+r()*.12};
+        rhythmHz:row.rhythmHz*g(0,.65,1.4),rhythm:row.rhythm*g(1,.7,1.35),tight:u(row.tight,.10),breakaway:u(row.breakaway,.20),reform:u(row.reform,.15),
+        react:Math.min(.9,k(row.react,.6,1.4)),weave:clamp(row.weave+g(2,-.18,.18)),weaveHz:row.weaveHz*g(3,.65,1.45),commit:u(row.commit,.12),
+        ph:[r()*6.283,r()*6.283,r()*6.283,r()*6.283,r()*6.283],slot:[r()*2-1,r()*2-1,g(4,-1,1)],breath:.08+r()*.12};
       return a.hand;
     },
     handling(race){return HANDLING[race]||HANDLING[0];},
@@ -1535,15 +1548,19 @@
     helmTurn(s,err,dt,now,o){
       const h=this.hand(s),L=s.slen||20,w=this.turnLimit(s);
       /* Commitment: a pilot who has just swung through more than 100 degrees holds the new line for the
-         rest of six seconds; they may correct by a few tens of degrees but never swing back within 75
+         rest of seven seconds; they may correct by a few tens of degrees but never swing back within 75
          degrees of where they started. Swinging straight back is the donkey. Lining up a shot is exempt. */
-      const hy=s.helmYaw||(s.helmYaw={u:s.yaw,last:s.yaw,buf:new Float64Array(25),t:new Float64Array(25).fill(-1e9),i:0,next:0});
+      const hy=s.helmYaw||(s.helmYaw={u:s.yaw,last:s.yaw,buf:new Float64Array(58),t:new Float64Array(58).fill(-1e9),i:0,next:0});
       hy.u+=angle(s.yaw-hy.last);hy.last=s.yaw;
-      if(now>=hy.next){hy.i=(hy.i+1)%25;hy.buf[hy.i]=hy.u;hy.t[hy.i]=now;hy.next=now+.25;}
+      if(now>=hy.next){hy.i=(hy.i+1)%58;hy.buf[hy.i]=hy.u;hy.t[hy.i]=now;hy.next=now+.125;}
       if(!o.lining){
-        let swing=0,from=0;for(let j=0;j<25;j++)if(now-hy.t[j]<=6){const d=hy.u-hy.buf[j];if(Math.abs(d)>Math.abs(swing)){swing=d;from=hy.buf[j];}}
-        if(swing>1.75)err=Math.max(err,from+1.3-hy.u);else if(swing<-1.75)err=Math.min(err,from-1.3-hy.u);
-      }
+        // The tightest limit: 75 degrees past every heading of the last 7 s that it has since swung 100 away from.
+        let swing=0;for(let j=0;j<58;j++)if(now-hy.t[j]<=7){const d=hy.u-hy.buf[j];if(Math.abs(d)>Math.abs(swing))swing=d;}
+        const dir=Math.sign(swing);let lim=null;
+        if(Math.abs(swing)>1.75)for(let j=0;j<58;j++)if(now-hy.t[j]<=7&&(hy.u-hy.buf[j])*dir>1.75){const l=hy.buf[j]+1.3*dir;if(lim==null||(l-lim)*dir>0)lim=l;}
+        if(lim!=null)err=dir>0?Math.max(err,lim-hy.u):Math.min(err,lim-hy.u);
+        hy.lim=lim;hy.dir=dir;
+      }else hy.lim=null;
       const tau=(.32+.5*h.smooth)*(1+Math.min(2.2,L/200))*(o.formed?1.1:1)*(o.lining?.75:1);
       const zeta=1.05-.35*h.overshoot,kp=1/(4*zeta*zeta*tau);
       let mx=Math.min(o.max,w*(o.boost||1));
@@ -1560,6 +1577,8 @@
         cmd+=k*(Math.sin(now*h.weaveHz*6.283+h.ph[0])+.4*Math.sin(now*h.weaveHz*14.4+h.ph[1]));
       }
       if(o.jink)cmd+=o.jink;
+      // The weave and a hurt pilot's jink ride on top, but never carry a committed pilot back past its limit.
+      if(hy.lim!=null){const back=Math.max(0,(hy.u-hy.lim)*hy.dir)/(tau*1.5);cmd=hy.dir>0?Math.max(cmd,-back):Math.min(cmd,back);}
       const amax=Math.max(.02,w)/(tau*1.1),jmax=amax/(tau*1.4);
       const want=clamp((cmd-(s.yawV||0))/tau,-amax,amax);
       s.yawA=(s.yawA||0)+clamp(want-(s.yawA||0),-jmax*dt,jmax*dt);
@@ -1578,8 +1597,10 @@
     },
     // Climb: vertical speed and pitch through a second-order hand, never a snap.
     helmClimb(s,wv,dt,o){
-      // A ship does not climb much steeper than it flies (about 30 degrees), unless it must.
-      if(!o.urgent){const lim=Math.max(3,Math.abs(s.v||0)*.6);wv=clamp(wv,-lim,lim);}
+      // A ship does not climb much steeper than it flies (about 30 degrees), and even when it must
+      // (traffic about to hit, a shot to line up) no steeper than about 50: a hull that dives and climbs
+      // back at 60 degrees retraces its own path.
+      {const lim=o.urgent?Math.max(6,Math.abs(s.v||0)*1.2):Math.max(3,Math.abs(s.v||0)*.6);wv=clamp(wv,-lim,lim);}
       const h=this.hand(s),L=s.slen||20,wn=(L>=80?.9:1.6)/(.4+.5*h.smooth)*(o.fast?1.6:1);
       s.vyA=(s.vyA||0)+(wn*wn*(wv-(s.vy||0))-2*wn*(s.vyA||0))*dt;
       s.vy=(s.vy||0)+s.vyA*dt;
