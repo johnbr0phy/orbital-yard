@@ -1,0 +1,44 @@
+{
+ "rows": [
+  {
+   "id": "tests",
+   "text": "All existing tests plus the new motion tests (tests/tribute-new)",
+   "target": "0 failures",
+   "before": "main: 293 pass, 1 skipped",
+   "value": "299 pass, 0 fail, 1 skipped (300, incl. tests/tribute-new/motion.test.cjs)",
+   "pass": true
+  },
+  {
+   "id": "determinism",
+   "text": "Determinism: sim-bench trace recorded twice, and determinism-browser.cjs (same war however watched)",
+   "target": "identical",
+   "before": "trace 034d4243",
+   "value": "trace d2e52a09 identical twice; browser: same final hash and story events at 1x, 2x/0.5x, slow motion and 1 vs 3 forge workers",
+   "pass": true
+  },
+  {
+   "id": "perf",
+   "text": "Simulation cost at 600 a side (sim-bench, Empire v Rebels, 38-48 s, median of 3, interleaved on one machine)",
+   "target": "within 5% of main",
+   "before": "5723 ms CPU per sim s",
+   "value": "4051 ms (29% cheaper)",
+   "pass": true
+  },
+  {
+   "id": "balance",
+   "text": "Fleet-balance winners (the nine fleet-balance pairings, 48 a side, 150 s)",
+   "target": "unchanged or justified",
+   "before": "see bench/motion/balance-main.json",
+   "value": "7 of 9 unchanged; Choir v Empire and USCM v Engineers were near-even on main (0.48/0.52, 0.52/0.48) and flip",
+   "pass": true
+  },
+  {
+   "id": "story",
+   "text": "Story moments at BEHAVIOUR.md rates or better (story-metrics.cjs, 30 wars)",
+   "target": ">= BEHAVIOUR.md",
+   "before": "60/300 a side: routs 61/312, last stands 72/76, rescues 48/29, aces 12/31",
+   "value": "routs 66/263, last stands 65/70, rescues 47/28, aces 10/25 (BEHAVIOUR.md, 'The motion pass')",
+   "pass": false
+  }
+ ]
+}
