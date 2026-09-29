@@ -12,3 +12,5 @@ bench/motion/d*/
 bench/motion/px/
 bench/motion/sw/
 bench/motion/dbg/
+bench/motion/quick-*.json
+bench/motion/story/quick-*.json
