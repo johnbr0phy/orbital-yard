@@ -24,8 +24,9 @@
      solver aside), so a heading reversal is a velocity reversal.
    - shuttle share: in each 10 s window (1 s stride), the share of time the
      ship is on ground it already crossed earlier in the window (within
-     max(20 m, half its length), at least 1 s earlier) while flying the
-     other way (more than 120 degrees apart). Orbits and loops do not
+     max(20 m, half its length), at least 1 s earlier and after travelling at
+     least that far in between) while flying the other way (more than 120
+     degrees apart). Orbits and loops do not
      retrace ground in the opposite direction; back-and-forth does. */
 'use strict';
 
@@ -157,19 +158,23 @@ function shuttle(S) {
       pts.push([k, get(k, 0), get(k, 1), get(k, 2), Math.cos(yaw) * v / sp, vy / sp, Math.sin(yaw) * v / sp]);
     }
     if (pts.length < 25) continue;
-    let hit = 0;
+    // Path travelled up to each point: a retrace only counts if the ship went away and came back
+    // (at least the tolerance in between), so a hull easing a metre up and down is not shuttling.
+    const path = [0]; for (let a = 1; a < pts.length; a++) path.push(path[a - 1] + Math.hypot(pts[a][1] - pts[a - 1][1], pts[a][2] - pts[a - 1][2], pts[a][3] - pts[a - 1][3]));
+    let hit = 0, firstHit = -1;
     for (let a = 0; a < pts.length; a++) {
       const p = pts[a];
       for (let b = 0; b < a; b++) {
         const r = pts[b]; if (p[0] - r[0] < 30) break;
+        if (path[a] - path[b] < tol) continue;
         const dx = p[1] - r[1], dy = p[2] - r[2], dz = p[3] - r[3];
         if (dx * dx + dy * dy + dz * dz > tol2) continue;
-        if (p[4] * r[4] + p[5] * r[5] + p[6] * r[6] < -0.5) { hit++; break; }
+        if (p[4] * r[4] + p[5] * r[5] + p[6] * r[6] < -0.5) { hit++; if (firstHit < 0) firstHit = p[0]; break; }
       }
     }
     const share = hit / (win / step);
     windows.push(share);
-    if (share > worst.share) { worst.share = share; worst.k = w; }
+    if (share > worst.share) { worst.share = share; worst.k = firstHit >= 0 ? firstHit : w; worst.w = w; }
   }
   // net / path over the same windows, for the record
   return {worst, windows};
