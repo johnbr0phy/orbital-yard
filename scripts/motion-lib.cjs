@@ -30,7 +30,7 @@
 'use strict';
 
 const F = 16; // floats per ship per step
-const FIELD = {x: 0, y: 1, z: 2, yaw: 3, pitch: 4, roll: 5, v: 6, vy: 7, goalYaw: 8, gap: 9, spdMax: 10, flags: 11, mode: 12, reason: 13, squad: 14, throttle: 15};
+const FIELD = {x: 0, y: 1, z: 2, yaw: 3, pitch: 4, roll: 5, v: 6, vy: 7, goalYaw: 8, gap: 9, spdMax: 10, flags: 11, mode: 12, reason: 13, squad: 14, fullBurn: 15};
 const FLAG = {flying: 1, contact: 2, ion: 4, traffic: 8, debris: 16, routing: 32, dogfight: 64, ram: 128, order: 256, transit: 512, formed: 1024};
 const MODES = ['', 'ATTACK', 'FLANK', 'ESCORT', 'REGROUP', 'RETREAT', 'EVADE', 'SEARCH', 'ROUT', 'PANIC', 'DRIFT', 'RAM', 'HOLD', 'HIDE', 'MANEUVER', 'GUARD', 'STRIKE', 'CONVOY', 'RECOVER', 'TOW', 'RESCUE', 'PATROL', 'STATION', 'OTHER'];
 const CLASSES = ['fighter', 'light', 'mid', 'frigate', 'hero', 'capital', 'leviathan'];
@@ -86,7 +86,10 @@ function installMotionRecorder(opts) {
       tr[o + 8] = plan && plan.goal ? Math.atan2(plan.goal[2] - s.z, plan.goal[0] - s.x) : NaN;
       tr[o + 9] = gap; tr[o + 10] = s.spdMax || 0; tr[o + 11] = flags;
       tr[o + 12] = modeIndex.has(mode) ? modeIndex.get(mode) : MODES.length - 1; tr[o + 13] = ri;
-      tr[o + 14] = s.squad == null ? -1 : s.squad; tr[o + 15] = s.throttleWant != null ? s.throttleWant : NaN;
+      tr[o + 14] = s.squad == null ? -1 : s.squad;
+      // Full burn: the speed the engines are spooling toward at full throttle. During a
+      // capital's transit burn that is the transit speed (the page's own formula), else top speed.
+      tr[o + 15] = s.fullBurn != null ? s.fullBurn : (flags & FLAG.transit) && a ? Math.min(180, (s.spd || 0) * (2.4 + a.budget[2] / 40)) : (s.spdMax || 0);
     }
     // Squadron state once a second (routing / membership), cheap.
     if (k % 30 === 0) rec.squadsAt.push({k, sq: squads.map(q => [q.state === 'routing' ? 1 : 0, q.mem.length, q.phase || 0])});
@@ -258,14 +261,20 @@ function turnPhysics(S) {
 // Contact and a committed ram (the emergency burn) are excluded; a transit burn is not.
 function capitalLimits(S) {
   const {n, get, meta} = S; let maxTurn = 0, maxAcc = 0, maxDec = 0, samples = 0;
-  const L = meta.slen, dash = Math.max(meta.spdMax, meta.spd), spool = Math.min(30, 8 + L / 200), acc = dash / spool;
+  const L = meta.slen, spool = Math.min(30, 8 + L / 200);
+  let accRatio = 0, decRatio = 0, accAt = -1, decAt = -1;
   for (let k = 3; k < n - 3; k++) {
     let ok = true; for (let j = k - 3; j <= k + 3; j++) if (!fly(S, j) || (S.flags[j] & (FLAG.contact | FLAG.ram))) { ok = false; break; }
     if (!ok) continue; samples++;
     const r = Math.abs(yawRate(S, k)); if (r > maxTurn) maxTurn = r;
-    const a = (get(k, 6) - get(k - 1, 6)) / DT; if (a > maxAcc) maxAcc = a; if (-a > maxDec) maxDec = -a;
+    // The limit at this step: full burn (of the drive in use, at either end of the step) over the spool.
+    const burn = Math.max(get(k, 15), get(k - 1, 15), get(k, 10), meta.spd), acc = burn / spool;
+    const a = (get(k, 6) - get(k - 1, 6)) / DT;
+    if (a > maxAcc) maxAcc = a; if (-a > maxDec) maxDec = -a;
+    if (a / acc > accRatio) { accRatio = a / acc; accAt = k; }
+    if (-a / (acc * 1.5) > decRatio) { decRatio = -a / (acc * 1.5); decAt = k; }
   }
-  return {turnRatio: meta.turn ? maxTurn / meta.turn : NaN, accRatio: maxAcc / acc, decRatio: maxDec / (acc * 1.5), samples, maxTurn, maxAcc, maxDec, limits: {turn: meta.turn, acc, dec: acc * 1.5}};
+  return {turnRatio: meta.turn ? maxTurn / meta.turn : NaN, accRatio, decRatio, accAt, decAt, samples, maxTurn, maxAcc, maxDec, limits: {turn: meta.turn, spool}};
 }
 
 // Motion signature of one ship over its flying time (outside contact).
