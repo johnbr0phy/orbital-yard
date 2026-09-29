@@ -9,7 +9,7 @@
    and whether a classifier can tell the fleets apart from motion alone.
 
    Usage:
-     node scripts/motion-report.cjs --label baseline [--only 01,03] [--scenes] [--sweep] [--jobs 4] [--logs-all]
+     node scripts/motion-report.cjs --label baseline [--only 01,03] [--scenes] [--sweep] [--jobs 4] [--logs-all] [--resume]
                                     [--compare bench/motion/baseline/summary.json]
    With neither --scenes nor --sweep, runs both (the full set).
    Writes bench/motion/<label>/runs/<id>.json (per run), logs/<id>.json.gz
@@ -202,6 +202,8 @@ async function main() {
   else if (has('scenes') && !has('sweep')) list = list.filter(s => !s.sweep);
   else if (has('sweep') && !has('scenes')) list = list.filter(s => s.sweep);
   if (has('skip-heavy')) list = list.filter(s => !s.heavy);
+  // --resume: keep runs already written (a long report survives a restart).
+  if (has('resume')) list = list.filter(s => !fs.existsSync(path.join(outDir, 'runs', s.id + '.json')));
   const jobs = +arg('jobs', Math.max(1, os.cpus().length));
   // Heavy runs first so they don't finish last alone.
   list.sort((a, b) => (b.heavy ? 1 : 0) - (a.heavy ? 1 : 0) || b.size * b.seconds - a.size * a.seconds);

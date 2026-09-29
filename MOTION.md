@@ -48,6 +48,43 @@ All measurements use the recorder in `scripts/motion-lib.cjs`. It samples every 
   10. a full 90 s war at 600 a side.
 - **Sweep.** Every fleet in a measured 150 s war at 48 a side, twice (two seeds). That's 12 pairings: (0,1), (2,3) … (20,21) and (22,0). `fleet-balance.cjs` runs 9.
 
+<!-- SCENE-TABLE -->
+
+## The three criteria that did not pass
+
+The goal was every criterion green. Three are not, and I haven't touched their definitions. This is what they measure now, and why.
+
+### Shuttle (17 of 6,656 ships over 5%, worst 12%)
+
+On main, 324 ships shuttled over 5% and the worst spent 88% of a window on ground it had just crossed. After this pass no gunboat or capital shuttles, and the Rebel screen (scene 02-06) flies lines and wide arcs.
+
+The 17 ships left are all small craft: 7 fighters in attack or flank runs, 4 retreating, 3 routing, 2 escorting, and one capital on a HOLD. The attack cases are gun passes. A fighter runs through its mark, breaks away 66 to 80 degrees, comes round and runs through the mark again, and the second run crosses the first within 20 m at more than 120 degrees. The criterion excludes nothing but contact, so a dogfight counts.
+
+I tried a wider break (over 1.15 rad) with a longer extension. It left 1 to 2 shuttlers in the test wars, but fighters took a third longer between runs and small-craft kills fell by a quarter, which fed the story regression (BEHAVIOUR.md). The break now is the compromise. What would fix it: a proper re-attack geometry that comes back on an offset line (a "lag" re-entry) instead of through the same point.
+
+### Squadron cohesion (70.0% overall; worst fleet Minbari 24%)
+
+Main measured 43.2%, worst fleet 12.4%. In-band share by formation phase now: CRUISE 74%, FORM 63%, REFORM 34%, BREAK 26%.
+
+- **Some squadrons have no band to be in.** The floor is 1.5 mean hull lengths and the ceiling is 700 m, so a squadron whose hulls average over 467 m is out of band whatever it does. The Minbari field crowns of 526–636 m in squadrons with a single frigate. Those squadrons are 12% of Minbari squad-time, and they are either stacked on each other or dissolved. I won't stack capitals to pass a number.
+- **Breaking and re-forming.** A squadron in a furball is exempt only while half or more of it is dogfighting. The seconds either side of that, when some pilots are on their passes and some are coming back, are counted, and they are mostly out of band on heading.
+- **The story trade.** Holding wingmen in formation until they were inside 0.5–0.85 km of their marks put cohesion at 72.6% in the fleet sweep, but fixed-gun wingmen can't aim from a slot. Kills, routs and last stands fell 15–30%. Wingmen now leave their slot when their mark is within gun-pass range, which bought the story back and costs about 3 points of cohesion.
+- **Speed spread in cruise** (`CRUISE.cvHigh`): fleets whose squadrons mix hulls with very different top speeds (Borg, Shadows, Romulans) run a coefficient of variation over 0.35 while stragglers catch up.
+
+### Individuality (159 of 915 squadrons below 0.25; median squadron minimum 0.38)
+
+Main had 202 of 915 below and a median of 0.36.
+
+The criterion is the smallest distance between any two squadmates. A squadron of 8 has 28 pairs, so it fails if any one pair is close. Failures by squadron size: 2 to 3 ships, 2 of 60 (3%); 4 to 5, 25 of 345 (7%); 6 or more, 132 of 510 (26%). Pilots' hands are dealt from a golden-ratio sequence on the ship id, so their weave, rhythm and bank differ by design. In formation, though, eight pilots fly one track, and the flight itself pulls their signatures together. Widening the per-pilot spread further cost the fleet classifier 5 points (fleets blur into each other) and didn't move this number.
+
+## The final question
+
+*If someone hides the colours and the hulls and shows only the motion trails, can they tell which fleet is which, which ships fly together, and that no ship is ever lost or dithering?*
+
+- **Which fleet is which: mostly, and measurably.** A classifier that sees only motion (15 features: speed, speed rhythm, yaw rate and weave, bank per unit of turn, climb, turn radius, distance and heading from the squadron, straightness, throttle steps), trained on one seed's wars and tested on the other's, names the fleet 42.3% of the time. Chance is 5.6% and main scores 24.6%. By hull class: frigates 44% of 19 fleets, capitals 44% of 23, fighters 42% of 20, light craft 41% of 17. So a trained eye would tell a Shoal swarm from a Borg cluster at a glance, and would still confuse the three "by the book" fleets (Yard, EarthForce, USCM) more often than not. `bench/motion/final/plots/signature-fighter.png` shows the clusters.
+- **Which ships fly together: usually.** Squadrons are in the cohesion band 70% of the time they aren't dogfighting or routing, against 43.2% on main, where squadrons didn't fly formations at all (their members happened to share a direction). They fly on their leader's track, turn as one arc, and hold 1.9 to 2.6 hull lengths of spacing. Where they don't read as one is above: a squadron mid-break, and crown squadrons that are too big for the band.
+- **Never lost or dithering: yes for gunboats and capitals, nearly for the rest.** There are no reversals at all for gunboats, capitals and leviathans over 2,046 ship-minutes (main: frigates reversing on their hold points). Across all classes there are 30 reversals in 7,678 ship-minutes, 0.004 a minute, and the worst fleet-class is 0.069. No hull of 80 m or more spins in place. Capitals stay inside their turn and spool limits (1.00×). Frigate p95 angular jerk is 0.39 rad/s³ against 10.84 on main (4%). The honest exception is the 17 fighters above whose gun passes cross their own earlier line.
+
 ## Why the Rebel frigates shuttled: the cause, with evidence
 
 The brief listed five suspects. I measured before changing anything. `bench/motion/evidence/donkey-baseline-02-06.png` is the clearest case: two Rebel corvettes in the baseline's scene 02-06, which is the Rebels' gunboat screen.
@@ -68,7 +105,7 @@ The other suspects, checked:
 
 What I tried, in order, and what the numbers said. Rejected approaches stay here so nobody tries them again.
 
-1. **Baseline on main (7f82d45).** Nine of ten motion criteria fail. Rebel frigates reverse and shuttle on their hold points (see above); classifier 24.6%; frigate p95 angular jerk 10.84 rad/s³.
+1. **Baseline on main (7f82d45).** All eight criteria that can be scored on a single build fail (jerk and the classifier are relative to main). Rebel frigates reverse and shuttle on their hold points (see above); classifier 24.6%; frigate p95 angular jerk 10.84 rad/s³.
 2. **Handling rows and a layered helm** (per-fleet distributions, per-ship stream, second-order turn, bank and climb, jerk-limited speed inside the spool envelope, reaction delay on intents). Reversals for gunboats and capitals went to zero at once: arrival now has a shape (a loiter circle or a racetrack) instead of a point.
 3. **Rejected: reaction delay inside the feedback loop.** Delaying the measured error as well as the intent made every pilot oscillate around its own track. The delay now applies to intents (goal and slot points) only.
 4. **Rejected: rigid formation slots rotated with the leader's heading.** When a leader turned, the outer slots swept sideways faster than a wingman could fly and the wingman looped back to catch the slot. Slots now sit on the leader's own breadcrumb trail (path-relative), so a wingman flies the line the leader flew.
@@ -83,3 +120,25 @@ What I tried, in order, and what the numbers said. Rejected approaches stay here
 13. **Escorts dispersed at muster.** Squads started scattered and spent a minute forming. `formTheSquadrons()` lays band-one squads out in formation around their leader at muster.
 14. **Cruiser squads fly a column** (line-ahead at 1.4 hull lengths). See "Cohesion and big hulls" for why this is the closest honest formation.
 15. **Speed holds.** Wingmen matching a leader at cruise sat inside ±2% for 5 s. Each pilot's throttle rhythm now carries a 3.8 to 5 s beat of at least 5%, from their own handling draw.
+16. **Story regression, then a trade.** The full story metrics (BEHAVIOUR.md) showed 15–30% fewer routs, last stands and rescues than main. Three causes, all mine: slotted fixed-gun wingmen couldn't aim (0.08 shots a second against 0.42 free); my combat orbit overrode fighters' gun passes, so they circled just outside the pass trigger; and formations formed at 0.55 of cruise for up to 30 s. Fighters now fly gun passes, leave their slot once their mark is inside gun-pass range (1,250 m), and formations form at 0.8 of cruise for at most 12 s. That bought the kills back and cost cohesion (below).
+17. **Rejected: letting formations cruise at 0.85 of full burn.** It closed the range faster, but wingmen had no speed in hand to hold slots, and ships pinned at the full-burn clamp sat in "speed holds" (mid-size craft 18%). Formations cruise at the slowest wingman's cruise.
+18. **Rejected: a throttle rhythm that only subtracts.** It cost 10–15% of speed on average. Centred on the demand, it clipped against full burn instead (the same speed-hold plateau), so the demand is held under 0.88 of full burn before the rhythm is applied.
+19. **The muster keeps jump lanes clear** (the Dominion arrival test). Laying a squadron out in formation put wingmen on their leader's jump lane; blocked wingmen stayed scattered, which cost 10 points of cohesion. They are now stepped up or down the stack until their lane is clear.
+20. **Rank-spread handling rows** took the fleet classifier from 34–35% to 40–42%. Each widening of the spread was checked against jerk (fighters p95 7.0 against 11.9 on main).
+
+## How to re-run
+
+```
+node scripts/motion-report.cjs --label final --jobs 2 --compare bench/motion/baseline/summary.json   # all scenes and the sweep (--resume after an interruption)
+python3 scripts/motion-plot.py final                  # track plots, reversal heatmap, signature scatter, cohesion
+node scripts/motion-capture-all.cjs --label before --dir ../orbital-yard-main   # clips from a worktree of main
+node scripts/motion-capture-all.cjs --label after
+node scripts/motion-watch.cjs                         # design/tribute-new/review/motion/index.html
+node scripts/motion-doc.cjs                           # the tables in this file, from bench/motion/*/summary.json and checks.json
+node scripts/sim-bench.cjs --size 600 --matchup 5,6 --seed 1234 --from 38 --to 48   # cost (three runs, median)
+node scripts/motion-balance.cjs --out bench/motion/balance-after.json            # fleet-balance winners (add --root for main)
+node scripts/story-metrics.cjs --label after --out bench/motion/story/full-after.json
+NODE_PATH=/opt/node22/lib/node_modules node scripts/determinism-browser.cjs
+```
+
+Keep jobs at 2 for the full motion report: scene 10 runs 600 a side, and four workers at once ran this 15 GB container out of memory twice.

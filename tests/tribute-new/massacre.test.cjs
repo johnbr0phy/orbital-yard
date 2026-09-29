@@ -28,14 +28,16 @@ test('when the First Ones start unmaking a holding line, it breaks: pilots charg
   // The motion pass: the First Ones' drives now spool (16-28 s for their hulls), so the first strike lands
   // a few seconds later than it used to (about 38 s, not 31). Wait for it, then give the line 4 s.
   for(let t=0;t<30&&!b.run('ships.some(s=>s.side===0&&s.dead)');t++)b.step(1);
-  b.step(4);
-  const r=b.run(`(()=>{const f=ships.filter(s=>s.side===0&&!s.dead&&s.arr&&s.ai&&!s.hulls&&s.slen<120);
+  // Over the next 4 s: who chose to charge or run (a later strike can kill those who chose first).
+  let chose=0,r;
+  for(let t=0;t<4;t++){b.step(1);r=b.run(`(()=>{const f=ships.filter(s=>s.side===0&&!s.dead&&s.arr&&s.ai&&!s.hulls&&s.slen<120);
     return {n:f.length,hold:f.filter(s=>s.ai.action==='HOLD').length,charge:f.filter(s=>s.ai.response==='CHARGE').length,
-      flee:f.filter(s=>s.ai.response==='FLEE').length,lost:ships.filter(s=>s.side===0&&s.dead).length,released:battleAI.story.sides[0].lossAt!=null};})()`);
+      flee:f.filter(s=>s.ai.response==='FLEE').length,lost:ships.filter(s=>s.side===0&&s.dead).length,released:battleAI.story.sides[0].lossAt!=null};})()`);chose=Math.max(chose,r.charge+r.flee);}
+  r.chose=chose;
   assert.ok(r.lost>0,'the ancients struck');
   assert.ok(r.released,'the side registered it was under fire');
   assert.equal(r.hold,0,'nobody holds the parade line under fire: '+JSON.stringify(r));
-  assert.ok(r.charge+r.flee>0,'survivors choose to charge or flee: '+JSON.stringify(r));
+  assert.ok(r.chose>0,'survivors choose to charge or flee: '+JSON.stringify(r));
 });
 
 test('a doctrine that forbids retreat answers a massacre by charging',()=>{

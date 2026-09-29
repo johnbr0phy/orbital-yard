@@ -164,8 +164,8 @@ test('determinism: time scale and Math.random change nothing in the story',()=>{
   const run=(schedule,seed)=>{const b=loadBattle({modules:true});b.run(`Math.random=(()=>{let s=${seed};return ()=>{s=(s*16807)%2147483647;return s/2147483647;};})()`);
     b.start(6,5,2202,26);b.run('endIntro();lastT=1;');let t=1000;
     for(const [rate,seconds] of schedule){b.run(`warClock.setRate(${rate});for(let i=1;i<=${Math.round(seconds*60)};i++)frame(${t}+i*1000/60);`);t+=seconds*1000;}
-    // Run both to the same step count, then compare the whole story.
-    b.run('while(Math.round(battleTime*30)<30*70){battleTime+=1/30;simStep(battleTime,1/30);}');
+    // Run both to the same step count, then compare the whole story. (85 s since the motion pass: formations engage a little later.)
+    b.run('while(Math.round(battleTime*30)<30*85){battleTime+=1/30;simStep(battleTime,1/30);}');
     return b.run(storyState);};
   const a=run([[1,20]],7),b=run([[4,6],[.25,4],[2,5]],99991);
   const A=JSON.parse(a);assert.ok(A.events.length>5,'the war told a story: '+A.events.length+' events');
