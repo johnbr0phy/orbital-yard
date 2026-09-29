@@ -93,7 +93,7 @@ function installMotionRecorder(opts) {
       tr[o + 15] = s.fullBurn != null ? s.fullBurn : (flags & FLAG.transit) && a ? Math.min(180, (s.spd || 0) * (2.4 + a.budget[2] / 40)) : (s.spdMax || 0);
     }
     // Squadron state once a second (routing / membership), cheap.
-    if (k % 30 === 0) rec.squadsAt.push({k, sq: squads.map(q => [q.state === 'routing' ? 1 : 0, q.mem.length, q.phase || 0])});
+    if (k % 30 === 0) rec.squadsAt.push({k, sq: squads.map(q => [q.state === 'routing' ? 1 : 0, q.mem.length, q.phase || 0, q.fm ? q.fm.phase : ''])});
     rec.n++;
     return true;
   };
@@ -316,7 +316,7 @@ const BAND = {head: [1.5, 40], cv: [.01, .35], radiusMax: 700, radiusMinHulls: 1
 function cohesion(rec, bySq) {
   const out = {seconds: 0, inBand: 0, parade: 0, dissolved: 0, other: 0, perSquad: [], frames: new Map()};
   for (const [id, members] of bySq) {
-    let sec = 0, inb = 0, par = 0, dis = 0; const frames = [];
+    let sec = 0, inb = 0, par = 0, dis = 0; const frames = [], why = {head: 0, headLow: 0, cvLow: 0, cvHigh: 0, far: 0, near: 0, modes: {}, phase: {}, byPhase: {}};
     for (let k = 0; k < rec.n; k++) {
       const live = members.filter(S => fly(S, k));
       if (live.length < 3) { frames.push(null); continue; }
@@ -336,10 +336,14 @@ function cohesion(rec, bySq) {
       const dissolved = hsd > BAND.head[1] || rad > BAND.radiusMax;
       const band = hsd >= BAND.head[0] && hsd <= BAND.head[1] && cv >= BAND.cv[0] && cv <= BAND.cv[1] && rad <= BAND.radiusMax && rad >= BAND.radiusMinHulls * L;
       if (band) inb++; else if (parade) par++; else if (dissolved) dis++;
+      { const at = rec.squadsAt[Math.floor(k / 30)], ph = at && at.k === k && at.sq[id] ? at.sq[id][3] || '-' : '?'; const w = why.phase[ph] || (why.phase[ph] = [0, 0]); w[0]++; if (band) w[1]++; }
+      if (!band) { for (const S of live) { const key = MODES[S.get(k, 12)] + ((S.flags[k] & FLAG.formed) ? '+slot' : ''); why.modes[key] = (why.modes[key] || 0) + 1; } }
+      if (!band) { const at = rec.squadsAt[Math.floor(k / 30)], ph = at && at.sq[id] ? at.sq[id][3] || '-' : '?'; const r = why.byPhase[ph] || (why.byPhase[ph] = {head: 0, cvHigh: 0, far: 0, near: 0, headLow: 0}); r.head += hsd > BAND.head[1] ? 1 : 0; r.cvHigh += cv > BAND.cv[1] ? 1 : 0; r.far += rad > BAND.radiusMax ? 1 : 0; r.near += rad < BAND.radiusMinHulls * L ? 1 : 0; r.headLow += hsd < BAND.head[0] ? 1 : 0; }
+      if (!band) { why.head += hsd > BAND.head[1] ? 1 : 0; why.headLow += hsd < BAND.head[0] ? 1 : 0; why.cvLow += cv < BAND.cv[0] ? 1 : 0; why.cvHigh += cv > BAND.cv[1] ? 1 : 0; why.far += rad > BAND.radiusMax ? 1 : 0; why.near += rad < BAND.radiusMinHulls * L ? 1 : 0; }
     }
     out.frames.set(id, frames);
     out.seconds += sec; out.inBand += inb; out.parade += par; out.dissolved += dis;
-    out.perSquad.push({squad: id, race: members[0].meta.race, cls: members[0].meta.cls, seconds: sec, inBand: inb, parade: par, dissolved: dis});
+    out.perSquad.push({squad: id, race: members[0].meta.race, cls: members[0].meta.cls, seconds: sec, inBand: inb, parade: par, dissolved: dis, why});
   }
   out.other = out.seconds - out.inBand - out.parade - out.dissolved;
   return out;

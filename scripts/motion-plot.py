@@ -115,11 +115,18 @@ def scene_figure(base, run, out):
         for sid, p in shut.items():
             top.plot(p['x'], p['z'], marker='s', mfc='none', mec=INK, ms=6, mew=.8)
         head.set_visible(False); speed.set_visible(False)
+    if fships and not many:
+        xs = np.concatenate([arr(s['x']) for s in fships]); zs = np.concatenate([arr(s['z']) for s in fships]); ys = np.concatenate([arr(s['y']) for s in fships])
+        if np.isfinite(xs).any():
+            x0, x1, z0, z1 = np.nanmin(xs), np.nanmax(xs), np.nanmin(zs), np.nanmax(zs)
+            m = max(200, .15 * max(x1 - x0, z1 - z0))
+            top.set_xlim(x0 - m, x1 + m); top.set_ylim(z0 - m, z1 + m); side.set_xlim(x0 - m, x1 + m)
+            y0, y1 = np.nanmin(ys), np.nanmax(ys); side.set_ylim(y0 - max(100, .2 * (y1 - y0)), y1 + max(100, .2 * (y1 - y0)))
     top.set_aspect('equal', adjustable='datalim')
-    top.set_title('From above (x, z). Focus ships in colour; rings: reversals; squares: shuttle windows over 5%', loc='left')
+    top.set_title('From above (x, z). Rings: reversals. Squares: shuttle over 5%', loc='left')
     top.set_xlabel('x (m)'); top.set_ylabel('z (m)')
     side.set_title('From the side (x, y)', loc='left'); side.set_xlabel('x (m)'); side.set_ylabel('y (m)')
-    head.set_title('Heading over time (unwrapped, degrees from start)', loc='left'); head.set_xlabel('war time (s)')
+    head.set_title('Heading (unwrapped, degrees from start)', loc='left'); head.set_xlabel('war time (s)')
     speed.set_title('Speed over time (m/s)', loc='left'); speed.set_xlabel('war time (s)')
     fig.suptitle(f"{run['spec']['id']} {run['spec']['name']}  ({os.path.basename(base)})", x=.01, ha='left', fontsize=12, fontweight='bold', color=INK)
     fig.tight_layout(rect=(0, 0, 1, .97))
