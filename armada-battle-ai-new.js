@@ -1562,10 +1562,12 @@
       if(!o.lining&&!o.free){
         // The tightest limit: 75 degrees past every heading of the last 7 s that it has since swung 100 away from.
         let swing=0;for(let j=0;j<58;j++)if(now-hy.t[j]<=7){const d=hy.u-hy.buf[j];if(Math.abs(d)>Math.abs(swing))swing=d;}
-        const dir=Math.sign(swing);let lim=null;
-        if(Math.abs(swing)>1.75)for(let j=0;j<58;j++)if(now-hy.t[j]<=7&&(hy.u-hy.buf[j])*dir>1.75){const l=hy.buf[j]+1.3*dir;if(lim==null||(l-lim)*dir>0)lim=l;}
+        let dir=Math.sign(swing),lim=null,until=0;
+        if(Math.abs(swing)>1.75)for(let j=0;j<58;j++)if(now-hy.t[j]<=7&&(hy.u-hy.buf[j])*dir>1.75){const l=hy.buf[j]+1.3*dir;if(lim==null||(l-lim)*dir>0){lim=l;until=hy.t[j]+7;}}
+        // The limit holds until the heading it came from is seven seconds old, even once the pilot eases back under 100 degrees.
+        if(hy.lim!=null&&now<hy.until&&(lim==null||(hy.dir===dir&&(hy.lim-lim)*dir>0))){lim=hy.lim;dir=hy.dir;until=hy.until;}
         if(lim!=null)err=dir>0?Math.max(err,lim-hy.u):Math.min(err,lim-hy.u);
-        hy.lim=lim;hy.dir=dir;
+        hy.lim=lim;hy.dir=dir;hy.until=until;
       }else hy.lim=null;
       // In a knife fight (lining up, or on a live mark close by) the pilot's hands are quicker.
       const tau=(.32+.5*h.smooth)*(1+Math.min(2.2,L/200))*(o.formed?1.1:1)*(o.lining||o.free?.55:1);
@@ -1612,19 +1614,26 @@
         w.next=now+.2;const dx=Math.cos(s.yaw)*v/sp,dy=vy/sp,dz=Math.sin(s.yaw)*v/sp;
         const o=w.i*7;w.b[o]=s.x;w.b[o+1]=s.y;w.b[o+2]=s.z;w.b[o+3]=dx;w.b[o+4]=dy;w.b[o+5]=dz;w.b[o+6]=now;w.i=(w.i+1)%50;w.n=Math.min(50,w.n+1);
         const r=tol*1.8;
-        scan:for(const ahead of [.5,1,1.5,2]){
-          const qx=s.x+dx*sp*ahead,qy=s.y+dy*sp*ahead,qz=s.z+dz*sp*ahead;
+        // look ahead along the arc it is turning on, not the straight line: a pilot hauling round sees its old track coming
+        const yv=clamp(s.yawV||0,-1.2,1.2);let qx=s.x,qy=s.y,qz=s.z,ahead=0,hx=dx,hz=dz;
+        scan:while(ahead<2.5){
+          ahead+=.25;const a=s.yaw+yv*ahead;hx=Math.cos(a)*v/sp;hz=Math.sin(a)*v/sp;qx+=hx*sp*.25;qy+=dy*sp*.25;qz+=hz*sp*.25;
+          if(ahead<.5)continue;
           for(let j=0;j<w.n;j++){
             const e=j*7,age=now-w.b[e+6];if(age<1||age>10)continue;
             const ex=qx-w.b[e],ey=qy-w.b[e+1],ez=qz-w.b[e+2];if(ex*ex+ey*ey+ez*ez>r*r)continue;
-            if(dx*w.b[e+3]+dy*w.b[e+4]+dz*w.b[e+5]>-.4)continue;
+            if(hx*w.b[e+3]+dy*w.b[e+4]+hz*w.b[e+5]>-.4)continue;
             // pass the old point two tolerances off, on the side the pilot is already on (perpendicular to the old track)
             const odx=w.b[e+3],ody=w.b[e+4],odz=w.b[e+5],al=ex*odx+ey*ody+ez*odz;
             let ux=ex-al*odx,uy=ey-al*ody,uz=ez-al*odz,un=Math.hypot(ux,uy,uz);
             if(un<1){ux=0;uy=s.y>=w.b[e+1]?1:-1;uz=0;un=1;}
             // a steep old track is passed to the side (a heading nudge), a level one over or under
-            const steep=Math.abs(ody)>.5;
-            w.p=[steep?Math.sign(Math.cos(s.yaw)*uz/un-Math.sin(s.yaw)*ux/un)||1:0,steep?s.y:w.b[e+1]+(qy>=w.b[e+1]?1:-1)*tol*2.5,w.b[e+1],tol];w.until=now+1.5;break scan;
+            const steep=Math.abs(ody)>.7;
+            // once it has picked over or under, it keeps to that side while the rule holds (and clears every point it has seen)
+            const held=now<w.until&&w.p&&!w.p[0]&&w.side;let side=held?w.side:(qy>=w.b[e+1]?1:-1),ty=w.b[e+1]+side*tol*2.5;
+            if(held)ty=side>0?Math.max(ty,w.p[1]):Math.min(ty,w.p[1]);
+            if(!steep)w.side=side;
+            w.p=[steep?Math.sign(Math.cos(s.yaw)*uz/un-Math.sin(s.yaw)*ux/un)||1:0,steep?s.y:ty,w.b[e+1],tol];w.until=now+1.5;break scan;
           }
         }
       }
