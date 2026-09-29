@@ -1312,7 +1312,7 @@
   /* The rows above are the authored characters. So that fleets read apart from motion alone, each motion
      parameter is then spread across its range by rank: every fleet keeps its place in the order (the Borg
      still bank least, the swarms still weave hardest), but near-twins no longer sit on the same number. */
-  const SPREAD={smooth:[.15,1],bank:[0,1.25],overshoot:[0,.9],rhythmHz:[.04,.48],rhythm:[.045,.13],weave:[0,1],weaveHz:[.2,1.15],react:[.15,.7]};
+  const SPREAD={smooth:[.1,1],bank:[0,1.4],overshoot:[0,.95],rhythmHz:[.03,.6],rhythm:[.045,.16],weave:[0,1.2],weaveHz:[.15,1.4],react:[.15,.75]};
   for(const key of Object.keys(SPREAD)){
     const [lo,hi]=SPREAD[key],order=HANDLING.map((row,i)=>[row[key],i]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
     order.forEach(([,i],j)=>{HANDLING[i][key]=+(lo+(hi-lo)*j/(order.length-1)).toFixed(3);});
@@ -1570,15 +1570,18 @@
       if(!o.capital&&L>=40)mx=Math.min(mx,Math.max(Math.abs(s.v||0),3)/((s.gunboat?1.4:s.midcraft?.9:.8)*L));
       // A formation leader turns the squadron as one wide arc.
       {const lf=this.leadsFormation(s);if(lf)mx=Math.min(mx,lf.turnCap);}
-      if(L>=80){const vf=Math.abs(s.v||0)/Math.max(1,s.spdMax||s.spd||20);if(vf<.2)mx=Math.min(mx,Math.max(.02,.08*vf/.2));}
+      let slowCap=null;
+      if(L>=80){const vf=Math.abs(s.v||0)/Math.max(1,s.spdMax||s.spd||20);if(vf<.2)mx=Math.min(mx,slowCap=Math.max(.02,.08*vf/.2));}
       let cmd=clamp(err*kp,-mx,mx);
       if(!o.clean){
-        const k=h.weave*w*.06*(o.formed?.45:1)*(L>=80?.35:1);
+        const k=h.weave*w*.06*(o.formed?.6:1)*(L>=80?.35:1);
         cmd+=k*(Math.sin(now*h.weaveHz*6.283+h.ph[0])+.4*Math.sin(now*h.weaveHz*14.4+h.ph[1]));
       }
       if(o.jink)cmd+=o.jink;
       // The weave and a hurt pilot's jink ride on top, but never carry a committed pilot back past its limit.
-      if(hy.lim!=null){const back=Math.max(0,(hy.u-hy.lim)*hy.dir)/(tau*1.5);cmd=hy.dir>0?Math.max(cmd,-back):Math.min(cmd,back);}
+      // Nothing 80 m or longer pivots at a crawl, weave and jink included.
+      if(slowCap!=null)cmd=clamp(cmd,-slowCap,slowCap);
+      if(hy.lim!=null){const back=Math.max(0,(hy.u-hy.lim)*hy.dir)/(tau*3);cmd=hy.dir>0?Math.max(cmd,-back):Math.min(cmd,back);}
       const amax=Math.max(.02,w)/(tau*1.1),jmax=amax/(tau*1.4);
       const want=clamp((cmd-(s.yawV||0))/tau,-amax,amax);
       s.yawA=(s.yawA||0)+clamp(want-(s.yawA||0),-jmax*dt,jmax*dt);

@@ -16283,7 +16283,7 @@ function fighterPassGoal(s,t,now){
   if(gap<55){
     /* break past her to the pilot's own side, so the next run comes in on a new line
        instead of back down the one just flown */
-    const distance=Math.max(200,(s.v||s.spd)*2.2),brk=s.yaw+(s.brkS||1)*.65;
+    const distance=Math.max(200,(s.v||s.spd)*2.2),brk=s.yaw+(s.brkS||1)*1.15;
     s.passGoal=[s.x+Math.cos(brk)*distance,s.y+(s.vy||0)*2.2,s.z+Math.sin(brk)*distance];
     s.passUntil=now+2.2*battleAI.extendK(s);
     return s.passGoal;
