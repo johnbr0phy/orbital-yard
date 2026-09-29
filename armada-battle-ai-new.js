@@ -412,7 +412,7 @@
         // A squadron keeps its shape on a posture order: the leader takes the point, the wingmen their slots.
         let slot=null;
         if(goal&&(!capital||sq)&&FORMATION_ORDERS.has(kind)&&this.formed(s,now)){slot=this.slotFor(s,sq,now);if(slot)goal=slot.goal;}
-        if(goal){a.plan={goal:slot?goal:this.avoidField(s,goal),boost,mode,target:a.target,reason:a.reason,slot,orbit:slot?null:orbit,station:!slot&&kind!=='ROUT'&&kind!=='PANIC'&&kind!=='RAM'&&kind!=='STRIKE'&&kind!=='BERSERK'};return a.plan;}
+        if(goal){a.plan={goal:slot?this.slotAround(s,slot,goal):this.avoidField(s,goal),boost,mode,target:a.target,reason:a.reason,slot,orbit:slot?null:orbit,station:!slot&&kind!=='ROUT'&&kind!=='PANIC'&&kind!=='RAM'&&kind!=='STRIKE'&&kind!=='BERSERK'};return a.plan;}
       }
       if(warning){
         let dx=s.x-warning.point[0],dy=s.y-warning.point[1],dz=s.z-warning.point[2];
@@ -493,7 +493,7 @@
           if(d>260){const k=Math.min(.35,(d-260)/1400);goal=[goal[0]+(sq.cx-goal[0])*k,goal[1]+(sq.cy-goal[1])*k,goal[2]+(sq.cz-goal[2])*k];}
         }
       }
-      a.plan={goal:slot?goal:this.avoidField(s,goal),boost,mode,target:a.target,reason:a.reason,slot,orbit,
+      a.plan={goal:slot?this.slotAround(s,slot,goal):this.avoidField(s,goal),boost,mode,target:a.target,reason:a.reason,slot,orbit,
         station:!slot&&!orbit&&(mode==='REGROUP'||mode==='ESCORT'||mode==='SEARCH')};
       return a.plan;
     }
@@ -544,6 +544,8 @@
     }
     // Pass around rocks and moons: if the leg to the goal clips one, fly to a
     // point on its near flank first. Only the first obstruction ahead counts.
+    // A wingman whose slot lies beyond a rock goes round the rock, not into it.
+    slotAround(s,slot,goal){const g=this.avoidField(s,slot.point);return g===slot.point?goal:g;}
     avoidField(s,goal){
       const f=this.field;if(!f||!f.solids.length)return goal;
       const r0=radius(s),dx=goal[0]-s.x,dy=goal[1]-s.y,dz=goal[2]-s.z,len=length(dx,dy,dz);if(len<1)return goal;
@@ -1573,10 +1575,14 @@
       // instead of pirouetting (0.8 of its length for light craft and heroes, 0.9 for slicer and
       // cutter craft, 1.4 for frigates). Fighters under 40 m are never held back by this.
       if(!o.capital&&L>=40)mx=Math.min(mx,Math.max(Math.abs(s.v||0),3)/((s.gunboat?1.4:s.midcraft?.9:.8)*L));
+      // A capital's turning circle is at least 0.6 of its length: a U-turn tighter than that is a pivot.
+      else if(o.capital)mx=Math.min(mx,Math.max(Math.abs(s.v||0),1)/(.6*L));
       // A formation leader turns the squadron as one wide arc.
       {const lf=this.leadsFormation(s);if(lf)mx=Math.min(mx,lf.turnCap);}
+      // Clawing off a rock, a hull may turn at up to 0.09 rad/s whatever its speed (a slow pivot, never a spin).
+      if(o.escape)mx=Math.max(mx,Math.min(.09,w));
       let slowCap=null;
-      if(L>=80){const vf=Math.abs(s.v||0)/Math.max(1,s.spdMax||s.spd||20);if(vf<.2)mx=Math.min(mx,slowCap=Math.max(.02,.08*vf/.2));}
+      if(L>=80&&!o.escape){const vf=Math.abs(s.v||0)/Math.max(1,s.spdMax||s.spd||20);if(vf<.2)mx=Math.min(mx,slowCap=Math.max(.02,.08*vf/.2));}
       let cmd=clamp(err*kp,-mx,mx);
       if(!o.clean){
         const k=h.weave*w*.06*(o.formed?.6:1)*(L>=80?.35:1);
@@ -1593,6 +1599,35 @@
       s.yawV=clamp((s.yawV||0)+s.yawA*dt,-Math.max(mx,Math.abs(cmd))*1.05,Math.max(mx,Math.abs(cmd))*1.05);
       s.yaw+=s.yawV*dt;
       return Math.min(1,Math.abs(s.yawV)/Math.max(.05,w));
+    },
+    /* A pilot's own wake: nobody flies back through their own track head-on. Every 0.2 s the pilot
+       notes where it was and which way it flew; if the next 0.5 to 2 s would bring it back across a
+       point of the last 1 to 10 s flying the other way, it passes that point two and a half tolerances over or under
+       it (whichever way it is already climbing or diving), or (when the old track was steep) to the side it is already on. Returns [side, altitude] or null. */
+    wake(s,now){
+      const L=s.slen||20,tol=Math.max(20,L*.5),w=s.helmWake||(s.helmWake={b:new Float64Array(50*7),i:0,n:0,next:0,y:null,until:0});
+      const v=Math.abs(s.v||0),vy=s.vy||0,sp=Math.hypot(v,vy);
+      if(now>=w.next&&sp>.5){
+        w.next=now+.2;const dx=Math.cos(s.yaw)*v/sp,dy=vy/sp,dz=Math.sin(s.yaw)*v/sp;
+        const o=w.i*7;w.b[o]=s.x;w.b[o+1]=s.y;w.b[o+2]=s.z;w.b[o+3]=dx;w.b[o+4]=dy;w.b[o+5]=dz;w.b[o+6]=now;w.i=(w.i+1)%50;w.n=Math.min(50,w.n+1);
+        const r=tol*1.8;
+        scan:for(const ahead of [.5,1,1.5,2]){
+          const qx=s.x+dx*sp*ahead,qy=s.y+dy*sp*ahead,qz=s.z+dz*sp*ahead;
+          for(let j=0;j<w.n;j++){
+            const e=j*7,age=now-w.b[e+6];if(age<1||age>10)continue;
+            const ex=qx-w.b[e],ey=qy-w.b[e+1],ez=qz-w.b[e+2];if(ex*ex+ey*ey+ez*ez>r*r)continue;
+            if(dx*w.b[e+3]+dy*w.b[e+4]+dz*w.b[e+5]>-.4)continue;
+            // pass the old point two tolerances off, on the side the pilot is already on (perpendicular to the old track)
+            const odx=w.b[e+3],ody=w.b[e+4],odz=w.b[e+5],al=ex*odx+ey*ody+ez*odz;
+            let ux=ex-al*odx,uy=ey-al*ody,uz=ez-al*odz,un=Math.hypot(ux,uy,uz);
+            if(un<1){ux=0;uy=s.y>=w.b[e+1]?1:-1;uz=0;un=1;}
+            // a steep old track is passed to the side (a heading nudge), a level one over or under
+            const steep=Math.abs(ody)>.5;
+            w.p=[steep?Math.sign(Math.cos(s.yaw)*uz/un-Math.sin(s.yaw)*ux/un)||1:0,steep?s.y:w.b[e+1]+(Math.abs(vy)>5?Math.sign(vy):s.y>=w.b[e+1]?1:-1)*tol*2.5];w.until=now+1.5;break scan;
+          }
+        }
+      }
+      return now<w.until?w.p:null;
     },
     // Banking into the turn: a critically damped roll toward the pilot's own bank for this rate.
     helmBank(s,dt,now,o){

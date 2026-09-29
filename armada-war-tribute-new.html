@@ -12515,7 +12515,18 @@ function fieldContacts(){
       const dy=s.y-o.center[1];if(dy>r||dy<-r)continue;const dz=s.z-o.center[2];if(dz>r||dz<-r)continue;
       const d=Math.sqrt(dx*dx+dy*dy+dz*dz);if(d>=r)continue;
       const k=d>1e-6?(r-d)/d:0;if(d<=1e-6){s.y+=r;continue;}
-      s.x+=dx*k;s.y+=dy*k;s.z+=dz*k;s.v=(s.v||0)*.6;s.vy=(s.vy||0)*.5;s.trafficBrakeUntil=battleTime+.6;
+      s.x+=dx*k;s.y+=dy*k;s.z+=dz*k;
+      /* the rock stops only the motion into it: a pilot already pulling away is not braked again, and it
+         remembers which way is out for two seconds (a hull nosed into a rock at a crawl could not turn out) */
+      const nx=dx/d,ny=dy/d,nz=dz/d,vx=Math.cos(s.yaw||0)*(s.v||0),vz=Math.sin(s.yaw||0)*(s.v||0),vy=s.vy||0,into=vx*nx+vy*ny+vz*nz;
+      if(into<0&&(fightsAsCrown(s)||(s.slen||20)>=300)){s.v=(s.v||0)*.6;s.vy=(s.vy||0)*.5;s.trafficBrakeUntil=battleTime+.6;}
+      else if(into<0){
+        // a small hull skids along the rock: the motion into it is lost, the rest carries on (a little slower)
+        let tx=vx-nx*into,ty=vy-ny*into,tz=vz-nz*into;const sp=Math.hypot(vx,vy,vz),tl=Math.hypot(tx,ty,tz);
+        if(tl<sp*.2){tx=-nz*sp*.5;ty=0;tz=nx*sp*.5;} // head-on: glance off to one side
+        const h=Math.hypot(tx,tz);s.v=h*.85;s.vy=ty*.85;if(h>.5)s.yaw=Math.atan2(tz,tx);s.trafficBrakeUntil=battleTime+.6;
+      }
+      s.rockN=[nx,ny,nz];s.rockUntil=battleTime+2;
     }
   }
 }
@@ -17613,12 +17624,23 @@ function simStep(now,dt){
          smoothed over about a second and a half (a sensor refresh must not make it porpoise) */
       s.goalY=s.goalY==null||urgent?goal[1]:s.goalY+(goal[1]-s.goalY)*Math.min(1,dt/1.5);
       let dx=goal[0]-s.x,dy=s.goalY-s.y,dz=goal[2]-s.z;
+      /* nosed into a rock: slide along its surface and away from it, never through it */
+      let escape=false;
+      if(now<(s.rockUntil||0)&&s.rockN){
+        const n=s.rockN,fx=Math.cos(s.yaw),fz=Math.sin(s.yaw),fn=fx*n[0]+fz*n[2];
+        if(fn<.3){const tx=fx-n[0]*fn,tz=fz-n[2]*fn,tn=Math.hypot(tx,tz)||1;
+          dx=(tx/tn)*250+n[0]*250;dz=(tz/tn)*250+n[2]*250;dy=Math.max(dy,n[1]*250+40);escape=true;}
+      }
+      /* never back through its own wake head-on: pass it a little to the side it is already on */
+      const wk=boat?null:battleAI.wake(s,now),wakeY=wk&&!wk[0]?wk[1]:null;
+      if(wakeY!=null)dy=wakeY-s.y;
       if(aw>0&&s.avY!=null&&!debris)dy+=(s.avY-s.goalY)*aw;
       const rail=Math.hypot(dx,dz)||1;
       let dyaw=Math.atan2(dz,dx)-s.yaw;
       /* a whisker of private heading, never a drunk crab that walks the chevron off the line */
       if(!boat&&!formed&&!liningUp&&!loiter)dyaw+=(s.crab||0)*Math.min(1,rail/420)*0.35;
       dyaw=((dyaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+      if(wk&&wk[0])dyaw+=wk[0]*.4;
       const stunned=!!(s.stunT&&now<s.stunT);
       const jink=!boat&&hurt?Math.sin(now*2.2+s.wf*2.0)*battleAI.turnLimit(s)*0.35:0;
       /* gunboats keep a clean track: the weave is what made the frigates nod */
@@ -17626,7 +17648,7 @@ function simStep(now,dt){
          commitment is for flying a line, not for a knife fight */
       const mk=plan.target>=0?ships[plan.target]:null;
       const knife=!boat&&!s.hulls&&(s.slen||20)<80&&mk&&!mk.dead&&['ATTACK','FLANK','STRIKE','EVADE'].includes(plan.mode)&&gapTo(s,mk)<1600;
-      battleAI.helmTurn(s,dyaw,dt,now,{max:s.turn*(1+0.5*(boost-1))*(stunned?.4:1),boost:1+0.5*(boost-1),formed,lining:liningUp,free:knife,clean:boat,jink});
+      battleAI.helmTurn(s,dyaw,dt,now,{max:s.turn*(1+0.5*(boost-1))*(stunned?.4:1),boost:1+0.5*(boost-1),formed,lining:liningUp,free:knife||escape,escape,clean:boat,jink});
       battleAI.helmBank(s,dt,now,{});
       if(!formed&&!s.hulls&&!boat&&s.slen<120&&now>=s.brUntil&&
          ((now-s.hurtT<1.6&&combatRandom()<dt*0.8)||combatRandom()<dt*0.012)){
@@ -17637,11 +17659,11 @@ function simStep(now,dt){
         s.brUntil=now+s.brT;
       }
       const hd=battleAI.hand(s);
-      const climb=aw>.05?.65:liningUp?.75:boat||formed?.10:.22;
+      const climb=aw>.05||wakeY!=null?.65:liningUp?.75:boat||formed?.10:.22;
       const bob=boat?0:Math.sin(now*hd.weaveHz*4.1+hd.ph[1])*s.spd*.02*hd.weave*(formed?.4:1);
       const wv=Math.max(-s.spd*climb,Math.min(s.spd*climb,
-        liningUp?dy/rail*Math.max(18,Math.abs(s.v)):dy*(boat?.08:formed?.10:.18)+bob));
-      battleAI.helmClimb(s,wv,dt,{fast:liningUp||aw>.05,urgent:liningUp||(avoiding&&(s.trafficBrake||1)<.7)});
+        wakeY!=null?dy*.9:liningUp?dy/rail*Math.max(18,Math.abs(s.v)):dy*(boat?.08:formed?.10:.18)+bob));
+      battleAI.helmClimb(s,wv,dt,{fast:liningUp||aw>.05||wakeY!=null||escape,urgent:liningUp||wakeY!=null||escape||(avoiding&&(s.trafficBrake||1)<.7)});
       const dist=Math.hypot(dx,dy,dz);
       let want=craftWant(s,now,sq,mood,dist,boost);
       /* a station is loitered lazily; an attack orbit is flown at the pilot's own pace, carrying
