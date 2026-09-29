@@ -63,3 +63,23 @@ The other suspects, checked:
 - **The 0.3 s traffic-avoidance offset that flickers:** dead code. `s.avT` is read in two places and written nowhere. The avoidance that does run is the traffic pilot's passing altitude, held for 1.2 s and switched on and off with a brake of 0.4, 0.65 or 0.9. That switching is real, and it now blends.
 - **Commit timers flipping goals:** real, but secondary. A pilot re-decides every 1.3–5.5 s. When ATTACK and FLANK aim at opposite sides of a target, the goal can swap sides mid-turn. There are now hysteresis and dwell times.
 - **Patrol waypoints close to the turning radius:** the same thing as the first cause, in another form. Every point goal smaller than a few turning circles makes the hull turn round on it.
+
+## Log
+
+What I tried, in order, and what the numbers said. Rejected approaches stay here so nobody tries them again.
+
+1. **Baseline on main (7f82d45).** Nine of ten motion criteria fail. Rebel frigates reverse and shuttle on their hold points (see above); classifier 24.6%; frigate p95 angular jerk 10.84 rad/s³.
+2. **Handling rows and a layered helm** (per-fleet distributions, per-ship stream, second-order turn, bank and climb, jerk-limited speed inside the spool envelope, reaction delay on intents). Reversals for gunboats and capitals went to zero at once: arrival now has a shape (a loiter circle or a racetrack) instead of a point.
+3. **Rejected: reaction delay inside the feedback loop.** Delaying the measured error as well as the intent made every pilot oscillate around its own track. The delay now applies to intents (goal and slot points) only.
+4. **Rejected: rigid formation slots rotated with the leader's heading.** When a leader turned, the outer slots swept sideways faster than a wingman could fly and the wingman looped back to catch the slot. Slots now sit on the leader's own breadcrumb trail (path-relative), so a wingman flies the line the leader flew.
+5. **Rejected: loiter radius from current speed.** A slowing ship shrank its circle, turned harder, slowed more. The radius now comes from cruise speed and the hull's turning circle.
+6. **Rejected: wingmen turning back for a slot they overshot.** A wingman ahead of its slot now eases off (a speed floor) instead of turning round. This alone took most of the fighter shuttling.
+7. **Throttle chase on slotted wingmen.** The page's throttle chased a mark's speed even in formation, dragging wingmen off their slots. Slotted ships skip the chase.
+8. **Hero ships set the spacing.** Squad spacing from the mean hull length let one hero stretch a squadron of fighters to 900 m. Spacing now uses the median.
+9. **Vertical hops.** Avoidance altitude switched in 0.3 s steps. Now: a climb limit, avoidance blends in over 0.35 s and out over 4 s, and goal height is smoothed over 1.5 s.
+10. **Pirouettes.** Big small craft (Shadow hunters, Borg spheres) could turn inside their length at low speed. A turning-circle floor (radius at least 0.8 to 1.4 hull lengths by class) stopped them.
+11. **Jerk regression.** The first helm cut reversals but raised fighter jerk. Longer turn time constants and a tighter jerk limit brought every class under baseline.
+12. **Capital acceleration overrun.** Transit burns accelerated without limit. The helm's speed demand is now clamped to the drive's spool envelope, and capital limits pass.
+13. **Escorts dispersed at muster.** Squads started scattered and spent a minute forming. `formTheSquadrons()` lays band-one squads out in formation around their leader at muster.
+14. **Cruiser squads fly a column** (line-ahead at 1.4 hull lengths). See "Cohesion and big hulls" for why this is the closest honest formation.
+15. **Speed holds.** Wingmen matching a leader at cruise sat inside ±2% for 5 s. Each pilot's throttle rhythm now carries a 3.8 to 5 s beat of at least 5%, from their own handling draw.

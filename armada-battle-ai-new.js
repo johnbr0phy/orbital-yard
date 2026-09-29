@@ -522,11 +522,15 @@
       }
       // Easing off to let the slot come back is for small corrections; a real rejoin is flown at pace, as an arc.
       // Ahead of its slot, a wingman drops right back and lets the formation come to it.
-      const floor=along<0?Math.max(spd*.3,sv*.5):off<p[3]*1.2?Math.max(spd*.35,sv*.55):Math.max(spd*.6,sv*.7);
+      // A big hull (80 m or more) turns only with way on, so it never eases off below four-fifths of the formation's pace.
+      const big=(s.slen||20)>=80;
+      const floor=along<0?Math.max(spd*(big?.45:.3),sv*(big?.8:.5)):off<p[3]*1.2?Math.max(spd*.35,sv*(big?.8:.55)):Math.max(spd*.6,sv*.8);
       // Sideways correction scales with forward pace: at a crawl a small error must not swing the nose.
       // Near the slot a pilot closes gently: never more than 30% off the formation's pace.
       const corr=off<p[3]*2?clamp(along*k,-.3*Math.max(sv,spd*.5),.3*Math.max(sv,spd*.5)):along*k;
-      const va=clamp(sv+corr,floor,top),lmax=va*(off<p[3]*1.2?.35:.7),vl=clamp(side*k,-lmax,lmax);
+      // A rejoin never runs at more than about half as fast again as the formation: a wingman sprinting at
+      // three times a crawling squadron's pace reads as a ship that has left it.
+      const va=clamp(sv+corr,floor,Math.min(top,Math.max(sv*1.45+spd*.1,spd*.5))),lmax=va*(off<p[3]*1.2?.35:.7),vl=clamp(side*k,-lmax,lmax);
       // Each pilot's own slow wander on the line: a squadron never flies as one autopilot.
       const wander=(.044+.061*(1-this.hand(lead).tight))*Math.sin(now*(.4+.5*h.breath)+h.ph[4]);
       const reach=Math.max(60,(s.slen||20)*2,va*1.2),ang=Math.atan2(vl,va)+wander;
@@ -1317,6 +1321,21 @@
     const off=j===0?[0,0,0]:j===1?[-.8,.12,-1.0]:j===2?[-.8,-.12,1.0]:[-1.6,.22,2.0];
     return [base[0]+off[0],base[1]+off[1],base[2]+off[2]];
   }
+  /* Spacing by hull: fighters a few lengths apart, frigates 1.7 lengths, cruisers 1.4 lengths (L is the
+     squadron's median hull). Then held to a squadron that reads as one: its radius (RMS distance of the
+     hulls from their centre, for this shape with n wingmen) at least 1.9 to 2.6 mean hull lengths (Lm), so
+     hulls never stack, and at most 560 m, so a column of big frigates is one squadron, not a kilometre-long
+     string. When the two bounds cross (hulls over about 300 m), the hulls win. */
+  function formationSpacing(shape,n,L,Lm,capital,tight){
+    const d=capital?L*1.4:shape==='column'?Math.max(60,L*1.7)*(1.3-.5*tight):Math.max(42,L*3)*(1.55-.75*tight);
+    if(!n)return d;
+    const P=[[0,0,0]];for(let i=0;i<n;i++)P.push(slotOffset(shape,i,n));
+    const c=[0,1,2].map(j=>P.reduce((a,p)=>a+p[j],0)/P.length);
+    const r1=Math.sqrt(P.reduce((a,p)=>a+(p[0]-c[0])**2+(p[1]-c[1])**2+(p[2]-c[2])**2,0)/P.length)||1;
+    // Aim for the middle of that range, not its edge: a squadron loitering at a crawl draws in on itself.
+    const lo=Math.max(1.9*Lm,Math.min(2.6*Lm,.75*Lm+350)),hi=Math.max(560,lo);
+    return Math.max(lo/r1,Math.min(d,hi/r1));
+  }
   // Orders a pilot carries out alone: they free that pilot from the formation, not the squadron.
   const SOLO_ORDERS=new Set(['ROUT','PANIC','BERSERK','RAM','TOW','RECOVER','DRIFT','CONVOY']);
   // Orders a squadron carries out together: the leader flies the order, the wingmen hold their slots.
@@ -1358,19 +1377,24 @@
         if(!members.length){fm.lead=-1;continue;}
         // The leader is the first member not busy with an order of their own.
         const busy=m=>m.ai&&m.ai.order&&now<m.ai.order.until&&SOLO_ORDERS.has(m.ai.order.kind);
+        // A mixed squadron (a crown and its fighters) is led from its largest kind: eight fighters are
+        // not slotted behind a hull that crawls at a tenth of their pace.
+        const kind=m=>capital(m)?2:m.gunboat?1:0,count=[0,0,0];for(const m of members)count[kind(m)]++;
+        let major=kind(members[0]);for(let k=0;k<3;k++)if(count[k]>count[major])major=k;
         const cur=members.find(m=>m.id===fm.lead);
-        if(!cur||busy(cur)){const next=members.find(m=>!busy(m))||members[0];if(next.id!==fm.lead){fm.lead=next.id;fm.trail=null;if(fm.phase==='CRUISE')fm.phase='FORM',fm.since=now;}}
+        if(!cur||busy(cur)||kind(cur)!==major){const next=members.find(m=>!busy(m)&&kind(m)===major)||members.find(m=>!busy(m))||members[0];if(next.id!==fm.lead){fm.lead=next.id;fm.trail=null;if(fm.phase==='CRUISE')fm.phase='FORM',fm.since=now;}}
         const lead=this.byId.get(fm.lead),h=this.hand(lead);
         // Shape and spacing: frigates fly a line-ahead column (they commit to a line and hold it);
         // everyone else flies their fleet's shape. Ranks follow the squadron's own order.
         // Spacing comes from the typical hull, not the biggest: a hero leading fighters must not spread them a kilometre apart.
-        let slow=Infinity;for(const m of members)slow=Math.min(slow,m.spd||20);
-        const lens=members.map(m=>m.slen||20).sort((x,y)=>x-y),L=lens[lens.length>>1];
+        // Who holds a slot: members whose pace is within reach of the leader's. The rest fly free.
+        const pace=m=>(m.spd||20)/Math.max(1,lead.spd||20),ranked=members.filter(m=>m===lead||pace(m)>=.55&&pace(m)<=2.5);
+        let slow=Infinity;for(const m of ranked)slow=Math.min(slow,m.spd||20);
+        const lens=ranked.map(m=>m.slen||20).sort((x,y)=>x-y),L=lens[lens.length>>1];
         // Frigates and cruisers fly a line-ahead column (a battle line); everyone else their fleet's shape.
         fm.shape=lead.gunboat||capital(lead)?'column':h.shape;
-        // Spacing by hull: fighters a few lengths apart, frigates 2.4 lengths, cruisers 1.4 lengths.
-        fm.d=capital(lead)?L*1.4:fm.shape==='column'?Math.max(60,L*2.4)*(1.3-.5*h.tight):Math.max(42,L*3)*(1.55-.75*h.tight);
-        fm.rank=new Map();let n=0;for(const m of members)if(m.id!==fm.lead)fm.rank.set(m.id,n++);fm.n=n;
+        fm.rank=new Map();let n=0;for(const m of ranked)if(m.id!==fm.lead)fm.rank.set(m.id,n++);fm.n=n;
+        fm.d=formationSpacing(fm.shape,n,L,ranked.reduce((a,m)=>a+(m.slen||20),0)/ranked.length,capital(lead),h.tight);
         let lat=0,back=0;for(let i=0;i<n;i++){const o=slotOffset(fm.shape,i,n);lat=Math.max(lat,Math.abs(o[2])*fm.d);back=Math.max(back,-o[0]*fm.d);}
         fm.back=back;
         // How fast the formation may turn: the outside lane never needs more than 35% more speed.
@@ -1428,6 +1452,12 @@
         if(want>=last[3]){const u=head>1e-6?(want-last[3])/head:0;px=last[0]+(lead.x-last[0])*u;py=last[1]+(lead.y-last[1])*u;pz=last[2]+(lead.z-last[2])*u;tx=lead.x-last[0];tz=lead.z-last[2];}
         else{while(j>0&&T[j-1][3]>want)j--;const A=T[Math.max(0,j-1)],B=T[j],span=Math.max(1e-6,B[3]-A[3]),u=clamp((want-A[3])/span);px=A[0]+(B[0]-A[0])*u;py=A[1]+(B[1]-A[1])*u;pz=A[2]+(B[2]-A[2])*u;tx=B[0]-A[0];tz=B[2]-A[2];}
         const tn=Math.hypot(tx,tz);if(tn<1e-6){tx=Math.cos(fm.hdg);tz=Math.sin(fm.hdg);}else{tx/=tn;tz/=tn;}
+        /* A slot far back in time (a slow squadron, a long column) comes off the leader's old track
+           toward the straight line from the leader: the tail follows where the leader is going, not
+           the heading it had two minutes ago. Up to 6 s behind, pure track; by 16 s, pure line. */
+        const w=clamp((back/Math.max(2,Math.abs(lead.v||0))-6)/10);
+        if(w>0){let cx=lead.x-px,cz=lead.z-pz;const cn=Math.hypot(cx,cz);
+          if(cn>1){cx/=cn;cz/=cn;px+=(lead.x-cx*back-px)*w;pz+=(lead.z-cz*back-pz)*w;py+=(lead.y-py)*w*.5;tx+=(cx-tx)*w;tz+=(cz-tz)*w;const t2=Math.hypot(tx,tz)||1;tx/=t2;tz/=t2;}}
       }else{tx=Math.cos(fm.hdg);tz=Math.sin(fm.hdg);px=lead.x-tx*back;py=lead.y;pz=lead.z-tz*back;}
       return [px-tz*side,py+up,pz+tx*side,d,tx,tz];
     },
@@ -1499,6 +1529,16 @@
        limits, plus the pilot's weave. o.max is the rate the hull allows now. */
     helmTurn(s,err,dt,now,o){
       const h=this.hand(s),L=s.slen||20,w=this.turnLimit(s);
+      /* Commitment: a pilot who has just swung through more than 100 degrees holds the new line for the
+         rest of six seconds; they may correct by a few tens of degrees but never swing back within 75
+         degrees of where they started. Swinging straight back is the donkey. Lining up a shot is exempt. */
+      const hy=s.helmYaw||(s.helmYaw={u:s.yaw,last:s.yaw,buf:new Float64Array(25),t:new Float64Array(25).fill(-1e9),i:0,next:0});
+      hy.u+=angle(s.yaw-hy.last);hy.last=s.yaw;
+      if(now>=hy.next){hy.i=(hy.i+1)%25;hy.buf[hy.i]=hy.u;hy.t[hy.i]=now;hy.next=now+.25;}
+      if(!o.lining){
+        let swing=0,from=0;for(let j=0;j<25;j++)if(now-hy.t[j]<=6){const d=hy.u-hy.buf[j];if(Math.abs(d)>Math.abs(swing)){swing=d;from=hy.buf[j];}}
+        if(swing>1.75)err=Math.max(err,from+1.3-hy.u);else if(swing<-1.75)err=Math.min(err,from-1.3-hy.u);
+      }
       const tau=(.32+.5*h.smooth)*(1+Math.min(2.2,L/200))*(o.formed?1.1:1)*(o.lining?.75:1);
       const zeta=1.05-.35*h.overshoot,kp=1/(4*zeta*zeta*tau);
       let mx=Math.min(o.max,w*(o.boost||1));
@@ -1544,10 +1584,10 @@
     },
     // The throttle hand: each pilot's own rhythm, from the fleet's handling.
     rhythm(s,now){
-      // The fleet's slow swell, plus a quicker touch of the hand (a 3.8-5 s beat of at least 5%), so no
+      // The fleet's slow swell, plus a quicker touch of the hand (a 3-5 s beat of at least 8%), so no
       // pilot sits on one number: a live hand on a throttle is never perfectly still.
       const h=this.hand(s),f=h.rhythmHz*6.283,g=6.283/(3+2*h.breath/.2);
-      return 1-h.rhythm*(.5+.5*Math.sin(now*f+h.ph[2]))-Math.max(.05,h.rhythm*.5)*(.5+.5*Math.sin(now*g+h.ph[4]));
+      return 1-h.rhythm*(.5+.5*Math.sin(now*f+h.ph[2]))-Math.max(.08,h.rhythm*.6)*(.5+.5*Math.sin(now*g+h.ph[4]));
     },
     // Engines: spool by size, braking a little quicker, and a burn that builds rather than snaps.
     helmSpeed(s,want,dt,k=1){
@@ -1565,13 +1605,14 @@
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return null;
       let n=0,L=0;for(const id of sq.mem){const m=this.byId.get(id);if(m&&alive(m)&&m.arr){n++;L=Math.max(L,m.slen||20);}}
-      return n>1?{n,span:Math.max(42,L*3)*(1+.5*n),turnCap:fm.turnCap||.35,lat:(fm.turnCap?.35*20/fm.turnCap:0)}:null;
+      // The circle must be big enough that the squadron's depth wraps no more than 1.2 rad of it.
+      return n>1?{n,span:Math.max(Math.max(42,L*3)*(1+.5*n),(fm.back||0)/1.2),turnCap:fm.turnCap||.35,lat:(fm.turnCap?.35*20/fm.turnCap:0)}:null;
     },
     // A formation leader flies slow enough for the slowest wingman to hold station.
     leadCap(s,now){
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return Infinity;
-      let slow=Infinity;for(const id of sq.mem){if(id===s.id)continue;const m=this.byId.get(id);if(m&&alive(m)&&m.arr)slow=Math.min(slow,m.spd||20);}
+      let slow=Infinity;for(const id of (fm.rank?fm.rank.keys():[])){const m=this.byId.get(id);if(m&&alive(m)&&m.arr)slow=Math.min(slow,m.spd||20);}
       return slow===Infinity?Infinity:slow*(fm.phase==='CRUISE'?.9:.55);
     },
     // How long a fixed-gun pilot extends past the target after a pass, by attack geometry.
@@ -1606,5 +1647,5 @@
     return cycles/Math.max(1,now()-start);
   }
 
-  return {FleetMinds,WarStory,PROFILES,TRAITS,DOCTRINE,PLANS,HANDLING,GEOMETRY,slotOffset,random,probe};
+  return {FleetMinds,WarStory,PROFILES,TRAITS,DOCTRINE,PLANS,HANDLING,GEOMETRY,slotOffset,formationSpacing,random,probe};
 });

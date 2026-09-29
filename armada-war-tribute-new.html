@@ -13308,9 +13308,11 @@ function trafficPilot(s,now){
   if(!threat){if(now>(s.trafficUntil||0))s.trafficGoal=null;return;}
   const other=threat.o,clear=threat.e.reduce((v,e,i)=>v+e*Math.abs(threat.axes[i][1]),0)+Math.hypot(own.e[1],own.e[2])+55;
   const key=other.uid!=null?'w'+other.uid:'s'+other.id;
-  const direction=now<(s.trafficUntil||0)&&s.trafficHand?s.trafficHand:s.y>other.y+5?1:s.y<other.y-5?-1:s.id<(other.id??other.uid)?1:-1;
+  /* a pilot who has chosen to pass over keeps passing over for a few seconds, even when the
+     next threat is a different hull: flipping sides per threat made hulls porpoise */
+  const direction=now<(s.trafficHandUntil||0)&&s.trafficHand?s.trafficHand:s.y>other.y+5?1:s.y<other.y-5?-1:s.id<(other.id??other.uid)?1:-1;
   const holdingLane=now<(s.trafficUntil||0);
-  s.trafficHand=direction;s.trafficKey=key;s.trafficUntil=now+1.2;
+  s.trafficHand=direction;s.trafficKey=key;s.trafficUntil=now+1.2;s.trafficHandUntil=now+4;
   const ahead=Math.max((s.slen||20)*1.5,Math.abs(s.v||0)*4,200);
   /* small craft pass in a band, not on one plane: without the stagger a whole
      screen ducking a crown's keel flattened into a single sheet at her belly */
@@ -14057,7 +14059,7 @@ function formTheSquadrons(){
     if(mem.length<2||q.hero||mem.some(s=>s.band!==1))continue;
     const lead=mem[0],h=battleAI.hand(lead),lens=mem.map(s=>s.slen||20).sort((a,b)=>a-b),L=lens[lens.length>>1];
     const crown=fightsAsCrown(lead),gun=isGunboat(lead)&&!crown,shape=gun||crown?"column":h.shape;
-    const d=crown?L*1.4:shape==="column"?Math.max(60,L*2.4)*(1.3-.5*h.tight):Math.max(42,L*3)*(1.55-.75*h.tight);
+    const d=ArmadaBattleAI.formationSpacing(shape,mem.length-1,L,mem.reduce((a,s)=>a+(s.slen||20),0)/mem.length,crown,h.tight);
     const yaw=lead.side?Math.PI:0,c=Math.cos(yaw),sn=Math.sin(yaw);
     mem.slice(1).forEach((s,i)=>{
       const o=ArmadaBattleAI.slotOffset(shape,i,mem.length-1),x=o[0]*d,z=o[2]*d;
