@@ -171,3 +171,42 @@ Before, the three wars are the same war: hero duels, ion strikes and capital kil
 - **Broadcast** holds a median shot of 9.6–10.7 s and misses 1 of 20 capital and hero deaths: 13 were on screen live and 6 were replayed. The miss is a Borg capital that died 6 s before the war ended, so its replay never came.
 - **Action**, the default camera, rides one subject at a time and has no replays. Its median is 8.0–9.0 s. It saw 13 of the 20 big deaths live and missed 7 (5 of them in the Borg vs Federation war, which loses capitals in bursts). B switches to Broadcast.
 - **The only dead stretch** is the 18 s approach before first contact in the convoy war.
+
+## The motion pass (MOTION.md)
+
+The motion pass changes how every ship flies, so it changes every war. I re-measured the same 30 wars (same script, same caps, same seeds) on main at 7f82d45 and on the motion branch. Data: `bench/motion/story/full-main.json` and `bench/motion/story/full-after.json`. Totals over three seeds of five wars:
+
+| moment | main, 60 a side | motion, 60 a side | main, 300 a side | motion, 300 a side |
+|---|---|---|---|---|
+| wars decided | 10 | 8 | 4 | 5 |
+| ships lost | 900 | 806 | 2808 | 2356 |
+| routs | 72 | 53 | 417 | 312 |
+| rallies | 2 | 3 | 47 | 29 |
+| last stands | 59 | 48 | 75 | 61 |
+| rescues | 43 | 31 | 36 | 23 |
+| aces | 15 | 14 | 27 | 23 |
+| vendettas | 37 | 31 | 39 | 31 |
+| flagships lost | 5 | 4 | 0 | 1 |
+| plan switches | 27 | 22 | 19 | 12 |
+| pods launched | 9 | 13 | 13 | 26 |
+
+**This is a regression, and I'm reporting it as one.** The brief said the story must not regress. Every named moment still happens in the same wars, but most of them happen 15 to 30% less often, because fewer ships die in the 120 or 180 s window: 10% fewer at 60 a side and 16% fewer at 300. Routs, last stands and rescues are all driven by losses.
+
+Where the losses went, from the per-war rows and the kill attributions I took on Empire v Rebels and three other matchups:
+
+- **Fewer ships fly into each other.** Deaths with no attributed killer (collisions and debris) fell by about half (50 → 26 over six 60-a-side wars). That is the motion pass doing its job. It is also a source of routs that no longer exists.
+- **Squadrons fly as squadrons.** On main every fighter flew at its own target at full burn from the first second. Now they form up, cruise at the formation's pace and break into gun passes at 2 km. The first contact comes at the same time at 60 a side (20.4 s mean on both), and about 4 s later at 300 a side (20.7 s v 24.5 s), where squadrons are bigger.
+- **Holding is holding.** On main a ship ordered to hold a point pendulumed around it and drifted into the enemy; HOLD-versus-HOLD wars (Tyranids v Empire, seed 3303) started early by accident. Loitering on station, both fleets now wait for the story's own "they would not come to the line" release.
+- **Wars that turn on a withdrawal.** Random 2 at 300, seed 1101, now ends at 62 s by withdrawal with 5 losses (main: 199 losses, 33 routs). One war moves the totals a lot.
+
+What I tried to win the losses back, in order:
+
+1. Squadrons attacked in formation and broke only in a furball (0.5–0.85 km). Fixed-gun wingmen can't aim from a slot: slotted attackers fired 0.08 shots a second against 0.42 for free ones. Reverted: a fighter on an attack run within 2 km flies its own pass.
+2. My combat orbit (a loiter round the target) overrode the fixed-gun fighters' gun passes, so they circled just outside the pass trigger. Fixed-gun fighters on an attack now fly passes, never orbits.
+3. The pilot's commitment rule (no swinging back within 7 s) doesn't apply in a dogfight on a live mark, and a pilot in a knife fight gets quicker hands (response time × 0.55).
+4. The throttle rhythm only ever held the speed back (10–15% under the demand on average). It is now centred on the demand.
+5. Formations formed at 0.55 of the slowest cruise for up to 30 s. They now form at 0.8 for at most 12 s, and cruise at up to 0.85 of the slowest wingman's full burn.
+
+Small-craft kills in Empire v Rebels are back at main's level (53 over three seeds against main's 56). What's left is fewer collisions and slower starts at 300 a side.
+
+**What I'd do next:** give formations a proper "attack" phase in which the whole squadron commits to one gun pass on the leader's mark and then breaks into pairs, rather than breaking into individuals; and let the story's HOLD posture release on first sensor contact, not first loss, so a standoff can't sit out half a war.

@@ -16292,9 +16292,12 @@ function fighterPassGoal(s,t,now){
   if(gap<55){
     /* break past her to the pilot's own side, so the next run comes in on a new line
        instead of back down the one just flown */
-    const distance=Math.max(200,(s.v||s.spd)*2.2),brk=s.yaw+(s.brkS||1)*.65;
-    s.passGoal=[s.x+Math.cos(brk)*distance,s.y+(s.vy||0)*2.2,s.z+Math.sin(brk)*distance];
-    s.passUntil=now+2.2*battleAI.extendK(s);
+    /* a hard break (57-75 degrees, by the pilot's overshoot) and a short extension (by their commitment):
+       the next run comes in across the last one, never back down it, and just as soon */
+    const hd=battleAI.hand(s),ext=1.2+.6*hd.commit;
+    const distance=Math.max(160,(s.v||s.spd)*ext),brk=s.yaw+(s.brkS||1)*(1+.3*hd.overshoot);
+    s.passGoal=[s.x+Math.cos(brk)*distance,s.y+(s.vy||0)*ext,s.z+Math.sin(brk)*distance];
+    s.passUntil=now+ext*battleAI.extendK(s);
     return s.passGoal;
   }
   return interceptPoint(s,t,weaponProfile(s).speed);

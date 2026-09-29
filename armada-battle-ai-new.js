@@ -479,8 +479,8 @@
       // intent, until contact breaks it. A pilot with its own emergency, or one whose nature is to
       // break off for a friend, is free.
       let slot=null;
-      // A fighter on its attack run flies its own pass: fixed guns cannot aim from a slot.
-      const run=(mode==='ATTACK'||mode==='FLANK')&&!capital&&!s.gunboat&&(s.slen||20)<120&&c&&surface(s,c)<2000;
+      // A fighter whose mark is inside gun-pass range flies its own pass: fixed guns cannot aim from a slot.
+      const run=(mode==='ATTACK'||mode==='FLANK')&&!capital&&!s.gunboat&&(s.slen||20)<120&&c&&surface(s,c)<1250;
       if((!capital||sq)&&!warning&&!a.response&&!run&&this.formed(s,now)&&!(s.vendetta)&&!(a.order&&now<a.order.until&&SOLO_ORDERS.has(a.order.kind))&&!(mode==='ESCORT'&&a.weak&&this.hand(s).breakaway>.55)&&mode!=='EVADE'
         &&!(mode==='RETREAT'&&(s.hp/Math.max(1,s.hpMax)<.45||a.fear>.7))){
         slot=this.slotFor(s,sq,now);if(slot){goal=slot.goal;boost=1;orbit=null;}
@@ -1425,7 +1425,7 @@
         if(!lead.gunboat){
           // Close quarters means a dogfight: small craft within about 1.4 km of their marks. Frigates and
           // cruisers in a mixed squadron hold their line and do not count.
-          const r=Math.min(1400,1000*GEOMETRY[h.geometry].r);let k=0;
+          const r=600*GEOMETRY[h.geometry].r;let k=0;
           for(const m of members){const a=m.ai;if(!a||m.gunboat||capital(m))continue;const c=a.contacts.get(a.target);if(c&&now-c.seen<2&&surface(m,c)<r)k+=m===lead?1.5:1;}
           engaged=k>=Math.max(1,members.length/2);
         }
@@ -1647,10 +1647,10 @@
     leadCap(s,now){
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return Infinity;
-      // Formed, it may close at 0.85 of its slowest wingman's full burn (leaving that wingman room to hold
-      // its slot); forming up, at 0.8 of the slowest cruise so the stragglers catch up.
+      // Formed, it flies at its slowest wingman's cruise (5% over at most, never past 0.8 of that wingman's
+      // full burn), which leaves every wingman room to hold its slot; forming up, at 0.8 of that cruise.
       let slow=Infinity,dash=Infinity;for(const id of (fm.rank?fm.rank.keys():[])){const m=this.byId.get(id);if(m&&alive(m)&&m.arr){slow=Math.min(slow,m.spd||20);dash=Math.min(dash,m.spdMax||(m.spd||20)*1.3);}}
-      return slow===Infinity?Infinity:fm.phase==='CRUISE'?dash*.85:slow*.8;
+      return slow===Infinity?Infinity:fm.phase==='CRUISE'?Math.min(dash*.8,slow*1.05):slow*.8;
     },
     // How long a fixed-gun pilot extends past the target after a pass, by attack geometry.
     extendK(s){return (GEOMETRY[this.hand(s).geometry]||GEOMETRY.slash).extend;},
