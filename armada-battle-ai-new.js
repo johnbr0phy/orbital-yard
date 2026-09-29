@@ -1368,7 +1368,7 @@
          squadmates have consecutive ids, and a golden-ratio sequence on the id puts neighbours far apart
          (a little jitter on top), so no two pilots in a squadron fly the same hand. */
       const g=(j,lo,hi)=>{const q=((s.id+1)*[.6180339,.7548776,.5698403,.8191725,.4142136,.5436890][j]+r()*.08)%1;return lo+(hi-lo)*q;};
-      a.hand={row,shape:row.shape,geometry:row.geometry,smooth:u(row.smooth,.12),bank:u(row.bank,.18,0,1.4),overshoot:u(row.overshoot,.15),
+      a.hand={row,shape:row.shape,geometry:row.geometry,smooth:u(row.smooth,.12),bank:clamp(row.bank+g(5,-.25,.25),0,1.4),overshoot:u(row.overshoot,.15),
         rhythmHz:row.rhythmHz*g(0,.65,1.4),rhythm:row.rhythm*g(1,.7,1.35),tight:u(row.tight,.10),breakaway:u(row.breakaway,.20),reform:u(row.reform,.15),
         react:Math.min(.9,k(row.react,.6,1.4)),weave:clamp(row.weave+g(2,-.18,.18)),weaveHz:row.weaveHz*g(3,.65,1.45),commit:u(row.commit,.12),
         ph:[r()*6.283,r()*6.283,r()*6.283,r()*6.283,r()*6.283],slot:[r()*2-1,r()*2-1,g(4,-1,1)],breath:.08+r()*.12};
@@ -1577,6 +1577,8 @@
       // instead of pirouetting (0.8 of its length for light craft and heroes, 0.9 for slicer and
       // cutter craft, 1.4 for frigates). Fighters under 40 m are never held back by this.
       if(!o.capital&&L>=40)mx=Math.min(mx,Math.max(Math.abs(s.v||0),3)/((s.gunboat?1.4:s.midcraft?.9:.8)*L));
+      // ...but even a fighter at a crawl circles no tighter than 30 m: tighter, and a furball pirouette crosses its own path every half-turn.
+      else if(!o.capital)mx=Math.min(mx,Math.max(Math.abs(s.v||0),3)/30);
       // A capital's turning circle is at least 0.6 of its length: a U-turn tighter than that is a pivot.
       else if(o.capital)mx=Math.min(mx,Math.max(Math.abs(s.v||0),1)/(.6*L));
       // A formation leader turns the squadron as one wide arc.
