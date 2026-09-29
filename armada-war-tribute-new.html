@@ -17572,8 +17572,8 @@ function simStep(now,dt){
     const sq=s.squad>=0?squads[s.squad]:null;
     const plan=battleAI.destination(s,now,false);
     let goal=plan.goal;const boost=plan.boost;
-    let liningUp=false;
-    if(weaponProfile(s).fixed&&['ATTACK','FLANK'].includes(plan.mode)&&!plan.slot){
+    let liningUp=false,passing=weaponProfile(s).fixed&&['ATTACK','FLANK'].includes(plan.mode)&&!plan.slot;
+    if(passing){
       const target=ships[plan.target];
       if(target&&!target.dead&&battleAI.fireable(s,target,now)&&gapTo(s,target)<1250){
         goal=fighterPassGoal(s,target,now);liningUp=now>=(s.passUntil||0);
@@ -17591,7 +17591,8 @@ function simStep(now,dt){
       const urgent=liningUp||hurt||plan.mode==="EVADE"||plan.mode==="RAM";
       if(!plan.slot)goal=battleAI.helmDelay(s,goal,urgent);
       let loiter=null;
-      if(!liningUp&&!urgent&&!plan.slot&&(plan.station||plan.orbit))loiter=battleAI.helmStation(s,goal,{orbit:plan.orbit,axis:enemyAxis(s)});
+      /* a fixed-gun fighter on an attack flies gun passes (close, run in, extend, come round), never an orbit */
+      if(!liningUp&&!passing&&!urgent&&!plan.slot&&(plan.station||plan.orbit))loiter=battleAI.helmStation(s,goal,{orbit:plan.orbit,axis:enemyAxis(s)});
       else s.helmLoiter=null;
       if(loiter)goal=loiter.p;
       const avoiding=!!(s.trafficGoal&&now<s.trafficUntil);
@@ -17612,7 +17613,11 @@ function simStep(now,dt){
       const stunned=!!(s.stunT&&now<s.stunT);
       const jink=!boat&&hurt?Math.sin(now*2.2+s.wf*2.0)*battleAI.turnLimit(s)*0.35:0;
       /* gunboats keep a clean track: the weave is what made the frigates nod */
-      battleAI.helmTurn(s,dyaw,dt,now,{max:s.turn*(1+0.5*(boost-1))*(stunned?.4:1),boost:1+0.5*(boost-1),formed,lining:liningUp,clean:boat,jink});
+      /* in a dogfight (a small craft on a live mark within 1.6 km) the pilot is free to haul round onto it:
+         commitment is for flying a line, not for a knife fight */
+      const mk=plan.target>=0?ships[plan.target]:null;
+      const knife=!boat&&!s.hulls&&(s.slen||20)<80&&mk&&!mk.dead&&['ATTACK','FLANK','STRIKE','EVADE'].includes(plan.mode)&&gapTo(s,mk)<1600;
+      battleAI.helmTurn(s,dyaw,dt,now,{max:s.turn*(1+0.5*(boost-1))*(stunned?.4:1),boost:1+0.5*(boost-1),formed,lining:liningUp,free:knife,clean:boat,jink});
       battleAI.helmBank(s,dt,now,{});
       if(!formed&&!s.hulls&&!boat&&s.slen<120&&now>=s.brUntil&&
          ((now-s.hurtT<1.6&&combatRandom()<dt*0.8)||combatRandom()<dt*0.012)){

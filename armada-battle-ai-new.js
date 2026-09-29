@@ -479,7 +479,9 @@
       // intent, until contact breaks it. A pilot with its own emergency, or one whose nature is to
       // break off for a friend, is free.
       let slot=null;
-      if((!capital||sq)&&!warning&&!a.response&&this.formed(s,now)&&!(s.vendetta)&&!(a.order&&now<a.order.until&&SOLO_ORDERS.has(a.order.kind))&&!(mode==='ESCORT'&&a.weak&&this.hand(s).breakaway>.55)&&mode!=='EVADE'
+      // A fighter on its attack run flies its own pass: fixed guns cannot aim from a slot.
+      const run=(mode==='ATTACK'||mode==='FLANK')&&!capital&&!s.gunboat&&(s.slen||20)<120&&c&&surface(s,c)<2000;
+      if((!capital||sq)&&!warning&&!a.response&&!run&&this.formed(s,now)&&!(s.vendetta)&&!(a.order&&now<a.order.until&&SOLO_ORDERS.has(a.order.kind))&&!(mode==='ESCORT'&&a.weak&&this.hand(s).breakaway>.55)&&mode!=='EVADE'
         &&!(mode==='RETREAT'&&(s.hp/Math.max(1,s.hpMax)<.45||a.fear>.7))){
         slot=this.slotFor(s,sq,now);if(slot){goal=slot.goal;boost=1;orbit=null;}
       }
@@ -1423,7 +1425,7 @@
         if(!lead.gunboat){
           // Close quarters means a dogfight: small craft within about 1.4 km of their marks. Frigates and
           // cruisers in a mixed squadron hold their line and do not count.
-          const r=600*GEOMETRY[h.geometry].r;let k=0;
+          const r=Math.min(1400,1000*GEOMETRY[h.geometry].r);let k=0;
           for(const m of members){const a=m.ai;if(!a||m.gunboat||capital(m))continue;const c=a.contacts.get(a.target);if(c&&now-c.seen<2&&surface(m,c)<r)k+=m===lead?1.5:1;}
           engaged=k>=Math.max(1,members.length/2);
         }
@@ -1551,11 +1553,11 @@
       const h=this.hand(s),L=s.slen||20,w=this.turnLimit(s);
       /* Commitment: a pilot who has just swung through more than 100 degrees holds the new line for the
          rest of seven seconds; they may correct by a few tens of degrees but never swing back within 75
-         degrees of where they started. Swinging straight back is the donkey. Lining up a shot is exempt. */
+         degrees of where they started. Swinging straight back is the donkey. Lining up a shot, or a dogfight on a live mark, is exempt. */
       const hy=s.helmYaw||(s.helmYaw={u:s.yaw,last:s.yaw,buf:new Float64Array(58),t:new Float64Array(58).fill(-1e9),i:0,next:0});
       hy.u+=angle(s.yaw-hy.last);hy.last=s.yaw;
       if(now>=hy.next){hy.i=(hy.i+1)%58;hy.buf[hy.i]=hy.u;hy.t[hy.i]=now;hy.next=now+.125;}
-      if(!o.lining){
+      if(!o.lining&&!o.free){
         // The tightest limit: 75 degrees past every heading of the last 7 s that it has since swung 100 away from.
         let swing=0;for(let j=0;j<58;j++)if(now-hy.t[j]<=7){const d=hy.u-hy.buf[j];if(Math.abs(d)>Math.abs(swing))swing=d;}
         const dir=Math.sign(swing);let lim=null;
@@ -1563,7 +1565,8 @@
         if(lim!=null)err=dir>0?Math.max(err,lim-hy.u):Math.min(err,lim-hy.u);
         hy.lim=lim;hy.dir=dir;
       }else hy.lim=null;
-      const tau=(.32+.5*h.smooth)*(1+Math.min(2.2,L/200))*(o.formed?1.1:1)*(o.lining?.75:1);
+      // In a knife fight (lining up, or on a live mark close by) the pilot's hands are quicker.
+      const tau=(.32+.5*h.smooth)*(1+Math.min(2.2,L/200))*(o.formed?1.1:1)*(o.lining||o.free?.55:1);
       const zeta=1.05-.35*h.overshoot,kp=1/(4*zeta*zeta*tau);
       let mx=Math.min(o.max,w*(o.boost||1));
       // A turning circle no tighter than the hull allows at any speed: a slow ship turns slowly
