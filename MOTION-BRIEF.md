@@ -1,5 +1,13 @@
 # Motion brief: Tribute War flight and pilot pass
 
+This is the owner's full brief for the motion pass. The `/goal` condition points here; this file is the spec.
+
+## Goal condition
+
+Every pass criterion in MOTION.md shows PASS on the final commit, measured by scripts/motion-report.cjs across the full scene set and all 23 fleets; all existing tests plus the new motion tests pass; determinism tests pass; and a pull request is open (not merged) on a new branch off main.
+
+## The ask
+
 I want you to do a complete end-to-end pass on how the Tribute War's ships fly and think, on your own, and make it look amazing. Not "good for a sim". Amazing, like watching a space battle choreographed by a film's VFX team, where every ship is flown by someone.
 
 I won't be around to answer questions. When something is unclear, make a reasonable call, write it down in DECISIONS.md, and keep going. Run until the /goal condition is true. If a criterion cannot be met, record exactly why with evidence in MOTION.md and keep improving everything else. Never weaken a criterion to make it pass.
