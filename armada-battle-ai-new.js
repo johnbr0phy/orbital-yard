@@ -1433,7 +1433,7 @@
         if(fm.phase==='BREAK'&&now-fm.calm>.8+1.6*(1-h.reform)){fm.phase='REFORM';fm.since=now;}
         if(fm.phase==='FORM'||fm.phase==='REFORM'){
           let near=0;for(const m of members){if(m.id===fm.lead)continue;const p=this.slotPoint(m,sq,now);if(p&&length(p[0]-m.x,p[1]-m.y,p[2]-m.z)<p[3]*1.2)near++;}
-          if(n&&(near>=Math.ceil(n*.75)||now-fm.since>30)){fm.phase='CRUISE';fm.since=now;}
+          if(n&&(near>=Math.ceil(n*.75)||now-fm.since>12)){fm.phase='CRUISE';fm.since=now;}
         }
       }
     },
@@ -1648,9 +1648,9 @@
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return Infinity;
       // Formed, it may close at 0.85 of its slowest wingman's full burn (leaving that wingman room to hold
-      // its slot); forming up, at 0.55 of the slowest cruise so the stragglers catch up.
+      // its slot); forming up, at 0.8 of the slowest cruise so the stragglers catch up.
       let slow=Infinity,dash=Infinity;for(const id of (fm.rank?fm.rank.keys():[])){const m=this.byId.get(id);if(m&&alive(m)&&m.arr){slow=Math.min(slow,m.spd||20);dash=Math.min(dash,m.spdMax||(m.spd||20)*1.3);}}
-      return slow===Infinity?Infinity:fm.phase==='CRUISE'?dash*.85:slow*.55;
+      return slow===Infinity?Infinity:fm.phase==='CRUISE'?dash*.85:slow*.8;
     },
     // How long a fixed-gun pilot extends past the target after a pass, by attack geometry.
     extendK(s){return (GEOMETRY[this.hand(s).geometry]||GEOMETRY.slash).extend;},
