@@ -1,0 +1,88 @@
+{
+ "scene": "02-18",
+ "name": "Gunboat screen: Romulans",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 389,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 2.786121168629772,
+   "hold": 0.043813356619461646,
+   "spins": 0,
+   "minutes": 97.67
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.019275249131909367,
+    "hold": 0.3861471861471861,
+    "spins": 0,
+    "minutes": 1.23
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.027227013080779128,
+    "hold": 0.28982871891130924,
+    "spins": 0,
+    "minutes": 7.99
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.14621771744567183,
+    "hold": 0.02089049421734449,
+    "spins": 0,
+    "minutes": 30.45
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.5185594437492265,
+    "hold": 0.0020181090210552454,
+    "spins": 0,
+    "minutes": 50.8
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 3.58921934645005,
+    "hold": 0.043905257076834195,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 3.198895109691397,
+    "hold": 0.025317702689390206,
+    "spins": 0,
+    "minutes": 5.29
+   }
+  },
+  "focus": {
+   "ships": 37,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.7408184679958028,
+  "individualityMin": 0.22952159235752123
+ },
+ "errors": []
+}

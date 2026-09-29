@@ -1,0 +1,97 @@
+{
+ "scene": "02-12",
+ "name": "Gunboat screen: Borg",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 432,
+ "metrics": {
+  "all": {
+   "perMin": 0.11941486715096031,
+   "strictPerMin": 0,
+   "shuttleMax": 0.54,
+   "angP95": 11.885022274370165,
+   "hold": 0.1545269136129277,
+   "spins": 0,
+   "minutes": 66.99
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.12445146117713844,
+    "hold": 0.7377713458755427,
+    "spins": 0,
+    "minutes": 1.47
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.2851018267503907,
+    "hold": 0.22091839789259415,
+    "spins": 0,
+    "minutes": 8.2
+   },
+   "mid": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 13.33521432163324,
+    "hold": 0.12167840445049419,
+    "spins": 0,
+    "minutes": 7.2
+   },
+   "light": {
+    "perMin": 0.10079798404031921,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 13.33521432163324,
+    "hold": 0.17076296587221199,
+    "spins": 0,
+    "minutes": 19.84
+   },
+   "fighter": {
+    "perMin": 0.21753580276753884,
+    "strictPerMin": 0,
+    "shuttleMax": 0.54,
+    "angP95": 13.645831365889238,
+    "hold": 0.11493836113125452,
+    "spins": 0,
+    "minutes": 27.58
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.28,
+    "angP95": 8.035261221856176,
+    "hold": 0.19387755102040816,
+    "spins": 0,
+    "minutes": 0.84
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 10.839269140212016,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 1.86
+   }
+  },
+  "focus": {
+   "ships": 0,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.21844660194174756,
+  "individualityMin": 0.17404369923996088
+ },
+ "errors": []
+}

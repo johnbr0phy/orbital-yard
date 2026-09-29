@@ -1,0 +1,88 @@
+{
+ "scene": "02-13",
+ "name": "Gunboat screen: Mondoshawan",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 392,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 1.7579236139586931,
+   "hold": 0.050600697370812894,
+   "spins": 0,
+   "minutes": 94.01
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.03198895109691397,
+    "hold": 0.35951487149870054,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.053088444423098846,
+    "hold": 0.42858538491598286,
+    "spins": 0,
+    "minutes": 5.22
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.8222426499470712,
+    "hold": 0.04283720430877142,
+    "spins": 0,
+    "minutes": 29.2
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 2.483133105295568,
+    "hold": 0.008973749685499426,
+    "spins": 0,
+    "minutes": 55.21
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 3.4276778654645046,
+    "hold": 0.06671181848967152,
+    "spins": 0,
+    "minutes": 1.54
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.20183663636815619,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 0.92
+   }
+  },
+  "focus": {
+   "ships": 0,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.6960297766749379,
+  "individualityMin": 0.22447111533252456
+ },
+ "errors": []
+}

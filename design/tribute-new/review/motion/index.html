@@ -1,0 +1,681 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Motion review</title>
+<style>
+:root{--bg:#0b1016;--panel:#121a22;--ink:#dfe7ec;--ink2:#9fb0bc;--line:#243240;--pass:#5ccf8a;--fail:#ff7a6b}
+body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,sans-serif}
+h1{font-size:21px;margin:0 0 4px}h2{font-size:16px;margin:28px 0 4px}p.m{margin:0 0 10px;color:var(--ink2);max-width:980px}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:10px}
+figure{margin:0;background:var(--panel);border-radius:6px;padding:6px}figcaption{font-size:12px;color:var(--ink2);margin:4px 2px}
+video,img{width:100%;height:auto;display:block;border-radius:4px;background:#000}
+table{border-collapse:collapse;margin:8px 0;font-size:13px;width:100%;max-width:980px}td,th{border-bottom:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+th{color:var(--ink2);font-weight:600}.pass{color:var(--pass)}.fail{color:var(--fail)}
+details{margin:6px 0}summary{cursor:pointer;color:var(--ink2)}
+.wrap{overflow-x:auto}
+</style></head><body>
+<h1>Tribute War: how the ships fly, before and after</h1>
+<p class="m">Each scene is a fixed seed and matchup. Left: main before this pass. Right: after. The clips are rendered in software (SwiftShader) in Chromium at 640×360, 30 fps, with the camera following the scene's focus ships. The numbers under each scene come from the headless motion report, <code>scripts/motion-report.cjs</code>. The last row of each table comes from the clip's own browser run, and that war can drift from the headless one over time. Full definitions are in MOTION.md.</p>
+<h2>Pass criteria</h2><div class="wrap"><table><thead><tr><th>criterion</th><th>target</th><th>before</th><th>after</th><th>result</th></tr></thead><tbody>
+<tr><td>Reversals, gunboats and capitals (every fleet), per ship-minute</td><td>0</td><td>13 in 1972 ship-min; worst Yautja frigate 0.079, Federation frigate 0.036, Empire frigate 0.022</td><td>0 in 2046 ship-min; worst none</td><td class="pass">PASS</td></tr>
+<tr><td>Reversals, any class in any fleet, per ship-minute</td><td>&lt; 0.2</td><td>worst Tesla hero 1.679; overall 0.212; 38 fleet-classes at or over 0.2</td><td>worst Shadows fighter 0.069; overall 0.004</td><td class="pass">PASS</td></tr>
+<tr><td>Shuttle: worst share of any 10 s window, any ship</td><td>&lt;= 5%</td><td>88.0%; 324 ships over 5%</td><td>12.0%; 17 ships over 5%</td><td class="fail">FAIL</td></tr>
+<tr><td>p95 angular jerk per class (rad/s^3), at or below baseline</td><td>&lt;= baseline</td><td>leviathan 0.38; capital 0.32; light 9.02; fighter 11.89; hero 11.89; frigate 10.84; mid 13.03</td><td>leviathan 0.38 -&gt; 0.09; capital 0.32 -&gt; 0.06; light 9.02 -&gt; 2.79; fighter 11.89 -&gt; 5.69; hero 11.89 -&gt; 5.43; frigate 10.84 -&gt; 0.39; mid 13.03 -&gt; 1.33</td><td class="pass">PASS</td></tr>
+<tr><td>p95 angular jerk, frigates</td><td>&lt;= 50% of baseline</td><td>-</td><td>10.84 -&gt; 0.39 (4%)</td><td class="pass">PASS</td></tr>
+<tr><td>Spinning in place, hulls of 80 m or longer (events)</td><td>0</td><td>64 (148.8 s)</td><td>0 (0.0 s)</td><td class="pass">PASS</td></tr>
+<tr><td>Speed holds of 5 s or more, small and mid-size craft</td><td>&lt;= 10%</td><td>fighter 15.8%; light 23.2%; mid 10.7%; frigate 32.8%; hero 19.7%</td><td>fighter 0.7%; light 2.5%; mid 7.0%; frigate 1.6%; hero 1.9%</td><td class="pass">PASS</td></tr>
+<tr><td>Capitals: max turn rate, acceleration and braking against the hull's limits; reversals</td><td>&lt;= 1.05x each; 0 reversals</td><td>turn 1.00x, accel 18.26x, brake 465.73x; 0 reversals</td><td>turn 1.00x, accel 1.00x, brake 1.00x; 0 reversals</td><td class="pass">PASS</td></tr>
+<tr><td>Squadron cohesion inside the band, share of squad-time outside dogfights and routs</td><td>&gt;= 80% overall and in every fleet</td><td>43.2% overall; worst Minbari 12.4% (parade 0%, dissolved 74%)</td><td>70.0% overall; worst Minbari 24.4% (parade 0%, dissolved 64%)</td><td class="fail">FAIL</td></tr>
+<tr><td>Squadmates' motion signatures: smallest pairwise distance in any squad (feature sd units)</td><td>&gt;= 0.25 in every squad</td><td>min 0.032, median squad min 0.363; 202 of 915 squads below</td><td>min 0.084, median squad min 0.381; 159 of 915 squads below</td><td class="fail">FAIL</td></tr>
+<tr><td>Fleet from motion alone: held-out accuracy (per-class models, ship identity hidden)</td><td>&gt;= 3x chance and &gt;= baseline +15 points and 1.5x baseline</td><td>24.6% vs chance 5.6% (4.40x)</td><td>42.3% vs chance 5.6% (7.56x); baseline 24.6%</td><td class="pass">PASS</td></tr>
+</tbody></table></div>
+<p class="m">The build, test, determinism and performance criteria are checked outside the motion report. See MOTION.md.</p>
+<section id="s01"><h2>01 · Rebel frigate screen</h2><p class="m">Empire v Rebels, seed 2202, 60 a side, 75 s. The reported donkey bug: Rebel frigates, corvettes and transports in Empire v Rebels.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/01-005s.jpg" src="before/01.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/01-005s.jpg" src="after/01.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.179</td><td>0.016</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>40.0%</td><td>2.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>10.12</td><td>3.76</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>9.44</td><td>0.34</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>19.7%</td><td>2.0%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>47.9%</td><td>83.5%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.074</td><td>0.185</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-01.png" alt="tracks before, scene 01"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-01.png" alt="tracks after, scene 01"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-00"><h2>02-00 · Gunboat screen: Yard</h2><p class="m">Yard v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-00-005s.jpg" src="before/02-00.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-00-005s.jpg" src="after/02-00.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.141</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>4.0%</td><td>10.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>11.35</td><td>5.07</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>11.61</td><td>0.44</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>19.9%</td><td>2.8%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>46.7%</td><td>78.7%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.177</td><td>0.203</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-00.png" alt="tracks before, scene 02-00"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-00.png" alt="tracks after, scene 02-00"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-01"><h2>02-01 · Gunboat screen: Shoal</h2><p class="m">Shoal v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-01-005s.jpg" src="before/02-01.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-01-005s.jpg" src="after/02-01.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.197</td><td>0.024</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>16.0%</td><td>10.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>11.61</td><td>10.84</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>10.59</td><td>0.90</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>19.7%</td><td>1.5%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>49.5%</td><td>70.6%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.247</td><td>0.237</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-01.png" alt="tracks before, scene 02-01"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-01.png" alt="tracks after, scene 02-01"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-02"><h2>02-02 · Gunboat screen: Lattice</h2><p class="m">Lattice v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-02-005s.jpg" src="before/02-02.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-02-005s.jpg" src="after/02-02.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.321</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>24.0%</td><td>4.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>7.16</td><td>2.72</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>7.67</td><td>0.11</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>20.2%</td><td>4.6%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>5</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>66.2%</td><td>91.0%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.193</td><td>0.230</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-02.png" alt="tracks before, scene 02-02"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-02.png" alt="tracks after, scene 02-02"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-03"><h2>02-03 · Gunboat screen: Drift</h2><p class="m">Drift v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-03-005s.jpg" src="before/02-03.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-03-005s.jpg" src="after/02-03.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.140</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>36.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>11.89</td><td>4.95</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>9.23</td><td>0.44</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>18.8%</td><td>1.7%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>49.8%</td><td>79.4%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.213</td><td>0.181</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-03.png" alt="tracks before, scene 02-03"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-03.png" alt="tracks after, scene 02-03"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-04"><h2>02-04 · Gunboat screen: Choir</h2><p class="m">Choir v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-04-005s.jpg" src="before/02-04.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-04-005s.jpg" src="after/02-04.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.161</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>22.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>10.12</td><td>3.67</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>8.22</td><td>0.21</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>22.4%</td><td>3.0%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>1</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>42.9%</td><td>73.5%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.149</td><td>0.172</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-04.png" alt="tracks before, scene 02-04"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-04.png" alt="tracks after, scene 02-04"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-05"><h2>02-05 · Gunboat screen: Empire</h2><p class="m">Empire v Rebels, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-05-005s.jpg" src="before/02-05.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-05-005s.jpg" src="after/02-05.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.185</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>0.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>7.16</td><td>2.99</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>2.16</td><td>0.44</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>24.8%</td><td>2.6%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>59.4%</td><td>86.5%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.086</td><td>0.129</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-05.png" alt="tracks before, scene 02-05"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-05.png" alt="tracks after, scene 02-05"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-06"><h2>02-06 · Gunboat screen: Rebels</h2><p class="m">Rebels v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-06-005s.jpg" src="before/02-06.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-06-005s.jpg" src="after/02-06.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.332</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.064</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>32.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>10.12</td><td>5.19</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>8.61</td><td>0.39</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>24.7%</td><td>3.2%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>49.9%</td><td>74.1%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.195</td><td>0.184</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>2 / 10.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-06.png" alt="tracks before, scene 02-06"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-06.png" alt="tracks after, scene 02-06"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-07"><h2>02-07 · Gunboat screen: Minbari</h2><p class="m">Minbari v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-07-005s.jpg" src="before/02-07.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-07-005s.jpg" src="after/02-07.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.149</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>10.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>8.22</td><td>2.60</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>5.43</td><td>0.07</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>24.9%</td><td>7.3%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>38.8%</td><td>68.0%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.168</td><td>0.157</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-07.png" alt="tracks before, scene 02-07"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-07.png" alt="tracks after, scene 02-07"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-09"><h2>02-09 · Gunboat screen: EarthForce</h2><p class="m">EarthForce v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-09-005s.jpg" src="before/02-09.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-09-005s.jpg" src="after/02-09.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.127</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>24.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>7.33</td><td>3.51</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>4.03</td><td>0.14</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>23.6%</td><td>3.6%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>65.9%</td><td>81.8%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.232</td><td>0.194</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-09.png" alt="tracks before, scene 02-09"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-09.png" alt="tracks after, scene 02-09"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-10"><h2>02-10 · Gunboat screen: Federation</h2><p class="m">Federation v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-10-005s.jpg" src="before/02-10.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-10-005s.jpg" src="after/02-10.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.047</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.076</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>2.0%</td><td>6.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>6.84</td><td>3.67</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>9.23</td><td>0.07</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>30.6%</td><td>8.8%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>54.0%</td><td>78.5%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.225</td><td>0.168</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-10.png" alt="tracks before, scene 02-10"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-10.png" alt="tracks after, scene 02-10"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-11"><h2>02-11 · Gunboat screen: Klingons</h2><p class="m">Klingons v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-11-005s.jpg" src="before/02-11.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-11-005s.jpg" src="after/02-11.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.232</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>82.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>8.22</td><td>3.35</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>6.10</td><td>0.29</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>23.5%</td><td>2.7%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>58.0%</td><td>87.6%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.098</td><td>0.207</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-11.png" alt="tracks before, scene 02-11"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-11.png" alt="tracks after, scene 02-11"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-12"><h2>02-12 · Gunboat screen: Borg</h2><p class="m">Borg v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-12-005s.jpg" src="before/02-12.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-12-005s.jpg" src="after/02-12.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.259</td><td>0.012</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>54.0%</td><td>6.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>13.34</td><td>4.73</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>12.45</td><td>1.16</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>15.6%</td><td>3.3%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>2</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>21.0%</td><td>52.6%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.294</td><td>0.250</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-12.png" alt="tracks before, scene 02-12"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-12.png" alt="tracks after, scene 02-12"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-13"><h2>02-13 · Gunboat screen: Mondoshawan</h2><p class="m">Mondoshawan v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-13-005s.jpg" src="before/02-13.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-13-005s.jpg" src="after/02-13.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.265</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>70.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>6.84</td><td>2.02</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>5.31</td><td>0.20</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>30.1%</td><td>5.1%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>48.9%</td><td>69.2%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.133</td><td>0.166</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-13.png" alt="tracks before, scene 02-13"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-13.png" alt="tracks after, scene 02-13"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-14"><h2>02-14 · Gunboat screen: USCM</h2><p class="m">USCM v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-14-005s.jpg" src="before/02-14.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-14-005s.jpg" src="after/02-14.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.070</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>10.0%</td><td>2.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>8.81</td><td>4.32</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>7.85</td><td>0.56</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>33.3%</td><td>2.6%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>53.0%</td><td>77.2%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.213</td><td>0.236</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>2 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-14.png" alt="tracks before, scene 02-14"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-14.png" alt="tracks after, scene 02-14"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-15"><h2>02-15 · Gunboat screen: Engineers</h2><p class="m">Engineers v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-15-005s.jpg" src="before/02-15.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-15-005s.jpg" src="after/02-15.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.067</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>58.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>6.24</td><td>1.93</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>6.38</td><td>0.08</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>32.5%</td><td>3.3%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>30.2%</td><td>87.1%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.142</td><td>0.145</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-15.png" alt="tracks before, scene 02-15"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-15.png" alt="tracks after, scene 02-15"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-16"><h2>02-16 · Gunboat screen: Yautja</h2><p class="m">Yautja v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-16-005s.jpg" src="before/02-16.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-16-005s.jpg" src="after/02-16.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.333</td><td>0.009</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>76.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>10.59</td><td>2.16</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>10.12</td><td>0.34</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>17.8%</td><td>2.9%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>1</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>49.2%</td><td>88.1%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.147</td><td>0.236</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>2 / 6.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-16.png" alt="tracks before, scene 02-16"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-16.png" alt="tracks after, scene 02-16"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-17"><h2>02-17 · Gunboat screen: First Ones</h2><p class="m">First Ones v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-17-005s.jpg" src="before/02-17.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-17-005s.jpg" src="after/02-17.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.177</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>0.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>8.41</td><td>2.99</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>9.23</td><td>0.31</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>24.0%</td><td>12.9%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>68.5%</td><td>70.9%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.169</td><td>0.265</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-17.png" alt="tracks before, scene 02-17"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-17.png" alt="tracks after, scene 02-17"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-18"><h2>02-18 · Gunboat screen: Romulans</h2><p class="m">Romulans v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-18-005s.jpg" src="before/02-18.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-18-005s.jpg" src="after/02-18.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.021</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>0.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>4.52</td><td>2.79</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>1.76</td><td>0.15</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>31.4%</td><td>4.4%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>64.2%</td><td>74.1%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.032</td><td>0.230</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-18.png" alt="tracks before, scene 02-18"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-18.png" alt="tracks after, scene 02-18"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-19"><h2>02-19 · Gunboat screen: Dominion</h2><p class="m">Dominion v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-19-005s.jpg" src="before/02-19.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-19-005s.jpg" src="after/02-19.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.044</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>18.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>7.00</td><td>3.20</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>12.74</td><td>0.54</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>25.0%</td><td>3.5%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>61.2%</td><td>77.9%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.080</td><td>0.207</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-19.png" alt="tracks before, scene 02-19"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-19.png" alt="tracks after, scene 02-19"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-20"><h2>02-20 · Gunboat screen: Space Marines</h2><p class="m">Space Marines v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-20-005s.jpg" src="before/02-20.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-20-005s.jpg" src="after/02-20.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.020</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>0.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>10.12</td><td>1.43</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>19.28</td><td>0.10</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>44.3%</td><td>13.0%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>34.2%</td><td>76.6%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.074</td><td>0.270</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-20.png" alt="tracks before, scene 02-20"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-20.png" alt="tracks after, scene 02-20"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-21"><h2>02-21 · Gunboat screen: Tyranids</h2><p class="m">Tyranids v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-21-005s.jpg" src="before/02-21.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-21-005s.jpg" src="after/02-21.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.137</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>10.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>7.67</td><td>3.20</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>6.53</td><td>1.19</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>23.5%</td><td>4.9%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>40.3%</td><td>67.5%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.176</td><td>0.181</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-21.png" alt="tracks before, scene 02-21"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-21.png" alt="tracks after, scene 02-21"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s02-22"><h2>02-22 · Gunboat screen: Tesla</h2><p class="m">Tesla v Empire, seed 3303, 60 a side, 60 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/02-22-005s.jpg" src="before/02-22.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/02-22-005s.jpg" src="after/02-22.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.529</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>76.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>11.09</td><td>3.76</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>5.96</td><td>0.33</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>14.6%</td><td>3.9%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>45.5%</td><td>94.6%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.174</td><td>0.197</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-02-22.png" alt="tracks before, scene 02-22"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-02-22.png" alt="tracks after, scene 02-22"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s03"><h2>03 · Imperial squadron: form, attack, re-form</h2><p class="m">Empire v Rebels, seed 1101, 60 a side, 80 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/03-005s.jpg" src="before/03.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/03-005s.jpg" src="after/03.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.406</td><td>0.017</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.072</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>12.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>11.35</td><td>5.19</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>9.44</td><td>0.45</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>19.1%</td><td>2.2%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>51.3%</td><td>74.3%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.173</td><td>0.155</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>3 / 6.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-03.png" alt="tracks before, scene 03"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-03.png" alt="tracks after, scene 03"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s04"><h2>04 · Rebel squadron: form, attack, re-form</h2><p class="m">Empire v Rebels, seed 1101, 60 a side, 80 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/04-005s.jpg" src="before/04.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/04-005s.jpg" src="after/04.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.406</td><td>0.017</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.072</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>12.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>11.35</td><td>5.19</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>9.44</td><td>0.45</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>19.1%</td><td>2.2%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>51.3%</td><td>74.3%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.173</td><td>0.155</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 12.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-04.png" alt="tracks before, scene 04"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-04.png" alt="tracks after, scene 04"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s05"><h2>05 · Borg cube and escorts closing</h2><p class="m">Borg v Federation, seed 1101, 60 a side, 70 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/05-005s.jpg" src="before/05.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/05-005s.jpg" src="after/05.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.391</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.041</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>12.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>11.89</td><td>0.62</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>14.96</td><td>0.16</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>23.4%</td><td>6.7%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>2</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>35.2%</td><td>63.1%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.189</td><td>0.251</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>9 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-05.png" alt="tracks before, scene 05"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-05.png" alt="tracks after, scene 05"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s06"><h2>06 · Capital handling: broadside pass, 180 degree turn, stop</h2><p class="m">EarthForce v Federation, seed 4242, 30 a side, 120 s. Scripted: the orders in this scene are issued at fixed times by the scene script.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/06-005s.jpg" src="before/06.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/06-005s.jpg" src="after/06.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.123</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>48.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>11.89</td><td>2.85</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>14.29</td><td>0.34</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>19.6%</td><td>5.7%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>54.4%</td><td>58.7%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.379</td><td>0.400</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>0 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-06.png" alt="tracks before, scene 06"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-06.png" alt="tracks after, scene 06"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s07"><h2>07 · Dogfight: Empire v Shoal</h2><p class="m">Empire v Shoal, seed 1101, 60 a side, 75 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/07-005s.jpg" src="before/07.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/07-005s.jpg" src="after/07.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.186</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>28.0%</td><td>4.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>13.03</td><td>5.96</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>14.96</td><td>0.84</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>16.4%</td><td>1.7%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>71.7%</td><td>85.6%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.253</td><td>0.244</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>8 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-07.png" alt="tracks before, scene 07"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-07.png" alt="tracks after, scene 07"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s08"><h2>08 · A rout and a rally</h2><p class="m">EarthForce v Klingons, seed 2202, 60 a side, 90 s. Scripted: the orders in this scene are issued at fixed times by the scene script.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/08-005s.jpg" src="before/08.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/08-005s.jpg" src="after/08.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.080</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>8.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>10.59</td><td>4.32</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>11.61</td><td>0.25</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>23.5%</td><td>3.1%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>38.4%</td><td>59.8%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.177</td><td>0.119</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>1 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-08.png" alt="tracks before, scene 08"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-08.png" alt="tracks after, scene 08"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s09"><h2>09 · A holding line breaks under First One fire</h2><p class="m">Empire v First Ones, seed 42, 60 a side, 70 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/09-005s.jpg" src="before/09.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/09-005s.jpg" src="after/09.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.130</td><td>0.000</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.000</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>0.0%</td><td>0.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>7.50</td><td>3.43</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>8.22</td><td>0.50</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>27.3%</td><td>14.1%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>0</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>69.6%</td><td>60.0%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.140</td><td>0.359</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>3 / 0.0%</td><td>0 / 0.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-09.png" alt="tracks before, scene 09"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-09.png" alt="tracks after, scene 09"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<section id="s10"><h2>10 · A full war, Broadcast, 600 a side</h2><p class="m">Empire v Rebels, seed 2202, 600 a side, 90 s.</p>
+  <div class="pair">
+    <figure><video controls preload="none" muted loop playsinline poster="before/stills/10-005s.jpg" src="before/10.webm"></video><figcaption>before (main)</figcaption></figure>
+    <figure><video controls preload="none" muted loop playsinline poster="after/stills/10-005s.jpg" src="after/10.webm"></video><figcaption>after</figcaption></figure>
+  </div>
+  <table><thead><tr><th>headless, whole scene</th><th>before</th><th>after</th></tr></thead><tbody>
+    <tr><td>reversals per ship-minute (all ships)</td><td>0.099</td><td>0.006</td></tr>
+    <tr><td>gunboat + capital reversals per ship-minute</td><td>0.008</td><td>0.000</td></tr>
+    <tr><td>worst shuttle share, any ship</td><td>20.0%</td><td>2.0%</td></tr>
+    <tr><td>p95 angular jerk, all ships (rad/s³)</td><td>9.66</td><td>4.73</td></tr>
+    <tr><td>p95 angular jerk, frigates</td><td>7.00</td><td>0.38</td></tr>
+    <tr><td>speed holds of 5 s+</td><td>20.4%</td><td>1.2%</td></tr>
+    <tr><td>spins in place, hulls 80 m+</td><td>1</td><td>0</td></tr>
+    <tr><td>squad-time in the cohesion band</td><td>43.2%</td><td>74.2%</td></tr>
+    <tr><td>smallest squadmate signature distance</td><td>0.115</td><td>0.084</td></tr>
+    <tr><td>clip (browser): focus ships reversals / worst shuttle</td><td>85 / 20.0%</td><td>15 / 6.0%</td></tr>
+  </tbody></table>
+  <details><summary>Track plots: from above, from the side, heading and speed over time</summary><div class="pair">
+    <figure><img loading="lazy" src="plots/before-scene-10.png" alt="tracks before, scene 10"><figcaption>before</figcaption></figure>
+    <figure><img loading="lazy" src="plots/after-scene-10.png" alt="tracks after, scene 10"><figcaption>after</figcaption></figure>
+  </div></details></section>
+<h2>The whole run set</h2><p class="m">All scenes and the 24-war sweep over all 23 fleets.</p><div class="pair"><figure><img loading="lazy" src="plots/before-reversals.png" alt="reversals.png before"><figcaption>before: reversals.png</figcaption></figure><figure><img loading="lazy" src="plots/after-reversals.png" alt="reversals.png after"><figcaption>after: reversals.png</figcaption></figure></div><div class="pair"><figure><img loading="lazy" src="plots/before-cohesion.png" alt="cohesion.png before"><figcaption>before: cohesion.png</figcaption></figure><figure><img loading="lazy" src="plots/after-cohesion.png" alt="cohesion.png after"><figcaption>after: cohesion.png</figcaption></figure></div><div class="pair"><figure><img loading="lazy" src="plots/before-signature-fighter.png" alt="signature-fighter.png before"><figcaption>before: signature-fighter.png</figcaption></figure><figure><img loading="lazy" src="plots/after-signature-fighter.png" alt="signature-fighter.png after"><figcaption>after: signature-fighter.png</figcaption></figure></div><div class="pair"><figure><img loading="lazy" src="plots/before-signature-frigate.png" alt="signature-frigate.png before"><figcaption>before: signature-frigate.png</figcaption></figure><figure><img loading="lazy" src="plots/after-signature-frigate.png" alt="signature-frigate.png after"><figcaption>after: signature-frigate.png</figcaption></figure></div></body></html>

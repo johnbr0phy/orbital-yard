@@ -1,0 +1,88 @@
+{
+ "scene": "02-19",
+ "name": "Gunboat screen: Dominion",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 409,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 3.3496543915782793,
+   "hold": 0.03562689997775635,
+   "spins": 0,
+   "minutes": 72.87
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.019275249131909367,
+    "hold": 0.37215335831651775,
+    "spins": 0,
+    "minutes": 1.93
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.04731512589614808,
+    "hold": 0.22994470438111442,
+    "spins": 0,
+    "minutes": 5.87
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.5432503314924331,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 14.67
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 1.5310874616820287,
+    "hold": 0.05456120092378753,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 2.264644307593062,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 5.56
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.7315125896148125,
+    "hold": 0.007844027441485069,
+    "spins": 0,
+    "minutes": 42.92
+   }
+  },
+  "focus": {
+   "ships": 16,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.7750809061488673,
+  "individualityMin": 0.2026885993899181
+ },
+ "errors": []
+}

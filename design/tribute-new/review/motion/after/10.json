@@ -1,0 +1,88 @@
+{
+ "scene": "10",
+ "name": "A full war, Broadcast, 600 a side",
+ "label": "after",
+ "clip": [
+  0,
+  90
+ ],
+ "frames": 2700,
+ "seconds": 90,
+ "msPerFrame": 614,
+ "metrics": {
+  "all": {
+   "perMin": 0.01036286930195714,
+   "strictPerMin": 0,
+   "shuttleMax": 0.06,
+   "angP95": 4.841723675840999,
+   "hold": 0.01242401320732859,
+   "spins": 0,
+   "minutes": 1447.48
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.025409727055493037,
+    "hold": 0.32220526516596715,
+    "spins": 0,
+    "minutes": 2.78
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.07328245331389037,
+    "hold": 0.29819277108433734,
+    "spins": 0,
+    "minutes": 42.16
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.38459178204535355,
+    "hold": 0.0013083224306464111,
+    "spins": 0,
+    "minutes": 131.25
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 2.483133105295568,
+    "hold": 0.006409568136090118,
+    "spins": 0,
+    "minutes": 116.42
+   },
+   "fighter": {
+    "perMin": 0.013014293550405346,
+    "strictPerMin": 0,
+    "shuttleMax": 0.06,
+    "angP95": 5.308844442309879,
+    "hold": 0.0022496729944404587,
+    "spins": 0,
+    "minutes": 1152.58
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 5.308844442309879,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 2.29
+   }
+  },
+  "focus": {
+   "ships": 1142,
+   "reversals": 15,
+   "shuttleMax": 0.06,
+   "spins": 45
+  },
+  "cohesion": 0.7376411775597111,
+  "individualityMin": 0.0984251423282921
+ },
+ "errors": []
+}

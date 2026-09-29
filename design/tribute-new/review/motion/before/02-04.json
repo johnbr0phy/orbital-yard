@@ -1,0 +1,88 @@
+{
+ "scene": "02-04",
+ "name": "Gunboat screen: Choir",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 403,
+ "metrics": {
+  "all": {
+   "perMin": 0.21451705620907707,
+   "strictPerMin": 0,
+   "shuttleMax": 0.12,
+   "angP95": 10.592537251772876,
+   "hold": 0.22626686481918581,
+   "spins": 1,
+   "minutes": 79.25
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.15310874616820302,
+    "hold": 0.46142733314071077,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.4216965034285822,
+    "hold": 0.37236009732360104,
+    "spins": 0,
+    "minutes": 5.59
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 6.839116472814292,
+    "hold": 0.29965613971586286,
+    "spins": 1,
+    "minutes": 11.97
+   },
+   "light": {
+    "perMin": 0.06482748685442627,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 7.161434102129013,
+    "hold": 0.25613769499111433,
+    "spins": 0,
+    "minutes": 15.43
+   },
+   "fighter": {
+    "perMin": 0.3700705446975827,
+    "strictPerMin": 0,
+    "shuttleMax": 0.12,
+    "angP95": 13.031667784522973,
+    "hold": 0.17943317299685532,
+    "spins": 0,
+    "minutes": 43.24
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.02,
+    "angP95": 15.667510701081468,
+    "hold": 0.20676004872107184,
+    "spins": 0,
+    "minutes": 1.11
+   }
+  },
+  "focus": {
+   "ships": 11,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 1
+  },
+  "cohesion": 0.4059259259259259,
+  "individualityMin": 0.1977978004289932
+ },
+ "errors": []
+}

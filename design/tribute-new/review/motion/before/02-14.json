@@ -1,0 +1,88 @@
+{
+ "scene": "02-14",
+ "name": "Gunboat screen: USCM",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 369,
+ "metrics": {
+  "all": {
+   "perMin": 0.1382559270827999,
+   "strictPerMin": 0.03536484734174231,
+   "shuttleMax": 0.22,
+   "angP95": 9.225714271547629,
+   "hold": 0.3089969173998155,
+   "spins": 0,
+   "minutes": 86.8
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.0988553094656939,
+    "hold": 0.6176555716353112,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.2483133105295573,
+    "hold": 0.36340607950116915,
+    "spins": 0,
+    "minutes": 5.7
+   },
+   "frigate": {
+    "perMin": 0.04841442749939483,
+    "strictPerMin": 0.04841442749939483,
+    "shuttleMax": 0,
+    "angP95": 8.413951416451948,
+    "hold": 0.31932547461131544,
+    "spins": 0,
+    "minutes": 20.65
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.22,
+    "angP95": 7.328245331389044,
+    "hold": 0.3061021665672829,
+    "spins": 0,
+    "minutes": 9.28
+   },
+   "fighter": {
+    "perMin": 0.2080540015719636,
+    "strictPerMin": 0,
+    "shuttleMax": 0.1,
+    "angP95": 11.091748152624008,
+    "hold": 0.2871160696283353,
+    "spins": 0,
+    "minutes": 48.06
+   },
+   "hero": {
+    "perMin": 0.851063829787234,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 7.498942093324558,
+    "hold": 0.4382642998027613,
+    "spins": 0,
+    "minutes": 1.18
+   }
+  },
+  "focus": {
+   "ships": 19,
+   "reversals": 2,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.4986737400530504,
+  "individualityMin": 0.14127580753367705
+ },
+ "errors": []
+}

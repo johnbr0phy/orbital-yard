@@ -1,0 +1,97 @@
+{
+ "scene": "05",
+ "name": "Borg cube and escorts closing",
+ "label": "before",
+ "clip": [
+  4,
+  40
+ ],
+ "frames": 1080,
+ "seconds": 36,
+ "msPerFrame": 626,
+ "metrics": {
+  "all": {
+   "perMin": 0.454254853797234,
+   "strictPerMin": 0,
+   "shuttleMax": 0.18,
+   "angP95": 11.614486138403414,
+   "hold": 0.24473532661986963,
+   "spins": 5,
+   "minutes": 99.06
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.36728230049808464,
+    "hold": 0.40989660265878886,
+    "spins": 0,
+    "minutes": 2.26
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.3427677865464501,
+    "hold": 0.32706702474144334,
+    "spins": 0,
+    "minutes": 8.23
+   },
+   "mid": {
+    "perMin": 0.270310857486109,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 13.645831365889238,
+    "hold": 0.08786401699787526,
+    "spins": 5,
+    "minutes": 3.7
+   },
+   "light": {
+    "perMin": 0.742277915236651,
+    "strictPerMin": 0,
+    "shuttleMax": 0.02,
+    "angP95": 11.091748152624008,
+    "hold": 0.13972182621925655,
+    "spins": 0,
+    "minutes": 41.76
+   },
+   "fighter": {
+    "perMin": 0.7568161971603222,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 9.440608762859226,
+    "hold": 0.21370967741935484,
+    "spins": 0,
+    "minutes": 17.18
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.18,
+    "angP95": 7.673614893618185,
+    "hold": 0.29457934755948006,
+    "spins": 0,
+    "minutes": 2.2
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 14.962356560944327,
+    "hold": 0.4414663434306818,
+    "spins": 0,
+    "minutes": 23.74
+   }
+  },
+  "focus": {
+   "ships": 13,
+   "reversals": 9,
+   "shuttleMax": 0,
+   "spins": 17
+  },
+  "cohesion": 0.302,
+  "individualityMin": 0.10554887889198948
+ },
+ "errors": []
+}

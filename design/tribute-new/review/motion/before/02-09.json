@@ -1,0 +1,88 @@
+{
+ "scene": "02-09",
+ "name": "Gunboat screen: EarthForce",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 466,
+ "metrics": {
+  "all": {
+   "perMin": 0.12688491655554446,
+   "strictPerMin": 0,
+   "shuttleMax": 0.04,
+   "angP95": 7.328245331389044,
+   "hold": 0.2529994062608767,
+   "spins": 0,
+   "minutes": 94.57
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.1496235656094433,
+    "hold": 0.7087546951748049,
+    "spins": 0,
+    "minutes": 1.74
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.32734069487883793,
+    "hold": 0.27379964433906345,
+    "spins": 0,
+    "minutes": 8.76
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 5.82103217770871,
+    "hold": 0.4035467980295567,
+    "spins": 0,
+    "minutes": 2.82
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.027170343254594,
+    "hold": 0.37358460045292785,
+    "spins": 0,
+    "minutes": 20.47
+   },
+   "fighter": {
+    "perMin": 0.20252594863716905,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 9.225714271547629,
+    "hold": 0.19700938912715887,
+    "spins": 0,
+    "minutes": 59.25
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.04,
+    "angP95": 6.839116472814292,
+    "hold": 0.27616027673681176,
+    "spins": 0,
+    "minutes": 1.53
+   }
+  },
+  "focus": {
+   "ships": 5,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.6692708333333334,
+  "individualityMin": 0.24334878372103091
+ },
+ "errors": []
+}

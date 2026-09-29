@@ -1,0 +1,88 @@
+{
+ "scene": "06",
+ "name": "Capital handling: broadside pass, 180 degree turn, stop",
+ "label": "before",
+ "clip": [
+  12,
+  84
+ ],
+ "frames": 2160,
+ "seconds": 72,
+ "msPerFrame": 432,
+ "metrics": {
+  "all": {
+   "perMin": 0.17498238024643353,
+   "strictPerMin": 0,
+   "shuttleMax": 0.58,
+   "angP95": 9.885530946569391,
+   "hold": 0.15782625575807188,
+   "spins": 0,
+   "minutes": 91.44
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.39355007545577725,
+    "hold": 0.41886524822695037,
+    "spins": 0,
+    "minutes": 3.09
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.5432503314924331,
+    "hold": 0.16351483534398434,
+    "spins": 0,
+    "minutes": 8.33
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 11.885022274370165,
+    "hold": 0.2569054021021755,
+    "spins": 0,
+    "minutes": 21.92
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.04,
+    "angP95": 8.413951416451948,
+    "hold": 0.14535725968503196,
+    "spins": 0,
+    "minutes": 18.15
+   },
+   "fighter": {
+    "perMin": 0.4369727498937912,
+    "strictPerMin": 0,
+    "shuttleMax": 0.16,
+    "angP95": 12.445146117713843,
+    "hold": 0.08222640494756654,
+    "spins": 0,
+    "minutes": 36.62
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.58,
+    "angP95": 8.609937521845998,
+    "hold": 0.18026054941942793,
+    "spins": 0,
+    "minutes": 3.33
+   }
+  },
+  "focus": {
+   "ships": 1,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.5257410296411856,
+  "individualityMin": 0.35704890241483767
+ },
+ "errors": []
+}

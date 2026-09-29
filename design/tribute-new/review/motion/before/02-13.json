@@ -1,0 +1,88 @@
+{
+ "scene": "02-13",
+ "name": "Gunboat screen: Mondoshawan",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 408,
+ "metrics": {
+  "all": {
+   "perMin": 0.25639199487215997,
+   "strictPerMin": 0,
+   "shuttleMax": 0.7,
+   "angP95": 7.673614893618185,
+   "hold": 0.2949921186162183,
+   "spins": 0,
+   "minutes": 85.81
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.431519076827765,
+    "hold": 0.6136298007507941,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.3198895109691397,
+    "hold": 0.5158264947245018,
+    "spins": 0,
+    "minutes": 5.55
+   },
+   "light": {
+    "perMin": 0.2700877785280216,
+    "strictPerMin": 0,
+    "shuttleMax": 0.7,
+    "angP95": 5.559042572704037,
+    "hold": 0.3088071748878924,
+    "spins": 0,
+    "minutes": 29.62
+   },
+   "fighter": {
+    "perMin": 0.30190849297343914,
+    "strictPerMin": 0,
+    "shuttleMax": 0.58,
+    "angP95": 9.440608762859226,
+    "hold": 0.2559059245070853,
+    "spins": 0,
+    "minutes": 46.37
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.12,
+    "angP95": 13.031667784522973,
+    "hold": 0.20386947733179323,
+    "spins": 0,
+    "minutes": 1.41
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 5.188000389289609,
+    "hold": 0.4626777251184834,
+    "spins": 0,
+    "minutes": 0.94
+   }
+  },
+  "focus": {
+   "ships": 0,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.5303030303030303,
+  "individualityMin": 0.24621565716443844
+ },
+ "errors": []
+}

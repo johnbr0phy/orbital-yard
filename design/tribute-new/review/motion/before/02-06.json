@@ -1,0 +1,88 @@
+{
+ "scene": "02-06",
+ "name": "Gunboat screen: Rebels",
+ "label": "before",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 446,
+ "metrics": {
+  "all": {
+   "perMin": 0.3518717622910761,
+   "strictPerMin": 0.04277668195536966,
+   "shuttleMax": 0.32,
+   "angP95": 10.115794542598962,
+   "hold": 0.24930597639454033,
+   "spins": 0,
+   "minutes": 79.57
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.2917427014001166,
+    "hold": 0.41387283236994216,
+    "spins": 0,
+    "minutes": 1.92
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.31260793671239523,
+    "hold": 0.5319107473448308,
+    "spins": 0,
+    "minutes": 5.7
+   },
+   "frigate": {
+    "perMin": 0.06347862886161659,
+    "strictPerMin": 0.06347862886161659,
+    "shuttleMax": 0.1,
+    "angP95": 8.609937521845998,
+    "hold": 0.29411958058048193,
+    "spins": 0,
+    "minutes": 15.75
+   },
+   "light": {
+    "perMin": 0.2996753517023225,
+    "strictPerMin": 0,
+    "shuttleMax": 0.32,
+    "angP95": 7.85235634610071,
+    "hold": 0.3416913946587537,
+    "spins": 0,
+    "minutes": 6.67
+   },
+   "fighter": {
+    "perMin": 0.45726954654103297,
+    "strictPerMin": 0,
+    "shuttleMax": 0.26,
+    "angP95": 12.161860006463654,
+    "hold": 0.19724167347954355,
+    "spins": 0,
+    "minutes": 48.11
+   },
+   "hero": {
+    "perMin": 2.125147579693034,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 12.161860006463654,
+    "hold": 0.17862890247827487,
+    "spins": 0,
+    "minutes": 1.41
+   }
+  },
+  "focus": {
+   "ships": 15,
+   "reversals": 2,
+   "shuttleMax": 0.1,
+   "spins": 0
+  },
+  "cohesion": 0.49343065693430654,
+  "individualityMin": 0.1688133538955805
+ },
+ "errors": []
+}

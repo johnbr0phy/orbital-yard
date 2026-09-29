@@ -1,0 +1,88 @@
+{
+ "scene": "03",
+ "name": "Imperial squadron: form, attack, re-form",
+ "label": "after",
+ "clip": [
+  4,
+  48
+ ],
+ "frames": 1320,
+ "seconds": 44,
+ "msPerFrame": 445,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0.02,
+   "angP95": 5.559042572704037,
+   "hold": 0.024594949642387974,
+   "spins": 0,
+   "minutes": 112.85
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.029853826189179603,
+    "hold": 0.33376427494074556,
+    "spins": 0,
+    "minutes": 2.07
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.13645831365889238,
+    "hold": 0.2555707795485685,
+    "spins": 0,
+    "minutes": 7.07
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.4731512589614803,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 14.05
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 2.264644307593062,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 16.31
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0.02,
+    "angP95": 6.998419960022731,
+    "hold": 0.004123417249628828,
+    "spins": 0,
+    "minutes": 71.64
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 6.683439175686149,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 1.71
+   }
+  },
+  "focus": {
+   "ships": 8,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.7916219119226638,
+  "individualityMin": 0.1788689696385586
+ },
+ "errors": []
+}

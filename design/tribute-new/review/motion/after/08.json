@@ -1,0 +1,88 @@
+{
+ "scene": "08",
+ "name": "A rout and a rally",
+ "label": "after",
+ "clip": [
+  28,
+  62
+ ],
+ "frames": 1020,
+ "seconds": 34,
+ "msPerFrame": 279,
+ "metrics": {
+  "all": {
+   "perMin": 0.008021819348628273,
+   "strictPerMin": 0,
+   "shuttleMax": 0.14,
+   "angP95": 4.5185594437492265,
+   "hold": 0.029077198604958065,
+   "spins": 0,
+   "minutes": 124.66
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.10351421666793431,
+    "hold": 0.22923018292682928,
+    "spins": 0,
+    "minutes": 2.13
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.1188502227437019,
+    "hold": 0.24486920296514122,
+    "spins": 0,
+    "minutes": 8.26
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.3198895109691397,
+    "hold": 0.01582090594768274,
+    "spins": 0,
+    "minutes": 15.88
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 2.6607250597988084,
+    "hold": 0.013214581607290799,
+    "spins": 0,
+    "minutes": 33.16
+   },
+   "fighter": {
+    "perMin": 0.015708588234267414,
+    "strictPerMin": 0,
+    "shuttleMax": 0.14,
+    "angP95": 6.683439175686149,
+    "hold": 0.008009652285149436,
+    "spins": 0,
+    "minutes": 63.66
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 2.16271852372702,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 1.57
+   }
+  },
+  "focus": {
+   "ships": 8,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 1
+  },
+  "cohesion": 0.5995828988529719,
+  "individualityMin": 0.11675410111108961
+ },
+ "errors": []
+}

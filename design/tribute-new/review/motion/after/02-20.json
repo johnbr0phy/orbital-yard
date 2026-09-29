@@ -1,0 +1,88 @@
+{
+ "scene": "02-20",
+ "name": "Gunboat screen: Space Marines",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 402,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 1.4288939585111007,
+   "hold": 0.13039611262961515,
+   "spins": 0,
+   "minutes": 96.37
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.012735030810166616,
+    "hold": 0.5617426428159262,
+    "spins": 0,
+    "minutes": 1.93
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.012735030810166616,
+    "hold": 0.6585848750405714,
+    "spins": 0,
+    "minutes": 15.89
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.10115794542598983,
+    "hold": 0.005989882374848702,
+    "spins": 0,
+    "minutes": 17.9
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 2.5409727055493065,
+    "hold": 0.01095159038599404,
+    "spins": 0,
+    "minutes": 54.04
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 1.7579236139586931,
+    "hold": 0.025219190227563786,
+    "spins": 0,
+    "minutes": 5.64
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 5.9566214352900975,
+    "hold": 0.11316397228637413,
+    "spins": 0,
+    "minutes": 0.96
+   }
+  },
+  "focus": {
+   "ships": 29,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.7658227848101266,
+  "individualityMin": 0.2649627639466843
+ },
+ "errors": []
+}

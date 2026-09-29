@@ -1,0 +1,88 @@
+{
+ "scene": "02-21",
+ "name": "Gunboat screen: Tyranids",
+ "label": "after",
+ "clip": [
+  14,
+  26
+ ],
+ "frames": 360,
+ "seconds": 12,
+ "msPerFrame": 532,
+ "metrics": {
+  "all": {
+   "perMin": 0,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 3.273406948788386,
+   "hold": 0.04903516376861379,
+   "spins": 0,
+   "minutes": 96.54
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.019275249131909367,
+    "hold": 0.42985507246376814,
+    "spins": 0,
+    "minutes": 1.4
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.07673614893618186,
+    "hold": 0.3768860353130016,
+    "spins": 0,
+    "minutes": 9.67
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 1.1885022274370165,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 14.4
+   },
+   "fighter": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 4.120975190973304,
+    "hold": 0.0017573805780016316,
+    "spins": 0,
+    "minutes": 63.79
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 5.9566214352900975,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 1.84
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 1.2735030810166603,
+    "hold": 0.025317702689390206,
+    "spins": 0,
+    "minutes": 5.44
+   }
+  },
+  "focus": {
+   "ships": 21,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.675,
+  "individualityMin": 0.1791322155588015
+ },
+ "errors": []
+}

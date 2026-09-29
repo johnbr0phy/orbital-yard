@@ -1,0 +1,88 @@
+{
+ "scene": "07",
+ "name": "Dogfight: Empire v Shoal",
+ "label": "after",
+ "clip": [
+  20,
+  50
+ ],
+ "frames": 900,
+ "seconds": 30,
+ "msPerFrame": 486,
+ "metrics": {
+  "all": {
+   "perMin": 0.017307609098033184,
+   "strictPerMin": 0,
+   "shuttleMax": 0,
+   "angP95": 6.3826348619054825,
+   "hold": 0.020697899374416545,
+   "spins": 0,
+   "minutes": 115.56
+  },
+  "classes": {
+   "leviathan": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.17988709151287874,
+    "hold": 0.28637094920707884,
+    "spins": 0,
+    "minutes": 2.37
+   },
+   "capital": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.27861211686297693,
+    "hold": 0.2561828831760495,
+    "spins": 0,
+    "minutes": 6.28
+   },
+   "frigate": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 0.8609937521846007,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 4.73
+   },
+   "light": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 3.8459178204535354,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 13.58
+   },
+   "fighter": {
+    "perMin": 0.02320948494284665,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 7.328245331389044,
+    "hold": 0.002813950507904135,
+    "spins": 0,
+    "minutes": 86.17
+   },
+   "hero": {
+    "perMin": 0,
+    "strictPerMin": 0,
+    "shuttleMax": 0,
+    "angP95": 8.035261221856176,
+    "hold": 0,
+    "spins": 0,
+    "minutes": 2.42
+   }
+  },
+  "focus": {
+   "ships": 24,
+   "reversals": 0,
+   "shuttleMax": 0,
+   "spins": 0
+  },
+  "cohesion": 0.888402625820569,
+  "individualityMin": 0.20778976196656188
+ },
+ "errors": []
+}
