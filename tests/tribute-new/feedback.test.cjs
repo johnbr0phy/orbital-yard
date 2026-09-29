@@ -94,10 +94,14 @@ test('the swarm has guns: hive ships hunt instead of holding, and spit seeking v
   const held=J(b,`ships.filter(s=>s.race===21&&s.slen>=180&&s.ai&&!s.dead&&s.ai.order&&s.ai.order.kind==='HOLD').length`);
   assert.equal(J(b,'battleAI.story.objective&&battleAI.story.objective.kind'),'STATION','a station war, where capitals used to sit on the station');
   assert.equal(held,0,'no hive ship holds ground');
-  // A brawl: the hive ships march in and reach their bio-cannons' 1,150 m. Since the motion pass both
-  // fleets loiter on their hold points instead of drifting off them, so contact comes later (about 150 s here).
+  // The volley: an enemy ship inside a hive ship's bio-cannon range (1,150 m). The motion pass changed when
+  // the fleets meet (in this war the swarm's small craft now finish the Empire before a hive ship is in range),
+  // so the test sets the range up itself instead of waiting for this war's pacing.
   const w=loadBattle({cores:1,modules:true});w.start(21,5,3303,40);
-  w.run(hook);for(let t=0;t<200&&!(J(w,'__v').cap);t+=10)w.step(10);w.step(10);
+  w.run(hook);w.step(20);
+  const park=`(()=>{const h=ships.find(s=>s.race===21&&s.slen>=180&&!s.dead&&s.arr);const e=ships.filter(s=>s.side!==h.side&&!s.dead&&s.arr).sort((a,b)=>b.slen-a.slen)[0];
+    e.x=h.x+Math.cos(h.yaw)*800;e.y=h.y;e.z=h.z+Math.sin(h.yaw)*800;e.v=0;return [h.id,e.id];})()`;
+  for(let t=0;t<120&&!(J(w,'__v').cap&&J(w,'__v').small);t+=2){J(w,park);w.step(2);}w.step(10);
   const v=J(w,'__v');
   assert.equal(v.cap,7,'a hive ship spits seven spores '+JSON.stringify(v));
   assert.equal(v.small,2,JSON.stringify(v));

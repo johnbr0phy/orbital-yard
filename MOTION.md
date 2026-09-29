@@ -107,32 +107,36 @@ All measurements use the recorder in `scripts/motion-lib.cjs`. It samples every 
 | 10 A full war, Broadcast, 600 a side | 0.099 → 0.006 | 0.008 / 0.000 → 0.000 / 0.000 | 20% → 2% | 7.00 → 0.38 | 43% → 74% | 0.115 → 0.084 |
 <!-- /SCENE-TABLE -->
 
-## The three criteria that did not pass
+## The criteria that did not pass
 
-The goal was every criterion green. Three are not, and I haven't touched their definitions. This is what they measure now, and why.
+The goal was every criterion green. Two motion criteria are not (cohesion and individuality), and neither is row 16, the story rates. I haven't touched any definitions. This is what they measure now, and why.
 
-### Shuttle (17 of 6,656 ships over 5%, worst 12%)
+### Squadron cohesion (69.1% overall; worst fleet Minbari 24%)
 
-On main, 324 ships shuttled over 5% and the worst spent 88% of a window on ground it had just crossed. After this pass no gunboat or capital shuttles, and the Rebel screen (scene 02-06) flies lines and wide arcs.
+Main measured 43.2%, worst fleet 12.4%. In-band share by formation phase now: CRUISE 74%, FORM 63%, REFORM 30%, BREAK 27%. By fleet in the sweep: Klingons 90%, Engineers and Yautja 87%, USCM 83%. Every other fleet is between 46% and 75%, except Borg (37%) and Minbari (20%).
 
-The 17 ships left are all small craft: 7 fighters in attack or flank runs, 4 retreating, 3 routing, 2 escorting, and one capital on a HOLD. The attack cases are gun passes. A fighter runs through its mark, breaks away 66 to 80 degrees, comes round and runs through the mark again, and the second run crosses the first within 20 m at more than 120 degrees. The criterion excludes nothing but contact, so a dogfight counts.
-
-I tried a wider break (over 1.15 rad) with a longer extension. It left 1 to 2 shuttlers in the test wars, but fighters took a third longer between runs and small-craft kills fell by a quarter, which fed the story regression (BEHAVIOUR.md). The break now is the compromise. What would fix it: a proper re-attack geometry that comes back on an offset line (a "lag" re-entry) instead of through the same point.
-
-### Squadron cohesion (70.0% overall; worst fleet Minbari 24%)
-
-Main measured 43.2%, worst fleet 12.4%. In-band share by formation phase now: CRUISE 74%, FORM 63%, REFORM 34%, BREAK 26%.
-
-- **Some squadrons have no band to be in.** The floor is 1.5 mean hull lengths and the ceiling is 700 m, so a squadron whose hulls average over 467 m is out of band whatever it does. The Minbari field crowns of 526–636 m in squadrons with a single frigate. Those squadrons are 12% of Minbari squad-time, and they are either stacked on each other or dissolved. I won't stack capitals to pass a number.
+- **Some squadrons have no band to be in.** The floor is 1.5 mean hull lengths and the ceiling is 700 m, so a squadron whose hulls average over 467 m is out of band whatever it does. In the final sweep that is 15% of Minbari squad-time (squadrons of four capitals of 300–636 m). Another 31% is in squadrons whose band is under 200 m wide (mean hull 333–466 m). With 15% out of reach, the Minbari can reach 85% only if every other squadron is in band every second. I won't stack capitals to pass a number.
+- **Frigate squadrons in cruise are the biggest single loss:** 7.6% of all sweep squad-time is out of band in all-frigate squadrons (55% in band), and another 3.6% in mixed squadrons led by frigates. Frigates fly a line-ahead column with slots 360–570 m apart. They arrive by jump in a clump, top out at 11–17 m/s, and a hull of 80 m or more never slows below four-fifths of the formation's pace (so it can't pivot on the spot). So the tail of a four-ship column takes minutes to drop 1.3 km back to its slot. Meanwhile the clump is under the 1.5-hull-length floor, or its speeds spread over the 0.35 limit.
+  - I tried letting a big hull that is well ahead of its slot, and on its line, slow to 45% of the pace.
+  - Separately, I tried dealing slots by where the pilots are (nearest pilot to each slot, front to back) instead of roster order.
+  - Neither moved cohesion on four test wars (49.7% → 49.8%), so neither is in.
 - **Breaking and re-forming.** A squadron in a furball is exempt only while half or more of it is dogfighting. The seconds either side of that, when some pilots are on their passes and some are coming back, are counted, and they are mostly out of band on heading.
 - **The story trade.** Holding wingmen in formation until they were inside 0.5–0.85 km of their marks put cohesion at 72.6% in the fleet sweep, but fixed-gun wingmen can't aim from a slot. Kills, routs and last stands fell 15–30%. Wingmen now leave their slot when their mark is within gun-pass range, which bought the story back and costs about 3 points of cohesion.
-- **Speed spread in cruise** (`CRUISE.cvHigh`): fleets whose squadrons mix hulls with very different top speeds (Borg, Shadows, Romulans) run a coefficient of variation over 0.35 while stragglers catch up.
+- **Speed spread in cruise** (`CRUISE.cvHigh`): fleets whose squadrons mix hulls with very different top speeds (Borg, Shadows, Romulans) run a coefficient of variation over 0.35 while stragglers catch up. Squadrons led by a capital with small craft in them are in band 4% of their cruise time.
 
-### Individuality (159 of 915 squadrons below 0.25; median squadron minimum 0.38)
+### Individuality (169 of 915 squadrons below 0.25; median squadron minimum 0.39)
 
 Main had 202 of 915 below and a median of 0.36.
 
-The criterion is the smallest distance between any two squadmates. A squadron of 8 has 28 pairs, so it fails if any one pair is close. Failures by squadron size: 2 to 3 ships, 2 of 60 (3%); 4 to 5, 25 of 345 (7%); 6 or more, 132 of 510 (26%). Pilots' hands are dealt from a golden-ratio sequence on the ship id, so their weave, rhythm and bank differ by design. In formation, though, eight pilots fly one track, and the flight itself pulls their signatures together. Widening the per-pilot spread further cost the fleet classifier 5 points (fleets blur into each other) and didn't move this number.
+The criterion is the smallest distance between any two squadmates. A squadron of 8 has 28 pairs, so it fails if any one pair is close. Failures by squadron size: 2 to 3 ships, 1 of 60; 4 to 5, 22 of 345 (6%); 6 or more, 146 of 510 (29%).
+
+Pilots' hands are dealt from a golden-ratio sequence on the ship id, so their weave, rhythm and now bank differ by design. Spreading the bank the same way cut failures on six test wars from 22 to 15 of 83. In formation, though, eight pilots fly one track, and the flight itself pulls their signatures together.
+
+Widening the weave and throttle-rhythm spreads as well made no further difference (15 of 83). An earlier, wider spread cost the fleet classifier 5 points (fleets blur into each other). The classifier is now at 40.2% against a 39.6% floor, so there is no room to widen further.
+
+### Story rates (row 16)
+
+See BEHAVIOUR.md, "The motion pass". Fewer ships die in the 120 s window, mostly because fewer fly into each other. Routs, rallies and last stands are driven by losses, so at 300 a side they fall below BEHAVIOUR.md's rates.
 
 ## The final question
 
@@ -182,6 +186,15 @@ What I tried, in order, and what the numbers said. Rejected approaches stay here
 18. **Rejected: a throttle rhythm that only subtracts.** It cost 10–15% of speed on average. Centred on the demand, it clipped against full burn instead (the same speed-hold plateau), so the demand is held under 0.88 of full burn before the rhythm is applied.
 19. **The muster keeps jump lanes clear** (the Dominion arrival test). Laying a squadron out in formation put wingmen on their leader's jump lane; blocked wingmen stayed scattered, which cost 10 points of cohesion. They are now stepped up or down the stack until their lane is clear.
 20. **Rank-spread handling rows** took the fleet classifier from 34–35% to 40–42%. Each widening of the spread was checked against jerk (fighters p95 7.0 against 11.9 on main).
+21. **A pilot's own wake.** Most shuttling left after item 20 was gun passes coming back through the first pass (the report had 17 ships over 5%, worst 12%). Every pilot now keeps 10 s of its own track (a point every 0.2 s with its direction). If the next 0.5 to 2.5 s, flown along the arc it is turning on, would bring it within 1.8 tolerances of an old point, flying the other way, it passes that point 2.5 tolerances over or under. It passes on the side it would cross at, and holds that side while the rule is active. When the old track was steeper than 45°, it passes to the side instead. A traffic lane that would take it back through the wake gives way to the wake.
+    - **Rejected: steering to a point beside the old track.** It pulled pilots across their own line and made things worse.
+    - **Rejected: choosing over or under from the current climb rate.** It went straight through the track.
+    - **Rejected: letting the rule re-pick its side on every trigger.** A fighter circling in a dogfight flipped between over and under and cleared neither.
+22. **Rocks.** A ship brushing a rock was braked hard and could sit pinned against it (one hull 70 s at 2.6 m/s, all of it shuttle and spin). Hulls under 80 m now skid along the surface. Mid-size hulls slide at 0.92 of their speed. A pinned hull claws off along the tangent at up to 0.085 rad/s, under the spin threshold and inside the commitment rule. Wingmen's slots route round rocks.
+23. **The commitment rule held too briefly.** It limited a pilot to 75° past any heading it had swung 100° away from, but it measured the swing from the current heading. A pilot easing back under 100° lost the limit and could finish the S-turn (the Tesla hero, 0.24 reversals a minute). The limit now holds until the heading it came from is 7 s old.
+24. **Furball pirouettes.** A fighter slowed to 40 m/s in a knife fight circled on an 18 m radius, so every half-turn crossed its own path (8% shuttle). Small craft now circle no tighter than 30 m. That limit only binds at a crawl, because at combat speed it is above their turn rate. With 21 to 24, shuttle went from 17 ships over 5% to none (worst 4%).
+25. **Bank per pilot** is dealt from the golden-ratio sequence like weave and rhythm (±0.25 about the fleet's row). Individuality went from 180 to 169 of 915 squadrons below 0.25. The classifier went from 41.9% to 40.2%, still over its 39.6% floor.
+26. **Rejected for cohesion: slots dealt by position, and a lower speed floor for big hulls ahead of their slot.** Neither moved cohesion (see above).
 
 ## How to re-run
 
