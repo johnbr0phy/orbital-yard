@@ -397,8 +397,8 @@
             let ux=threat?threat.x-cap.x:dir,uz=threat?threat.z-cap.z:0;const n=Math.hypot(ux,uz)||1;ux/=n;uz/=n;
             const theta=(s.seed%628)/100+now*.25*a.orbit,berth=radius(cap)+(capital?330:170);
             goal=[cap.x+ux*berth+Math.cos(theta)*120,cap.y+a.vertical*berth*.25,cap.z+uz*berth+Math.sin(theta)*120];
-            // The screen works a circle on the threat side of its capital, not a dot that wanders.
-            orbit={x:cap.x+ux*berth*.45,y:cap.y+a.vertical*berth*.25,z:cap.z+uz*berth*.45,r:berth*.75};
+            // The screen circles its capital just outside the hull, never inside it.
+            orbit={x:cap.x,y:cap.y+a.vertical*berth*.25,z:cap.z,r:berth};
           }else goal=[s.x,s.y,s.z];
           boost=1.1;mode='ESCORT';
         }else if(order.point){goal=order.point.slice();if(order.spread){goal[0]+=a.lane*order.spread;goal[1]+=a.vertical*order.spread*.45;goal[2]+=a.depth*order.spread;}
@@ -426,7 +426,7 @@
         const friend=mode==='ESCORT'&&a.weak?a.weak:a.friends.find(f=>f.hulls)||a.friends[0];a.anchor=friend?friend.id:-1;
         // Terrain is cover: a pilot falling back puts a rock or the moon between itself and them.
         const cover=mode!=='ESCORT'&&!capital&&st&&!this.formed(s,now)?this.coverFor(s,c):null;
-        if(cover){goal=cover;a.anchor=-2;boost=mode==='RETREAT'?1.2:.95;a.plan={goal:this.avoidField(s,goal),boost,mode,target:a.target,reason:a.reason='Falling back behind cover'};return a.plan;}
+        if(cover){goal=cover;a.anchor=-2;boost=mode==='RETREAT'?1.2:.95;a.plan={goal:this.avoidField(s,goal),boost,mode,target:a.target,reason:a.reason='Falling back behind cover',station:true};return a.plan;}
         if(friend){
           const theta=(s.seed%628)/100+now*(capital?.022:.085)*a.orbit;
           const berth=radius(friend)+radius(s)+(capital?330:150);
@@ -510,7 +510,7 @@
       const k=(.12+.18*h.reform)*(off>p[3]*1.5?1.6:1),spd=s.spd||20,top=s.spdMax||spd*1.3;
       // Far from the slot: fly an intercept on where it will be, at full pace, and ignore its turns.
       // Close: match its velocity. Hysteresis between the two, so the choice does not flicker.
-      const farOn=p[3]*3,farOff=p[3]*1.8;
+      const farOn=Math.min(p[3]*3,p[3]+600),farOff=Math.min(p[3]*1.8,p[3]+300);
       // A wingman ahead of its slot never turns round for it, near or far: it eases off instead.
       s.slotFar=(s.slotFar?off>farOff:off>farOn)&&(along>-p[3]*1.5||sv<5);
       if(s.slotFar){
@@ -521,7 +521,8 @@
         return {goal:[s.x+dx/dn*reach,p[1],s.z+dz/dn*reach],point:p,along,off,want,spacing:p[3],reform:h.reform,far:true};
       }
       // Easing off to let the slot come back is for small corrections; a real rejoin is flown at pace, as an arc.
-      const floor=off<p[3]*1.2?Math.max(spd*.35,sv*.55):Math.max(spd*.6,sv*.7);
+      // Ahead of its slot, a wingman drops right back and lets the formation come to it.
+      const floor=along<0?Math.max(spd*.3,sv*.5):off<p[3]*1.2?Math.max(spd*.35,sv*.55):Math.max(spd*.6,sv*.7);
       // Sideways correction scales with forward pace: at a crawl a small error must not swing the nose.
       // Near the slot a pilot closes gently: never more than 30% off the formation's pace.
       const corr=off<p[3]*2?clamp(along*k,-.3*Math.max(sv,spd*.5),.3*Math.max(sv,spd*.5)):along*k;
@@ -609,7 +610,9 @@
        // The burn builds under a jerk limit, but never outside what the drive in use can give.
        s.vA=clamp((s.vA||0)+clamp(want-(s.vA||0),-jerk*dt,jerk*dt),-dec,acc);
        s.v=Math.max(0,v+s.vA*dt);if(velocity===0&&s.v<.05){s.v=0;s.vA=0;}}
-      s.vy=(s.vy||0)+(clamp(dy*.15,-s.spd*.42,s.spd*.42)-(s.vy||0))*Math.min(1,dt*.8);
+      // A capital climbs no steeper than about 30 degrees to its own flight path: no hull bobs on the spot.
+      const climbLim=Math.min(s.spd*.42,Math.max(2,Math.abs(s.v||0)*.6));
+      s.vy=(s.vy||0)+(clamp(dy*.15,-climbLim,climbLim)-(s.vy||0))*Math.min(1,dt*.8);
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
       if(s.steadyCapital){
         // A capital hull translates vertically without pitching like a fighter.
@@ -1264,7 +1267,7 @@
        geometry   preferred attack geometry: slash, joust, orbit, dive, stalk, swarm
        smooth     stick smoothing, 0 snappy to 1 silky (the yaw response time)
        bank       bank eagerness: how far a pilot rolls into a turn
-       overshoot  tolerance for swinging past a heading (0: damping 1.05, 1: 0.55)
+       overshoot  tolerance for swinging past a heading (0: damping 1.05, 1: 0.70)
        rhythmHz   throttle rhythm frequency (Hz); rhythm is its depth (share of speed)
        tight      formation tightness, 0 loose to 1 close
        breakaway  willingness to leave the formation for a friend or a kill
@@ -1363,9 +1366,10 @@
         // Spacing comes from the typical hull, not the biggest: a hero leading fighters must not spread them a kilometre apart.
         let slow=Infinity;for(const m of members)slow=Math.min(slow,m.spd||20);
         const lens=members.map(m=>m.slen||20).sort((x,y)=>x-y),L=lens[lens.length>>1];
-        fm.shape=lead.gunboat?'column':h.shape;
-        // Spacing by hull: fighters a few lengths apart, frigates in column, cruisers about a length and a half.
-        fm.d=fm.shape==='column'?Math.max(40,L*1.8)*(1.3-.5*h.tight):capital(lead)?L*1.5*(1.3-.5*h.tight):Math.max(42,L*3)*(1.55-.75*h.tight);
+        // Frigates and cruisers fly a line-ahead column (a battle line); everyone else their fleet's shape.
+        fm.shape=lead.gunboat||capital(lead)?'column':h.shape;
+        // Spacing by hull: fighters a few lengths apart, frigates 2.4 lengths, cruisers 1.4 lengths.
+        fm.d=capital(lead)?L*1.4:fm.shape==='column'?Math.max(60,L*2.4)*(1.3-.5*h.tight):Math.max(42,L*3)*(1.55-.75*h.tight);
         fm.rank=new Map();let n=0;for(const m of members)if(m.id!==fm.lead)fm.rank.set(m.id,n++);fm.n=n;
         let lat=0,back=0;for(let i=0;i<n;i++){const o=slotOffset(fm.shape,i,n);lat=Math.max(lat,Math.abs(o[2])*fm.d);back=Math.max(back,-o[0]*fm.d);}
         fm.back=back;
@@ -1496,8 +1500,12 @@
     helmTurn(s,err,dt,now,o){
       const h=this.hand(s),L=s.slen||20,w=this.turnLimit(s);
       const tau=(.32+.5*h.smooth)*(1+Math.min(2.2,L/200))*(o.formed?1.1:1)*(o.lining?.75:1);
-      const zeta=1.05-.5*h.overshoot,kp=1/(4*zeta*zeta*tau);
+      const zeta=1.05-.35*h.overshoot,kp=1/(4*zeta*zeta*tau);
       let mx=Math.min(o.max,w*(o.boost||1));
+      // A turning circle no tighter than the hull allows at any speed: a slow ship turns slowly
+      // instead of pirouetting (0.8 of its length for light craft and heroes, 0.9 for slicer and
+      // cutter craft, 1.4 for frigates). Fighters under 40 m are never held back by this.
+      if(!o.capital&&L>=40)mx=Math.min(mx,Math.max(Math.abs(s.v||0),3)/((s.gunboat?1.4:s.midcraft?.9:.8)*L));
       // A formation leader turns the squadron as one wide arc.
       {const lf=this.leadsFormation(s);if(lf)mx=Math.min(mx,lf.turnCap);}
       if(L>=80){const vf=Math.abs(s.v||0)/Math.max(1,s.spdMax||s.spd||20);if(vf<.2)mx=Math.min(mx,Math.max(.02,.08*vf/.2));}
@@ -1525,6 +1533,8 @@
     },
     // Climb: vertical speed and pitch through a second-order hand, never a snap.
     helmClimb(s,wv,dt,o){
+      // A ship does not climb much steeper than it flies (about 30 degrees), unless it must.
+      if(!o.urgent){const lim=Math.max(3,Math.abs(s.v||0)*.6);wv=clamp(wv,-lim,lim);}
       const h=this.hand(s),L=s.slen||20,wn=(L>=80?.9:1.6)/(.4+.5*h.smooth)*(o.fast?1.6:1);
       s.vyA=(s.vyA||0)+(wn*wn*(wv-(s.vy||0))-2*wn*(s.vyA||0))*dt;
       s.vy=(s.vy||0)+s.vyA*dt;
@@ -1534,8 +1544,10 @@
     },
     // The throttle hand: each pilot's own rhythm, from the fleet's handling.
     rhythm(s,now){
-      const h=this.hand(s),f=h.rhythmHz*6.283;
-      return 1-h.rhythm*(.5+.5*Math.sin(now*f+h.ph[2]))-h.rhythm*.4*(.5+.5*Math.sin(now*f*2.63+h.ph[4]));
+      // The fleet's slow swell, plus a quicker touch of the hand (a 3.8-5 s beat of at least 5%), so no
+      // pilot sits on one number: a live hand on a throttle is never perfectly still.
+      const h=this.hand(s),f=h.rhythmHz*6.283,g=6.283/(3+2*h.breath/.2);
+      return 1-h.rhythm*(.5+.5*Math.sin(now*f+h.ph[2]))-Math.max(.05,h.rhythm*.5)*(.5+.5*Math.sin(now*g+h.ph[4]));
     },
     // Engines: spool by size, braking a little quicker, and a burn that builds rather than snaps.
     helmSpeed(s,want,dt,k=1){
@@ -1566,7 +1578,8 @@
     extendK(s){return (GEOMETRY[this.hand(s).geometry]||GEOMETRY.slash).extend;},
     // Avoidance blends in and out over time instead of switching each step.
     avoidBlend(s,active,brake,dt){
-      const w=s.avW||0,target=active?1:0,rate=active?1/.35:1/.6;
+      // In over 0.35 s; out slowly (4 s), so a ship that climbed over traffic eases back, never hops.
+      const w=s.avW||0,target=active?1:0,rate=active?1/.35:1/4;
       s.avW=w+clamp(target-w,-rate*dt,rate*dt);
       const bt=active?brake:1;s.avBrake=(s.avBrake??1)+(bt-(s.avBrake??1))*Math.min(1,dt/.3);
       return s.avW;

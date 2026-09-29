@@ -68,7 +68,7 @@ Each fleet has a handling row beside its pilot profile. Each pilot draws their o
 - **Attack**: preferred attack geometry. *Slash* works a wide circle and extends long after a pass. *Joust* closes tight and extends short. *Orbit* circles wide. *Dive* comes in from above. *Stalk* comes in from astern. *Swarm* comes in from each pilot's own bearing.
 - **Stick smoothing** sets the yaw response time (0.32 + 0.5 × smoothing s, longer for bigger hulls).
 - **Bank**: how far a pilot rolls into a turn.
-- **Overshoot**: the tolerance for swinging past a heading (damping 1.05 at 0, 0.55 at 1).
+- **Overshoot**: the tolerance for swinging past a heading (damping 1.05 at 0, 0.70 at 1).
 - **Throttle rhythm**: the frequency and depth of the pilot's own feathering on the throttle.
 - **Tightness**: formation spacing.
 - **Breaks away**: willingness to leave the formation to cover a damaged friend.
@@ -108,7 +108,8 @@ Each fleet has a handling row beside its pilot profile. Each pilot draws their o
 
 1. **Physics limits by hull.**
    - Turn rate, spool and top speed come from the forge and the engines allocation.
-   - A frigate, corvette or transport cannot turn tighter than 1.4 of its own lengths at cruise. A slicer or cutter small craft is limited to 0.9 of its lengths.
+   - No hull of 40 m or more turns inside a circle proportional to its own length, at any speed: 1.4 lengths for a frigate, corvette or transport, 0.9 for a slicer or cutter small craft, 0.8 for light craft and heroes. A slow ship turns slowly instead of pirouetting. Frigates are also held to that circle at cruise.
+   - No ship climbs or dives much steeper than about 30° to its own flight path, unless it is lining up a shot or avoiding an imminent collision.
    - Any hull of 80 m or more turns at no more than 0.08 rad/s below 20% of top speed. Nothing that size pivots on the spot.
    - Angular acceleration and angular jerk are limited by the pilot's response time.
    - Speed changes through an acceleration that builds under a jerk limit, inside the spool: 1.5 s for fighters, 4 s for mid-size ships, 8–30 s for capitals, and braking 1.5× quicker. A transit burn builds and sheds over the same spool, against its own full burn.
@@ -117,7 +118,8 @@ Each fleet has a handling row beside its pilot profile. Each pilot draws their o
    - The stick follows the heading error through the pilot's response time and damping.
    - The weave rides on top (never on a frigate: that is what made them nod).
    - The ship banks into the turn through a critically damped roll.
-   - Climb and pitch are second-order.
+   - Climb and pitch are second-order. The altitude the pilot steers for is smoothed over about 1.5 s, so a sensor refresh on the mark does not make it porpoise.
+   - Traffic avoidance blends in over 0.35 s and out over 4 s. A ship that climbed over traffic eases back instead of hopping.
    - The throttle carries the pilot's rhythm.
 3. **Intent.**
    - The goal comes from the minds, with hysteresis. A new goal has to beat the current one by a margin (0.06 + 0.14 × commitment) and keep beating it for a dwell that grows with the hull: 0.5 s + length / 120 m, capped at 5 s, × (0.6 + 0.8 × commitment), × 1.4 for crowns. Being hit hard (12% of the hull in one decision), terror, a crippled hull or an ion lock override it.
@@ -128,7 +130,7 @@ Each fleet has a handling row beside its pilot profile. Each pilot draws their o
 - **No point is ever held by flying at it.** Near a point it must hold, a fighter orbits it on a lazy circle (no faster than 0.5 rad/s), and a formation leader slower still. A frigate flies a racetrack across the enemy's line, with legs several turning circles long and wide banked arcs at the ends.
 - **The direction is chosen from how the ship is already moving**, so arriving is never a reversal.
 - **The circle's size comes from the hull and the loiter pace, not the current speed.**
-- **Attack standoffs are orbits** around the target at the pilot's own range.
+- **Attack standoffs are orbits** around the target at the pilot's own range, flown at the pilot's own pace (95% of cruise, 75% for a frigate). A pilot never matches a slow target's speed down into a pirouette.
 - **Screens circle the threat side of their capital.**
 - **A capital holding a point** runs its way in, brakes over its spool and stops. It does not circle or pivot.
 

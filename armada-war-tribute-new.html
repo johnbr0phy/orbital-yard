@@ -14046,6 +14046,26 @@ function parkTheCrowns(){
     if(s.stn){s.stn[0]=s.x;s.stn[2]=s.z;}
   }
 }
+/* Escort squadrons jump in in formation, like the fighter chevrons. The line of battle deals
+   escorts one per berth, 560 m apart and often a rank apart, so a squadron of frigates could
+   start a kilometre and more wide and spend the whole approach assembling at frigate speed.
+   Each escort squadron is laid out round its leader in the shape and spacing the helm flies
+   (a column for frigates), facing the enemy. The muster's own spacing checks run after. */
+function formTheSquadrons(){
+  for(const q of squads){
+    const mem=q.mem.map(id=>ships[id]).filter(s=>s&&!s.dead&&s.vao);
+    if(mem.length<2||q.hero||mem.some(s=>s.band!==1))continue;
+    const lead=mem[0],h=battleAI.hand(lead),lens=mem.map(s=>s.slen||20).sort((a,b)=>a-b),L=lens[lens.length>>1];
+    const crown=fightsAsCrown(lead),gun=isGunboat(lead)&&!crown,shape=gun||crown?"column":h.shape;
+    const d=crown?L*1.4:shape==="column"?Math.max(60,L*2.4)*(1.3-.5*h.tight):Math.max(42,L*3)*(1.55-.75*h.tight);
+    const yaw=lead.side?Math.PI:0,c=Math.cos(yaw),sn=Math.sin(yaw);
+    mem.slice(1).forEach((s,i)=>{
+      const o=ArmadaBattleAI.slotOffset(shape,i,mem.length-1),x=o[0]*d,z=o[2]*d;
+      s.x=lead.x+c*x-sn*z;s.y=lead.y+o[1]*d;s.z=lead.z+sn*x+c*z;s.yaw=lead.yaw;
+      if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
+    });
+  }
+}
 function clearTheCrownBows(){
   /* the muster is opened and spread after the crowns are parked, so a
      21 km keel could still end with her bow through her own screen. The
@@ -15351,6 +15371,7 @@ function onWorkerMsg(e){
     scatterShadows();
     scatterBorg();
     spaceTheFleets();
+    formTheSquadrons();
     clearTheCrownBows();
     if(!beginIntro()){
       frameTheWar();
@@ -17563,8 +17584,11 @@ function simStep(now,dt){
       const aw=battleAI.avoidBlend(s,avoiding,avoiding?s.trafficBrake:1,dt);
       const debris=!!(s.debrisGoal&&now<s.debrisUntil);
       if(debris)goal=s.debrisGoal;
-      let dx=goal[0]-s.x,dy=goal[1]-s.y,dz=goal[2]-s.z;
-      if(aw>0&&s.avY!=null&&!debris)dy+=(s.avY-goal[1])*aw;
+      /* the pilot does not chase every altitude twitch of the mark: the height it steers for is
+         smoothed over about a second and a half (a sensor refresh must not make it porpoise) */
+      s.goalY=s.goalY==null||urgent?goal[1]:s.goalY+(goal[1]-s.goalY)*Math.min(1,dt/1.5);
+      let dx=goal[0]-s.x,dy=s.goalY-s.y,dz=goal[2]-s.z;
+      if(aw>0&&s.avY!=null&&!debris)dy+=(s.avY-s.goalY)*aw;
       const rail=Math.hypot(dx,dz)||1;
       let dyaw=Math.atan2(dz,dx)-s.yaw;
       /* a whisker of private heading, never a drunk crab that walks the chevron off the line */
@@ -17588,10 +17612,12 @@ function simStep(now,dt){
       const bob=boat?0:Math.sin(now*hd.weaveHz*4.1+hd.ph[1])*s.spd*.02*hd.weave*(formed?.4:1);
       const wv=Math.max(-s.spd*climb,Math.min(s.spd*climb,
         liningUp?dy/rail*Math.max(18,Math.abs(s.v)):dy*(boat?.08:formed?.10:.18)+bob));
-      battleAI.helmClimb(s,wv,dt,{fast:liningUp||aw>.05});
+      battleAI.helmClimb(s,wv,dt,{fast:liningUp||aw>.05,urgent:liningUp||(avoiding&&(s.trafficBrake||1)<.7)});
       const dist=Math.hypot(dx,dy,dz);
       let want=craftWant(s,now,sq,mood,dist,boost);
-      if(loiter)want=Math.min(want,s.spd*(boat?.62:.8));
+      /* a station is loitered lazily; an attack orbit is flown at the pilot's own pace, carrying
+         momentum round the circle, never matched down to a slow target into a pirouette */
+      if(loiter)want=plan.orbit&&plan.target>=0?s.spd*(boat?.75:.95):Math.min(want,s.spd*(boat?.62:.8));
       else if(dist<26)want=Math.min(want,s.spd*(boat?0.62:0.35));
       if(plan.slot){
         /* holding station: match the leader, close the gap along the heading */
@@ -17603,7 +17629,7 @@ function simStep(now,dt){
       want*=s.avBrake??1;
       if(now<(s.trafficBrakeUntil||0))want*=.65;
       if(stunned)want*=0.36;
-      want=throttle(s,now,want,prefer,mood,!!plan.slot);
+      want=throttle(s,now,want,prefer,mood,!!plan.slot||!!(loiter&&plan.orbit));
       s.throttleWant=want;
       s.v=approachSpeed(s,want,dt,s.hero?1.5:1);
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;

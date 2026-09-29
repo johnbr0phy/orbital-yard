@@ -7,3 +7,4 @@ bench/audio/scenes/*/*.wav
 bench/audio/probes/
 bench/audio/ledger.csv.lock
 bench/motion/dev/
+bench/motion/dev2/

@@ -9,7 +9,7 @@
    and whether a classifier can tell the fleets apart from motion alone.
 
    Usage:
-     node scripts/motion-report.cjs --label baseline [--only 01,03] [--scenes] [--sweep] [--jobs 4]
+     node scripts/motion-report.cjs --label baseline [--only 01,03] [--scenes] [--sweep] [--jobs 4] [--logs-all]
                                     [--compare bench/motion/baseline/summary.json]
    With neither --scenes nor --sweep, runs both (the full set).
    Writes bench/motion/<label>/runs/<id>.json (per run), logs/<id>.json.gz
@@ -65,7 +65,7 @@ function runOne(spec, outDir) {
     cohesion: A.cohesion, individuality: A.individuality, features: A.features.map(r => ({...r, f: r.f.map(x => +x.toPrecision(5))}))};
   fs.mkdirSync(path.join(outDir, 'runs'), {recursive: true});
   fs.writeFileSync(path.join(outDir, 'runs', spec.id + '.json'), JSON.stringify(out));
-  if (!spec.sweep) {
+  if (!spec.sweep || process.env.MOTION_LOGS_ALL) {
     const every = spec.heavy ? 6 : 3;
     const log = M.compactLog(rec, every);
     log.id = spec.id; log.name = spec.name; log.focus = focus; log.events = events; log.reasons = rec.reasonList;
@@ -210,7 +210,7 @@ async function main() {
     const launch = () => {
       if (next >= list.length) { if (done === list.length) resolve(); return; }
       const spec = list[next++];
-      const p = spawn(process.execPath, ['--max-old-space-size=6144', __filename, '--worker', spec.id, '--label', label], {stdio: ['ignore', 'inherit', 'inherit']});
+      const p = spawn(process.execPath, ['--max-old-space-size=6144', __filename, '--worker', spec.id, '--label', label], {stdio: ['ignore', 'inherit', 'inherit'], env: has('logs-all') ? {...process.env, MOTION_LOGS_ALL: '1'} : process.env});
       p.on('close', code => { done++; if (code) failed.push(spec.id); console.error(`[${done}/${list.length}] ${spec.id} ${code ? 'FAILED' : 'ok'}`); launch(); if (done === list.length) resolve(); });
     };
     for (let i = 0; i < Math.min(jobs, list.length); i++) launch();
