@@ -82,6 +82,22 @@ test('capital-band jobs are filled by capital-band hulls in every fleet', {timeo
   assert.deepEqual(failing(await reportSummary(), ['reach ']), []);
 });
 
+// The page's own pool tables: [race, builder, pools] for fleets dealt by class name,
+// and the numeric pools of the tribute navies and the Minbari.
+const NAMED = [[8, 'buildShadow', 'SHD_POOLS'], [15, 'buildEngineer', 'EN_POOLS'], [5, 'buildImperial', 'IMP_POOLS'], [9, 'buildEarthforce', 'EF_POOLS'], [10, 'buildFed', 'FED_POOLS'],
+  [11, 'buildKlingon', 'KLI_POOLS'], [12, 'buildBorg', 'BORG_POOLS'], [13, 'buildMondo', 'MO_POOLS'], [14, 'buildUSCM', 'UM_POOLS'], [16, 'buildYautja', 'YJ_POOLS']];
+function expectedClasses() {
+  const want = {};
+  const add = (race, band, klass) => ((want[race] = want[race] || {})[band] = want[race][band] || new Set()).add(L.classKey(race, klass));
+  for (const [race, fn, table] of NAMED) {
+    const pools = F.wrun(table);
+    pools.forEach((rows, band) => { for (const [kind] of rows) add(race, band, F.wrun(`raceBuild(${race},1234,0,false,${JSON.stringify(kind)}).meta.klass`)); });
+  }
+  for (const [race, pools] of Object.entries(F.wrun('EXTRA_BAND_POOLS'))) pools.forEach((rows, band) => { for (const [type] of rows) add(+race, band, F.wrun(`EXTRA_CLASSES[${race - 18}][${type}]`)); });
+  for (let type = 0; type < 10; type++) add(21, 'any', F.wrun(`EXTRA_CLASSES[3][${type}]`));
+  F.wrun('MIN_POOLS').forEach((rows, band) => { for (const [type] of rows) add(7, band, F.wrun(`buildMinbariClass(1234,${type}).meta.klass`)); });
+  return want;
+}
 test('every class in every band pool is actually dealt in its band, including the Sharlin and the Jem\'Hadar shuttle', {timeout: 900000}, () => {
   const want = expectedClasses(), missing = [];
   for (const [race, bands] of Object.entries(want)) for (const [band, set] of Object.entries(bands)) {
