@@ -12072,7 +12072,9 @@ function buildExtraClass(race,seed,type,hero=false){
     }
    };
    rocket(0);
-   if(type===3){for(const sign of [-1,1]){rocket(sign*10,true);box(-15,0,sign*5,15,2,2);}}
+   // a third of the Falcon Heavies fly at booster separation: the side cores
+   // pulled clear of the centre core, their struts gone (own stream)
+   if(type===3){const sep=!hero&&vyStream(seed,0xFA17)()<.34;for(const sign of [-1,1]){rocket(sign*(sep?19:10),true);if(!sep)box(-15,0,sign*5,15,2,2);}if(sep)arch='BOOSTER SEPARATION';}
    /* configurations (VARIETY.md): a Falcon flies with its landing legs out
       or folded and a Dragon or a fairing on top; a Starship either carries
       aft flaps or is the lunar lander (HLS) on four legs. */
