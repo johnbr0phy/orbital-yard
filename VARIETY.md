@@ -74,7 +74,11 @@ Didn't work (tried, measured, dropped):
 
 ## The clay question
 
-(written with the final numbers)
+*If someone hides the colours and shows only clay silhouettes, can they tell which fleet is which, which ships are the screen, the line and the flagship, and that no fleet is one shape repeated?*
+
+- **Which fleet is which: yes, measurably, and no worse than main.** From clay masks alone the classifier names the fleet of 99.0% of hulls (21.8 times chance; main 99.1%). Every tribute fleet is at 100%. The originals are the hard ones and stay so: the Yard 94.1% (main 94.9%), the Shoal 92.6% (93.5%), the Lattice 93.1% (93.7%), the Drift 98.5% (98.8%), each within its floor. The Yard and the Shoal are generators, not navies with a design bureau, and some of their one-off designs will always look like someone else's ship; that is where the misses are.
+- **No fleet is one shape repeated: yes.** On main 30 of the 66 fleet bands held fewer than three distinct silhouettes; now none does. The fewest is 3.3 (the Imperial escort line) and no single silhouette fills more than 49% of any band. Sisters are no longer clones (every class with more than one hull a battle sits between 0.04 and 0.25 from its sisters, and nearer to them than to any other class). The contact sheets show it at a glance.
+- **Screen, line and flagship: mostly, and by more than size.** Within a band no two classes are the same shape at a different scale (every pair at least 0.20 apart), so the screen is not a shrunken line. Between bands the classifier was not asked, and I did not build one, so this part rests on the contact sheets, not a number: small craft read as fighters, pods, shuttles and gunships; escorts as frigates and transports; capitals as the fleet's long hulls and carriers. The weak spot is the originals, whose capitals are their frigate designs built large, which is the Yard's own language but means a Yard capital in clay can look like a Yard frigate. The crowns (named heroes and the fleet flagships) are unchanged.
 
 ## How to re-run
 

@@ -77,6 +77,53 @@ The refits above made individual ships different; they did not make a fleet read
 Every fleet with named classes deals each muster band from its own pool. The table is read from the page's pool tables by `scripts/variety-pools.cjs`, so it cannot drift from what the forge deals; `tests/tribute-new/variety.test.cjs` checks that every entry is really dealt in its band. The originals (Yard, Shoal, Lattice, Drift, Choir) forge one-off designs and have no pools; Rebel and Tyranid pools are unchanged.
 
 <!-- POOL-TABLE -->
+| fleet | band | pool (share of the band's jobs) | why |
+|---|---|---|---|
+| Imperial | small | Tie/Ln Starfighter 30%, Tie/In Interceptor 20%, Tie/Sa Bomber 16%, Tie Advanced X1 6%, Tie/D Defender 10%, Lambda-Class Shuttle 18% | TIEs stay the screen, but no single mark over a third, and the Lambda flies with them, so the screen reads as several jobs. |
+| Imperial | escort | Gozanti-Class Cruiser 34%, Raider-Class Corvette 33%, Arquitens-Class Cruiser 33% | Three distinct escort hulls in near-equal shares; the Arquitens' longer dagger is the largest share because it is the line's picket. |
+| Imperial | capital | Victory-Class Destroyer 36%, Immobilizer 418 Interdictor 22%, Carrack-Class Light Cruiser 22%, Quasar Fire-Class Carrier 20% | The Victory's dagger is the largest share, but the Carrack and Quasar Fire put non-dagger capitals in every line. |
+| Minbari | small | Nial-Class Heavy Fighter 45%, Tishat-Class Medium Fighter 30%, Minbari Flyer 25% | The Nial remains the Minbari fighter; the reshaped Tishat and the Flyer give the screen three plans instead of one. |
+| Minbari | escort | Torotha-Class Assault Frigate 40%, Tinashi-Class War Frigate 35%, Leshath-Class Heavy Scout 25% | Torotha and Tinashi carry most of the line; the slim Leshath scout breaks up the three-fin silhouette. |
+| Minbari | capital | Tigara-Class Attack Cruiser 40%, Morshin-Class Carrier 35%, Sharlin-Class War Cruiser 25% | The Sharlin is now dealt as a normal capital (the old roll's r<.94?4:5 cutoff never reached it). |
+| Shadows | small | Shadow Fighter 45%, Shadow Scout 30%, Drakh Light Raider 25% | Shadow fighters outnumber scouts, as the vessels carry them; Drakh raiders are the servants' screen. |
+| Shadows | escort | Shadow Hunter 60%, Drakh Heavy Raider 40% | The hunter is the Shadows' own frigate; heavy raiders give the line a second, non-crab plan. |
+| Shadows | capital | Shadow Vessel 50%, Shadow Hybrid 22%, Drakh Cruiser 28% | The battlecrab stays half the line; hybrid and Drakh cruiser keep it from being one crab at every size. |
+| EarthForce | small | Sa-23e Aurora Starfury 40%, Sa-32a Thunderbolt Starfury 28%, Earth Alliance Shuttle 32% | The Aurora stays the most common; the Thunderbolt and the shuttle keep it under half. |
+| EarthForce | escort | Olympus-Class Corvette 50%, Sagittarius-Class Missile Cruiser 50% | Olympus and Sagittarius in equal shares; the Olympus drive layouts add plans inside the class. |
+| EarthForce | capital | Hyperion-Class Heavy Cruiser 26%, Omega-Class Destroyer 24%, Avenger-Class Heavy Carrier 14%, Nova-Class Dreadnought 20%, Poseidon-Class Supercarrier 16% | Five capital plans; Hyperion and Omega lead as the war's workhorses, Nova and Poseidon add the heavy line. |
+| Federation | small | Peregrine-Class Fighter 30%, Danube-Class Runabout 24%, Type-6 Shuttlecraft 24%, Type-9 Shuttlecraft 22% | Fighter, runabout and shuttle: three small-craft jobs. |
+| Federation | escort | Oberth-Class Science Vessel 21%, Defiant-Class Escort 12%, Miranda-Class Cruiser 24%, Intrepid-Class Explorer 22%, Steamrunner-Class Cruiser 21% | Five escort classes in near-equal shares, as the old roll had them. |
+| Federation | capital | Constitution-Class Heavy Cruiser 25%, Nebula-Class Explorer 25%, Akira-Class Heavy Cruiser 25%, Excelsior-Class Cruiser 25% | Four heavy classes in equal shares. |
+| Klingon | small | D'ktagh-Class Shuttlecraft 35%, Hegh'gogh-Class Heavy Fighter 35%, To'duj-Class Fighter 30% | Shuttle, heavy fighter and To'Duj in near-equal shares. |
+| Klingon | escort | F5-Class Frigate 25%, D6s-Class Scout Cruiser 25%, K'vort-Class Heavy Bird-Of-Prey 25%, D7-Class Battlecruiser 25% | The D7 flies here only, so the capital band is not D7s beside the K't'inga they grew into. |
+| Klingon | capital | K't'inga-Class Battlecruiser 30%, B'rel-Class Bird-Of-Prey 25%, F15-Class Destroyer 20%, Vor'cha-Class Attack Cruiser 25% | K't'inga, B'rel, F15 and Vor'cha: four silhouettes, none over a third. |
+| Borg | small | Borg Scout Ship 40%, Assimilated Shuttle 30%, Long-Range Probe 30% | The small band was 95% probes on main; the scout and assimilated shuttle give it three plans. |
+| Borg | escort | Long-Range Probe 36%, Assimilated Vessel (Ring-Pattern) 30%, Tactical Diamond 34% | Probe, assimilated vessel and diamond in near-equal shares. |
+| Borg | capital | Sphere 33%, Tactical Cube 36%, Tactical Diamond 31% | The sphere and diamond are joined by the tactical cube (under the crown threshold), so no capital plan is half the line. |
+| Mondoshawan | small | Zfx200 Mercenary Fighter 30%, Mangalore Raider Gunship 25%, Ny Flying Cab 15%, Ny Police Cruiser 15%, Angel-Wing Executive Yacht 15% | Five small classes; the cab and police cruiser are now different bodies. |
+| Mondoshawan | escort | Mondoshawan Ship 28%, Angel-Wing Executive Yacht 22%, Mangalore Assault Ship 26%, Fhloston Spaceliner 24% | The Mondoshawan ship was 71% of the escort band; the yacht and the Mangalore assault ship now share it. |
+| Mondoshawan | capital | Earth Federal Battle Cruiser 34%, Fhloston-Class Pleasure Liner 30%, Mangalore Warship 36% | Main had no normal capital-band class at all (0% reach); the battle cruiser and liner come from the fleet's own library. |
+| USCM | small | Ud-4l Cheyenne Dropship 44%, Type 337 Eev Escape Pod 8%, Narcissus-Class Shuttle 20%, Covenant Lander 28% | The Cheyenne stays the largest share; the lander, shuttle and EEV keep it under half. |
+| USCM | escort | Conestoga-Class Troop Transport 30%, Cm-88b Bison Star Freighter 25%, Heliades-Class Exploration Vessel 25%, Betty-Class Tramp Freighter 20% | The escort band was 98% Conestoga transports; the Bison star freighter now shares it. |
+| USCM | capital | Tientsin-Class Assault Ship 34%, Heliades-Class Exploration Vessel 33%, Conestoga-Class Medical Frigate 33% | Three capital classes in near-equal shares, as before. |
+| Engineers | small | Engineer Eva Skiff 35%, Pilot-Chair Gunship 35%, Ampule Dart 30% | Main's screen was one horseshoe; skiff, chair gunship and ampule dart share it. |
+| Engineers | escort | Sentinel-Class Patrol Croissant 40%, Orrery Seed Vessel 30%, Ampule Carrier 30% | Main's line was the same horseshoe; Sentinel, orrery and ampule carrier share it. |
+| Engineers | capital | Juggernaut-Class Voidwright 66%, Temple Ship 34% | The Juggernaut stays two thirds of the capital line, in four structural variants; the temple ship is the rest. |
+| Yautja | small | Yautja Scout Ship 34%, Single-Pilot Drop Pod 22%, Enforcer-Caste Cruiser 24%, Feral Hunter's Ship 20% | The scout ship was 59% of the screen; pod, Enforcer and Prey ship share it. |
+| Yautja | escort | Lost Tribe Sewer-Ship 40%, Wolf-Class Militant Scout 35%, Enforcer-Caste Cruiser 25% | Sewer-ship, Wolf and Enforcer. |
+| Yautja | capital | Elder Horseshoe Trophy Barge 34%, Golden Clan Ship 33%, Yautja Mothership 33% | Capital jobs used to fall back to Wolf scouts (41% reach); the barge and clan ship are real capitals. |
+| Romulans | small | Reman Scorpion Fighter 40%, Romulan Shuttle 30%, Romulan Drone Ship 30% | Main's small band was only the shuttle; the Scorpion and drone ship join it. |
+| Romulans | escort | Romulan Scout 35%, Romulan Bird-Of-Prey 35%, Tos Bird-Of-Prey 30% | The scout was a half-size bird-of-prey on main; it and the TOS bird-of-prey now have their own plans. |
+| Romulans | capital | D’deridex Warbird 35%, Valdore Warbird 35%, Reman Scimitar Warbird 30% | D'deridex and Valdore as before, with the Scimitar. |
+| Dominion | small | Jem'hadar Attack Ship 30%, Cardassian Hideki Corvette 26%, Jem'hadar Shuttle 22%, Breen Raider 22% | The attack ship stays the largest share; Hideki and shuttle (never in the old pool) share the rest. |
+| Dominion | escort | Jem'hadar Heavy Escort 35%, Cardassian Galor Warship 65% | The heavy escort was the attack ship at twice the size; it now has its own plan, and the Galor/Keldon is the Cardassian line. |
+| Dominion | capital | Jem'hadar Battlecruiser 27%, Jem'hadar Battleship 22%, Breen Warship 27%, Cardassian Keldon Cruiser 24% | Battlecruiser, battleship (now in the normal pool) and Breen warship in near-equal shares. |
+| Space Marines | small | Thunderhawk Gunship 25%, Storm Eagle 20%, Xiphon Interceptor 20%, Caestus Assault Ram 17%, Drop Pod 18% | Five small craft, none over a quarter. The boarding torpedo is modelled but out of the pool: in clay it read as the Yard's small craft. |
+| Space Marines | escort | Hunter Destroyer 26%, Gladius Frigate 26%, Nova Frigate 26%, Stormbird Gunship 22% | Hunter, Gladius and Nova were one armoured spine on main; each has its own plan now, with the Stormbird. |
+| Space Marines | capital | Strike Cruiser 34%, Vanguard Light Cruiser 26%, Battle Barge 22%, Space Hulk 18% | Strike cruiser leads; the leaner Vanguard, the barge and the space hulk share the rest. |
+| Tesla | small | Optimus Blaster 28%, Optimus Heavy 12%, Starlink Swarmsat 20%, Cargo Dragon 20%, Cybertruck Gunship 20% | Optimus robots were 75% of the screen; Starlink, Dragon and Cybertruck share it. |
+| Tesla | escort | Falcon 9 55%, Falcon Heavy 45% | Falcon 9 and Falcon Heavy, each with its configurations (legs, payload). |
+| Tesla | capital | Starship 40%, Starship / Super Heavy 35%, Gigafactory Carrier 25% | Starship and the stack with the Gigafactory carrier. |
 <!-- /POOL-TABLE -->
 
 ### Variant kits
@@ -93,4 +140,187 @@ A sister must differ from her sisters by something a builder would change, and s
 The ship minds read length, not shape: the band cuts, the gunboat line (80 m), fighter attack runs (under 120 m), spool steps (60 m and 180 m), the Shadow crown line (180 m) and capitals (300 m). Every class declares its role and the length range its hulls fly at, measured over both musters of every fleet by `scripts/variety-roles.cjs`. `tests/tribute-new/variety.test.cjs` fails when a hull leaves its declared range or crosses a threshold its class does not declare.
 
 <!-- ROLE-TABLE -->
+| Fleet | Class | Role | Length range | Thresholds crossed |
+| --- | --- | --- | --- | --- |
+| Imperial | CARRACK-CLASS LIGHT CRUISER | gunboat, capital | 249-398 m | 300 |
+| Imperial | IMMOBILIZER 418 INTERDICTOR | gunboat, capital | 522-752 m | none |
+| Imperial | VICTORY-CLASS DESTROYER | gunboat, capital | 765-1189 m | none |
+| Imperial | QUASAR FIRE-CLASS CARRIER | gunboat, capital | 317-463 m | none |
+| Imperial | GOZANTI-CLASS CRUISER | attack runs | 42-62 m | 60 |
+| Imperial | RAIDER-CLASS CORVETTE | attack runs | 55-80 m | 60 |
+| Imperial | ARQUITENS-CLASS CRUISER | gunboat, attack runs | 66-95 m | 80 |
+| Imperial | TIE/LN STARFIGHTER | screen, attack runs | 7-8 m | none |
+| Imperial | TIE/SA BOMBER | screen, attack runs | 7-9 m | none |
+| Imperial | TIE/IN INTERCEPTOR | screen, attack runs | 9-11 m | none |
+| Imperial | LAMBDA-CLASS SHUTTLE | screen, attack runs | 18-22 m | none |
+| Imperial | TIE ADVANCED X1 | screen, attack runs | 8-10 m | none |
+| Imperial | TIE/D DEFENDER | screen, attack runs | 10-12 m | none |
+| Rebel | CR90-CLASS CORVETTE | gunboat | 123-186 m | 180 |
+| Rebel | NEBULON-B ESCORT FRIGATE | gunboat, capital | 243-360 m | 300 |
+| Rebel | PELTA-CLASS FRIGATE | gunboat | 95-137 m | 120 |
+| Rebel | GR-75 MEDIUM TRANSPORT | gunboat, attack runs | 74-116 m | 80, 95 |
+| Rebel | DP20 CORELLIAN GUNSHIP | gunboat, attack runs | 67-104 m | 80, 95 |
+| Rebel | SPHYRNA-CLASS HAMMERHEAD CORVETTE | gunboat, attack runs | 65-95 m | 80 |
+| Rebel | BTL-A4 Y-WING | screen, attack runs | 15-18 m | none |
+| Rebel | A/SF-01 B-WING | screen, attack runs | 3-3 m | none |
+| Rebel | T-65 X-WING | screen, attack runs | 12-15 m | none |
+| Rebel | RZ-1 A-WING | screen, attack runs | 6-8 m | none |
+| Rebel | UT-60D U-WING | screen, attack runs | 25-31 m | none |
+| Minbari | TIGARA-CLASS ATTACK CRUISER | gunboat, capital | 660-1058 m | none |
+| Minbari | MORSHIN-CLASS CARRIER | gunboat, capital | 1026-1458 m | none |
+| Minbari | SHARLIN-CLASS WAR CRUISER | gunboat, capital | 1296-1998 m | none |
+| Minbari | LESHATH-CLASS HEAVY SCOUT | gunboat, capital | 259-416 m | 300 |
+| Minbari | TINASHI-CLASS WAR FRIGATE | gunboat, capital | 439-650 m | none |
+| Minbari | TOROTHA-CLASS ASSAULT FRIGATE | gunboat, capital | 224-351 m | 300 |
+| Minbari | MINBARI FLYER | screen, attack runs | 23-30 m | none |
+| Minbari | NIAL-CLASS HEAVY FIGHTER | screen, attack runs | 19-25 m | none |
+| Minbari | TISHAT-CLASS MEDIUM FIGHTER | screen, attack runs | 14-19 m | none |
+| Shadows | SHADOW HYBRID | capital | 349-655 m | none |
+| Shadows | SHADOW VESSEL | capital | 1010-2045 m | none |
+| Shadows | DRAKH CRUISER | capital | 210-478 m | 300 |
+| Shadows | SHADOW HUNTER | attack runs | 57-95 m | 60, 80 |
+| Shadows | DRAKH HEAVY RAIDER | attack runs | 44-86 m | 60, 80 |
+| Shadows | SHADOW FIGHTER | screen, attack runs | 16-23 m | none |
+| Shadows | SHADOW SCOUT | screen, attack runs | 33-41 m | none |
+| Shadows | DRAKH LIGHT RAIDER | screen, attack runs | 26-36 m | none |
+| EarthForce | OMEGA-CLASS DESTROYER | gunboat, capital | 879-1381 m | none |
+| EarthForce | NOVA-CLASS DREADNOUGHT | gunboat, capital | 935-1443 m | none |
+| EarthForce | AVENGER-CLASS HEAVY CARRIER | gunboat | 106-149 m | 120 |
+| EarthForce | POSEIDON-CLASS SUPERCARRIER | gunboat, capital | 992-1495 m | none |
+| EarthForce | HYPERION-CLASS HEAVY CRUISER | gunboat, capital | 839-1296 m | none |
+| EarthForce | SAGITTARIUS-CLASS MISSILE CRUISER | attack runs | 49-77 m | 60 |
+| EarthForce | OLYMPUS-CLASS CORVETTE | attack runs | 42-58 m | none |
+| EarthForce | SA-23E AURORA STARFURY | screen, attack runs | 8-11 m | none |
+| EarthForce | EARTH ALLIANCE SHUTTLE | screen, attack runs | 14-21 m | none |
+| EarthForce | SA-32A THUNDERBOLT STARFURY | screen, attack runs | 17-21 m | none |
+| Federation | AKIRA-CLASS HEAVY CRUISER | gunboat | 95-145 m | 120 |
+| Federation | CONSTITUTION-CLASS HEAVY CRUISER | gunboat, capital | 240-371 m | 300 |
+| Federation | NEBULA-CLASS EXPLORER | gunboat | 95-133 m | 120 |
+| Federation | EXCELSIOR-CLASS CRUISER | gunboat, capital | 374-554 m | none |
+| Federation | MIRANDA-CLASS CRUISER | attack runs | 49-76 m | 60 |
+| Federation | INTREPID-CLASS EXPLORER | gunboat, attack runs | 68-95 m | 80 |
+| Federation | STEAMRUNNER-CLASS CRUISER | gunboat, attack runs | 77-95 m | 80 |
+| Federation | OBERTH-CLASS SCIENCE VESSEL | attack runs | 42-54 m | none |
+| Federation | DEFIANT-CLASS ESCORT | attack runs | 42-64 m | 60 |
+| Federation | PEREGRINE-CLASS FIGHTER | screen, attack runs | 11-13 m | none |
+| Federation | TYPE-6 SHUTTLECRAFT | screen, attack runs | 9-12 m | none |
+| Federation | TYPE-9 SHUTTLECRAFT | screen, attack runs | 10-13 m | none |
+| Federation | DANUBE-CLASS RUNABOUT | screen, attack runs | 20-24 m | none |
+| Klingon | K'T'INGA-CLASS BATTLECRUISER | gunboat | 165-258 m | 180 |
+| Klingon | F15-CLASS DESTROYER | gunboat | 105-154 m | 120 |
+| Klingon | B'REL-CLASS BIRD-OF-PREY | gunboat | 99-135 m | 120 |
+| Klingon | VOR'CHA-CLASS ATTACK CRUISER | gunboat | 137-234 m | 180 |
+| Klingon | D6S-CLASS SCOUT CRUISER | attack runs | 51-80 m | 60 |
+| Klingon | K'VORT-CLASS HEAVY BIRD-OF-PREY | gunboat, attack runs | 64-95 m | 80 |
+| Klingon | F5-CLASS FRIGATE | attack runs | 42-62 m | 60 |
+| Klingon | D7-CLASS BATTLECRUISER | gunboat, attack runs | 84-95 m | none |
+| Klingon | D'KTAGH-CLASS SHUTTLECRAFT | screen, attack runs | 11-14 m | none |
+| Klingon | HEGH'GOGH-CLASS HEAVY FIGHTER | screen, attack runs | 20-24 m | none |
+| Klingon | TO'DUJ-CLASS FIGHTER | screen, attack runs | 13-19 m | none |
+| Borg | TACTICAL CUBE | gunboat | 172-285 m | 180 |
+| Borg | TACTICAL DIAMOND | gunboat | 71-163 m | 80, 95, 120 |
+| Borg | SPHERE | gunboat, capital | 468-733 m | none |
+| Borg | ASSIMILATED VESSEL (RAPTOR-PATTERN) | attack runs | 51-77 m | 60 |
+| Borg | LONG-RANGE PROBE | attack runs | 31-58 m | 42 |
+| Borg | ASSIMILATED VESSEL (RING-PATTERN) | attack runs | 51-78 m | 60 |
+| Borg | ASSIMILATED SHUTTLE | screen, attack runs | 17-21 m | none |
+| Borg | BORG SCOUT SHIP | screen, attack runs | 27-34 m | none |
+| Mondoshawan | FHLOSTON-CLASS PLEASURE LINER | gunboat | 184-300 m | none |
+| Mondoshawan | EARTH FEDERAL BATTLE CRUISER | gunboat | 180-300 m | none |
+| Mondoshawan | MANGALORE WARSHIP | gunboat, capital | 186-314 m | 300 |
+| Mondoshawan | FHLOSTON SPACELINER | gunboat, attack runs | 60-95 m | 80 |
+| Mondoshawan | MONDOSHAWAN SHIP | attack runs | 42-63 m | 60 |
+| Mondoshawan | MANGALORE ASSAULT SHIP | gunboat, attack runs | 64-95 m | 80 |
+| Mondoshawan | ANGEL-WING EXECUTIVE YACHT | attack runs | 37-55 m | 42 |
+| Mondoshawan | NY FLYING CAB | screen, attack runs | 8-10 m | none |
+| Mondoshawan | MANGALORE RAIDER GUNSHIP | screen, attack runs | 34-40 m | none |
+| Mondoshawan | ZFX200 MERCENARY FIGHTER | screen, attack runs | 17-20 m | none |
+| Mondoshawan | NY POLICE CRUISER | screen, attack runs | 11-12 m | none |
+| USCM | CONESTOGA-CLASS MEDICAL FRIGATE | gunboat | 97-144 m | 120 |
+| USCM | TIENTSIN-CLASS ASSAULT SHIP | gunboat | 101-158 m | 120 |
+| USCM | HELIADES-CLASS EXPLORATION VESSEL | gunboat | 63-152 m | 80, 95, 120 |
+| USCM | CONESTOGA-CLASS TROOP TRANSPORT | gunboat, attack runs | 65-95 m | 80 |
+| USCM | BETTY-CLASS TRAMP FREIGHTER | gunboat, attack runs | 50-91 m | 60, 80 |
+| USCM | CM-88B BISON STAR FREIGHTER | gunboat, attack runs | 66-95 m | 80 |
+| USCM | UD-4L CHEYENNE DROPSHIP | screen, attack runs | 23-28 m | none |
+| USCM | NARCISSUS-CLASS SHUTTLE | screen, attack runs | 16-20 m | none |
+| USCM | COVENANT LANDER | screen, attack runs | 25-35 m | none |
+| USCM | TYPE 337 EEV ESCAPE POD | screen, attack runs | 12-14 m | none |
+| Engineers | JUGGERNAUT-CLASS VOIDWRIGHT | gunboat | 138-213 m | 180 |
+| Engineers | TEMPLE SHIP | gunboat | 164-300 m | 180 |
+| Engineers | SENTINEL-CLASS PATROL CROISSANT | gunboat, attack runs | 56-86 m | 60, 80 |
+| Engineers | ORRERY SEED VESSEL | gunboat, attack runs | 49-95 m | 60, 80 |
+| Engineers | AMPULE CARRIER | gunboat, attack runs | 54-95 m | 60, 80 |
+| Engineers | PILOT-CHAIR GUNSHIP | screen, attack runs | 19-28 m | none |
+| Engineers | ENGINEER EVA SKIFF | screen, attack runs | 14-18 m | none |
+| Engineers | AMPULE DART | screen, attack runs | 23-35 m | none |
+| Yautja | YAUTJA MOTHERSHIP | gunboat, capital | 224-338 m | 300 |
+| Yautja | GOLDEN CLAN SHIP | gunboat | 190-300 m | none |
+| Yautja | ELDER HORSESHOE TROPHY BARGE | gunboat | 173-266 m | 180 |
+| Yautja | WOLF-CLASS MILITANT SCOUT | gunboat, attack runs | 66-95 m | 80 |
+| Yautja | LOST TRIBE SEWER-SHIP | attack runs | 44-71 m | 60 |
+| Yautja | ENFORCER-CASTE CRUISER | attack runs | 35-46 m | 42 |
+| Yautja | FERAL HUNTER'S SHIP | screen, attack runs | 18-27 m | none |
+| Yautja | YAUTJA SCOUT SHIP | screen, attack runs | 23-29 m | none |
+| Yautja | SINGLE-PILOT DROP POD | screen, attack runs | 9-10 m | none |
+| First Ones | WALKERS OF SIGMA 957 | gunboat, capital | 2522-2678 m | none |
+| First Ones | KIRISHIAC LORDSHIP | gunboat, capital | 2134-2266 m | none |
+| First Ones | MINDRIDER THOUGHTFORCE | gunboat, capital | 1940-2060 m | none |
+| First Ones | TRIAD TRIUMVIRON | gunboat, capital | 2037-2163 m | none |
+| First Ones | TORVALUS DARK KNIFE | gunboat, capital | 3298-3502 m | none |
+| First Ones | THE FIRST BORN | gunboat, capital | 1552-1648 m | none |
+| First Ones | VORLON TRANSPORT | gunboat, capital | 1746-1854 m | none |
+| First Ones | HAND SERVITOR VESSEL | gunboat, capital | 1843-1957 m | none |
+| Romulans | REMAN SCIMITAR WARBIRD | gunboat, capital | 751-888 m | none |
+| Romulans | VALDORE WARBIRD | gunboat, capital | 594-709 m | none |
+| Romulans | D’DERIDEX WARBIRD | gunboat, capital | 1009-1166 m | none |
+| Romulans | TOS BIRD-OF-PREY | gunboat | 137-164 m | none |
+| Romulans | ROMULAN BIRD-OF-PREY | gunboat | 192-229 m | none |
+| Romulans | ROMULAN SCOUT | gunboat, attack runs | 91-109 m | none |
+| Romulans | REMAN SCORPION FIGHTER | screen, attack runs | 15-17 m | none |
+| Romulans | ROMULAN SHUTTLE | screen, attack runs | 22-26 m | none |
+| Romulans | ROMULAN DRONE SHIP | screen, attack runs | 27-33 m | none |
+| Dominion | BREEN WARSHIP | gunboat, capital | 438-523 m | none |
+| Dominion | CARDASSIAN KELDON CRUISER | gunboat, capital | 310-371 m | none |
+| Dominion | JEM'HADAR BATTLECRUISER | gunboat, capital | 568-675 m | none |
+| Dominion | JEM'HADAR BATTLESHIP | gunboat, capital | 1168-1358 m | none |
+| Dominion | JEM'HADAR HEAVY ESCORT | gunboat | 211-250 m | none |
+| Dominion | CARDASSIAN GALOR WARSHIP | gunboat | 219-262 m | none |
+| Dominion | CARDASSIAN HIDEKI CORVETTE | screen, gunboat, attack runs | 92-109 m | none |
+| Dominion | JEM'HADAR ATTACK SHIP | screen, gunboat, attack runs | 100-120 m | none |
+| Dominion | BREEN RAIDER | screen, attack runs | 57-68 m | 60 |
+| Dominion | JEM'HADAR SHUTTLE | screen, attack runs | 26-31 m | none |
+| Space Marines | BATTLE BARGE | gunboat, capital | 1368-1632 m | none |
+| Space Marines | VANGUARD LIGHT CRUISER | gunboat, capital | 394-467 m | none |
+| Space Marines | STRIKE CRUISER | gunboat, capital | 714-848 m | none |
+| Space Marines | SPACE HULK | gunboat, capital | 1066-1251 m | none |
+| Space Marines | HUNTER DESTROYER | gunboat | 120-142 m | none |
+| Space Marines | GLADIUS FRIGATE | gunboat | 173-207 m | 180 |
+| Space Marines | NOVA FRIGATE | gunboat | 220-262 m | none |
+| Space Marines | STORMBIRD GUNSHIP | attack runs | 66-79 m | none |
+| Space Marines | STORM EAGLE | screen, attack runs | 31-37 m | none |
+| Space Marines | CAESTUS ASSAULT RAM | screen, attack runs | 23-27 m | none |
+| Space Marines | XIPHON INTERCEPTOR | screen, attack runs | 19-23 m | none |
+| Space Marines | THUNDERHAWK GUNSHIP | screen, attack runs | 26-32 m | none |
+| Space Marines | DROP POD | screen, attack runs | 11-13 m | none |
+| Tyranids | HIVE SHIP | gunboat, capital | 1189-1419 m | none |
+| Tyranids | RAZORFIEND CRUISER | gunboat, capital | 593-706 m | none |
+| Tyranids | VOID PROWLER | gunboat, capital | 385-456 m | none |
+| Tyranids | DEVOURER CRUISER | gunboat, capital | 840-1002 m | none |
+| Tyranids | VANGUARD DRONE SHIP | gunboat | 219-262 m | none |
+| Tyranids | ESCORT DRONE | gunboat | 192-229 m | none |
+| Tyranids | KRAKEN BIO-SHIP | gunboat | 137-164 m | none |
+| Tyranids | SPORE DRONE | screen, attack runs | 17-21 m | none |
+| Tyranids | BOARDING WORM | screen, attack runs | 32-38 m | none |
+| Tyranids | ATTACK ORGANISM | screen, attack runs | 30-36 m | none |
+| Tesla | STARSHIP | gunboat | 111-130 m | 120 |
+| Tesla | GIGAFACTORY CARRIER | gunboat | 213-250 m | none |
+| Tesla | STARSHIP / SUPER HEAVY | gunboat | 192-228 m | none |
+| Tesla | FALCON 9 | attack runs | 64-76 m | none |
+| Tesla | FALCON HEAVY | attack runs | 66-79 m | none |
+| Tesla | OPTIMUS HEAVY | screen, attack runs | 7-9 m | none |
+| Tesla | OPTIMUS BLASTER | screen, attack runs | 5-7 m | none |
+| Tesla | CYBERTRUCK GUNSHIP | screen, attack runs | 13-15 m | none |
+| Tesla | STARLINK SWARMSAT | screen, attack runs | 11-13 m | none |
+| Tesla | CARGO DRAGON | screen, attack runs | 8-10 m | none |
 <!-- /ROLE-TABLE -->
