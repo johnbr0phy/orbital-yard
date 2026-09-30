@@ -36,7 +36,9 @@ const SIZE = 600, TOPUP = 40;
 const T = L.T, ONE_OFF = L.ONE_OFF;
 
 function forgeFleet(race, recogOnly) {
-  const F = L.loadForge(ROOT);
+  // --fast: iteration runs skip breakup fragments (same geometry; the forge
+  // time column is then not comparable, and the verdict uses forge-time.json)
+  const F = L.loadForge(ROOT, {fast: flag('fast')});
   const hulls = [];
   const budget = F.wrun(`typeof VY_DISTANT_REPS==='undefined'?3:VY_DISTANT_REPS[${race}]`);
   const take = (job, fold, war, topup) => {
@@ -246,7 +248,7 @@ async function main() {
     await Promise.all(Array.from({length: jobs}, async () => {
       while (next < todo.length) {
         const race = todo[next++], t0 = Date.now();
-        await new Promise((res, rej) => { const p = spawn(process.execPath, [__filename, '--worker', '--race', race, '--root', ROOT, '--out', OUT, ...(flag('append-recog') ? ['--append-recog'] : [])], {stdio: 'inherit'}); p.on('exit', c => c ? rej(new Error('fleet ' + race + ' exit ' + c)) : res()); });
+        await new Promise((res, rej) => { const p = spawn(process.execPath, [__filename, '--worker', '--race', race, '--root', ROOT, '--out', OUT, ...(flag('append-recog') ? ['--append-recog'] : []), ...(flag('fast') ? ['--fast'] : [])], {stdio: 'inherit'}); p.on('exit', c => c ? rej(new Error('fleet ' + race + ' exit ' + c)) : res()); });
         console.log(`forged ${L.NAMES[race]} in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
       }
     }));

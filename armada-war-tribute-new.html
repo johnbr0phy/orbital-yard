@@ -2264,10 +2264,13 @@ function vyMeasure(ship,volK){
   return ship;
 }
 /* Triangle budget. A hull's study-quality mesh (q=.65) stays under 5,900
-   triangles: when it would not, every round part is cut with proportionally
-   fewer facets at every quality, so the battle mesh shrinks with it. Named
-   heroes are exempt and stay byte-identical. The count mirrors shipMeshQ
-   exactly (tests/tribute-new/variety.test.cjs checks that). */
+   triangles. When it would not, the facet ceiling comes down on the smallest
+   fittings first (a part's ceiling scales with its size, so the large forms
+   stay round). It is a study-quality ceiling: the battle meshes (q=.32 and
+   below) are cut exactly as before, so a hull keeps the silhouette it flies
+   with (they already sit far under the budget's density). Named heroes are exempt and stay byte-identical. The
+   count mirrors shipMeshQ exactly (tests/tribute-new/variety.test.cjs). */
+function vyPartQ(qp,k,s,q){return k>=1||q<.45?qp:Math.min(qp,.65*Math.min(1,k*Math.max(1,s/.06)));}
 var VY_TRI_CAP=5900;
 // Measured once per ship object, without writing to the ship itself.
 var VY_TRIK_CACHE=new WeakMap();
@@ -2275,11 +2278,11 @@ function vyTriCount(ship,q,k,cull){
   const bb=ship.bb,diag=Math.hypot(bb[1][0]-bb[0][0],bb[1][1]-bb[0][1],bb[1][2]-bb[0][2])||1;
   let partQ=q,n=0;
   const SG=r=>Math.max(3,Math.round(Math.max(8,Math.min(40,Math.round(8+r/diag*280)))*partQ));
-  const tiny=Math.max(q<0.18?Math.min(6,diag*0.03):q<0.25?Math.min(6,diag*0.025):q<0.45?Math.min(2.5,diag*0.01):0,(cull||0)*diag);
+  const tiny=Math.max(q<0.18?Math.min(6,diag*0.03):q<0.25?Math.min(6,diag*0.025):q<0.45?Math.min(2.5,diag*0.01):0,q>=.45?(cull||0)*diag:0);
   const psize=p=>p.k==="sphere"||p.k==="disc"?p.r:p.k==="capsule"?Math.max(p.r,V.len(V.sub(p.b,p.a))*0.5):p.k==="tube"?Math.max(p.r1,p.r2,V.len(V.sub(p.b,p.a))*0.5):p.k==="box"?Math.max(V.len(p.u),V.len(p.v),V.len(p.w)):1e9;
   for(const p of ship.parts){
     if(tiny&&!p.structural&&psize(p)<tiny)continue;
-    partQ=(p.structural?Math.max(.32,q):q)*k;
+    partQ=vyPartQ(p.structural?Math.max(.32,q):q,k,psize(p)/diag,q);
     if(p.k==="sphere"){const s=SG(p.r),m=Math.max(2,s>>1);n+=2*m*s;}
     else if(p.k==="capsule"){const s=SG(p.r),m=Math.max(2,s>>2);n+=2*s*(1+2*m);}
     else if(p.k==="tube"){const s=SG(Math.max(p.r1,p.r2));n+=2*s+2*(s-2);}
@@ -2359,7 +2362,7 @@ function shipMeshQ(ship,q){
      all — but a grown ship IS her small parts (a limb is a chain of little
      capsules), so the shoal culls at half the yard's threshold */
   const tiny=Math.max(q<0.18?Math.min(6,diag*0.03):q<0.25?Math.min(6,diag*0.025)
-            :q<0.45?Math.min(2.5,diag*0.01):0,triCull*diag);
+            :q<0.45?Math.min(2.5,diag*0.01):0,q>=.45?triCull*diag:0);
   const psize=p=>{
     if(p.k==="sphere"||p.k==="disc")return p.r;
     if(p.k==="capsule")return Math.max(p.r,V.len(V.sub(p.b,p.a))*0.5);
@@ -2371,7 +2374,7 @@ function shipMeshQ(ship,q){
 
   for(const p of ship.parts){
     if(tiny&&!p.structural&&psize(p)<tiny)continue;
-    partQ=(p.structural?Math.max(.32,q):q)*triK;
+    partQ=vyPartQ(p.structural?Math.max(.32,q):q,triK,psize(p)/diag,q);
     if(p.k==="sphere"){
       const n=SG(p.r),m=Math.max(2,n>>1),rg=[];
       for(let i=0;i<=m;i++){const th=i/m*Math.PI;
@@ -13473,9 +13476,14 @@ const baseRaceBuild=(f,seed,hulls,hero,band)=>{
      tried first and dropped: those cruisers read as other navies' capitals
      (VARIETY.md, "What didn't work"). */
   if(!hulls&&!hero&&band===2&&f>=0&&f<=3){
-    const ship=f===1?buildXeno(seed):f===2?buildLattice(seed):f===3?buildDrift(seed):buildShip(seed,P,NL);
-    const target=110+vyStream(seed,0x11CE)()*130;
-    if(ship.meta.length<target){const k=target/ship.meta.length;vyWarpShip(ship,[k,k,k]);ship.meta.crew=Math.round((ship.meta.crew||1)*k*k);}
+    // The fleet's own designs first: up to eight of them (derived seeds), the
+    // first that is naturally capital length wins; otherwise the longest one
+    // is grown. A small type grown to 200 m does not read as the fleet's line.
+    const make=s2=>f===1?buildXeno(s2):f===2?buildLattice(s2):f===3?buildDrift(s2):buildShip(s2,P,NL);
+    let ship=null;
+    for(let k=0;k<8;k++){const c=make(k?(seed^Math.imul(k,0x2545F491))>>>0:seed);if(!ship||c.meta.length>ship.meta.length)ship=c;if(c.meta.length>=118)break;}
+    const target=118+vyStream(seed,0x11CE)()*122;
+    if(ship.meta.length<118){const k=target/ship.meta.length;vyWarpShip(ship,[k,k,k]);ship.meta.crew=Math.round((ship.meta.crew||1)*k*k);}
     return ship;
   }
   switch(f){
