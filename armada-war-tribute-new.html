@@ -2267,6 +2267,8 @@ function vyMeasure(ship,volK){
    heroes are exempt and stay byte-identical. The count mirrors shipMeshQ
    exactly (tests/tribute-new/variety.test.cjs checks that). */
 var VY_TRI_CAP=5900;
+// Measured once per ship object, without writing to the ship itself.
+var VY_TRIK_CACHE=new WeakMap();
 function vyTriCount(ship,q,k){
   const bb=ship.bb,diag=Math.hypot(bb[1][0]-bb[0][0],bb[1][1]-bb[0][1],bb[1][2]-bb[0][2])||1;
   let partQ=q,n=0;
@@ -2297,7 +2299,7 @@ function vyTriK(ship){
 /* Distant representatives per class, per fleet. Main (471d650) kept three
    per class; a fleet whose class count grew keeps fewer, so its groups per
    battle stay within its count on main (scripts/variety-report.cjs). */
-var VY_DISTANT_REPS=[3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,3,3];
+var VY_DISTANT_REPS=[3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,1,1,2,3,1];
 /*__VARIETY_END__*/
 
 /* =====================================================================
@@ -2314,7 +2316,8 @@ var VY_DISTANT_REPS=[3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,3,3];
 function shipMeshQ(ship,q){
   // Triangle budget (VARIETY.md): a real ship measures its own facet scale
   // once; temporary part lists carry the scale of the ship they came from.
-  const triK=ship.triK!=null?ship.triK:ship.meta?(ship.triK=vyTriK(ship)):1;
+  let triK=ship.triK!=null?ship.triK:1;
+  if(ship.triK==null&&ship.meta){triK=VY_TRIK_CACHE.get(ship);if(triK==null){triK=vyTriK(ship);VY_TRIK_CACHE.set(ship,triK);}}
   const T=[];
   const tri=(a,b,c)=>T.push(a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2]);
   const quad=(a,b,c,d)=>{tri(a,b,c);tri(a,c,d);};
@@ -11210,15 +11213,18 @@ var buildHero=function(f,seed){
    configurations and compressed battle lengths are deliberate game adaptations.
    Geometry is built once in the worker, with native weapon/engine sockets. */
 var EXTRA_CLASSES=[
- ['ROMULAN SHUTTLE','ROMULAN SCOUT','ROMULAN BIRD-OF-PREY','VALDORE WARBIRD',"D’DERIDEX WARBIRD"],
- ["JEM'HADAR SHUTTLE","JEM'HADAR ATTACK SHIP","JEM'HADAR HEAVY ESCORT","JEM'HADAR BATTLECRUISER","JEM'HADAR BATTLESHIP"],
- ['THUNDERHAWK GUNSHIP','HUNTER DESTROYER','GLADIUS FRIGATE','NOVA FRIGATE','STRIKE CRUISER','BATTLE BARGE','VANGUARD LIGHT CRUISER','XIPHON INTERCEPTOR','CAESTUS ASSAULT RAM','STORM EAGLE','GLORIANA BATTLESHIP'],
+ ['ROMULAN SHUTTLE','ROMULAN SCOUT','ROMULAN BIRD-OF-PREY','VALDORE WARBIRD',"D’DERIDEX WARBIRD",'REMAN SCORPION FIGHTER','TOS BIRD-OF-PREY','REMAN SCIMITAR WARBIRD','ROMULAN DRONE SHIP'],
+ ["JEM'HADAR SHUTTLE","JEM'HADAR ATTACK SHIP","JEM'HADAR HEAVY ESCORT","JEM'HADAR BATTLECRUISER","JEM'HADAR BATTLESHIP",'CARDASSIAN HIDEKI CORVETTE','CARDASSIAN GALOR WARSHIP','BREEN WARSHIP'],
+ ['THUNDERHAWK GUNSHIP','HUNTER DESTROYER','GLADIUS FRIGATE','NOVA FRIGATE','STRIKE CRUISER','BATTLE BARGE','VANGUARD LIGHT CRUISER','XIPHON INTERCEPTOR','CAESTUS ASSAULT RAM','STORM EAGLE','GLORIANA BATTLESHIP','STORMBIRD GUNSHIP','DROP POD','BOARDING TORPEDO','SPACE HULK'],
  ['SPORE DRONE','ATTACK ORGANISM','KRAKEN BIO-SHIP','VANGUARD DRONE SHIP','RAZORFIEND CRUISER','HIVE SHIP','VOID PROWLER','DEVOURER CRUISER','BOARDING WORM','ESCORT DRONE'],
- ['OPTIMUS BLASTER','OPTIMUS HEAVY','FALCON 9','FALCON HEAVY','STARSHIP','STARSHIP / SUPER HEAVY','ROADSTER / STARMAN']
+ ['OPTIMUS BLASTER','OPTIMUS HEAVY','FALCON 9','FALCON HEAVY','STARSHIP','STARSHIP / SUPER HEAVY','ROADSTER / STARMAN','STARLINK SWARMSAT','CREW DRAGON','CYBERTRUCK GUNSHIP','GIGAFACTORY CARRIER']
 ];
 function buildExtraClass(race,seed,type,hero=false){
  const R=mulberry32((seed^Math.imul(race,73471))>>>0),parts=[],muzzles=[],engines=[];
  const row=race-18,klass=EXTRA_CLASSES[row][type],variant=Math.floor(R()*3);
+ // Variety kit (VARIETY.md): the new classes draw their sister choices from
+ // their own stream; the older draws above are untouched.
+ const V2=vyStream(seed,0xE7A0+race*16+type);let arch=null,warp=null;
  // Work in a common 100-unit keel, then scale the entire connected assembly.
  const box=(x,y,z,a,b,c)=>parts.push({k:'box',c:[x,y,z],u:[a,0,0],v:[0,b,0],w:[0,0,c]});
  const tube=(a,b,r1,r2=r1)=>parts.push({k:'tube',a,b,r1,r2});
@@ -11226,12 +11232,70 @@ function buildExtraClass(race,seed,type,hero=false){
  const body=(sections,n=10)=>parts.push({k:'loft',sec:sections.map(([x,y,z,ry,rz])=>({pts:Array.from({length:n},(_,i)=>[x,y+Math.sin(i/n*6.283185)*ry,z+Math.cos(i/n*6.283185)*rz])}))});
  const pod=(x,y,z,l,h,w)=>body([[x-l,y,z,.3,.3],[x-l*.65,y,z,h*.8,w*.8],[x,y,z,h,w],[x+l*.7,y,z,h*.65,w*.65],[x+l,y,z,.3,.3]]);
  const gun=(a,b,r=.8)=>{tube(a,b,r,r*.65);muzzles.push(b.slice());};
+ const armourW=(stations)=>parts.push({k:'loft',sec:stations.map(([x,y,h,w])=>({pts:[[x,y+h,w*.72],[x,y+h*.72,w],[x,y-h*.72,w],[x,y-h,w*.72],[x,y-h,-w*.72],[x,y-h*.72,-w],[x,y+h*.72,-w],[x,y+h,-w*.72]]}))});
  const drive=(x,y,z,r)=>{tube([x+3,y,z],[x,y,z],r*.65,r);parts[parts.length-1].driveGroup='extra';engines.push([x,y,z,r]);};
  let L;
  if(race===18){
-  L=[24,100,210,650,1100][type];
+  L=[24,100,210,650,1100,16,150,820,30][type];
   const span=(type===4?42:type===3?58:30)*( .93+R()*.14),sweep=-8-variant*5;
-  if(type===4){
+  if(type===0){
+   // Shuttle: a boxy lifting-body wedge with two short canted fins and a
+   // rear ramp; no wing nacelles, so it no longer reads as a small warbird.
+   const fin=8+V2()*5;
+   armourW([[-40,-1,7,10],[-10,0,9,12],[24,0,7,10],[42,-1,3,6]]);
+   for(const sign of [-1,1]){parts.push({k:'panel',pts:[[-36,6,sign*8],[-42,6+fin,sign*(10+fin*.5)],[-22,7,sign*9]],n:[0,0,sign],th:1});drive(-42,-1,sign*5,2.4);gun([30,-2,sign*6],[42,-2,sign*6],.7);}
+   arch=fin>10?'TALL FINS':'LOW FINS';warp=[.95+V2()*.1,.92+V2()*.16,.92+V2()*.16];
+  }else if(type===1){
+   // Scout: a flat arrowhead with a single drive; no wing nacelles, so it is
+   // not a small bird-of-prey. Form invented from the TNG scout's role.
+   const w=24+V2()*6,hump=4+V2()*2;
+   plate([[46,0,0],[-30,0,w],[-44,0,w*.72],[-44,0,-w*.72],[-30,0,-w]],3);
+   pod(2,3,0,30,hump,6);drive(-47,1,0,3.5);
+   for(const sign of [-1,1])gun([18,2,sign*5],[30,2,sign*5],.8);
+   parts.push({k:'panel',pts:[[-40,2,0],[-44,12,0],[-26,4,0]],n:[0,0,1],th:1.2});
+   arch=hump>5?'HIGH-BACKED SCOUT':'LOW-BACKED SCOUT';warp=[.96+V2()*.08,.95+V2()*.1,.94+V2()*.12];
+  }else if(type===5){
+   // Reman Scorpion (Star Trek Nemesis, 2002): a bat-winged attack fighter,
+   // wings swept forward with drooping blade tips.
+   const reach=34+V2()*8,droop=4+V2()*6;
+   body([[-42,0,0,3,4],[-16,1,0,6,7],[18,1,0,5,5],[44,0,0,1.5,1.5]]);
+   for(const sign of [-1,1]){
+    plate([[-24,0,sign*6],[8,0,sign*reach],[18,-droop,sign*(reach+3)],[4,0,sign*6]],1.6);
+    parts.push({k:'panel',pts:[[8,0,sign*reach],[18,-droop,sign*(reach+3)],[12,-droop-8,sign*(reach+1)]],n:[0,0,1],th:1});
+    gun([10,-1,sign*9],[30,-1,sign*9],.9);
+   }
+   drive(-44,0,0,3.2);arch=droop>7?'DEEP-BLADED':'SHALLOW-BLADED';warp=[.94+V2()*.12,.94+V2()*.12,.9+V2()*.2];
+  }else if(type===6){
+   // TOS bird-of-prey (Star Trek, "Balance of Terror", 1966): a saucer hull
+   // with two outboard warp nacelles on short pylons.
+   const nz=30+V2()*8,nl=24+V2()*8;
+   parts.push({k:'lathe',c:[8,0,0],axis:[0,1,0],prof:[[-5,0],[-4,28],[-1,32],[2,29],[5,17],[8,8],[10,0]]});
+   for(const sign of [-1,1]){
+    pod(-12,-2,sign*nz,nl,4.5,4.5);box(-8,-1,sign*(nz*.6),6,1.2,nz*.32);drive(-12-nl,-2,sign*nz,3);
+    gun([30,0,sign*7],[40,0,sign*7],1);
+   }
+   arch=nz>34?'WIDE-NACELLE':'CLOSE-NACELLE';warp=[.95+V2()*.1,.9+V2()*.2,.95+V2()*.1];
+  }else if(type===7){
+   // Reman Scimitar (Star Trek Nemesis, 2002): a dark bat-wing warbird whose
+   // wing blades unfold for battle; sisters fly cruise or attack wings.
+   const attack=V2()<.5;
+   body([[-44,0,0,4,5],[-20,2,0,7,9],[14,3,0,6,7],[40,0,0,2,3]]);
+   for(const sign of [-1,1])for(let k=0;k<3;k++){
+    // three fanned blades: the bat's scalloped trailing edge in plan
+    const y=attack?-3-k*6:2-k*1.5,out=46+k*12,tip=-4-18*k;
+    plate([[20-10*k,1,sign*7],[tip,y,sign*out],[tip-10,y*.9,sign*(out-4)],[-22-8*k,1,sign*7]],1.4);
+    gun([tip,y+1,sign*(out-6)],[tip+10,y+1,sign*(out-6)],1);
+   }
+   for(const sign of [-1,1])drive(-52,0,sign*6,3.5);gun([40,3,0],[52,3,0],2);
+   arch=attack?'ATTACK WINGS':'CRUISE WINGS';warp=[.95+V2()*.1,.92+V2()*.16,.94+V2()*.12];
+  }else if(type===8){
+   // Romulan drone ship (Star Trek: Enterprise, "Babel One", 2005): an
+   // unmanned bird-form hull; no cockpit, long raked wings.
+   const rake=18+V2()*12;
+   body([[-36,0,0,4,5],[-6,2,0,7,7],[26,1,0,4,4],[44,0,0,1,1]]);
+   for(const sign of [-1,1]){plate([[8,0,sign*5],[-rake,-3,sign*38],[-rake-12,-5,sign*36],[-24,0,sign*5]],1.8);gun([12,-1,sign*6],[26,-1,sign*6],.8);}
+   drive(-38,0,0,3);arch=rake>24?'RAKED':'SHALLOW RAKE';warp=[.94+V2()*.12,.9+V2()*.2,.9+V2()*.2];
+  }else if(type===4){
    // Double hull enclosing a genuinely empty centre, joined only at the bow,
    // stern and outboard nacelles: the defining D'deridex negative space.
    pod(-36,0,0,12,10,16);pod(37,0,0,14,9,15);
@@ -11248,6 +11312,65 @@ function buildExtraClass(race,seed,type,hero=false){
    }
   }
 
+ }else if(race===19&&type>=5){
+  L=[0,0,0,0,0,100,240,480][type];
+  if(type===5){
+   // Cardassian Hideki-class (Star Trek: Deep Space Nine): a small, flat,
+   // broad-sterned patrol ship with a short neck and rounded head.
+   const w=26+V2()*8;
+   body([[-46,0,0,2,w*.6],[-32,0,0,4,w],[-12,1,0,5,w*.85],[6,1,0,3,10],[30,0,0,2.5,5],[40,0,0,4,8],[48,0,0,1,1]],10);
+   for(const sign of [-1,1]){drive(-47,0,sign*w*.45,3);gun([40,2,sign*4],[52,2,sign*4],1);}
+   arch=w>30?'BROAD STERN':'NARROW STERN';warp=[.95+V2()*.1,.9+V2()*.2,.94+V2()*.12];
+  }else if(type===6){
+   // Cardassian Galor-class (DS9): the long cobra neck and head over a broad
+   // flat aft wing. The Keldon (DS9) is the uprated Galor: a dorsal module
+   // and a second aft wing, kept here as a Galor configuration.
+   const keldon=V2()<.35,w=34+V2()*8,neck=.9+V2()*.2;
+   plate([[-18,0,0],[-44,0,w],[-52,0,w*.8],[-52,0,-w*.8],[-44,0,-w]],3);
+   body([[-50,0,0,4,6],[-24,1,0,5,7],[10*neck,1,0,3,4],[30*neck,0,0,3,4],[38*neck,-1,0,6,9],[48*neck,-1,0,3,5],[52*neck,-1,0,.8,.8]],10);
+   pod(-30,-5,0,14,4,6);
+   if(keldon){pod(-28,7,0,16,5,6);plate([[-36,-3,0],[-50,-3,w*.55],[-54,-3,w*.4],[-54,-3,-w*.4],[-50,-3,-w*.55]],2);}
+   for(const sign of [-1,1]){drive(-53,0,sign*w*.35,3);gun([44*neck,1,sign*4],[56*neck,1,sign*4],1.2);gun([-40,2,sign*w*.7],[-28,2,sign*w*.7],1);}
+   gun([46*neck,-4,0],[58*neck,-4,0],1.6);
+   arch=keldon?'KELDON CONFIGURATION':'GALOR CONFIGURATION';warp=[.95+V2()*.1,.92+V2()*.16,.92+V2()*.16];
+  }else{
+   // Breen warship (DS9, season 7): a bulbous stern, a long spine and a
+   // forked claw bow, wings swept down amidships. Proportions interpreted.
+   const fork=10+V2()*6,wing=30+V2()*10;
+   pod(-28,0,0,24,11,13);body([[-10,0,0,6,7],[18,1,0,5,6],[30,1,0,4,5]]);
+   for(const sign of [-1,1]){
+    body([[26,0,sign*3,3,3],[42,-1,sign*fork,2.5,3],[54,-2,sign*(fork*.6),1.5,2],[58,-2,sign*(fork*.3),.6,.6]]);
+    plate([[4,0,sign*5],[-14,-8,sign*wing],[-24,-12,sign*(wing-4)],[-18,0,sign*5]],2);
+    drive(-52,0,sign*6,4);gun([50,-1,sign*fork*.8],[60,-1,sign*fork*.8],1.3);
+   }
+   arch=fork>13?'WIDE CLAW':'CLOSED CLAW';warp=[.95+V2()*.1,.9+V2()*.2,.92+V2()*.16];
+  }
+ }else if(race===19&&(type===0||type===2||type===4)){
+  L=[28,110,230,620,1250][type];
+  if(type===0){
+   // Jem'Hadar shuttle: a blunt short pod with swept stub fins (form ours).
+   const fin=16+V2()*6;
+   pod(0,0,0,40,11,13);for(const sign of [-1,1]){plate([[-8,0,sign*10],[-30,-2,sign*fin],[-36,-2,sign*fin],[-24,0,sign*9]],1.5);drive(-38,0,sign*5,2.5);gun([30,-2,sign*5],[42,-2,sign*5],.8);}
+   arch=fin>19?'LONG FINS':'SHORT FINS';warp=[.94+V2()*.12,.9+V2()*.2,.9+V2()*.2];
+  }else if(type===2){
+   // Heavy escort: the attack ship's line stretched into a twin-pronged
+   // raider (after the heavy raiders of Star Trek Online, a licensed game).
+   const prong=12+V2()*5,span=30+V2()*6;
+   pod(8,0,0,36,7,12);pod(-30,0,0,20,5,8);
+   for(const sign of [-1,1]){
+    body([[20,0,sign*7,3,4],[44,-1,sign*prong,2.5,3],[54,-2,sign*prong*.7,1,1]]);
+    body([[4,-1,sign*9,3,5],[-24,-2,sign*span,3,5],[-44,-1,sign*span*.9,2,3]]);
+    drive(-48,-1,sign*span*.9,3);gun([46,0,sign*prong],[58,0,sign*prong],1.3);
+   }
+   arch=prong>14?'WIDE PRONGS':'NARROW PRONGS';warp=[.95+V2()*.1,.92+V2()*.16,.92+V2()*.16];
+  }else{
+   // Battleship (DS9, "Tacking into the Wind"): the battlecruiser's family,
+   // longer and heavier: three shoulder pairs and a dorsal command spine.
+   const arm=36+variant*4;
+   pod(28,0,0,24,12,22);pod(-12,0,0,36,7,12);pod(-6,11,0,30,5,8);
+   for(const sign of [-1,1])for(let k=0;k<3;k++){const x=16-k*22;body([[x,0,sign*10,4,6],[x-16,-2,sign*arm*(1-k*.1),3,6],[x-30,-1,sign*arm*(1-k*.1),2,3]]);drive(x-32,-1,sign*arm*(1-k*.1),3);gun([x-6,2,sign*(arm-6)],[x+4,2,sign*(arm-6)],1.4);}
+   for(let i=0;i<4;i++)body([[14+i*7,9,0,3,15-i*2],[18+i*7,10,0,2,14-i*2]],8);
+  }
  }else if(race===19){
   L=[28,110,230,620,1250][type];const broad=type>=3,span=(broad?38:31)+variant*4;
   // Beetle bow, narrow waist, swept nacelle arms, forked stern. Larger hulls
@@ -11261,13 +11384,88 @@ function buildExtraClass(race,seed,type,hero=false){
   if(type===4){pod(-4,12,0,26,6,13);pod(-8,-10,0,30,5,18);}
   for(let i=0;i<4;i++)body([[8+i*7,7,0,3,17-i*2],[12+i*7,8,0,2,16-i*2]],8);
  }else if(race===20){
-  L=[29,130,190,240,780,1500,430,21,25,34,2300][type];
+  L=[29,130,190,240,780,1500,430,21,25,34,2300,72,12,30,1150][type];
   // Chamfered armour sections, not piled rectangular rooms. +X is the prow.
   const armour=(stations)=>parts.push({k:'loft',sec:stations.map(([x,y,h,w])=>({pts:[[x,y+h,w*.72],[x,y+h*.72,w],[x,y-h*.72,w],[x,y-h,w*.72],[x,y-h,-w*.72],[x,y-h*.72,-w],[x,y+h*.72,-w],[x,y+h,-w*.72]]}))});
   const roof=(x,y,z,l,w,h)=>{box(x,y+h*.35,z,l,h*.35,w);parts.push({k:'loft',sec:[x-l,x+l].map(xx=>({pts:[[xx,y+h*.7,z-w],[xx,y+h,z],[xx,y+h*.7,z+w]]}))});};
   const battery=(x,y,z,n)=>{for(let i=0;i<n;i++){const gx=x+i*5.8;box(gx,y,z,2,2.5,2.8);gun([gx,y,z],[gx+1,y,z+Math.sign(z)*5],.85);}};
   const driveBank=(n,width)=>{for(let i=0;i<n;i++)drive(-51,-1,(i-(n-1)*.5)*width,2.6);};
-  if([0,7,8,9].includes(type)){
+  const tower=(x,h,w)=>{armour([[x-6,6+h*.4,h*.5,w],[x+5,6+h*.4,h*.5,w*.8]]);roof(x,5+h,0,5,w*.7,4);tube([x-1,9+h,0],[x-1,16+h,0],.7,.2);};
+  if([1,2,3,6].includes(type)||type>=11){
+   /* Variety pass (VARIETY.md): each escort and cruiser class gets its own
+      body plan, after the Battlefleet Gothic (Games Workshop, 1999) and
+      Forge World references in EXTRA-FLEETS-NEW.md. */
+   if(type===1){
+    // Hunter destroyer: slim torpedo boat, big prow tube block, one tall tower aft.
+    const prow=6+V2()*3,th=10+V2()*5;
+    armour([[-48,0,5,5],[-30,0,7,7],[10,0,6,6],[30,0,7,7],[46,-1,8,6],[46+prow,-2,5,4]]);
+    box(44+prow*.5,-1,0,prow*.6+2,5,6);
+    for(const y of [1,-3])for(const sign of [-1,1])gun([48+prow,y,sign*2.2],[56+prow,y,sign*2.2],1.1);
+    tower(-28,th,5);driveBank(2,5);
+    arch=th>12?'HIGH TOWER':'LOW TOWER';warp=[.95+V2()*.1,.92+V2()*.16,.92+V2()*.16];
+   }else if(type===2){
+    // Gladius frigate: a broad, squat battery ship with a stubby prow and a
+    // wide four-drive stern.
+    const w=15+V2()*3,n=3+Math.floor(V2()*2);
+    armour([[-48,0,6,w*.8],[-36,0,8,w],[20,0,7,w],[36,0,6,w*.8],[46,-1,4,w*.45]]);
+    for(const sign of [-1,1]){battery(-24,2,sign*(w+2),n);battery(-20,-4,sign*(w+1),n-1);}
+    roof(-30,8,0,8,6,6);driveBank(4,w*.45);gun([40,4,0],[52,4,0],1.4);
+    arch=n>3?'FOUR-GUN BROADSIDE':'THREE-GUN BROADSIDE';warp=[.95+V2()*.1,.92+V2()*.16,.94+V2()*.12];
+   }else if(type===3){
+    // Nova frigate: a long lance spear with swept stern fins and a dorsal
+    // spinal barrel.
+    const fin=18+V2()*8;
+    armour([[-48,0,5,6],[-30,0,6,8],[0,0,5,6],[30,0,4,4],[50,-1,2,2]]);
+    tube([-10,7,0],[56,7,0],2.2,1.4);muzzles.push([56,7,0]);box(-12,5,0,8,3,4);
+    for(const sign of [-1,1])plate([[-30,0,sign*7],[-48,-1,sign*fin],[-54,-1,sign*fin],[-44,0,sign*6]],1.6);
+    tower(-36,8,4);driveBank(2,5);
+    arch=fin>22?'WIDE FINS':'NARROW FINS';warp=[.96+V2()*.08,.92+V2()*.16,.9+V2()*.2];
+   }else if(type===6){
+    // Vanguard light cruiser: long and lean, a ram prow and engine outriggers,
+    // so it no longer reads as a small Strike Cruiser.
+    const out=16+V2()*6,ram=8+V2()*6;
+    armour([[-48,0,6,6],[-30,0,8,7],[20,0,7,6],[40,-1,8,6],[40+ram,-3,4,3]]);
+    for(const sign of [-1,1]){pod(-34,-1,sign*out,14,3.5,3.5);box(-30,-1,sign*out*.55,4,1.4,out*.45);drive(-49,-1,sign*out,3);battery(-10,1,sign*8,3);}
+    tower(-26,10,5);driveBank(2,5);
+    arch=out>19?'WIDE OUTRIGGERS':'CLOSE OUTRIGGERS';warp=[.95+V2()*.1,.92+V2()*.16,.92+V2()*.16];
+   }else if(type===11){
+    // Stormbird (Forge World): a heavy gunship, straight broad wings with
+    // twin engine nacelles each side and a dorsal turret.
+    const span=34+V2()*8;
+    armour([[-45,0,8,10],[-10,1,10,12],[25,0,9,11],[45,-2,6,8]]);
+    for(const sign of [-1,1]){plate([[4,1,sign*10],[0,1,sign*span],[-18,1,sign*span],[-22,1,sign*10]],3);
+     for(const z of [.45,.8])pod(-12,-1,sign*span*z,18,4,4),drive(-31,-1,sign*span*z,3);
+     parts.push({k:'panel',pts:[[-36,6,sign*6],[-44,20,sign*8],[-26,8,sign*6]],n:[0,0,1],th:1.2});}
+    box(8,11,0,6,3,5);for(const sign of [-1,1])gun([10,13,sign*2],[26,13,sign*2],1.2);
+    arch=span>38?'LONG WINGS':'SHORT WINGS';warp=[.95+V2()*.1,.92+V2()*.16,.94+V2()*.12];
+   }else if(type===12){
+    // Drop pod: an armoured cylinder with petal doors and a nose cone,
+    // fired at the enemy hull. It keeps one storm bolter.
+    const petals=5,flare=4+V2()*3;
+    parts.push({k:'lathe',c:[0,0,0],axis:[1,0,0],prof:[[-40,0],[-38,16],[18,14],[34,9],[46,0]]});
+    for(let i=0;i<petals;i++){const a=i/petals*Math.PI*2,c=Math.cos(a),sn=Math.sin(a);parts.push({k:'panel',pts:[[-36,sn*15,c*15],[-46,sn*(15+flare),c*(15+flare)],[-14,sn*15,c*15]],n:[0,-c,sn],th:1.4});}
+    gun([30,0,6],[44,0,6],1.4);drive(-42,0,0,6);
+    arch=flare>5.5?'FLARED PETALS':'CLOSED PETALS';warp=[.95+V2()*.1,.95+V2()*.1,.95+V2()*.1];
+   }else if(type===13){
+    // Boarding torpedo (Battlefleet Gothic): a long armoured tube with a
+    // melta-cutter claw nose.
+    const teeth=4+Math.floor(V2()*3);
+    parts.push({k:'lathe',c:[0,0,0],axis:[1,0,0],prof:[[-46,0],[-44,8],[28,8],[36,6],[40,0]]});
+    for(let i=0;i<teeth;i++){const a=i/teeth*Math.PI*2;tube([34,Math.sin(a)*5,Math.cos(a)*5],[48,Math.sin(a)*2,Math.cos(a)*2],1.8,.4);}
+    for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4;parts.push({k:'panel',pts:[[-40,Math.sin(a)*8,Math.cos(a)*8],[-48,Math.sin(a)*15,Math.cos(a)*15],[-30,Math.sin(a)*8,Math.cos(a)*8]],n:[0,-Math.cos(a),Math.sin(a)],th:1});}
+    gun([40,0,0],[50,0,0],1.6);drive(-47,0,0,5);
+    arch=teeth>5?'SIX-CLAW CUTTER':'FOUR-CLAW CUTTER';warp=[.92+V2()*.16,.88+V2()*.24,.88+V2()*.24];
+   }else{
+    // Space hulk: wrecks drifted together in the warp and fused into one
+    // mass (Warhammer 40,000; Space Hulk). A lumpen rock core with the hulls
+    // of dead ships jutting out of it at their own angles.
+    for(const [x,y,z,r] of [[0,0,0,24],[-24,6,10,16],[20,-6,-12,18],[-10,-10,-16,14],[16,10,14,13]])pod(x,y,z,r*1.2,r*(.8+V2()*.3),r*(.8+V2()*.3));
+    const wreck=(x,y,z,ang,len,w)=>{const c=Math.cos(ang),sn=Math.sin(ang);armour([[0,0,w*.8,w],[len*.6,0,w,w],[len,0,w*.5,w*.6]]);const p=parts[parts.length-1];for(const sec of p.sec)sec.pts=sec.pts.map(v=>[x+v[0]*c-v[2]*sn,y+v[1],z+v[0]*sn+v[2]*c]);};
+    wreck(18,4,4,.15+V2()*.2,34,6);wreck(-20,-4,-8,Math.PI-.3+V2()*.3,32,5);wreck(0,12,-6,1.2+V2()*.4,26,4);wreck(4,-12,10,-1.4+V2()*.4,24,4);
+    for(const sign of [-1,1])gun([40,2,sign*6],[52,2,sign*6],2);gun([-12,20,0],[-4,26,0],1.6);drive(-50,0,0,6);drive(-40,-10,-14,4);
+    arch='FUSED WRECKS';warp=[.94+V2()*.12,.9+V2()*.2,.9+V2()*.2];
+   }
+  }else if([0,7,8,9].includes(type)){
    const xiphon=type===7,ram=type===8,eagle=type===9;
    if(ram){
     for(const sign of [-1,1]){armour([[-38,0,7,7],[-5,0,7,7],[35,-1,10,9],[48,-1,9,9]]);const p=parts[parts.length-1];for(const sec of p.sec)for(const v of sec.pts)v[2]+=sign*13;box(43,0,sign*13,3,7,7);drive(-43,0,sign*13,5);gun([36,6,sign*13],[46,6,sign*13],1.2);}
@@ -11277,7 +11475,8 @@ function buildExtraClass(race,seed,type,hero=false){
     box(17,8,0,8,2.5,xiphon?4:7);
     for(const sign of [-1,1]){
      const span=xiphon?35:eagle?27:39;
-     plate([[13,0,sign*6],[-20,-1,sign*span],[-36,-1,sign*span],[-27,0,sign*6]],2);
+     if(eagle){plate([[8,0,sign*6],[2,-1,sign*span],[-12,-1,sign*span],[-18,0,sign*6]],2);pod(-5,-1,sign*span,9,3,3);parts.push({k:'panel',pts:[[-30,4,sign*7],[-38,22,sign*9],[-22,8,sign*7]],n:[0,0,1],th:1.2});}
+     else plate([[13,0,sign*6],[-20,-1,sign*span],[-36,-1,sign*span],[-27,0,sign*6]],2);
      pod(-26,1,sign*(xiphon?10:17),15,4,4);drive(-44,1,sign*(xiphon?10:17),3.2);
      parts.push({k:'panel',pts:[[-35,2,sign*8],[-38,22,sign*8],[-17,11,sign*8],[-14,2,sign*8]],n:[0,0,1],th:1.2});
      gun([19,-4,sign*(xiphon?5:10)],[48,-4,sign*(xiphon?5:10)],1.1);
@@ -11285,8 +11484,11 @@ function buildExtraClass(race,seed,type,hero=false){
     }
     if(type===0){box(-2,10,0,6,3,5);gun([2,12,0],[26,12,0],2.1);}
    }
+   // sister kit: lean or broad airframes, from the variety stream
+   warp=[.95+V2()*.1,.92+V2()*.16,.9+V2()*.2];
   }else{
    const barge=type===5||type===10,gloriana=type===10,escort=type<=3,vanguard=type===6;
+   if(!gloriana)warp=[.95+V2()*.1,.92+V2()*.16,.92+V2()*.16];
    const width=(gloriana?17:barge?15:escort?6.5:vanguard?8:10.5)*(.94+variant*.06);
    const stern=barge?-39:-32,prow=escort?30:24;
    armour([[-47,0,6,width*.85],[stern,0,8,width],[-18,0,6,width*.58],[17,0,6,width*.58],[prow,0,8,width],[43,-1,10,width*1.20],[51,-2,7,width*.65]]);
@@ -11372,8 +11574,43 @@ function buildExtraClass(race,seed,type,hero=false){
    }
   }
  }else{
-  L=[6,8,70,72,120,210,8][type];
-  if(type<=1){
+  L=[6,8,70,72,120,210,8,12,9,14,230][type];
+  if(type===7){
+   // Starlink (SpaceX): a flat satellite bus with one long solar array on a
+   // boom; the swarm's laser links become its guns (a fictional adaptation).
+   const span=32+V2()*8,side=1;
+   box(0,0,0,16,1.4,9);box(-2,1.6,0,10,.4,7);
+   box(-4,0,side*(9+span*.5),6,.3,span*.5);tube([-4,0,side*9],[-4,0,side*12],.6,.6);
+   for(const sign of [-1,1])gun([12,0,sign*5],[20,0,sign*5],.8);drive(-17,0,0,1.6);
+   arch=span>36?'LONG ARRAY':'SHORT ARRAY';warp=[.95+V2()*.1,.9+V2()*.2,.95+V2()*.1];
+  }else if(type===8){
+   // Crew Dragon (SpaceX): a blunt capsule with nosecone over a finned
+   // trunk. SuperDraco pods stand in as its guns (fictional adaptation).
+   const trunk=18+V2()*8;
+   parts.push({k:'lathe',c:[0,0,0],axis:[1,0,0],prof:[[-trunk-6,15],[-6,15],[-4,17],[2,16],[16,10],[24,5],[28,0]]});
+   for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4,c=Math.cos(a),sn=Math.sin(a);parts.push({k:'panel',pts:[[-trunk-6,sn*15,c*15],[-trunk-8,sn*23,c*23],[-trunk+4,sn*15,c*15]],n:[0,-c,sn],th:1.4});
+    if(i<2)gun([8,sn*15,c*15],[16,sn*12,c*12],1.1);}
+   drive(-trunk-7,0,0,8);
+   arch=trunk>22?'LONG TRUNK':'SHORT TRUNK';warp=[.95+V2()*.1,.95+V2()*.1,.95+V2()*.1];
+  }else if(type===9){
+   // Cybertruck gunship: the stainless wedge as a hover gunship, wheel
+   // wells turned to lift fans, a turret on the bed. Invented.
+   const roof=14+V2()*4,apex=-4+V2()*8;
+   parts.push({k:'loft',sec:[[-46,5],[apex,roof],[46,6]].map(([x,h])=>({pts:[[x,-8,-20],[x,-8,20],[x,h*.35,20],[x,h,0],[x,h*.35,-20]]}))});
+   for(const x of [-28,30])for(const sign of [-1,1])parts.push({k:'disc',c:[x,-8,sign*19],n:[0,1,0],r:9,ri:4});
+   box(-30,9,0,10,2,12);for(const sign of [-1,1])gun([-24,12,sign*4],[4,12,sign*4],1.6);
+   for(const sign of [-1,1])drive(-47,-2,sign*10,3);
+   arch=apex>0?'FORWARD APEX':'AFT APEX';warp=[.95+V2()*.1,.92+V2()*.16,.94+V2()*.12];
+  }else if(type===10){
+   // Gigafactory carrier: a flying factory, a vast low slab with a solar
+   // roof, loading bays down both flanks and a bank of drives. Invented.
+   const bays=3+Math.floor(V2()*3),w=26+V2()*8;
+   parts.push({k:'loft',sec:[-48,-40,36,46].map((x,i)=>({pts:[[x,-10,-w*[.8,1,1,.7][i]],[x,-10,w*[.8,1,1,.7][i]],[x,6,w*[.8,1,1,.7][i]],[x,9,0],[x,6,-w*[.8,1,1,.7][i]]]}))});
+   for(let i=0;i<4;i++)plate([[-36+i*18,9.5,-w*.8],[-22+i*18,9.5,-w*.8],[-22+i*18,9.5,w*.8],[-36+i*18,9.5,w*.8]],.6);
+   for(const sign of [-1,1])for(let i=0;i<bays;i++){const x=-30+i*60/(bays-1||1);box(x,-3,sign*(w+1),5,4,1.4);}
+   for(let i=0;i<5;i++)drive(-49,-2,(i-2)*w*.35,3.5);for(const sign of [-1,1])gun([40,2,sign*w*.5],[52,2,sign*w*.5],1.6);
+   arch=bays>4?'FIVE-BAY':'THREE-BAY';warp=[.95+V2()*.1,.9+V2()*.2,.92+V2()*.16];
+  }else if(type<=1){
    // Upright free-flying Optimus: white torso, black face, articulated limbs,
    // boots and a forward-facing blaster in each hand. +X is forward.
    box(0,9,0,6,12,9);box(0,-6,0,5,5,7);pod(0,30,0,6,9,7);
@@ -11385,6 +11622,8 @@ function buildExtraClass(race,seed,type,hero=false){
     tube([0,-10,sign*5],[-4,-25,sign*6],3.5,2.5);tube([-4,-25,sign*6],[0,-39,sign*7],2.5,2);box(4,-41,sign*7,6,2,3);drive(-6,7,sign*7,2);
    }
    if(type===1){box(-7,8,0,4,12,10);gun([0,20,12],[27,20,12],3);}
+   // sister kit: build and stance differ robot to robot
+   if(!hero)warp=[.9+V2()*.2,.92+V2()*.16,.88+V2()*.24];
   }else if(type===6){
    // The original open-top Roadster, including four wheels and Starman.
    body([[-43,0,0,4,13],[-31,1,0,7,18],[14,0,0,6,18],[42,-1,0,4,14],[48,-1,0,2,9]],8);
@@ -11407,20 +11646,54 @@ function buildExtraClass(race,seed,type,hero=false){
    };
    rocket(0);
    if(type===3){for(const sign of [-1,1]){rocket(sign*10,true);box(-15,0,sign*5,15,2,2);}}
+   /* configurations (VARIETY.md): a Falcon flies with its landing legs out
+      or folded and a Dragon or a fairing on top; a Starship either carries
+      aft flaps or is the lunar lander (HLS) on four legs. */
+   if(!hero){
+    if(!star){
+     if(V2()<.5){arch='LEGS DEPLOYED';for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4;parts.push({k:'panel',pts:[[-40,Math.sin(a)*rad,Math.cos(a)*rad],[-52,Math.sin(a)*rad*2.8,Math.cos(a)*rad*2.8],[-34,Math.sin(a)*rad,Math.cos(a)*rad]],n:[0,-Math.cos(a),Math.sin(a)],th:.7});}}
+     else arch='LEGS STOWED';
+     if(V2()<.5){arch+=', DRAGON';body([[40,0,0,rad*1.2,rad*1.2],[45,0,0,rad,rad],[50,0,0,.2,.2]],12);}
+     for(let i=0;i<4;i++){const a=i/4*Math.PI*2;box(22,Math.sin(a)*rad*1.3,Math.cos(a)*rad*1.3,1.4,.3+Math.abs(Math.cos(a))*1.2,.3+Math.abs(Math.sin(a))*1.2);}
+    }else if(!stack&&V2()<.4){
+     arch='HLS LANDER';parts.splice(0,parts.length,...parts.filter(p=>!(p.k==='panel')));
+     for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4;tube([-36,Math.sin(a)*rad,Math.cos(a)*rad],[-50,Math.sin(a)*rad*1.8,Math.cos(a)*rad*1.8],1,.7);}
+     body([[20,0,0,rad*1.02,rad*1.02],[26,0,0,rad*1.02,rad*1.02]],12);
+    }else if(stack){
+     // Super Heavy: grid fins at the booster's head, and on later flights a
+     // vented hot-staging ring between the stages.
+     const ring=V2()<.5,fin=3+V2()*3;arch=ring?'HOT-STAGING RING':'CLEAN INTERSTAGE';
+     for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4;box(-54,Math.sin(a)*(rad+fin*.5),Math.cos(a)*(rad+fin*.5),2,.4+Math.abs(Math.sin(a))*fin*.5,.4+Math.abs(Math.cos(a))*fin*.5);}
+     if(ring)body([[-50,0,0,rad*1.25,rad*1.25],[-46,0,0,rad*1.25,rad*1.25]],12);
+    }else arch='FLAPS';
+    warp=[.94+V2()*.12,.88+V2()*.24,.88+V2()*.24];
+   }
    if(stack){engines.length=0;body([[-120,0,0,rad,rad],[-47,0,0,rad,rad]],12);for(let i=0;i<12;i++){const a=i/12*6.283;drive(-124,Math.sin(a)*6,Math.cos(a)*6,1.7);}}
    for(const sign of [-1,1])gun([28,0,sign*rad],[43,0,sign*rad],star?1.2:.7);
   }
  }
+ if(warp&&!hero){vyWarpParts(parts,warp);for(const q of muzzles){q[0]*=warp[0];q[1]*=warp[1];q[2]*=warp[2];}for(const q of engines){q[0]*=warp[0];q[1]*=warp[1];q[2]*=warp[2];}}
  const scale=heroFit(parts,L*(.94+R()*.12)),bb=heroBB(parts);
  const names=['IRW KHOPESH','VICTORY IS LIFE',"MACRAGGE’S HONOUR",'THE GREAT DEVOURER',"ELON'S ROADSTER"];
- const meta={klass,desig:hero?names[row]:klass+' '+String(seed>>>0).slice(-5),hero,length:bb[1][0]-bb[0][0],beam:bb[1][2]-bb[0][2],height:bb[1][1]-bb[0][1],crew:race===21||race===22?1:Math.max(4,Math.round(L*1.5)),nativeMuzzles:true,liverySeed:seed>>>0,extraClass:type,architecture:race===21?['LEAN PREDATOR MORPH','EXTENDED FEEDER MORPH','HEAVY CARAPACE MORPH'][variant]:['PATROL CONFIGURATION','WIDE ASSEMBLY','HEAVY CONFIGURATION'][variant]};
+ const meta={klass,desig:hero?names[row]:klass+' '+String(seed>>>0).slice(-5),hero,length:bb[1][0]-bb[0][0],beam:bb[1][2]-bb[0][2],height:bb[1][1]-bb[0][1],crew:race===21||race===22?1:Math.max(4,Math.round(L*1.5)),nativeMuzzles:true,liverySeed:seed>>>0,extraClass:type,architecture:arch||(race===21?['LEAN PREDATOR MORPH','EXTENDED FEEDER MORPH','HEAVY CARAPACE MORPH'][variant]:['PATROL CONFIGURATION','WIDE ASSEMBLY','HEAVY CONFIGURATION'][variant])};
  meta.mass=Math.max(1,meta.length*meta.beam*meta.height*.035);
  return {parts,bb,meta,muzzles:muzzles.map(q=>q.map(v=>v*scale)),exhaust:engines.map(q=>q.map(v=>v*scale))};
 }
-function buildExtra(race,seed,hulls=0,hero=false){
+// The five tribute navies' muster mix (RACE_DEFS 18-22), for an unbanded roll.
+var RACE_MIX_EXTRA=[[.28,.64,.08],[.64,.30,.06],[.38,.37,.25],[.62,.26,.12],[.76,.16,.08]];
+/* Band pools (VARIETY.md, UNIQUENESS-NEW.md): [type, weight] per muster
+   band. A fleet listed here deals its class from the band the muster asked
+   for; the others keep their original flat pool. */
+var EXTRA_BAND_POOLS={
+ 18:[[[5,.40],[0,.30],[8,.30]],[[1,.35],[2,.35],[6,.30]],[[4,.35],[3,.35],[7,.30]]],
+ 19:[[[1,.42],[5,.33],[0,.25]],[[2,.35],[6,.65]],[[3,.40],[4,.20],[7,.40]]],
+ 22:[[[0,.28],[1,.12],[7,.20],[8,.20],[9,.20]],[[2,.55],[3,.45]],[[4,.40],[5,.35],[10,.25]]],
+ 20:[[[0,.22],[9,.18],[7,.18],[8,.14],[12,.14],[13,.14]],[[1,.26],[2,.26],[3,.26],[11,.22]],[[4,.34],[6,.26],[5,.22],[14,.18]]]};
+function buildExtra(race,seed,hulls=0,hero=false,band){
  const R=mulberry32((seed^0xADC73)>>>0),row=race-18;
  const pools=[[0,1,2,3,4],[1,1,1,2,3],[0,1,2,3,4,5,6,7,8,9],[0,1,2,3,4,5,6,7,8,9],[0,0,0,1,2,3,4,5]];
- let type=hero?[4,1,10,5,6][row]:hulls?(hulls>=50?[4,4,5,5,5][row]:[3,3,4,4,4][row]):pools[row][Math.floor(R()*pools[row].length)];
+ const bandPools=EXTRA_BAND_POOLS[race];
+ let type=hero?[4,1,10,5,6][row]:hulls?(hulls>=50?[4,4,5,5,5][row]:[3,3,4,4,4][row]):bandPools?vyBandClass(vyStream(seed,0xB0A1+race),bandPools,band,RACE_MIX_EXTRA[row]):pools[row][Math.floor(R()*pools[row].length)];
  if(race===21&&hulls&&hulls<50&&!hero)type=[4,6,7][Math.floor(R()*3)];
  return buildExtraClass(race,seed,type,hero);
 }
@@ -12921,7 +13194,7 @@ const baseRaceBuild=(f,seed,hulls,hero,band)=>{
     case 15:return hulls?buildEngineerMega(seed,hulls):buildEngineer(seed,band);
     case 16:return hulls?buildYautjaMega(seed,hulls):buildYautja(seed);
     case 17:return hulls?buildFirstonesMega(seed,hulls):buildFirstones(seed);
-    case 18:case 19:case 20:case 21:case 22:return buildExtra(f,seed,hulls,hero);
+    case 18:case 19:case 20:case 21:case 22:return buildExtra(f,seed,hulls,hero,band);
     default:return hulls?buildMegaShip(seed,hulls):buildShip(seed,P,NL);
   }
 };
