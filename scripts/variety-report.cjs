@@ -221,7 +221,12 @@ function verdict(sum, base) {
     push(`tris ${f.name}`, f.cost.studyMax < T.studyTris, `max ${f.cost.studyMax}`);
     if (base) { const b = base.fleets.find(x => x.race === f.race); if (b) {
       push(`uniqueMeshes ${f.name}`, f.cost.uniqueMeshes <= b.cost.uniqueMeshes * 1.10, `${f.cost.uniqueMeshes} (baseline ${b.cost.uniqueMeshes})`);
-      push(`forgeMs ${f.name}`, f.cost.forgeMs <= b.cost.forgeMs * 1.10, `${f.cost.forgeMs.toFixed(1)} (baseline ${b.cost.forgeMs.toFixed(1)})`);
+      // Forge time comes from scripts/variety-forge-time.cjs (one quiet process, main and branch
+      // interleaved on the same jobs) when it has been run; the report's own timings run 3 forges
+      // at once alongside other work and are only indicative.
+      const ft = sum.forgeTime && sum.forgeTime.fleets[f.race];
+      if (ft) push(`forgeMs ${f.name}`, ft.ratio <= 1.10, `${ft.branch.toFixed(1)} ms v ${ft.main.toFixed(1)} ms on main (x${ft.ratio.toFixed(2)}, interleaved)`);
+      else push(`forgeMs ${f.name}`, f.cost.forgeMs <= b.cost.forgeMs * 1.10, `${f.cost.forgeMs.toFixed(1)} (baseline ${b.cost.forgeMs.toFixed(1)}, concurrent run)`);
     } }
   }
   return {rows, fail};
@@ -251,6 +256,8 @@ async function main() {
   const exf = path.join(__dirname, 'variety-exemptions.json');
   sum.exemptions = fs.existsSync(exf) ? JSON.parse(fs.readFileSync(exf, 'utf8')) : {};
   const base = opt('compare') ? JSON.parse(fs.readFileSync(opt('compare'), 'utf8')) : null;
+  const ftf = opt('forge-time');
+  sum.forgeTime = ftf && fs.existsSync(ftf) ? JSON.parse(fs.readFileSync(ftf, 'utf8')) : null;
   sum.verdict = verdict(sum, base);
   sum.meta = {label: LABEL, root: ROOT, commit: (() => { try { return execFileSync('git', ['-C', ROOT, 'rev-parse', '--short', 'HEAD']).toString().trim(); } catch (e) { return null; } })(), folds: FOLDS, size: SIZE, hulls: all.length};
   fs.writeFileSync(path.join(OUT, 'summary.json'), JSON.stringify(sum, null, 1));

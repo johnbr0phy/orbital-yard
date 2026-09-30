@@ -15,14 +15,25 @@ const HEROES = JSON.parse(fs.readFileSync(path.join(__dirname, 'variety-heroes.j
 const EXEMPT = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/variety-exemptions.json'), 'utf8'));
 
 const F = L.loadForge(ROOT, {fast: true});
-const PER_BAND = 36;
+// Per band, 40 hulls from each of the report's two wars: the report's own band
+// sample size (it tops thin bands up to 40 a war), so clusters count alike.
+const PER_BAND = 40, WARS = [101, 202];
 const sample = {};   // race -> hulls
 function forgeRace(race) {
   if (sample[race]) return sample[race];
   const out = [];
-  const jobs = F.muster(race, 101, 600);
   const take = (list, n) => { const o = []; for (let k = 0; k < Math.min(n, list.length); k++) o.push(list[Math.floor(k * list.length / Math.min(n, list.length))]); return o; };
-  const pick = race === 17 ? jobs.filter(j => j.hulls) : [0, 1, 2].flatMap(b => take(jobs.filter(j => !j.hero && !j.hulls && j.band === b), PER_BAND));
+  const pick = [];
+  for (const war of WARS) {
+    const jobs = F.muster(race, war, 600);
+    if (race === 17) { if (war === WARS[0]) pick.push(...jobs.filter(j => j.hulls)); continue; }
+    for (const b of [0, 1, 2]) {
+      const band = jobs.filter(j => !j.hero && !j.hulls && j.band === b), got = take(band, PER_BAND);
+      // a band this war musters thinly is topped up from later wars, as the report does
+      for (let w = war + 1000; got.length < PER_BAND && got.length && w < war + 1040; w++) got.push(...F.muster(race, w, 600).filter(j => !j.hero && !j.hulls && j.band === b).slice(0, PER_BAND - got.length));
+      pick.push(...got);
+    }
+  }
   for (const j of pick) {
     const {out: s, study} = F.forge(j);
     out.push({race, band: j.band, jobSeed: j.seed, seed: s.seed >>> 0, klass: s.meta.klass, key: L.classKey(race, s.meta.klass), length: s.meta.length,
@@ -42,8 +53,7 @@ test('every band holds several silhouettes, none over half the band, classes are
       const shares = L.clusters(bh.map(h => h.sig), T.cluster).map(m => m.length / bh.length).sort((a, b) => b - a);
       const eff = Math.exp(-shares.reduce((s, p) => s + p * Math.log(p), 0));
       if (eff < T.minShapes && !EXEMPT[race + '/' + L.BANDS[band]]) bad.push(`${L.NAMES[race]}/${L.BANDS[band]}: ${eff.toFixed(2)} shapes`);
-      // a 36-hull sample: allow one hull of sampling slack on the dominant share
-      if (shares[0] > T.maxDominant + 1 / bh.length) bad.push(`${L.NAMES[race]}/${L.BANDS[band]}: dominant ${(shares[0] * 100).toFixed(0)}%`);
+      if (shares[0] > T.maxDominant) bad.push(`${L.NAMES[race]}/${L.BANDS[band]}: dominant ${(shares[0] * 100).toFixed(0)}%`);
       const byKey = groupBy(bh, h => h.key), keys = Object.keys(byKey);
       for (let a = 0; a < keys.length; a++) for (let b = a + 1; b < keys.length; b++) {
         const ds = []; for (const x of byKey[keys[a]]) for (const y of byKey[keys[b]]) ds.push(L.distance(x.sig, y.sig));

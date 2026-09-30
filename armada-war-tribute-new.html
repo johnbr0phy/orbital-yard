@@ -2320,6 +2320,12 @@ function vyNativeGuns(ship){
   if(m.length){ship.muzzles=m;ship.meta.nativeMuzzles=true;}
   return ship;
 }
+/* Sister proportion amplitude per class, relative to the fleet kit above:
+   just enough for each class to sit clear of the clone floor (a median sister
+   distance near 0.08), because every further percent of proportion change
+   made the fleets it borders less recognisable (VARIETY.md, "Recognition").
+   Measured on the variety run before this table (bench/variety/full3). */
+var VY_SISTER_K={"5|CARRACK-CLASS LIGHT CRUISER":0.47,"5|IMMOBILIZER 418 INTERDICTOR":0.95,"5|VICTORY-CLASS DESTROYER":0.76,"5|QUASAR FIRE-CLASS CARRIER":0.47,"5|GOZANTI-CLASS CRUISER":0.83,"5|RAIDER-CLASS CORVETTE":0.6,"5|ARQUITENS-CLASS CRUISER":0.76,"5|TIE/LN STARFIGHTER":0.37,"5|TIE/IN INTERCEPTOR":0.64,"5|LAMBDA-CLASS SHUTTLE":0.6,"5|TIE ADVANCED X1":0.9,"5|TIE/D DEFENDER":0.66,"6|CR90-CLASS CORVETTE":0.77,"6|NEBULON-B ESCORT FRIGATE":0.6,"6|PELTA-CLASS FRIGATE":0.8,"6|DP20 CORELLIAN GUNSHIP":0.5,"6|BTL-A4 Y-WING":0.68,"6|T-65 X-WING":0.71,"6|RZ-1 A-WING":0.88,"6|UT-60D U-WING":0.92,"9|POSEIDON-CLASS SUPERCARRIER":0.74,"9|SAGITTARIUS-CLASS MISSILE CRUISER":0.82,"9|OLYMPUS-CLASS CORVETTE":0.35,"9|SA-23E AURORA STARFURY":0.39,"9|EARTH ALLIANCE SHUTTLE":0.48,"9|SA-32A THUNDERBOLT STARFURY":0.44,"10|AKIRA-CLASS HEAVY CRUISER":0.74,"10|NEBULA-CLASS EXPLORER":0.87,"10|MIRANDA-CLASS CRUISER":0.35,"10|STEAMRUNNER-CLASS CRUISER":0.8,"10|OBERTH-CLASS SCIENCE VESSEL":0.68,"10|DEFIANT-CLASS ESCORT":0.94,"10|TYPE-6 SHUTTLECRAFT":0.77,"11|K'T'INGA-CLASS BATTLECRUISER":0.49,"11|F15-CLASS DESTROYER":0.46,"11|B'REL-CLASS BIRD-OF-PREY":0.37,"11|VOR'CHA-CLASS ATTACK CRUISER":0.7,"11|D6S-CLASS SCOUT CRUISER":0.53,"11|K'VORT-CLASS HEAVY BIRD-OF-PREY":0.48,"11|F5-CLASS FRIGATE":0.43,"11|D7-CLASS BATTLECRUISER":0.5,"11|HEGH'GOGH-CLASS HEAVY FIGHTER":0.78,"11|TO'DUJ-CLASS FIGHTER":0.35,"12|TACTICAL DIAMOND":0.55,"12|ASSIMILATED VESSEL (RAPTOR-PATTERN)":0.39,"12|LONG-RANGE PROBE":0.42,"12|ASSIMILATED VESSEL (RING-PATTERN)":0.53,"12|ASSIMILATED SHUTTLE":0.81,"12|BORG SCOUT SHIP":0.83,"13|EARTH FEDERAL BATTLE CRUISER":0.87,"13|FHLOSTON-CLASS PLEASURE LINER":0.94,"13|MANGALORE ASSAULT SHIP":0.84,"13|ANGEL-WING EXECUTIVE YACHT":0.4,"13|NY FLYING CAB":0.88,"13|MANGALORE RAIDER GUNSHIP":0.59,"13|ZFX200 MERCENARY FIGHTER":0.41,"14|CONESTOGA-CLASS MEDICAL FRIGATE":0.81,"14|TIENTSIN-CLASS ASSAULT SHIP":0.99,"14|HELIADES-CLASS EXPLORATION VESSEL":0.87,"14|CONESTOGA-CLASS TROOP TRANSPORT":0.86,"14|CM-88B BISON STAR FREIGHTER":0.6,"14|UD-4L CHEYENNE DROPSHIP":0.93,"14|COVENANT LANDER":0.56,"16|GOLDEN CLAN SHIP":0.69,"16|ELDER HORSESHOE TROPHY BARGE":0.46,"16|WOLF-CLASS MILITANT SCOUT":0.72,"16|LOST TRIBE SEWER-SHIP":0.67,"16|ENFORCER-CASTE CRUISER":0.92,"16|FERAL HUNTER'S SHIP":0.65,"18|REMAN SCIMITAR WARBIRD":0.58,"18|TOS BIRD-OF-PREY":0.8,"18|ROMULAN SCOUT":0.59,"18|REMAN SCORPION FIGHTER":0.38,"18|ROMULAN SHUTTLE":0.71,"18|ROMULAN DRONE SHIP":0.66,"19|BREEN WARSHIP":0.72,"19|JEM'HADAR BATTLECRUISER":0.91,"19|JEM'HADAR BATTLESHIP":0.8,"19|JEM'HADAR HEAVY ESCORT":0.73,"19|CARDASSIAN GALOR WARSHIP":0.42,"19|JEM'HADAR ATTACK SHIP":0.9,"19|CARDASSIAN HIDEKI CORVETTE":0.85,"19|JEM'HADAR SHUTTLE":0.87,"20|BATTLE BARGE":0.69,"20|VANGUARD LIGHT CRUISER":0.55,"20|STRIKE CRUISER":0.83,"20|SPACE HULK":0.7,"20|HUNTER DESTROYER":0.88,"20|GLADIUS FRIGATE":0.87,"20|NOVA FRIGATE":0.75,"20|STORMBIRD GUNSHIP":0.59,"20|STORM EAGLE":0.64,"20|CAESTUS ASSAULT RAM":0.95,"20|XIPHON INTERCEPTOR":0.69,"20|THUNDERHAWK GUNSHIP":0.64,"20|BOARDING TORPEDO":0.69,"21|HIVE SHIP":0.71,"21|RAZORFIEND CRUISER":0.57,"21|VOID PROWLER":0.69,"21|DEVOURER CRUISER":0.66,"21|VANGUARD DRONE SHIP":0.8,"21|ESCORT DRONE":0.7,"21|KRAKEN BIO-SHIP":0.54,"21|SPORE DRONE":0.36,"21|BOARDING WORM":0.37,"21|ATTACK ORGANISM":0.65,"22|STARSHIP":0.48,"22|GIGAFACTORY CARRIER":0.74,"22|STARSHIP / SUPER HEAVY":0.88,"22|FALCON 9":0.41,"22|FALCON HEAVY":0.52,"22|OPTIMUS HEAVY":0.48,"22|OPTIMUS BLASTER":0.4,"22|CYBERTRUCK GUNSHIP":0.99,"22|STARLINK SWARMSAT":0.67};
 /*__VARIETY_END__*/
 
 /* =====================================================================
@@ -6353,7 +6359,7 @@ var kliNeghvar=function(parts,R,L){
 var KLI_SEL={DKT:.05,HEGH:.15,F5:.26,BREL:.39,D6S:.49,KVORT:.59,D7:.71,KTINGA:.85,F15:.95};
 var KLI_POOLS=[[["DKT",.35],["HEGH",.35],["TODUJ",.30]],[["F5",.25],["D6S",.25],["KVORT",.25],["D7",.25]],[["KTINGA",.30],["BREL",.25],["F15",.20],["VORCHA",.25]]];
 var kliToduj=function(parts,L,V2){
-  const lift=.10+V2()*.10,rake=.16+V2()*.08;
+  const lift=.13+V2()*.05,rake=.18+V2()*.04;
   parts.push({k:"loft",sec:[kliSec(-L*.30,0,L*.05,L*.07),kliSec(-L*.10,0,L*.07,L*.10),kliSec(L*.10,0,L*.035,L*.04),kliSec(L*.30,0,L*.03,L*.035)]});
   parts.push({k:"sphere",c:[L*.40,-L*.01,0],r:L*.075});
   kliMirRun(parts,()=>{
@@ -11595,7 +11601,7 @@ function buildExtraClass(race,seed,type,hero=false){
    // Cardassian Galor-class (DS9): the long cobra neck and head over a broad
    // flat aft wing. The Keldon (DS9) is the uprated Galor: a dorsal module
    // and a second aft wing, kept here as a Galor configuration.
-   const keldon=V2()<.35,w=34+V2()*8,neck=.9+V2()*.2;
+   const keldon=V2()<.25,w=34+V2()*8,neck=.9+V2()*.2;
    plate([[-18,0,0],[-44,0,w],[-52,0,w*.8],[-52,0,-w*.8],[-44,0,-w]],3);
    body([[-50,0,0,4,6],[-24,1,0,5,7],[10*neck,1,0,3,4],[30*neck,0,0,3,4],[38*neck,-1,0,6,9],[48*neck,-1,0,3,5],[52*neck,-1,0,.8,.8]],10);
    pod(-30,-5,0,14,4,6);
@@ -11803,10 +11809,11 @@ function buildExtraClass(race,seed,type,hero=false){
   if(type===0){
    // A floating spore bladder, not a miniature cruiser.
    // sister kit: each bladder grows its own count and spread of tendrils
-   const nT=hero?10:10+Math.floor(V2()*2),fl=hero?1:.95+V2()*.1,bl=hero?1:.94+V2()*.12;
+   // ten tendrils always (a varied count read as the Shoal's medusas); reach and bladder vary
+   const nT=10,fl=hero?1:.92+V2()*.16,bl=hero?1:.9+V2()*.2;
    pod(0,0,0,18*bl,17,16);
    for(let i=0;i<nT;i++){const a=i*2*Math.PI/nT;curve([[0,Math.sin(a)*13,Math.cos(a)*13],[9,Math.sin(a)*25*fl,Math.cos(a)*25*fl],[16,Math.sin(a)*29*fl,Math.cos(a)*29*fl]],2.6);}
-   muzzles.push([18,0,0]);if(!hero){arch=nT>10?'DENSE TENDRILS':'SPARSE TENDRILS';warp=[.94+V2()*.12,.9+V2()*.2,.9+V2()*.2];}
+   muzzles.push([18,0,0]);if(!hero){arch=fl>1?'LONG TENDRILS':'SHORT TENDRILS';warp=[.94+V2()*.12,.9+V2()*.2,.9+V2()*.2];}
   }else if(type===8){
    // Boarding organism: long flexible segmented worm with a toothed mouth.
    const wave=hero?4:2+V2()*6,ph=hero?0:V2()*2;
@@ -11878,14 +11885,19 @@ function buildExtraClass(race,seed,type,hero=false){
    for(const sign of [-1,1])drive(-47,-2,sign*10,3);
    arch=apex>0?'FORWARD APEX':'AFT APEX';warp=[.95+V2()*.1,.92+V2()*.16,.94+V2()*.12];
   }else if(type===10){
-   // Gigafactory carrier: a flying factory, a vast low slab with a solar
-   // roof, loading bays down both flanks and a bank of drives. Invented.
-   const bays=3+Math.floor(V2()*3),w=26+V2()*8;
-   parts.push({k:'loft',sec:[-48,-40,36,46].map((x,i)=>({pts:[[x,-10,-w*[.8,1,1,.7][i]],[x,-10,w*[.8,1,1,.7][i]],[x,6,w*[.8,1,1,.7][i]],[x,9,0],[x,6,-w*[.8,1,1,.7][i]]]}))});
-   for(let i=0;i<4;i++)plate([[-36+i*18,9.5,-w*.8],[-22+i*18,9.5,-w*.8],[-22+i*18,9.5,w*.8],[-36+i*18,9.5,w*.8]],.6);
-   for(const sign of [-1,1])for(let i=0;i<bays;i++){const x=-30+i*60/(bays-1||1);box(x,-3,sign*(w+1),5,4,1.4);}
-   for(let i=0;i<5;i++)drive(-49,-2,(i-2)*w*.35,3.5);for(const sign of [-1,1])gun([40,2,sign*w*.5],[52,2,sign*w*.5],1.6);
-   arch=bays>4?'FIVE-BAY':'THREE-BAY';warp=[.95+V2()*.1,.9+V2()*.2,.92+V2()*.16];
+   // Gigafactory carrier: the flying factory in the fleet's stainless
+   // language, a long faceted prism (the Cybertruck's triangle section)
+   // under a ridge of solar roof, with two broad photovoltaic wings on
+   // booms and a stern drive block. Invented.
+   const wing=34+V2()*10,ridge=18+V2()*6;
+   parts.push({k:'loft',sec:[[-46,.6],[-36,1],[30,1],[44,.55],[50,.2]].map(([x,k])=>({pts:[[x,-8*k,-22*k],[x,-8*k,22*k],[x,ridge*k,0]]}))});
+   for(const sign of [-1,1]){
+    plate([[-6,ridge*.5,sign*18],[-6,ridge*.5,sign*(18+wing)],[-30,ridge*.5,sign*(18+wing)],[-30,ridge*.5,sign*18]],.6);
+    tube([-18,ridge*.45,sign*8],[-18,ridge*.5,sign*20],1.2,1.2);
+    gun([36,2,sign*10],[50,2,sign*10],1.6);
+   }
+   box(-48,0,0,4,7,16);for(let i=0;i<4;i++)drive(-52,-1,(i-1.5)*8,3.2);
+   arch=wing>39?'WIDE ARRAYS':'NARROW ARRAYS';warp=[.95+V2()*.1,.92+V2()*.16,.94+V2()*.12];
   }else if(type<=1){
    // Upright free-flying Optimus: white torso, black face, articulated limbs,
    // boots and a forward-facing blaster in each hand. +X is forward.
@@ -11931,7 +11943,7 @@ function buildExtraClass(race,seed,type,hero=false){
      else arch='LEGS STOWED';
      if(V2()<.5){arch+=', DRAGON';body([[40,0,0,rad*1.2,rad*1.2],[45,0,0,rad,rad],[50,0,0,.2,.2]],12);}
      for(let i=0;i<4;i++){const a=i/4*Math.PI*2;box(22,Math.sin(a)*rad*1.3,Math.cos(a)*rad*1.3,1.4,.3+Math.abs(Math.cos(a))*1.2,.3+Math.abs(Math.sin(a))*1.2);}
-    }else if(!stack&&V2()<.4){
+    }else if(!stack&&V2()<.25){
      arch='HLS LANDER';parts.splice(0,parts.length,...parts.filter(p=>!(p.k==='panel')));
      for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4;tube([-36,Math.sin(a)*rad,Math.cos(a)*rad],[-50,Math.sin(a)*rad*1.8,Math.cos(a)*rad*1.8],1,.7);}
      body([[20,0,0,rad*1.02,rad*1.02],[26,0,0,rad*1.02,rad*1.02]],12);
@@ -11948,7 +11960,7 @@ function buildExtraClass(race,seed,type,hero=false){
    for(const sign of [-1,1])gun([28,0,sign*rad],[43,0,sign*rad],star?1.2:.7);
   }
  }
- if(warp&&!hero){vyWarpParts(parts,warp);for(const q of muzzles){q[0]*=warp[0];q[1]*=warp[1];q[2]*=warp[2];}for(const q of engines){q[0]*=warp[0];q[1]*=warp[1];q[2]*=warp[2];}}
+ if(warp&&!hero){const kk=VY_SISTER_K[race+'|'+klass];if(kk)warp=warp.map(v=>1+(v-1)*kk);vyWarpParts(parts,warp);for(const q of muzzles){q[0]*=warp[0];q[1]*=warp[1];q[2]*=warp[2];}for(const q of engines){q[0]*=warp[0];q[1]*=warp[1];q[2]*=warp[2];}}
  const scale=heroFit(parts,L*(.94+R()*.12)),bb=heroBB(parts);
  const names=['IRW KHOPESH','VICTORY IS LIFE',"MACRAGGE’S HONOUR",'THE GREAT DEVOURER',"ELON'S ROADSTER"];
  const meta={klass,desig:hero?names[row]:klass+' '+String(seed>>>0).slice(-5),hero,length:bb[1][0]-bb[0][0],beam:bb[1][2]-bb[0][2],height:bb[1][1]-bb[0][1],crew:race===21||race===22?1:Math.max(4,Math.round(L*1.5)),nativeMuzzles:true,liverySeed:seed>>>0,extraClass:type,architecture:arch||(race===21?['LEAN PREDATOR MORPH','EXTENDED FEEDER MORPH','HEAVY CARAPACE MORPH'][variant]:['PATROL CONFIGURATION','WIDE ASSEMBLY','HEAVY CONFIGURATION'][variant])};
@@ -11962,7 +11974,7 @@ var RACE_MIX_EXTRA=[[.28,.64,.08],[.64,.30,.06],[.38,.37,.25],[.62,.26,.12],[.76
    for; the others keep their original flat pool. */
 var EXTRA_BAND_POOLS={
  18:[[[5,.40],[0,.30],[8,.30]],[[1,.35],[2,.35],[6,.30]],[[4,.35],[3,.35],[7,.30]]],
- 19:[[[1,.42],[5,.33],[0,.25]],[[2,.35],[6,.65]],[[3,.40],[4,.20],[7,.40]]],
+ 19:[[[1,.42],[5,.33],[0,.25]],[[2,.35],[6,.65]],[[3,.35],[4,.30],[7,.35]]],
  22:[[[0,.28],[1,.12],[7,.20],[8,.20],[9,.20]],[[2,.55],[3,.45]],[[4,.40],[5,.35],[10,.25]]],
  20:[[[0,.22],[9,.18],[7,.18],[8,.14],[12,.14],[13,.14]],[[1,.26],[2,.26],[3,.26],[11,.22]],[[4,.34],[6,.26],[5,.22],[14,.18]]]};
 function buildExtra(race,seed,hulls=0,hero=false,band){
@@ -12102,7 +12114,7 @@ function applyFleetRefit(ship,race,seed,forced,drive){
      little long or short, broad or lean, deep or flat, on its own stream, so
      no two sisters are clones. Classes with structural kits (drive banks,
      keels, wings, payloads) vary their assemblies on top of this. */
-  if([5,6,9,10,11,12,13,14,16].includes(race)){const V2=vyStream(seed,0x5157),k=race===5&&small?.5:race===10?.7:1;vyWarpShip(ship,[1+(V2()-.5)*.1*k,1+(V2()-.5)*.14*k,1+(V2()-.5)*.14*k]);}
+  if([5,6,9,10,11,12,13,14,16].includes(race)){const V2=vyStream(seed,0x5157),cls=String(ship.meta.klass).replace(/\s*\((CARGO|BATTLE|SCIENCE|COMMAND)[^)]*REFIT\)\s*$/,''),k=(race===5&&small?.5:race===10?(/MIRANDA/.test(ship.meta.klass)?0:/DANUBE/.test(ship.meta.klass)?1.3:.7):1)*(VY_SISTER_K[race+'|'+cls]||1);vyWarpShip(ship,[1+(V2()-.5)*.1*k,1+(V2()-.5)*.14*k,1+(V2()-.5)*.14*k]);}
   bb=efBB(ship.parts);ship.bb=bb;ship.meta.length=bb[1][0]-bb[0][0];ship.meta.beam=bb[1][2]-bb[0][2];ship.meta.height=bb[1][1]-bb[0][1];
   ship.meta.mass=(ship.meta.mass||1)*scale**3;
   ship.meta.refit={role:organic?['BASE MORPH','LONG-RANGE MORPH','BROOD / TRANSPORT MORPH','SENSORY CREST','ARMORED CARAPACE','SEEDER / SUPPORT MORPH'][role]:REFIT_NAMES[role],index:role,seed:seed>>>0,scale,addedParts:ship.parts.length-originalCount,provenance:'Procedural refit'};

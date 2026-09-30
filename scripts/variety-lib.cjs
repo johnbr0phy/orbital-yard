@@ -23,6 +23,7 @@ function classKey(race, klass) {
 }
 
 function loadForge(root, opts = {}) {
+  root = path.resolve(root);
   const html = fs.readFileSync(path.join(root, 'armada-war-tribute-new.html'), 'utf8');
   const {loadBattle} = require(path.join(root, 'tests/tribute-new/headless-battle.cjs'));
   const page = loadBattle();
