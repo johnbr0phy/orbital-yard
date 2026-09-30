@@ -51,9 +51,10 @@ const ONE_OFF = r => r <= 4;
 function forgeFleet(race) {
   const F = L.loadForge(ROOT);
   const hulls = [];
+  const budget = F.wrun(`typeof VY_DISTANT_REPS==='undefined'?3:VY_DISTANT_REPS[${race}]`);
   const take = (job, fold, war, topup) => {
     const {out, ms, study} = F.forge(job);
-    hulls.push({race, fold, war, topup: !!topup, jobBand: job.band, hulls: job.hulls || 0,
+    hulls.push({race, fold, war, topup: !!topup, budget, jobBand: job.band, hulls: job.hulls || 0,
       klass: out.meta.klass, key: L.classKey(race, out.meta.klass), length: out.meta.length, beam: out.meta.beam, height: out.meta.height,
       band: F.wrun(`fleetBandOf(${out.meta.length},${race})`), tris: out.mesh.tris, study, ms,
       seed: out.seed >>> 0, hash: L.meshHash(out.mesh), refit: out.meta.refit ? out.meta.refit.role || out.meta.refit.name || 1 : null,
@@ -129,12 +130,19 @@ function analyse(all) {
       studyMax: Math.max(...hs.map(h => h.study)), studyMean: mean(hs.map(h => h.study)), battleMean: mean(hs.map(h => h.tris)),
       forgeMs: L.median(hs.map(h => h.ms)),
       // distant-hull groups: race|klass|seed%3, one per battle (fold 0), plus crowns and hero
-      uniqueMeshes: new Set(mus.filter(h => h.fold === 0).map(h => h.klass + '|' + (h.seed % 3))).size + 4,
+      uniqueMeshes: distantGroups(mus.filter(h => h.fold === 0)),
     };
     fleets.push(row);
   }
   const recognition = recognise(all.filter(h => allowNormal(h) && !h.topup), sigOf);
   return {thresholds: T, fleets, recognition, reference: reference(fleets)};
+}
+/* The page's registerDistantHull rule: one group per class and seed modulo
+   the fleet's representatives per class (VY_DISTANT_REPS; 3 on main).
+   Crowns and the hero count as four more. */
+function distantGroups(hs) {
+  const reps = hs.length && hs[0].budget || 3;
+  return new Set(hs.map(h => h.klass + '|' + (h.seed % reps))).size + 4;
 }
 function classSeparation(byKey, sigOf) {
   const keys = Object.keys(byKey).sort(), pairs = [];
