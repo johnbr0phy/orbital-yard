@@ -2269,11 +2269,11 @@ function vyMeasure(ship,volK){
 var VY_TRI_CAP=5900;
 // Measured once per ship object, without writing to the ship itself.
 var VY_TRIK_CACHE=new WeakMap();
-function vyTriCount(ship,q,k){
+function vyTriCount(ship,q,k,cull){
   const bb=ship.bb,diag=Math.hypot(bb[1][0]-bb[0][0],bb[1][1]-bb[0][1],bb[1][2]-bb[0][2])||1;
   let partQ=q,n=0;
   const SG=r=>Math.max(3,Math.round(Math.max(8,Math.min(40,Math.round(8+r/diag*280)))*partQ));
-  const tiny=q<0.18?Math.min(6,diag*0.03):q<0.25?Math.min(6,diag*0.025):q<0.45?Math.min(2.5,diag*0.01):0;
+  const tiny=Math.max(q<0.18?Math.min(6,diag*0.03):q<0.25?Math.min(6,diag*0.025):q<0.45?Math.min(2.5,diag*0.01):0,(cull||0)*diag);
   const psize=p=>p.k==="sphere"||p.k==="disc"?p.r:p.k==="capsule"?Math.max(p.r,V.len(V.sub(p.b,p.a))*0.5):p.k==="tube"?Math.max(p.r1,p.r2,V.len(V.sub(p.b,p.a))*0.5):p.k==="box"?Math.max(V.len(p.u),V.len(p.v),V.len(p.w)):1e9;
   for(const p of ship.parts){
     if(tiny&&!p.structural&&psize(p)<tiny)continue;
@@ -2289,17 +2289,23 @@ function vyTriCount(ship,q,k){
   }
   return n;
 }
+/* Returns the facet scale. When even three facets per round part is over
+   budget (a hull of hundreds of small limbs), the smallest non-structural
+   fittings are left out as well, the smallest first: ship.triCull records
+   that size as a fraction of the hull's diagonal. */
 function vyTriK(ship){
   if(!ship.meta||ship.meta.hero||!ship.parts||!ship.bb)return 1;
   if(vyTriCount(ship,.65,1)<=VY_TRI_CAP)return 1;
   let lo=.02,hi=1;
   for(let i=0;i<12;i++){const mid=(lo+hi)/2;if(vyTriCount(ship,.65,mid)<=VY_TRI_CAP)lo=mid;else hi=mid;}
+  if(vyTriCount(ship,.65,lo)>VY_TRI_CAP){let c0=0,c1=.2;for(let i=0;i<14;i++){const m=(c0+c1)/2;if(vyTriCount(ship,.65,lo,m)<=VY_TRI_CAP)c1=m;else c0=m;}VY_CULL_CACHE.set(ship,c1);}
   return lo;
 }
+var VY_CULL_CACHE=new WeakMap();
 /* Distant representatives per class, per fleet. Main (471d650) kept three
    per class; a fleet whose class count grew keeps fewer, so its groups per
    battle stay within its count on main (scripts/variety-report.cjs). */
-var VY_DISTANT_REPS=[3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,1,1,2,3,1];
+var VY_DISTANT_REPS=[3,3,3,3,3,2,3,1,1,3,3,3,3,3,3,1,3,3,1,1,2,3,1];
 /*__VARIETY_END__*/
 
 /* =====================================================================
@@ -2318,6 +2324,7 @@ function shipMeshQ(ship,q){
   // once; temporary part lists carry the scale of the ship they came from.
   let triK=ship.triK!=null?ship.triK:1;
   if(ship.triK==null&&ship.meta){triK=VY_TRIK_CACHE.get(ship);if(triK==null){triK=vyTriK(ship);VY_TRIK_CACHE.set(ship,triK);}}
+  const triCull=ship.triCull!=null?ship.triCull:VY_CULL_CACHE.get(ship)||0;
   const T=[];
   const tri=(a,b,c)=>T.push(a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2]);
   const quad=(a,b,c,d)=>{tri(a,b,c);tri(a,c,d);};
@@ -2331,8 +2338,8 @@ function shipMeshQ(ship,q){
   /* at the far level, fittings smaller than a distant pixel are not cut at
      all — but a grown ship IS her small parts (a limb is a chain of little
      capsules), so the shoal culls at half the yard's threshold */
-  const tiny=q<0.18?Math.min(6,diag*0.03):q<0.25?Math.min(6,diag*0.025)
-            :q<0.45?Math.min(2.5,diag*0.01):0;
+  const tiny=Math.max(q<0.18?Math.min(6,diag*0.03):q<0.25?Math.min(6,diag*0.025)
+            :q<0.45?Math.min(2.5,diag*0.01):0,triCull*diag);
   const psize=p=>{
     if(p.k==="sphere"||p.k==="disc")return p.r;
     if(p.k==="capsule")return Math.max(p.r,V.len(V.sub(p.b,p.a))*0.5);
@@ -3906,20 +3913,59 @@ var bgDiamond=function(parts,L,R,o){
   }
 };
 
-var buildBorg=function(seed){
+/* ---- variety pass (VARIETY.md) ----
+   Band pools; each class keeps its old stream. New: the Borg scout ship
+   (Star Trek: The Next Generation, "I, Borg"), a small faceted wedge block;
+   an assimilated shuttle (invented, after the fleet's assimilated vessels:
+   a donor wedge cabin half grown over); and the tactical cube (Star Trek:
+   Voyager, "Unimatrix Zero"), a cube in heavy face armour, in the capital
+   line at a battle length under the crown threshold. */
+var BORG_SEL={PROBE:.2,ASSIM:.5,DIAM:.74,SPHERE:.94};
+var BORG_POOLS=[[["SCOUT",.40],["SHUTTLE",.30],["PROBE",.30]],[["PROBE",.36],["ASSIM",.30],["DIAM",.34]],[["SPHERE",.38],["TCUBE",.34],["DIAM",.28]]];
+var bgScout=function(parts,L,V2){
+  const nose=.28+V2()*.1,hump=.12+V2()*.06;
+  parts.push({k:"loft",sec:[[-.5,.22,.16],[-.1,.24,.18+hump],[.2,.18,.14],[.5,.06,.05]].map(([x,w,h])=>({pts:[[x*L,-h*L,-w*L],[x*L,-h*L,w*L],[x*L,h*L,w*.7*L],[x*L,h*L,-w*.7*L]]}))});
+  for(let i=0;i<6;i++){const x=(-.4+i*.13)*L,sg=i%2?1:-1;parts.push({k:"box",c:[x,(.12+.04*(i%3))*L,sg*.10*L],u:[.05*L,0,0],v:[0,.03*L,0],w:[0,0,.06*L]});}
+  parts.push({k:"box",c:[-.5*L,0,0],u:[.03*L,0,0],v:[0,.12*L,0],w:[0,0,.16*L]});
+  parts.push({k:"disc",c:[nose*L+.2*L,0,0],n:[1,0,0],r:.05*L,ri:.02*L});
+  parts.push({k:"tube",a:[.3*L,-.08*L,.08*L],b:[.52*L,-.08*L,.08*L],r1:.012*L,r2:.009*L});
+};
+var bgShuttle=function(parts,L,V2){
+  const grow=.4+V2()*.4;
+  parts.push({k:"loft",sec:[[-.46,.16,.12,.14],[.20,.16,.12,.08],[.44,.12,.02,.04]].map(([x,w,hTop,hBot])=>({pts:[[x*L,-hBot*L,-w*L],[x*L,-hBot*L,w*L],[x*L,(hTop-.12*(x+.46))*L,w*.8*L],[x*L,(hTop-.12*(x+.46))*L,-w*.8*L]]}))});
+  for(let i=0;i<5;i++){const x=(-.40+i*.16*grow)*L;parts.push({k:"box",c:[x,.02*L,.18*L],u:[.06*L,0,0],v:[0,(.06+.03*(i%2))*L,0],w:[0,0,.05*L]});}
+  parts.push({k:"capsule",a:[-.48*L,-.08*L,-.2*L],b:[.08*L,-.08*L,-.2*L],r:.045*L});
+  parts.push({k:"tube",a:[.36*L,-.1*L,-.08*L],b:[.52*L,-.1*L,-.08*L],r1:.012*L,r2:.009*L});
+};
+var buildBorg=function(seed,band){
   const R=mulberry32(seed|0);
   const rr=(a,b)=>a+R()*(b-a);
   const parts=[];
   const u=seed>>>0;
   const num=(n,w)=>String(Math.floor(n)).padStart(w,"0");
   const uni=" OF "+num(1+(u>>>7)%19,2);
-  const t=R();
+  const V2=vyStream(seed,0xB095),kind=band==null?null:vyBandClass(V2,BORG_POOLS,band,[.22,.66,.12]);
+  let t=R();if(kind&&BORG_SEL[kind]!=null)t=BORG_SEL[kind];
+  if(kind==="TCUBE"){
+    const ship=buildBorgMega(seed,25),S=ship.meta.length/2.18;
+    // tactical armour: thick plates proud of every face
+    for(let ax=0;ax<3;ax++)for(const sg of [-1,1])for(let i=0;i<2;i++){const c=[0,0,0];c[ax]=sg*S*1.08;const b2=(ax+1)%3;c[b2]=(i?.45:-.45)*S*(.8+V2()*.4);
+      ship.parts.push({k:"box",c,u:bgAxis(ax,S*.06),v:bgAxis(b2,S*.35),w:bgAxis((ax+2)%3,S*.8)});}
+    vyMeasure(ship);const k=(210+V2()*30)/ship.meta.length;vyWarpShip(ship,[k,k,k]);
+    ship.meta.klass="TACTICAL CUBE";ship.meta.desig="TACTICAL CUBE "+num(u%900+100,3)+uni;return ship;
+  }
+  if(kind==="SCOUT"||kind==="SHUTTLE"){
+    const L=(kind==="SCOUT"?26:18)*(.94+V2()*.12);
+    if(kind==="SCOUT")bgScout(parts,L,V2);else bgShuttle(parts,L,V2);
+    const ship={parts,bb:heroBB(parts),meta:{desig:(kind==="SCOUT"?"SCOUT ":"ASSIMILATED SHUTTLE ")+num(u%9000+1000,4)+uni,klass:kind==="SCOUT"?"BORG SCOUT SHIP":"ASSIMILATED SHUTTLE",crew:kind==="SCOUT"?5:2,mass:1}};
+    vyMeasure(ship);ship.meta.mass=ship.meta.length*ship.meta.beam*ship.meta.height*.3;return ship;
+  }
   let klass,desig,mf,cf;
   if(t<0.40){
     /* THE PROBE: a splinter of something larger, sent ahead to taste.
        An elongated prism, greebled thin — the cheapest thought the
        Collective ever finishes. Dies as slabs along its seams. */
-    const L=46*rr(0.97,1.03);
+    const L=(band===0?33:46)*rr(0.97,1.03);
     const hx=L/2,hy=L*0.15,hz=L*0.15,th=hy*0.09;
     bgFrameR(parts,[hx*0.99,hy*0.965,hz*0.965],th);
     const ns=5;
@@ -4037,7 +4083,7 @@ var buildBorg=function(seed){
     /* THE DIAMOND: the one hull that refuses the cube. Cut facets,
        austere, near-bare — the Queen does not decorate. It does not
        shed greeble when it dies; it fractures clean through the stone. */
-    const L=88*rr(0.97,1.03);
+    const L=(band===2?140:88)*rr(0.97,1.03);
     bgDiamond(parts,L,R,{});
     const id=u%90+10;
     klass="TACTICAL DIAMOND";desig="DIAMOND "+num(id,2)+" OF 01";
@@ -4772,13 +4818,28 @@ var fedGalaxy=function(parts,R,L){
    battle and nothing else. Whisker trim only — a hull is ±1.5% of
    her sister. Shares are the OOB table renormalized over the eleven
    small classes (the three megas are dealt by appetite, below) */
-var buildFed=function(seed){
+/* ---- variety pass (VARIETY.md) ----
+   Band pools; each class keeps its old stream. New screen class: the Type-6
+   shuttlecraft (Star Trek: The Next Generation), a blunt wedge cabin with
+   two short warp nacelles slung low on its flanks. */
+var FED_SEL={PER:.043,DAN:.12,OBE:.18,DEF:.27,MIR:.39,CON:.49,INT:.60,STE:.69,NEB:.77,AKI:.86,EXC:.96};
+var FED_POOLS=[[["PER",.40],["DAN",.30],["T6",.30]],[["OBE",.18],["DEF",.22],["MIR",.22],["INT",.20],["STE",.18]],[["CON",.25],["NEB",.25],["AKI",.25],["EXC",.25]]];
+var fedType6=function(parts,L,V2){
+  const nz=.20+V2()*.05,rake=.10+V2()*.08;
+  parts.push({k:"loft",sec:[[-.46,.16,.12,.14],[.20,.16,.12,.08],[.44,.12,.02,.04]].map(([x,w,hTop,hBot])=>({pts:[[x*L,-hBot*L,-w*L],[x*L,-hBot*L,w*L],[x*L,(hTop-rake*(x+.46))*L,w*.8*L],[x*L,(hTop-rake*(x+.46))*L,-w*.8*L]]}))});
+  for(const sg of [-1,1]){parts.push({k:"capsule",a:[-.48*L,-.08*L,sg*nz*L],b:[.08*L,-.08*L,sg*nz*L],r:.045*L});
+    parts.push({k:"box",c:[-.20*L,-.08*L,sg*(nz-.03)*L],u:[.12*L,0,0],v:[0,.02*L,0],w:[0,0,.03*L]});
+    parts.push({k:"tube",a:[.36*L,-.10*L,sg*.08*L],b:[.52*L,-.10*L,sg*.08*L],r1:.012*L,r2:.009*L});}
+};
+var buildFed=function(seed,band){
   const R=mulberry32(seed|0);
   const rr=(a,b)=>a+(b-a)*R();
   const parts=[];
-  const t=rr(0.985,1.015),roll=R();
+  const V2=vyStream(seed,0xFED1),kind=band==null?null:vyBandClass(V2,FED_POOLS,band,[.18,.44,.38]);
+  const t=rr(0.985,1.015);let roll=R();if(kind&&FED_SEL[kind]!=null)roll=FED_SEL[kind];
   let cls;
-  if(roll<0.087)cls=fedPeregrine(parts,R,12*t);
+  if(kind==="T6"){fedType6(parts,(9+V2()*2)*t,V2);cls=["TYPE-6 SHUTTLECRAFT",0.12,2,FED_DAN];}
+  else if(roll<0.087)cls=fedPeregrine(parts,R,12*t);
   else if(roll<0.152)cls=fedDanube(parts,R,21*t);
   else if(roll<0.207)cls=fedOberth(parts,R,45*t);
   else if(roll<0.337)cls=fedDefiant(parts,R,49*t);
@@ -5081,12 +5142,49 @@ var impCityGuns=function(parts,L,o){
    Shares per the fleet bible, the small classes renormalised to one:
    ln 14 · in 10 · sa 8 · advanced 4 · lambda 7 · gozanti 9 · raider 10 ·
    arquitens 10 · interdictor 8 · victory 10   (of 90; megas fly apart) */
-var buildImperial=function(seed){
+/* ---- variety pass (VARIETY.md) ----
+   Band pools pick the class; a class's own draws stay on the old stream
+   (its "deal" is set to the middle of the class's old interval). Two new
+   capitals, so the line is not only daggers:
+   Carrack light cruiser (The Empire Strikes Back, 1980): a long round-
+   shouldered hull, a tall mid-ship tower and a heavy engine block.
+   Quasar Fire-class carrier (Star Wars Rebels, 2015): a flat hull with an
+   open flight deck along its back and a blunt bridge block forward. */
+var IMP_DEAL={LN:.078,IN:.21,SA:.31,ADV:.367,DEF:.389,LAMBDA:.44,GOZ:.528,RAIDER:.633,ARQ:.744,INT:.844,VSD:.944};
+var IMP_POOLS=[[["LN",.30],["IN",.20],["SA",.16],["ADV",.06],["DEF",.10],["LAMBDA",.18]],[["GOZ",.30],["RAIDER",.30],["ARQ",.40]],[["VSD",.36],["INT",.22],["CARRACK",.22],["QUASAR",.20]]];
+var impCarrack=function(parts,L,V2){
+  const tall=.10+V2()*.05,pods=V2()<.5;
+  parts.push({k:"loft",sec:[[-.50,.07,.06],[-.40,.09,.075],[0,.085,.07],[.30,.06,.05],[.50,.012,.012]].map(([x,w,h])=>({pts:Array.from({length:10},(_,i)=>{const a=i/10*Math.PI*2;return [x*L,Math.sin(a)*h*L,Math.cos(a)*w*L];})}))});
+  parts.push({k:"box",c:[-.44*L,0,0],u:[.06*L,0,0],v:[0,.07*L,0],w:[0,0,.10*L]});
+  parts.push({k:"box",c:[.02*L,(.07+tall*.5)*L,0],u:[.04*L,0,0],v:[0,tall*.5*L,0],w:[0,0,.018*L]});
+  parts.push({k:"box",c:[.03*L,(.07+tall)*L,0],u:[.05*L,0,0],v:[0,.012*L,0],w:[0,0,.045*L]});
+  for(const sg of [-1,1]){for(let i=0;i<3;i++)parts.push(TUB([(-.51)*L,(i-1)*.04*L,sg*.05*L],[(-.55)*L,(i-1)*.04*L,sg*.05*L],.018*L,.022*L,{hideA:true}));
+    if(pods)parts.push({k:"capsule",a:[-.30*L,-.02*L,sg*.10*L],b:[-.05*L,-.02*L,sg*.10*L],r:.02*L});
+    for(let i=0;i<4;i++)parts.push(TUB([(.25-i*.12)*L,.04*L,sg*.06*L],[(.30-i*.12)*L,.04*L,sg*.06*L],.006*L,.005*L));}
+};
+var impQuasar=function(parts,L,V2){
+  const deckW=.11+V2()*.03,bridge=V2()<.5;
+  parts.push({k:"loft",sec:[[-.50,.11,.05],[-.30,.12,.06],[.20,.12,.06],[.42,.08,.05],[.50,.03,.03]].map(([x,w,h])=>({pts:[[x*L,-h*L,-w*L],[x*L,-h*L,w*L],[x*L,h*.4*L,w*L],[x*L,h*.4*L,-w*L]]}))});
+  // the open flight deck: two tall side walls along the back
+  for(const sg of [-1,1])parts.push({k:"box",c:[-.05*L,.07*L,sg*deckW*L],u:[.36*L,0,0],v:[0,.05*L,0],w:[0,0,.008*L]});
+  parts.push({k:"box",c:[-.05*L,.03*L,0],u:[.36*L,0,0],v:[0,.004*L,0],w:[0,0,deckW*L]});
+  parts.push({k:"box",c:[(bridge?.30:-.38)*L,.10*L,0],u:[.05*L,0,0],v:[0,.05*L,0],w:[0,0,.05*L]});
+  for(let i=0;i<4;i++)parts.push(TUB([-.51*L,-.01*L,(i-1.5)*.05*L],[-.56*L,-.01*L,(i-1.5)*.05*L],.02*L,.024*L,{hideA:true}));
+  for(const sg of [-1,1])for(let i=0;i<3;i++)parts.push(TUB([(.30-i*.15)*L,-.02*L,sg*.125*L],[(.35-i*.15)*L,-.02*L,sg*.125*L],.006*L,.005*L));
+};
+var buildImperial=function(seed,band){
   const R=mulberry32(seed|0);
   const j=()=>1+(R()*2-1)*0.03;
   const parts=[];
-  const deal=R();
+  const V2=vyStream(seed,0x1A7E),kind=band==null?null:vyBandClass(V2,IMP_POOLS,band,[.86,.10,.04]);
+  let deal=R();if(kind&&IMP_DEAL[kind]!=null)deal=IMP_DEAL[kind];
   let pre,klass,crew,massK=0.09,bank=IMPN;
+  if(kind==="CARRACK"||kind==="QUASAR"){
+    const L=(kind==="CARRACK"?300:360)*j()*(.94+V2()*.12);
+    if(kind==="CARRACK"){impCarrack(parts,L,V2);klass="CARRACK-CLASS LIGHT CRUISER";pre="CRK";}
+    else{impQuasar(parts,L,V2);klass="QUASAR FIRE-CLASS CARRIER";pre="QFC";}
+    return impDone(parts,seed,pre,klass,bank,massK,Math.round(Math.pow(L,1.5)));
+  }
 
   if(deal<0.3556){
     /* TIE marks: the ball and the two black sails. Hull run first, sails
@@ -6231,14 +6329,36 @@ var kliNeghvar=function(parts,R,L){
 
 /* the order of battle, dealt by the seed at the empire's fixed
    shares. Nine classes small; the crowns fly as megas */
-var buildKlingon=function(seed){
+/* ---- variety pass (VARIETY.md) ----
+   Band pools; each class keeps its old stream. The D7 flies in the escort
+   line only, so the capital band is not D7s beside the K't'inga they grew
+   into. New: the To'Duj fighter (Star Trek Online, a licensed game): a
+   short-necked head over a gull wing raked back and up, cannons at the
+   tips; and the Vor'cha attack cruiser (Star Trek: The Next Generation)
+   in the capital line. */
+var KLI_SEL={DKT:.05,HEGH:.15,F5:.26,BREL:.39,D6S:.49,KVORT:.59,D7:.71,KTINGA:.85,F15:.95};
+var KLI_POOLS=[[["DKT",.35],["HEGH",.35],["TODUJ",.30]],[["F5",.25],["D6S",.25],["KVORT",.25],["D7",.25]],[["KTINGA",.30],["BREL",.25],["F15",.20],["VORCHA",.25]]];
+var kliToduj=function(parts,L,V2){
+  const lift=.10+V2()*.10,rake=.16+V2()*.08;
+  parts.push({k:"loft",sec:[kliSec(-L*.30,0,L*.05,L*.07),kliSec(-L*.10,0,L*.07,L*.10),kliSec(L*.10,0,L*.035,L*.04),kliSec(L*.30,0,L*.03,L*.035)]});
+  parts.push({k:"sphere",c:[L*.40,-L*.01,0],r:L*.075});
+  kliMirRun(parts,()=>{
+    const tip=kliWing(parts,-L*.12,0,L*.08,L*.46,L*.24,L*.10,rake*L,lift*L,L*.014);
+    kliCannon(parts,tip.xt,tip.yt,tip.zt+L*.01,L*.12,L);
+  });
+  parts.push({k:"disc",c:[-L*.31,0,0],n:[-1,0,0],r:L*.05,ri:L*.02});
+};
+var buildKlingon=function(seed,band){
   const R=mulberry32(seed|0);
   const rr=(a,b)=>a+(b-a)*R();
   const parts=[];
   R(); /* first draw discarded: it correlates across sequential seeds
           and starves whole classes out of a linear seed sweep */
-  const av=R();
+  const V2=vyStream(seed,0x6112),kind=band==null?null:vyBandClass(V2,KLI_POOLS,band,[.55,.30,.15]);
+  let av=R();if(kind&&KLI_SEL[kind]!=null)av=KLI_SEL[kind];
   const trim=rr(0.97,1.03);
+  if(kind==="TODUJ"){kliToduj(parts,(17+V2()*4)*trim,V2);return kliDone(parts,seed,"TO'DUJ-CLASS FIGHTER",0.16,1,KLIN_HEGH);}
+  if(kind==="VORCHA"){kliVorcha(parts,R,(150+V2()*30)*trim,false);return kliDone(parts,seed,"VOR'CHA-CLASS ATTACK CRUISER",0.09,Math.round(rr(1500,1900)),KLIN_VORCHA);}
   if(av<0.107){
     const L=11.4*trim;
     kliDktagh(parts,R,L);
@@ -6527,14 +6647,46 @@ function minMorshin(parts,L,R){
   for(const x of [-.2,0,.2])parts.push(minHousing(x*L,.14*L,.18*L,.025*L));
   minFit(parts,L);
 }
-function buildMinbariClass(seed,type){
-  const R=mulberry32((seed^0x71A5B1)>>>0),parts=[],rows=[['NIAL-CLASS HEAVY FIGHTER',22.23,minNial,1],['TISHAT-CLASS MEDIUM FIGHTER',16,minNial,1],['TOROTHA-CLASS ASSAULT FRIGATE',280,minTorotha,60],['TINASHI-CLASS WAR FRIGATE',560,minTinashi,150],['TIGARA-CLASS ATTACK CRUISER',850,minTigara,220],['MORSHIN-CLASS CARRIER',1200,minMorshin,350],['SHARLIN-CLASS WAR CRUISER',1600,minSharlin,600]];
-  const row=rows[type%rows.length],L=row[1]*(.96+R()*.08);row[2](parts,L,R);
-  if(type===1){for(const p of parts){if(p.k==='loft')for(const sc of p.sec)for(const v of sc.pts){v[1]*=.78;v[2]*=.78;}}}
-  const ship=minDone(parts,seed,type<2?'HF':type<4?'FF':'WC',row[0],row[3]);ship.meta.minbariClass=type;return ship;
+/* ---- the variety pass (VARIETY.md) ----
+   Tishat: invented in the fleet's language so it no longer reads as a
+   squashed Nial: a lean body with two forward-raked sails and a low dorsal
+   fin. Flyer: the Minbari transport seen throughout Babylon 5, a smooth flat
+   arrowhead with a raised aft fin. Leshath: the heavy scout of the licensed
+   Babylon 5 Wars and A Call to Arms games, a slim sensor hull under one
+   tall dorsal sail and a long keel sail. */
+function minTishat(parts,L,R){
+  minBody(parts,L,[[-.50,.004,.004],[-.30,.07,.06],[-.02,.085,.07],[.26,.05,.045],[.48,.004,.006]]);
+  for(const sg of [-1,1])minSail(parts,L,[0,-.25,sg*.97],.52,-.30,.34,.10,R);
+  minSail(parts,L,[0,1,0],.22,.30,.40,-.10,R);
+  for(const sg of [-1,1]){parts.push(CAP([.18*L,-.02*L,sg*.05*L],[.46*L,-.02*L,sg*.05*L],.012*L));parts.push({k:"disc",c:[.47*L,-.02*L,sg*.05*L],n:[1,0,0],r:.013*L,ri:.008*L});}
+  minFit(parts,L);
 }
-var buildMinbari=function(seed){
-  const r=mulberry32((seed^0xCAF37)>>>0)();return buildMinbariClass(seed,r<.34?0:r<.46?1:r<.64?2:r<.82?3:r<.94?4:5);
+function minFlyer(parts,L,R){
+  parts.push({k:'loft',sec:minCurve([[-.50,.20,.03],[-.30,.28,.07],[0,.24,.08],[.30,.13,.06],[.50,.01,.01]]).map(([x,w,h])=>({pts:Array.from({length:12},(_,i)=>{const a=i/12*Math.PI*2;return [x*L,Math.sin(a)*h*L*(Math.sin(a)>0?1:.55),Math.cos(a)*w*L];})}))});
+  minSail(parts,L,[0,1,0],.26,.28,.42,-.16,R);
+  for(const sg of [-1,1])parts.push({k:"disc",c:[.30*L,-.01*L,sg*.08*L],n:[1,0,0],r:.018*L,ri:.01*L});
+  minFit(parts,L);
+}
+function minLeshath(parts,L,R){
+  minBody(parts,L,[[-.50,.004,.004],[-.34,.05,.05],[-.05,.07,.065],[.28,.045,.04],[.50,.004,.004]]);
+  minSail(parts,L,[0,1,0],.46,.34,.46,-.02,R);minSail(parts,L,[0,-1,0],.30,.20,.60,.02,R);
+  parts.push(CAP([.40*L,0,0],[.62*L,0,0],.01*L));parts.push({k:"disc",c:[.63*L,0,0],n:[1,0,0],r:.012*L,ri:.007*L});
+  minGills(parts,L,.07,.05,9);
+  minFit(parts,L);
+}
+function buildMinbariClass(seed,type){
+  const R=mulberry32((seed^0x71A5B1)>>>0),parts=[],rows=[['NIAL-CLASS HEAVY FIGHTER',22.23,minNial,1],['TISHAT-CLASS MEDIUM FIGHTER',16,minTishat,1],['TOROTHA-CLASS ASSAULT FRIGATE',280,minTorotha,60],['TINASHI-CLASS WAR FRIGATE',560,minTinashi,150],['TIGARA-CLASS ATTACK CRUISER',850,minTigara,220],['MORSHIN-CLASS CARRIER',1200,minMorshin,350],['SHARLIN-CLASS WAR CRUISER',1600,minSharlin,600],['MINBARI FLYER',26,minFlyer,4],['LESHATH-CLASS HEAVY SCOUT',330,minLeshath,40]];
+  const row=rows[type%rows.length],L=row[1]*(.96+R()*.08);row[2](parts,L,R);
+  // Small-craft sister kit: build and stance from the variety stream (the
+  // fleet refit gives larger hulls their axis stretches).
+  if(type===0||type===1||type===7){const V2=vyStream(seed,0x7A57+type);vyWarpParts(parts,[.94+V2()*.12,.88+V2()*.24,.88+V2()*.24]);}
+  const ship=minDone(parts,seed,type<2||type===7?'HF':type<4||type===8?'FF':'WC',row[0],row[3]);ship.meta.minbariClass=type;return ship;
+}
+/* Band pools (VARIETY.md). The old flat roll ended at r<.94?4:5, so the
+   Sharlin (type 6) only ever flew as a crown; it is now in the capital pool. */
+var MIN_POOLS=[[[0,.45],[1,.30],[7,.25]],[[2,.40],[3,.35],[8,.25]],[[4,.40],[5,.35],[6,.25]]];
+var buildMinbari=function(seed,band){
+  return buildMinbariClass(seed,vyBandClass(vyStream(seed,0xCAF37),MIN_POOLS,band,[.68,.28,.04]));
 };
 var buildMinbariMega=function(seed,nH){
   const r=mulberry32((seed^0x7A110)>>>0)();return buildMinbariClass(seed,nH>=50?6:r<.32?4:r<.64?5:6);
@@ -8701,11 +8853,30 @@ var efNova=function(parts,L){
 
 /* ===================== the yard gates ===================== */
 
-var buildEarthforce=function(seed){
+/* ---- variety pass (VARIETY.md) ----
+   Band pools; a class keeps its old draw stream (its selector is set to the
+   middle of its old interval). New: the Earth Alliance shuttle (the utility
+   shuttle seen throughout Babylon 5), interpreted as a blunt box body with a
+   forward canopy, two side drive pods and a dorsal fin; and the Nova and
+   Warlock from the class library in the capital line. */
+var EF_SEL={AUR:.175,TB:.425,OLY:.565,SAG:.685,HYP:.795,OME:.90,AVE:.975};
+var EF_POOLS=[[["AUR",.40],["TB",.28],["SHUTTLE",.32]],[["OLY",.50],["SAG",.50]],[["HYP",.26],["OME",.24],["AVE",.14],["NOVA",.20],["WARLOCK",.16]]];
+var efShuttle=function(parts,L,V2){
+  const fin=.14+V2()*.08,pods=.20+V2()*.06;
+  parts.push({k:"loft",sec:[[-.46,.10,.09],[-.10,.13,.11],[.22,.12,.10],[.40,.08,.06],[.48,.04,.03]].map(([x,w,h])=>({pts:[[x*L,-h*L,-w*L],[x*L,-h*L,w*L],[x*L,h*.8*L,w*L],[x*L,h*L,w*.6*L],[x*L,h*L,-w*.6*L],[x*L,h*.8*L,-w*L]]}))});
+  for(const sg of [-1,1]){parts.push({k:"capsule",a:[-.46*L,-.02*L,sg*pods*L],b:[-.10*L,-.02*L,sg*pods*L],r:.055*L});parts.push({k:"box",c:[-.28*L,-.02*L,sg*(pods*.5+.06)*L],u:[.08*L,0,0],v:[0,.012*L,0],w:[0,0,(pods*.5-.06)*L]});
+    parts.push({k:"disc",c:[-.465*L,-.02*L,sg*pods*L],n:[-1,0,0],r:.042*L,ri:.02*L,enginePort:true});
+    parts.push({k:"tube",a:[.30*L,-.07*L,sg*.07*L],b:[.52*L,-.07*L,sg*.07*L],r1:.012*L,r2:.009*L});}
+  parts.push({k:"panel",pts:[[-.40*L,.10*L,0],[-.48*L,(.10+fin)*L,0],[-.24*L,.10*L,0]],n:[0,0,1],th:.012*L});
+};
+var buildEarthforce=function(seed,band){
   const R=mulberry32(seed|0);
   const rr=(a,b)=>a+(b-a)*R();
   const parts=[];
-  const av=R(),t=rr(0.97,1.03);
+  const V2=vyStream(seed,0xEF01),kind=band==null?null:vyBandClass(V2,EF_POOLS,band,[.70,.20,.10]);
+  let av=R();const t=rr(0.97,1.03);if(kind&&EF_SEL[kind]!=null)av=EF_SEL[kind];
+  if(kind==="SHUTTLE"){efShuttle(parts,1,V2);efFit(parts,(15+V2()*4)*t);return efDone(parts,seed,"EARTH ALLIANCE SHUTTLE",0.06,4);}
+  if(kind==="NOVA"||kind==="WARLOCK"){const ship=buildEarthforceClass(seed,kind==="NOVA"?4:6),k=(kind==="NOVA"?1150:1300)*t/ship.meta.length;vyWarpShip(ship,[k,k,k]);return ship;}
   /* each class's internal L is its bible game length divided by the
      hull's overhang span, so the delivered ship measures to spec */
   if(av<0.35){
@@ -9114,9 +9285,9 @@ var moArk=function(parts,R,t){
    flies it, the thrusters shove it, the bumper is chrome because 2263
    is still America. Built at 8.6 m — the harness floor; in spirit she
    is 5.5 m of yellow fibreglass ---- */
-var moCab=function(parts,R,t){
+var moCab=function(parts,R,t,forceCop){
   const q=t;
-  const cop=R()<0.4;
+  const cop0=R()<0.4,cop=forceCop==null?cop0:forceCop;
   parts.push({k:"loft",sec:[
     moRing( 3.95*q,-0.35*q,0.50*q,0.12*q),
     moRing( 3.00*q,-0.35*q,1.55*q,0.26*q),
@@ -9142,6 +9313,14 @@ var moCab=function(parts,R,t){
   });
   if(cop)parts.push({k:"box",c:[-0.2*q,2.05*q,0],u:[0.28*q,0,0],v:[0,0.16*q,0],w:[0,0,0.95*q]});
   else parts.push({k:"box",c:[-0.2*q,2.02*q,0],u:[0.55*q,0,0],v:[0,0.22*q,0],w:[0,0,0.30*q]});
+  if(cop&&forceCop!=null){
+    /* variety pass (VARIETY.md): the pursuit car is its own body, long and
+       low, with tail fins and side intake pods, so it no longer reads as a
+       cab with a light bar */
+    vyWarpParts(parts,[1.3,.8,1.02]);
+    moMirRun(parts,()=>{parts.push({k:"panel",pts:[[-3.4*q,.6*q,1.0*q],[-5.6*q,2.3*q,1.5*q],[-4.4*q,.6*q,1.3*q]],n:[0,0,1],th:.12*q});
+      parts.push({k:"capsule",a:[-2.6*q,-.1*q,1.9*q],b:[1.2*q,-.1*q,1.9*q],r:.34*q});});
+  }
   return cop?["NY POLICE CRUISER",0.15,1,"CRUISER"]:["NY FLYING CAB",0.15,1,"CAB"];
 };
 
@@ -9175,13 +9354,38 @@ var moAngel=function(parts,R,t){
 
 /* the convoy: seed deals the class, stamps the papers, and that is all
    the power a seed gets. Sisters differ by a whisker of trim */
-var buildMondo=function(seed){
+/* ---- variety pass (VARIETY.md) ----
+   Band pools; each class keeps its old stream. Capitals come from the
+   fleet's own library at battle length: the Earth Federal battle cruiser
+   and the Fhloston-class pleasure liner (the fleet's liner name bank
+   already carries her sisters). New in the escort line, invented: the
+   Mangalore assault ship, a brutal hexagonal slab with forward mandibles
+   and dorsal spikes, in the Mangalores' raider language. */
+var MO_SEL={ZFX:.17,RAIDER:.47,ARK:.67,CAB:.82,YACHT:.95};
+var MO_POOLS=[[["ZFX",.30],["RAIDER",.25],["CAB",.15],["COP",.15],["YACHT",.15]],[["ARK",.45],["YACHT",.25],["ASSAULT",.30]],[["FEDERAL",.60],["LINER",.40]]];
+var moAssault=function(parts,q,V2){
+  const spikes=3+Math.floor(V2()*3),jaw=.18+V2()*.08;
+  parts.push({k:"loft",sec:[[-.50,.16,.10],[-.30,.22,.14],[.10,.20,.13],[.34,.14,.09],[.46,.08,.05]].map(([x,w,h])=>moHexS(x*q,0,w*q,h*q))});
+  for(const sg of [-1,1]){parts.push({k:"tube",a:[.30*q,-.02*q,sg*.10*q],b:[.58*q,-.04*q,sg*jaw*q],r1:.04*q,r2:.012*q});
+    parts.push({k:"tube",a:[.44*q,-.03*q,sg*.14*q],b:[.60*q,-.03*q,sg*.14*q],r1:.012*q,r2:.009*q});
+    parts.push({k:"tube",a:[-.40*q,0,sg*.14*q],b:[-.56*q,0,sg*.15*q],r1:.07*q,r2:.05*q});
+    parts.push({k:"disc",c:[-.565*q,0,sg*.15*q],n:[-1,0,0],r:.05*q,ri:.02*q});}
+  for(let i=0;i<spikes;i++){const x=(.20-i*.16)*q;parts.push({k:"tube",a:[x,.12*q,0],b:[x-.08*q,(.26+.03*(i%2))*q,0],r1:.03*q,r2:.004*q});}
+};
+var buildMondo=function(seed,band){
   const R=mulberry32(seed|0);
   const rr=(a,b)=>a+(b-a)*R();
   const parts=[];
-  const t=rr(0.985,1.015),roll=R();
+  const V2=vyStream(seed,0x3000D),kind=band==null?null:vyBandClass(V2,MO_POOLS,band,[.40,.40,.20]);
+  const t=rr(0.985,1.015);let roll=R();if(kind&&MO_SEL[kind]!=null)roll=MO_SEL[kind];
+  if(kind==="FEDERAL"||kind==="LINER"){
+    const ship=kind==="FEDERAL"?(()=>{const c=moFederal(parts,R,t);return moDone(parts,seed,c[0],"EFS "+moName(seed,MO_M2N),c[1],c[2]);})():(()=>{const c=moFhloston(parts,R,t);return moDone(parts,seed,"FHLOSTON-CLASS PLEASURE LINER","PLS "+moName(seed,MO_M3N),c[1],c[2]);})();
+    const k=(kind==="FEDERAL"?225:245)*(.94+V2()*.12)/ship.meta.length;vyWarpShip(ship,[k,k,k]);return ship;
+  }
+  if(kind==="ASSAULT"){moAssault(parts,(62+V2()*18)*t,V2);return moDone(parts,seed,"MANGALORE ASSAULT SHIP","MAS-"+(10+moNum(seed,90))+" "+moName(seed,MO_RAIDN),0.14,20);}
   let cls;
-  if(roll<0.35)cls=moZFX(parts,R,t);
+  if(kind==="CAB"||kind==="COP")cls=moCab(parts,R,t,kind==="COP");
+  else if(roll<0.35)cls=moZFX(parts,R,t);
   else if(roll<0.60)cls=moRaider(parts,R,t);
   else if(roll<0.75)cls=moArk(parts,R,t);
   else if(roll<0.90)cls=moCab(parts,R,t);
@@ -9686,11 +9890,30 @@ var umPrometheus=function(parts,L){
 };
 
 /* ================= the small-ship deal ================= */
-var buildUSCM=function(seed){
+/* ---- variety pass (VARIETY.md) ----
+   Band pools; each class keeps its old stream. The CM-88B Bison star
+   freighter (the Nostromo's class, Alien 1979) flies in the escort line at
+   battle length; new in the screen: the Covenant lander (Alien: Covenant,
+   2017), interpreted as a chamfered lifting body with swept, down-tipped
+   wings and twin aft nacelles. */
+var UM_SEL={CHEY:.12,HEL:.32,TIEN:.47,TROOP:.62,MED:.75,EEV:.85,NARC:.95};
+var UM_POOLS=[[["CHEY",.40],["EEV",.15],["NARC",.20],["LANDER",.25]],[["TROOP",.55],["BISON",.45]],[["TIEN",.35],["HEL",.35],["MED",.30]]];
+var umLander=function(parts,L,V2){
+  const span=.34+V2()*.08,droop=.06+V2()*.05;
+  parts.push({k:"loft",sec:[umCham(-.46*L,0,.10*L,.07*L,.3),umCham(-.10*L,.01*L,.13*L,.09*L,.3),umCham(.24*L,0,.09*L,.06*L,.3),umCham(.46*L,-.01*L,.03*L,.025*L,.3)]});
+  umMirRun(parts,()=>{parts.push({k:"loft",sec:[umFoil(-.02*L,0,.10*L,.26*L,.012*L),umFoil(-.20*L,-droop*L,span*L,.10*L,.006*L)]});
+    parts.push({k:"capsule",a:[-.48*L,.03*L,.12*L],b:[-.18*L,.03*L,.12*L],r:.045*L});
+    parts.push({k:"disc",c:[-.49*L,.03*L,.12*L],n:[-1,0,0],r:.035*L,ri:.015*L,enginePort:true});
+    parts.push({k:"tube",a:[.28*L,-.05*L,.06*L],b:[.50*L,-.05*L,.06*L],r1:.012*L,r2:.009*L});});
+};
+var buildUSCM=function(seed,band){
   const R=mulberry32(seed|0);
   const rr=(a,b)=>a+(b-a)*R();
   const parts=[];
-  const av=R();
+  const V2=vyStream(seed,0x05C3),kind=band==null?null:vyBandClass(V2,UM_POOLS,band,[.60,.28,.12]);
+  let av=R();if(kind&&UM_SEL[kind]!=null)av=UM_SEL[kind];
+  if(kind==="LANDER"){umLander(parts,(26+V2()*6)*rr(.98,1.02),V2);return umDone(parts,seed,"USCSS","LN",UMNM.narc,"COVENANT LANDER",0.12,4);}
+  if(kind==="BISON"){umNostromo(parts,(74+V2()*14)*rr(.98,1.02),R);return umDone(parts,seed,"USCSS","WY",UMNM.nost,"CM-88B BISON STAR FREIGHTER",0.05,7);}
   if(av<0.25){
     umCheyenne(parts,rr(1.00,1.03));
     return umDone(parts,seed,"UD4L","DS",UMNM.chey,"UD-4L CHEYENNE DROPSHIP",0.12,2);
@@ -10671,14 +10894,38 @@ var yjMother=function(parts,R,L){
 
 /* the order of battle: the seed deals a hunt licence from the clan's
    fixed shares, never a new species of ship */
-var buildYautja=function(seed){
+/* ---- variety pass (VARIETY.md) ----
+   Band pools; each class keeps its old stream. Capital-band jobs used to
+   fall back to Wolf scouts (41% band reach on main); the capital line is
+   now the Elder trophy barge and the golden clan ship from the fleet's own
+   library at battle length. New in the screen: the Feral hunter's ship
+   (Prey, 2022), seen only briefly on screen and interpreted here as a dark
+   lens with a dorsal spine and hooked landing claws. */
+var YJ_SEL={SCOUT:.2,POD:.47,SEWER:.62,ENF:.77,WOLF:.92};
+var YJ_POOLS=[[["SCOUT",.34],["POD",.22],["ENF",.24],["PREY",.20]],[["SEWER",.40],["WOLF",.35],["ENF",.25]],[["BARGE",.55],["CLAN",.45]]];
+var yjPrey=function(parts,L,V2){
+  const w=.34+V2()*.08,claws=3+Math.floor(V2()*2);
+  parts.push({k:"lathe",c:[0,0,0],axis:[0,1,0],ell:[1,w/.40],prof:[[-.10*L,0],[-.08*L,.30*L],[-.02*L,.44*L],[.04*L,.40*L],[.10*L,.18*L],[.13*L,0]]});
+  parts.push({k:"loft",sec:[[-.46,.02,.10],[0,.03,.16],[.40,.01,.06]].map(([x,w2,h])=>({pts:[[x*L,.08*L,-w2*L],[x*L,.08*L,w2*L],[x*L,(.08+h)*L,0]]}))});
+  for(let i=0;i<claws;i++){const a=i/claws*Math.PI*2+.4,c=Math.cos(a),sn=Math.sin(a);parts.push({k:"tube",a:[c*.30*L,-.06*L,sn*.30*L*w/.4],b:[c*.40*L,-.20*L,sn*.40*L*w/.4],r1:.025*L,r2:.006*L});}
+  parts.push({k:"tube",a:[.30*L,-.02*L,0],b:[.50*L,-.02*L,0],r1:.018*L,r2:.012*L});
+};
+var buildYautja=function(seed,band){
   const R=mulberry32(seed|0);
   const rr=(a,b)=>a+(b-a)*R();
   const parts=[];
   R(); /* first draw discarded — it correlates across sequential
           seeds and starves classes out of a linear sweep */
-  const av=R();
+  const V2=vyStream(seed,0x1A07),kind=band==null?null:vyBandClass(V2,YJ_POOLS,band,[.70,.22,.08]);
+  let av=R();if(kind&&YJ_SEL[kind]!=null)av=YJ_SEL[kind];
   const trim=rr(0.97,1.03);
+  if(kind==="PREY"){yjPrey(parts,(20+V2()*6)*trim,V2);return yjDone(parts,seed,"FERAL HUNTER'S SHIP",0.13,1,YJ_POD);}
+  if(kind==="BARGE"||kind==="CLAN"){
+    const L=(kind==="BARGE"?215:250)*trim*(.94+V2()*.12);
+    if(kind==="BARGE")yjBarge(parts,R,L);else yjGold(parts,R,L);
+    const ship=yjDone(parts,seed,kind==="BARGE"?"ELDER HORSESHOE TROPHY BARGE":"GOLDEN CLAN SHIP",0.10,Math.round(rr(40,120)),YJ_WOLF);
+    const k=L/ship.meta.length;vyWarpShip(ship,[k,k,k]);return ship;
+  }
   if(av<0.40){
     const L=26.92*trim;
     yjScout(parts,R,L);
@@ -11530,12 +11777,16 @@ function buildExtraClass(race,seed,type,hero=false){
   const feeler=(x,y,z,len,spread,phase)=>{const pts=[];for(let i=0;i<5;i++){const t=i/4;pts.push([x+len*t,y-Math.sin(t*2.6)*8+t*t*5,z+spread*t+Math.sin(t*4+phase)*t*4]);}curve(pts,2.2);};
   if(type===0){
    // A floating spore bladder, not a miniature cruiser.
-   pod(0,0,0,18,17,16);
-   for(let i=0;i<10;i++){const a=i*Math.PI/5;curve([[0,Math.sin(a)*13,Math.cos(a)*13],[9,Math.sin(a)*25,Math.cos(a)*25],[16,Math.sin(a)*29,Math.cos(a)*29]],2.6);}
-   muzzles.push([18,0,0]);
+   // sister kit: each bladder grows its own count and spread of tendrils
+   const nT=hero?10:9+Math.floor(V2()*3),fl=hero?1:.9+V2()*.2,bl=hero?1:.92+V2()*.16;
+   pod(0,0,0,18*bl,17,16);
+   for(let i=0;i<nT;i++){const a=i*2*Math.PI/nT;curve([[0,Math.sin(a)*13,Math.cos(a)*13],[9,Math.sin(a)*25*fl,Math.cos(a)*25*fl],[16,Math.sin(a)*29*fl,Math.cos(a)*29*fl]],2.6);}
+   muzzles.push([18,0,0]);if(!hero){arch=nT>10?'DENSE TENDRILS':'SPARSE TENDRILS';warp=[.94+V2()*.12,.9+V2()*.2,.9+V2()*.2];}
   }else if(type===8){
    // Boarding organism: long flexible segmented worm with a toothed mouth.
-   for(let i=0;i<8;i++)pod(-34+i*9,Math.sin(i*.65)*4,0,6,4+i*.55,4+i*.55);
+   const wave=hero?4:2+V2()*6,ph=hero?0:V2()*2;
+   for(let i=0;i<8;i++)pod(-34+i*9,Math.sin(i*.65+ph)*wave,Math.cos(i*.5+ph)*wave*.5,6,4+i*.55,4+i*.55);
+   if(!hero){arch=wave>5?'COILED':'STRAIGHT';warp=[.94+V2()*.12,.92+V2()*.16,.92+V2()*.16];}
    for(let i=0;i<8;i++){const a=i*Math.PI/4;curve([[29,3+Math.sin(a)*7,Math.cos(a)*7],[43,3+Math.sin(a)*10,Math.cos(a)*10],[48,3+Math.sin(a)*3,Math.cos(a)*3]],1.8);}
    muzzles.push([42,3,0]);
   }else{
@@ -11760,7 +12011,8 @@ function applyFleetRefit(ship,race,seed,forced,drive){
   let bb=efBB(ship.parts),L=bb[1][0]-bb[0][0],B=bb[1][2]-bb[0][2],H=bb[1][1]-bb[0][1];
   const cx=(bb[1][0]+bb[0][0])*.5,cz=(bb[1][2]+bb[0][2])*.5;
   if(race===7){
-    const shape=[[1,1,1],[1,.91,1.17],[.93,1.18,.91],[1.08,.94,1.28],[1.08,1.12,.82],[.94,1.06,1.08]][role];
+    // The Sharlin (Minbari class 6) keeps its iconic proportions: half the stretch.
+    const shape=[[1,1,1],[1,.91,1.17],[.93,1.18,.91],[1.08,.94,1.28],[1.08,1.12,.82],[.94,1.06,1.08]][role].map(v=>ship.meta.minbariClass===6?1+(v-1)*.5:v);
     if(!small)for(const p of ship.parts){const fy=shape[0]*(p.minSail?shape[2]:1),fz=shape[1]*(p.minSail?shape[2]:1),warp=v=>[v[0],v[1]*fy,v[2]*fz];
       for(const key of ['a','b','c','u','v','w'])if(p[key])p[key]=warp(p[key]);if(p.sec)for(const sc of p.sec)sc.pts=sc.pts.map(warp);if(p.ell)p.ell=[p.ell[0]*fz,p.ell[1]*fy];
     }
@@ -11821,6 +12073,11 @@ function applyFleetRefit(ship,race,seed,forced,drive){
       }
     }
   }else if(small&&role===1){const c=station(-.16);if(c)pod(c,L*.22,size*.8,size*.65);}
+  /* Sister proportions (VARIETY.md): every hull of these fleets is built a
+     little long or short, broad or lean, deep or flat, on its own stream, so
+     no two sisters are clones. Classes with structural kits (drive banks,
+     keels, wings, payloads) vary their assemblies on top of this. */
+  if([5,6,9,10,11,12,13,14,16].includes(race)){const V2=vyStream(seed,0x5157),k=small?.5:1;vyWarpShip(ship,[1+(V2()-.5)*.1*k,1+(V2()-.5)*.14*k,1+(V2()-.5)*.14*k]);}
   bb=efBB(ship.parts);ship.bb=bb;ship.meta.length=bb[1][0]-bb[0][0];ship.meta.beam=bb[1][2]-bb[0][2];ship.meta.height=bb[1][1]-bb[0][1];
   ship.meta.mass=(ship.meta.mass||1)*scale**3;
   ship.meta.refit={role:organic?['BASE MORPH','LONG-RANGE MORPH','BROOD / TRANSPORT MORPH','SENSORY CREST','ARMORED CARAPACE','SEEDER / SUPPORT MORPH'][role]:REFIT_NAMES[role],index:role,seed:seed>>>0,scale,addedParts:ship.parts.length-originalCount,provenance:'Procedural refit'};
@@ -13181,18 +13438,18 @@ const baseRaceBuild=(f,seed,hulls,hero,band)=>{
     case 2:return hulls?buildLatticeMega(seed,hulls):buildLattice(seed);
     case 3:return hulls?buildDriftMega(seed,hulls):buildDrift(seed);
     case 4:return hulls?buildChoirMega(seed,hulls):buildChoir(seed);
-    case 12:return hulls?buildBorgMega(seed,hulls):buildBorg(seed);
-    case 10:return hulls?buildFedMega(seed,hulls):buildFed(seed);
-    case 5:return hulls?buildImperialMega(seed,hulls):buildImperial(seed);
-    case 11:return hulls?buildKlingonMega(seed,hulls):buildKlingon(seed);
-    case 7:return hulls?buildMinbariMega(seed,hulls):buildMinbari(seed);
+    case 12:return hulls?buildBorgMega(seed,hulls):buildBorg(seed,band);
+    case 10:return hulls?buildFedMega(seed,hulls):buildFed(seed,band);
+    case 5:return hulls?buildImperialMega(seed,hulls):buildImperial(seed,band);
+    case 11:return hulls?buildKlingonMega(seed,hulls):buildKlingon(seed,band);
+    case 7:return hulls?buildMinbariMega(seed,hulls):buildMinbari(seed,band);
     case 8:return hulls?buildShadowMega(seed,hulls):buildShadow(seed,band);
     case 6:return hulls?buildRebelMega(seed,hulls):buildRebel(seed);
-    case 9:return hulls?buildEarthforceMega(seed,hulls):buildEarthforce(seed);
-    case 13:return hulls?buildMondoMega(seed,hulls):buildMondo(seed);
-    case 14:return hulls?buildUSCMMega(seed,hulls):buildUSCM(seed);
+    case 9:return hulls?buildEarthforceMega(seed,hulls):buildEarthforce(seed,band);
+    case 13:return hulls?buildMondoMega(seed,hulls):buildMondo(seed,band);
+    case 14:return hulls?buildUSCMMega(seed,hulls):buildUSCM(seed,band);
     case 15:return hulls?buildEngineerMega(seed,hulls):buildEngineer(seed,band);
-    case 16:return hulls?buildYautjaMega(seed,hulls):buildYautja(seed);
+    case 16:return hulls?buildYautjaMega(seed,hulls):buildYautja(seed,band);
     case 17:return hulls?buildFirstonesMega(seed,hulls):buildFirstones(seed);
     case 18:case 19:case 20:case 21:case 22:return buildExtra(f,seed,hulls,hero,band);
     default:return hulls?buildMegaShip(seed,hulls):buildShip(seed,P,NL);
@@ -13367,7 +13624,7 @@ onmessage=e=>{
        down body-first then limb by limb, so contiguous slices come away
        as recognisable pieces — a wing, a tail, a ring of hull */
     const ship=raceBuild(d.f,d.seed,d.hulls,false,d.band);
-    if(ship.triK==null)ship.triK=vyTriK(ship);
+    if(ship.triK==null){ship.triK=vyTriK(ship);ship.triCull=VY_CULL_CACHE.get(ship)||0;}
     const c=centre(ship);
     const n=ship.parts.length;
     const K=Math.max(2,Math.min(d.hulls?12:6,2+Math.round(n/30)));
@@ -13376,7 +13633,7 @@ onmessage=e=>{
       const a=Math.floor(k*n/K),b=Math.floor((k+1)*n/K);
       const sub=ship.parts.slice(a,b);
       if(!sub.length)continue;
-      const m=packMesh({parts:sub,bb:ship.bb,triK:ship.triK},c,0.30);
+      const m=packMesh({parts:sub,bb:ship.bb,triK:ship.triK,triCull:ship.triCull},c,0.30);
       if(!m.i.length)continue;
       let ox=0,oy=0,oz=0,cnt=0;
       for(const p2 of sub){const q2=partCentroid(p2);ox+=q2[0];oy+=q2[1];oz+=q2[2];cnt++;}
@@ -13430,7 +13687,7 @@ onmessage=e=>{
     }else ship=raceBuild(j.f,seed,j.hulls);
     armShip(ship,j.f,j.hulls||0);
     seatShipAssemblies(ship,j.f);
-    ship.triK=vyTriK(ship);
+    ship.triK=vyTriK(ship);ship.triCull=VY_CULL_CACHE.get(ship)||0;
     const c=centre(ship);
     const exhaust=enginePorts(ship,j.f).map(q=>[q[0]-c[0],q[1]-c[1],q[2]-c[2],q[3]]);
     const guns=(ship.muzzles||[]).map(q=>[q[0]-c[0],q[1]-c[1],q[2]-c[2]]);
@@ -13439,10 +13696,10 @@ onmessage=e=>{
     const candidates=ship.meta.hero?[]:ship.parts.filter(p=>p.k==='box'&&!p.structural&&!p.driveGroup&&!p.enginePort&&Math.hypot(...partCentroid(p).map((v,i)=>v-c[i]))>ship.meta.length*.12&&Math.max(V.len(p.u),V.len(p.v),V.len(p.w))<ship.meta.length*.055).filter(p=>!(ship.muzzles||[]).some(q=>Math.hypot(...q.map((v,i)=>v-partCentroid(p)[i]))<Math.max(V.len(p.u),V.len(p.v),V.len(p.w))*3)).slice(-2);
     const coreParts=ship.parts.filter(p=>!candidates.includes(p));
     const mountSites=j.f===8?[]:forgeMountSites(coreParts,ship.bb,c,guns);
-    let m=packMesh({parts:coreParts,bb:ship.bb,triK:ship.triK},c,0.32);
+    let m=packMesh({parts:coreParts,bb:ship.bb,triK:ship.triK,triCull:ship.triCull},c,0.32);
     const damagePods=[];
     for(const part of candidates){
-      const center=partCentroid(part),fm=packMesh({parts:[part],bb:ship.bb,triK:ship.triK},center,.32),start=m.i.length,base=m.v.length/3;
+      const center=partCentroid(part),fm=packMesh({parts:[part],bb:ship.bb,triK:ship.triK,triCull:ship.triCull},center,.32),start=m.i.length,base=m.v.length/3;
       const vertices=new Float32Array(m.v.length+fm.v.length);vertices.set(m.v);
       for(let i=0;i<fm.v.length;i++)vertices[m.v.length+i]=fm.v[i]+center[i%3]-c[i%3];
       const indices=new Uint32Array(start+fm.i.length);indices.set(m.i);for(let i=0;i<fm.i.length;i++)indices[start+i]=fm.i[i]+base;
@@ -13459,7 +13716,7 @@ onmessage=e=>{
       const a=Math.floor(k*n/K),b=Math.floor((k+1)*n/K);
       const sub=coreParts.slice(a,b);
       if(!sub.length)continue;
-      const fm=packMesh({parts:sub,bb:ship.bb,triK:ship.triK},c,0.30);
+      const fm=packMesh({parts:sub,bb:ship.bb,triK:ship.triK,triCull:ship.triCull},c,0.30);
       if(!fm.i.length)continue;
       let ox=0,oy=0,oz=0,cnt=0;
       for(const p2 of sub){const q2=partCentroid(p2);ox+=q2[0];oy+=q2[1];oz+=q2[2];cnt++;}
@@ -13476,7 +13733,7 @@ onmessage=e=>{
     // before combat. Do not sort/split thousands of triangles on a kill frame.
     const readyFrags=fractureMesh(frags,ship.meta.length>=180?32:6);
     for(const f of readyFrags)tr.push(f.v.buffer,f.i.buffer);
-    const low=packMesh({parts:coreParts,bb:ship.bb,triK:ship.triK},c,.12);tr.push(low.v.buffer,low.i.buffer);
+    const low=packMesh({parts:coreParts,bb:ship.bb,triK:ship.triK,triCull:ship.triCull},c,.12);tr.push(low.v.buffer,low.i.buffer);
     const fireHull=ship.meta.length>=55?forgeFireHull(m):null;
     out.push({id:j.id,seed:seed,mesh:m,low,fireHull,nose:ship.bb[1][0]-c[0],frags:readyFrags,fragReady:true,guns,exhaust,damagePods,mountSites,
       ringX:ship.meta.ringX!==undefined?ship.meta.ringX-c[0]:0,

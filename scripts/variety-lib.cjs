@@ -48,7 +48,8 @@ function loadForge(root) {
     const ms = Number(process.hrtime.bigint() - t0) / 1e6;
     const s = result.out[0];
     // Study quality (the ship study and model review use q=.65).
-    const study = wrun(`(()=>{const s=${job.hulls ? `raceBuild(${job.f},${s.seed >>> 0},${job.hulls})` : job.hero ? `raceBuild(${job.f},${s.seed >>> 0},0,true)` : `raceBuild(${job.f},${s.seed >>> 0},0)`};armShip(s,${job.f},${job.hulls || 0});seatShipAssemblies(s,${job.f});return shipMeshQ(s,.65).tris;})()`);
+    // the same hull the forge dealt: its seed after band re-cuts, and its band
+    const study = wrun(`(()=>{const s=raceBuild(${job.f},${s.seed >>> 0},${job.hulls || 0},${!!job.hero},${job.band == null ? 'undefined' : job.band});armShip(s,${job.f},${job.hulls || 0});seatShipAssemblies(s,${job.f});return shipMeshQ(s,.65).tris;})()`);
     return {out: s, ms, study};
   }
   return {muster, forge, page, worker, wrun, html};
@@ -99,12 +100,23 @@ function signature(mesh) {
   return sig;
 }
 const pack = sig => Buffer.from(sig).toString('base64');
-const unpack = s => new Uint8Array(Buffer.from(s, 'base64'));
+/* Signatures are compared bit-packed: 3 views x 32 words of 32 cells. */
+const W = N * N / 32;
+function bits(u8) {
+  const out = new Uint32Array(3 * W);
+  for (let i = 0; i < u8.length; i++) if (u8[i]) out[i >>> 5] |= 1 << (i & 31);
+  return out;
+}
+const unpack = s => bits(new Uint8Array(Buffer.from(s, 'base64')));
+const pop = v => { v = v - ((v >>> 1) & 0x55555555); v = (v & 0x33333333) + ((v >>> 2) & 0x33333333); return (((v + (v >>> 4)) & 0x0F0F0F0F) * 0x01010101) >>> 24; };
+// 1 - IoU, averaged over the three views. Takes packed (unpack/bits) or raw signatures.
 function distance(a, b) {
+  if (!(a instanceof Uint32Array)) a = bits(a);
+  if (!(b instanceof Uint32Array)) b = bits(b);
   let d = 0;
   for (let view = 0; view < 3; view++) {
     let inter = 0, uni = 0;
-    for (let i = view * N * N, e = i + N * N; i < e; i++) { const x = a[i], y = b[i]; inter += x & y; uni += x | y; }
+    for (let i = view * W, e = i + W; i < e; i++) { const x = a[i], y = b[i]; inter += pop(x & y); uni += pop(x | y); }
     d += uni ? 1 - inter / uni : 0;
   }
   return d / 3;
@@ -147,4 +159,4 @@ function clusters(sigs, cut) {
   return members.filter(Boolean);
 }
 
-module.exports = {NAMES, BANDS, N, classKey, loadForge, signature, pack, unpack, distance, meshHash, median, quantile, clusters};
+module.exports = {NAMES, BANDS, N, classKey, loadForge, signature, pack, unpack, bits, distance, meshHash, median, quantile, clusters};

@@ -154,20 +154,26 @@ function classSeparation(byKey, sigOf) {
   pairs.sort((p, q) => p.d - q.d);
   return {min: pairs.length ? pairs[0].d : null, pairs};
 }
-/* Fleet from silhouette alone: k-nearest neighbours (k=7, IoU distance)
-   trained on one war's hulls and scored on the other war's (two folds).
-   Every fleet's test rows are weighted equally, so chance is 1/fleets. */
+/* Fleet from silhouette alone: k-nearest neighbours (k=7, rank-weighted,
+   IoU distance) trained on every hull one war mustered and scored on every
+   hull the other war mustered (two folds). Every fleet's test rows count
+   equally, so chance is 1/fleets. */
 function recognise(hs, sigOf) {
   const races = [...new Set(hs.map(h => h.race))].sort((a, b) => a - b);
   const per = Object.fromEntries(races.map(r => [r, {hit: 0, n: 0}]));
-  const CAP = 150; // rows per fleet per fold, spread evenly over its muster
-  const sample = fold => races.flatMap(r => { const v = hs.filter(h => h.race === r && h.fold === fold); const k = Math.max(1, v.length / CAP); const o = []; for (let i = 0; i < v.length && o.length < CAP; i += k) o.push(v[Math.floor(i)]); return o; });
+  const K = 7;
   for (const [train, test] of [[0, 1], [1, 0]]) {
-    const tr = sample(train), te = sample(test);
+    const tr = hs.filter(h => h.fold === train), te = hs.filter(h => h.fold === test);
+    const trS = tr.map(h => sigOf.get(h)), trR = tr.map(h => h.race);
     for (const q of te) {
-      const sq = sigOf.get(q);
-      const nb = tr.map(h => [L.distance(sq, sigOf.get(h)), h.race]).sort((a, b) => a[0] - b[0]).slice(0, 7);
-      const vote = {}; nb.forEach(([d, r], i) => { vote[r] = (vote[r] || 0) + 1 / (1 + i); });
+      const sq = sigOf.get(q), bd = new Float64Array(K).fill(Infinity), br = new Int32Array(K).fill(-1);
+      for (let i = 0; i < trS.length; i++) {
+        const d = L.distance(sq, trS[i]);
+        if (d >= bd[K - 1]) continue;
+        let j = K - 1; while (j > 0 && bd[j - 1] > d) { bd[j] = bd[j - 1]; br[j] = br[j - 1]; j--; }
+        bd[j] = d; br[j] = trR[i];
+      }
+      const vote = {}; for (let i = 0; i < K; i++) if (br[i] >= 0) vote[br[i]] = (vote[br[i]] || 0) + 1 / (1 + i);
       const guess = +Object.entries(vote).sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0];
       per[q.race].n++; if (guess === q.race) per[q.race].hit++;
     }
