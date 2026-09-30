@@ -74,7 +74,7 @@ The variety pass (VARIETY.md) added classes so that no band of these navies is o
 | Tesla | Cargo Dragon | small | SpaceX Dragon 1 (the CRS resupply capsule); weapons fictional | Capsule over a finned trunk with its two solar array wings deployed; Draco pods as guns. Flown as the Cargo Dragon (no wings) first: in clay it was a plain cone the Yard's pods share |
 | Tesla | Cybertruck gunship | small | Invented from the Tesla Cybertruck | Stainless wedge hover gunship, wheel wells as lift fans, bed turret |
 | Tesla | Gigafactory carrier | capital | Invented | Long faceted prism under a solar ridge, two photovoltaic wings on booms |
-| Tesla | Falcon and Starship configurations | escort, capital | SpaceX Falcon and Starship user's guides (above); HLS from the NASA Artemis lander | Falcons fly legs out or folded, with a Dragon or a fairing; a quarter of Starships are the HLS lander on four legs; stacks fly with or without the hot-staging ring |
+| Tesla | Falcon and Starship configurations | escort, capital | SpaceX Falcon and Starship user's guides (above); HLS from the NASA Artemis lander | Falcons fly with a Dragon, a closed fairing, or (three in ten) the fairing halves splayed open over a Starlink stack; a quarter of Starships are the HLS lander on four legs; stacks fly with or without the hot-staging ring |
 | Tyranids | Spore drone and boarding worm sister kits | small | As above | Tendril reach and bladder size; worm coil |
 
 Every new class above has native weapon and engine sockets on modelled barrels, apertures and drive bells (checked by `tests/tribute-new/variety.test.cjs`), stays under 4,000 triangles at study quality (the extra-fleets test), and appears in the ship study.
