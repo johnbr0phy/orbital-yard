@@ -27,28 +27,15 @@ const LABEL = opt('label', 'run');
 const OUT = path.resolve(opt('out', path.join(__dirname, '../bench/variety', LABEL)));
 const FLEETS = opt('fleets', null) ? opt('fleets').split(',').map(Number) : L.NAMES.map((_, i) => i);
 const FOLDS = [101, 202];
+// Two more wars per fleet, used only by the recognition classifier (leave one
+// war out over four), so a rare class has sisters to be recognised by. They
+// are forged without breakup fragments, which do not change a hull's shape.
+const RECOG_FOLDS = [303, 404];
 const SIZE = 600, TOPUP = 40;
 
-/* ---------------- thresholds (see VARIETY.md, "Why these thresholds") ---------------- */
-const T = {
-  cluster: 0.20,      // complete-linkage cut: hulls closer than this are one shape (half the closest reference class pair, 0.401)
-  minShapes: 3,       // effective number of clusters, exp(Shannon entropy of cluster shares)
-  maxDominant: 0.50,
-  classSep: 0.20,     // scale-normalised median distance between two classes, same cut as a shape
-  sisterFloor: 0.04,  // sisters are not clones (scale-only sisters measure 0.000-0.011)
-  sisterCeiling: 0.25,// sisters still read as one class; and closer to each other than to any other class
-  recognitionX: 5,    // x chance
-  recognitionSE: 2,   // per-fleet floor: baseline minus two binomial standard errors of the baseline estimate
-  bandReach: 0.95,
-  studyTris: 6000,
-};
-/* The original fleets (Yard, Shoal, Lattice, Drift, Choir) forge one-off
-   designs: the "-CLASS" name is drawn from the seed's digits, independently
-   of the design, so two hulls sharing a name are not sisters. Their class for
-   separation is the role type the page prints after the name. */
-const ONE_OFF = r => r <= 4;
+const T = L.T, ONE_OFF = L.ONE_OFF;
 
-function forgeFleet(race) {
+function forgeFleet(race, recogOnly) {
   const F = L.loadForge(ROOT);
   const hulls = [];
   const budget = F.wrun(`typeof VY_DISTANT_REPS==='undefined'?3:VY_DISTANT_REPS[${race}]`);
@@ -60,6 +47,16 @@ function forgeFleet(race) {
       seed: out.seed >>> 0, hash: L.meshHash(out.mesh), refit: out.meta.refit ? out.meta.refit.role || out.meta.refit.name || 1 : null,
       structure: out.meta.structure ? out.meta.structure.name || null : null, sig: L.pack(L.signature(out.mesh))});
   };
+  if (race !== 17) {
+    const G = L.loadForge(ROOT, {fast: true});
+    RECOG_FOLDS.forEach((war, i) => {
+      for (const j of G.muster(race, war, SIZE).filter(j => !j.hero && !j.hulls && j.band != null)) {
+        const {out} = G.forge(j);
+        hulls.push({race, fold: 2 + i, war, topup: false, recogOnly: true, jobBand: j.band, klass: out.meta.klass, key: L.classKey(race, out.meta.klass), length: out.meta.length, seed: out.seed >>> 0, sig: L.pack(L.signature(out.mesh))});
+      }
+    });
+  }
+  if (recogOnly) return hulls;
   FOLDS.forEach((war, fold) => {
     const jobs = F.muster(race, war, SIZE);
     const normal = jobs.filter(j => !j.hero && !j.hulls && j.band != null);
@@ -79,6 +76,8 @@ function forgeFleet(race) {
 /* ---------------- analysis ---------------- */
 function analyse(all) {
   const sigOf = new Map(); for (const h of all) sigOf.set(h, L.unpack(h.sig));
+  const recogAll = all;
+  all = all.filter(h => !h.recogOnly);
   const fleets = [];
   const allowNormal = h => h.race !== 17;
   for (const race of FLEETS) {
@@ -134,7 +133,7 @@ function analyse(all) {
     };
     fleets.push(row);
   }
-  const recognition = recognise(all.filter(h => allowNormal(h) && !h.topup), sigOf);
+  const recognition = recognise(recogAll.filter(h => allowNormal(h) && !h.topup), sigOf);
   return {thresholds: T, fleets, recognition, reference: reference(fleets)};
 }
 /* The page's registerDistantHull rule: one group per class and seed modulo
@@ -155,15 +154,16 @@ function classSeparation(byKey, sigOf) {
   return {min: pairs.length ? pairs[0].d : null, pairs};
 }
 /* Fleet from silhouette alone: k-nearest neighbours (k=7, rank-weighted,
-   IoU distance) trained on every hull one war mustered and scored on every
-   hull the other war mustered (two folds). Every fleet's test rows count
+   IoU distance), leave one war out: trained on every hull three wars
+   mustered and scored on every hull the fourth war mustered, for each war. Every fleet's test rows count
    equally, so chance is 1/fleets. */
 function recognise(hs, sigOf) {
   const races = [...new Set(hs.map(h => h.race))].sort((a, b) => a - b);
   const per = Object.fromEntries(races.map(r => [r, {hit: 0, n: 0}]));
   const K = 7;
-  for (const [train, test] of [[0, 1], [1, 0]]) {
-    const tr = hs.filter(h => h.fold === train), te = hs.filter(h => h.fold === test);
+  const folds = [...new Set(hs.map(h => h.fold))].sort();
+  for (const test of folds) {
+    const tr = hs.filter(h => h.fold !== test), te = hs.filter(h => h.fold === test);
     const trS = tr.map(h => sigOf.get(h)), trR = tr.map(h => h.race);
     for (const q of te) {
       const sq = sigOf.get(q), bd = new Float64Array(K).fill(Infinity), br = new Int32Array(K).fill(-1);
@@ -229,14 +229,19 @@ function verdict(sum, base) {
 
 async function main() {
   fs.mkdirSync(OUT, {recursive: true});
-  if (flag('worker')) { const race = +opt('race'); fs.writeFileSync(path.join(OUT, `hulls-${race}.json`), JSON.stringify(forgeFleet(race))); return; }
+  if (flag('worker')) {
+    const race = +opt('race'), file = path.join(OUT, `hulls-${race}.json`);
+    // --append-recog: add only the recognition wars to an existing forge (baseline from before they existed)
+    if (flag('append-recog')) { const old = JSON.parse(fs.readFileSync(file, 'utf8')).filter(h => !h.recogOnly); fs.writeFileSync(file, JSON.stringify(old.concat(forgeFleet(race, true)))); return; }
+    fs.writeFileSync(file, JSON.stringify(forgeFleet(race))); return;
+  }
   if (!flag('analyse-only')) {
-    const todo = FLEETS.filter(r => flag('force') || !fs.existsSync(path.join(OUT, `hulls-${r}.json`)));
+    const todo = FLEETS.filter(r => flag('force') || flag('append-recog') || !fs.existsSync(path.join(OUT, `hulls-${r}.json`)));
     const jobs = +opt('jobs', 3); let next = 0;
     await Promise.all(Array.from({length: jobs}, async () => {
       while (next < todo.length) {
         const race = todo[next++], t0 = Date.now();
-        await new Promise((res, rej) => { const p = spawn(process.execPath, [__filename, '--worker', '--race', race, '--root', ROOT, '--out', OUT], {stdio: 'inherit'}); p.on('exit', c => c ? rej(new Error('fleet ' + race + ' exit ' + c)) : res()); });
+        await new Promise((res, rej) => { const p = spawn(process.execPath, [__filename, '--worker', '--race', race, '--root', ROOT, '--out', OUT, ...(flag('append-recog') ? ['--append-recog'] : [])], {stdio: 'inherit'}); p.on('exit', c => c ? rej(new Error('fleet ' + race + ' exit ' + c)) : res()); });
         console.log(`forged ${L.NAMES[race]} in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
       }
     }));

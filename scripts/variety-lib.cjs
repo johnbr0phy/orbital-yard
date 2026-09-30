@@ -18,11 +18,11 @@ const SUB = 2;            // supersampling per mask cell
 function classKey(race, klass) {
   let k = String(klass || '');
   if (race <= 4) k = k.replace(/^\S+-(CLASS|BROOD|GROWTH|LASH|VOICE)\s+/, '');
-  k = k.replace(/\s*\((CARGO|BATTLE|SCIENCE)[^)]*REFIT\)\s*$/, '');
+  k = k.replace(/\s*\((CARGO|BATTLE|SCIENCE|COMMAND)[^)]*REFIT\)\s*$/, '');
   return k;
 }
 
-function loadForge(root) {
+function loadForge(root, opts = {}) {
   const html = fs.readFileSync(path.join(root, 'armada-war-tribute-new.html'), 'utf8');
   const {loadBattle} = require(path.join(root, 'tests/tribute-new/headless-battle.cjs'));
   const page = loadBattle();
@@ -30,6 +30,8 @@ function loadForge(root) {
   let result = null;
   const worker = vm.createContext({console, postMessage: r => { result = r; }});
   vm.runInContext(prefix + page.run('fractureMesh.toString()+WORKER_MAIN'), worker);
+  // Tests: the breakup fragments and fire hull do not change a hull's shape.
+  if (opts.fast) vm.runInContext('fractureMesh=()=>[];forgeFireHull=()=>null;', worker);
   page.run('postForgeJobs=j=>{globalThis.__varietyJobs=j};');
   const wrun = s => vm.runInContext(s, worker);
   // The real muster: every job the page deals one side of a war.
@@ -159,4 +161,22 @@ function clusters(sigs, cut) {
   return members.filter(Boolean);
 }
 
-module.exports = {NAMES, BANDS, N, classKey, loadForge, signature, pack, unpack, bits, distance, meshHash, median, quantile, clusters};
+/* ---------------- thresholds (VARIETY.md, "Why these thresholds") ---------------- */
+const T = {
+  cluster: 0.20,      // complete-linkage cut: hulls closer than this are one shape (half the closest reference class pair, 0.401)
+  minShapes: 3,       // effective number of clusters, exp(Shannon entropy of cluster shares)
+  maxDominant: 0.50,
+  classSep: 0.20,     // scale-normalised median distance between two classes, same cut as a shape
+  sisterFloor: 0.04,  // sisters are not clones (scale-only sisters measure 0.000-0.011)
+  sisterCeiling: 0.25,// sisters still read as one class; and closer to each other than to any other class
+  recognitionX: 5,    // x chance
+  recognitionSE: 2,   // per-fleet floor: baseline minus two binomial standard errors of the baseline estimate
+  bandReach: 0.95,
+  studyTris: 6000,
+};
+/* The original fleets (Yard, Shoal, Lattice, Drift, Choir) forge one-off
+   designs: the "-CLASS" name is drawn from the seed's digits, independently
+   of the design, so two hulls sharing a name are not sisters. Their class for
+   separation is the role type the page prints after the name. */
+const ONE_OFF = r => r <= 4;
+module.exports = {T, ONE_OFF, NAMES, BANDS, N, classKey, loadForge, signature, pack, unpack, bits, distance, meshHash, median, quantile, clusters};
