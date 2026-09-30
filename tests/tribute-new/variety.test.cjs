@@ -44,69 +44,44 @@ function forgeRace(race) {
 const RACES = L.NAMES.map((_, i) => i).filter(r => r !== 17);
 const groupBy = (xs, f) => { const o = {}; for (const x of xs) (o[f(x)] = o[f(x)] || []).push(x); return o; };
 
-test('every band holds several silhouettes, none over half the band, classes are not one shape at two scales', {timeout: 900000}, () => {
-  const bad = [];
-  for (const race of RACES) {
-    const hs = forgeRace(race);
-    for (const band of [0, 1, 2]) {
-      const bh = hs.filter(h => h.band === band); if (bh.length < 8) continue;
-      const shares = L.clusters(bh.map(h => h.sig), T.cluster).map(m => m.length / bh.length).sort((a, b) => b - a);
-      const eff = Math.exp(-shares.reduce((s, p) => s + p * Math.log(p), 0));
-      if (eff < T.minShapes && !EXEMPT[race + '/' + L.BANDS[band]]) bad.push(`${L.NAMES[race]}/${L.BANDS[band]}: ${eff.toFixed(2)} shapes`);
-      if (shares[0] > T.maxDominant) bad.push(`${L.NAMES[race]}/${L.BANDS[band]}: dominant ${(shares[0] * 100).toFixed(0)}%`);
-      const byKey = groupBy(bh, h => h.key), keys = Object.keys(byKey);
-      for (let a = 0; a < keys.length; a++) for (let b = a + 1; b < keys.length; b++) {
-        const ds = []; for (const x of byKey[keys[a]]) for (const y of byKey[keys[b]]) ds.push(L.distance(x.sig, y.sig));
-        const d = L.median(ds); if (d < T.classSep) bad.push(`${L.NAMES[race]}/${L.BANDS[band]}: ${keys[a]} v ${keys[b]} ${d.toFixed(3)}`);
-      }
+/* The band, sister and reach criteria are measured exactly as the report
+   measures them: the report's own forge (both full musters of every fleet,
+   thin bands topped up) and its own analysis code, so the test and VARIETY.md
+   cannot disagree on sampling. Forged in parallel worker processes. */
+const REPORT = require('../../scripts/variety-report.cjs');
+let reportSum = null;
+async function reportSummary() {
+  if (reportSum) return reportSum;
+  const os = require('node:os'), {spawn} = require('node:child_process');
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'variety-test-')), script = path.join(ROOT, 'scripts/variety-report.cjs');
+  const todo = L.NAMES.map((_, i) => i); let next = 0;
+  await Promise.all(Array.from({length: Math.max(2, Math.min(4, os.cpus().length))}, async () => {
+    while (next < todo.length) {
+      const race = todo[next++];
+      await new Promise((res, rej) => spawn(process.execPath, [script, '--worker', '--race', race, '--root', ROOT, '--out', out, '--fast', '--no-recog'], {stdio: 'inherit'}).on('exit', c => c ? rej(new Error('forge ' + race)) : res()));
     }
-  }
-  assert.deepEqual(bad, []);
-});
-
-test('sisters differ (no clones, no identical meshes) and still read as their class', {timeout: 900000}, () => {
-  const bad = [];
-  for (const race of RACES) {
-    if (L.ONE_OFF(race)) continue;
-    const byKey = groupBy(forgeRace(race), h => h.key), keys = Object.keys(byKey);
-    for (const k of keys) {
-      const v = byKey[k]; if (v.length < 6) continue;
-      const ds = []; for (let i = 0; i < v.length; i++) for (let j = i + 1; j < v.length; j++) ds.push(L.distance(v[i].sig, v[j].sig));
-      const spread = L.median(ds);
-      let near = Infinity; for (const o of keys) if (o !== k) { const e = []; for (const x of v) for (const y of byKey[o]) e.push(L.distance(x.sig, y.sig)); near = Math.min(near, L.median(e)); }
-      if (!(spread >= T.sisterFloor && spread <= T.sisterCeiling && spread < near)) bad.push(`${L.NAMES[race]}/${k}: spread ${spread.toFixed(3)}, nearest other class ${near.toFixed(3)}`);
-      if (new Set(v.map(h => h.hash)).size !== v.length) bad.push(`${L.NAMES[race]}/${k}: identical sister meshes`);
-    }
-  }
-  assert.deepEqual(bad, []);
-});
-
-test('capital-band jobs are filled by capital-band hulls in every fleet', {timeout: 900000}, () => {
-  const bad = [];
-  for (const race of RACES) {
-    const cap = forgeRace(race).filter(h => h.band === 2);
-    const reach = cap.filter(h => h.finalBand === 2).length / cap.length;
-    if (reach < T.bandReach) bad.push(`${L.NAMES[race]}: ${(reach * 100).toFixed(0)}%`);
-  }
-  assert.deepEqual(bad, []);
-});
-
-// The page's own pool tables: [race, builder, pools] for fleets dealt by class name,
-// and the numeric pools of the tribute navies and the Minbari.
-const NAMED = [[8, 'buildShadow', 'SHD_POOLS'], [15, 'buildEngineer', 'EN_POOLS'], [5, 'buildImperial', 'IMP_POOLS'], [9, 'buildEarthforce', 'EF_POOLS'], [10, 'buildFed', 'FED_POOLS'],
-  [11, 'buildKlingon', 'KLI_POOLS'], [12, 'buildBorg', 'BORG_POOLS'], [13, 'buildMondo', 'MO_POOLS'], [14, 'buildUSCM', 'UM_POOLS'], [16, 'buildYautja', 'YJ_POOLS']];
-function expectedClasses() {
-  const want = {};
-  const add = (race, band, klass) => ((want[race] = want[race] || {})[band] = want[race][band] || new Set()).add(L.classKey(race, klass));
-  for (const [race, fn, table] of NAMED) {
-    const pools = F.wrun(table);
-    pools.forEach((rows, band) => { for (const [kind] of rows) add(race, band, F.wrun(`raceBuild(${race},1234,0,false,${JSON.stringify(kind)}).meta.klass`)); });
-  }
-  for (const [race, pools] of Object.entries(F.wrun('EXTRA_BAND_POOLS'))) pools.forEach((rows, band) => { for (const [type] of rows) add(+race, band, F.wrun(`EXTRA_CLASSES[${race - 18}][${type}]`)); });
-  for (let type = 0; type < 10; type++) add(21, 'any', F.wrun(`EXTRA_CLASSES[3][${type}]`));
-  F.wrun('MIN_POOLS').forEach((rows, band) => { for (const [type] of rows) add(7, band, F.wrun(`buildMinbariClass(1234,${type}).meta.klass`)); });
-  return want;
+  }));
+  const all = todo.flatMap(r => JSON.parse(fs.readFileSync(path.join(out, `hulls-${r}.json`), 'utf8')));
+  fs.rmSync(out, {recursive: true, force: true});
+  const sum = REPORT.analyse(all, {noRecognition: true});
+  sum.exemptions = EXEMPT;
+  sum.verdict = REPORT.verdict(sum, null);
+  return (reportSum = sum);
 }
+const failing = (sum, prefixes) => sum.verdict.rows.filter(r => !r.ok && prefixes.some(p => r.id.startsWith(p))).map(r => r.id + ': ' + r.detail);
+
+test('every band holds several silhouettes, none over half the band, classes are not one shape at two scales', {timeout: 3600000}, async () => {
+  assert.deepEqual(failing(await reportSummary(), ['shapes ', 'dominant ', 'classSep ']), []);
+});
+
+test('sisters differ (no clones, no identical meshes) and still read as their class', {timeout: 3600000}, async () => {
+  assert.deepEqual(failing(await reportSummary(), ['sisters ', 'identical ']), []);
+});
+
+test('capital-band jobs are filled by capital-band hulls in every fleet', {timeout: 3600000}, async () => {
+  assert.deepEqual(failing(await reportSummary(), ['reach ']), []);
+});
+
 test('every class in every band pool is actually dealt in its band, including the Sharlin and the Jem\'Hadar shuttle', {timeout: 900000}, () => {
   const want = expectedClasses(), missing = [];
   for (const [race, bands] of Object.entries(want)) for (const [band, set] of Object.entries(bands)) {

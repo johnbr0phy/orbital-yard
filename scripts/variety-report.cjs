@@ -35,7 +35,7 @@ const SIZE = 600, TOPUP = 40;
 
 const T = L.T, ONE_OFF = L.ONE_OFF;
 
-function forgeFleet(race, recogOnly) {
+function forgeFleet(race, recogOnly, noRecog) {
   // --fast: iteration runs skip breakup fragments (same geometry; the forge
   // time column is then not comparable, and the verdict uses forge-time.json)
   const F = L.loadForge(ROOT, {fast: flag('fast')});
@@ -49,7 +49,7 @@ function forgeFleet(race, recogOnly) {
       seed: out.seed >>> 0, hash: L.meshHash(out.mesh), refit: out.meta.refit ? out.meta.refit.role || out.meta.refit.name || 1 : null,
       structure: out.meta.structure ? out.meta.structure.name || null : null, sig: L.pack(L.signature(out.mesh))});
   };
-  if (race !== 17) {
+  if (race !== 17 && !noRecog && !flag('no-recog')) {
     const G = L.loadForge(ROOT, {fast: true});
     RECOG_FOLDS.forEach((war, i) => {
       for (const j of G.muster(race, war, SIZE).filter(j => !j.hero && !j.hulls && j.band != null)) {
@@ -76,7 +76,7 @@ function forgeFleet(race, recogOnly) {
 }
 
 /* ---------------- analysis ---------------- */
-function analyse(all) {
+function analyse(all, o = {}) {
   const sigOf = new Map(); for (const h of all) sigOf.set(h, L.unpack(h.sig));
   const recogAll = all;
   all = all.filter(h => !h.recogOnly);
@@ -135,7 +135,7 @@ function analyse(all) {
     };
     fleets.push(row);
   }
-  const recognition = recognise(recogAll.filter(h => allowNormal(h) && !h.topup), sigOf);
+  const recognition = o.noRecognition ? null : recognise(recogAll.filter(h => allowNormal(h) && !h.topup), sigOf);
   return {thresholds: T, fleets, recognition, reference: reference(fleets)};
 }
 /* The page's registerDistantHull rule: one group per class and seed modulo
@@ -218,8 +218,8 @@ function verdict(sum, base) {
   }
   for (const f of sum.fleets) if (!f.unique) push(`identical ${f.name}`, !f.identicalMeshes.length, `${f.identicalMeshes.length} identical hull meshes in one muster ${f.identicalMeshes.slice(0, 3).join(', ')}`);
   const rec = sum.recognition;
-  push('recognition overall', rec.xChance >= T.recognitionX, `${(rec.accuracy * 100).toFixed(1)}% = ${rec.xChance.toFixed(2)}x chance`);
-  if (base) for (const [r, a] of Object.entries(rec.perFleet)) { const b = base.recognition.perFleet[r], n = base.recognition.rows[r]; if (b != null) { const floor = b - T.recognitionSE * Math.sqrt(b * (1 - b) / n); push(`recognition ${L.NAMES[r]}`, a >= floor - 1e-9, `${(a * 100).toFixed(1)}% (baseline ${(b * 100).toFixed(1)}%, floor ${(floor * 100).toFixed(1)}%)`); } }
+  if (rec) push('recognition overall', rec.xChance >= T.recognitionX, `${(rec.accuracy * 100).toFixed(1)}% = ${rec.xChance.toFixed(2)}x chance`);
+  if (base && rec) for (const [r, a] of Object.entries(rec.perFleet)) { const b = base.recognition.perFleet[r], n = base.recognition.rows[r]; if (b != null) { const floor = b - T.recognitionSE * Math.sqrt(b * (1 - b) / n); push(`recognition ${L.NAMES[r]}`, a >= floor - 1e-9, `${(a * 100).toFixed(1)}% (baseline ${(b * 100).toFixed(1)}%, floor ${(floor * 100).toFixed(1)}%)`); } }
   for (const f of sum.fleets) if (!f.unique) {
     push(`tris ${f.name}`, f.cost.studyMax < T.studyTris, `max ${f.cost.studyMax}`);
     if (base) { const b = base.fleets.find(x => x.race === f.race); if (b) {
@@ -249,7 +249,7 @@ async function main() {
     await Promise.all(Array.from({length: jobs}, async () => {
       while (next < todo.length) {
         const race = todo[next++], t0 = Date.now();
-        await new Promise((res, rej) => { const p = spawn(process.execPath, [__filename, '--worker', '--race', race, '--root', ROOT, '--out', OUT, ...(flag('append-recog') ? ['--append-recog'] : []), ...(flag('fast') ? ['--fast'] : [])], {stdio: 'inherit'}); p.on('exit', c => c ? rej(new Error('fleet ' + race + ' exit ' + c)) : res()); });
+        await new Promise((res, rej) => { const p = spawn(process.execPath, [__filename, '--worker', '--race', race, '--root', ROOT, '--out', OUT, ...(flag('append-recog') ? ['--append-recog'] : []), ...(flag('no-recog') ? ['--no-recog'] : []), ...(flag('fast') ? ['--fast'] : [])], {stdio: 'inherit'}); p.on('exit', c => c ? rej(new Error('fleet ' + race + ' exit ' + c)) : res()); });
         console.log(`forged ${L.NAMES[race]} in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
       }
     }));
@@ -280,4 +280,6 @@ function print(sum) {
   console.log(`\nverdict: ${sum.verdict.rows.length - sum.verdict.fail.length} pass, ${sum.verdict.fail.length} fail`);
   for (const r of sum.verdict.rows.filter(r => !r.ok)) console.log('  FAIL ' + r.id + ': ' + r.detail);
 }
-main().catch(e => { console.error(e); process.exit(1); });
+// The variety test measures its criteria with this same code (tests/tribute-new/variety.test.cjs).
+if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });
+module.exports = {forgeFleet, analyse, verdict};

@@ -20,7 +20,7 @@ test('muster, heroes, weapon profiles and AI cover all five fleets',()=>{
   b.start(a,c,777,24);const rows=b.run(`ships.map(s=>({race:s.race,klass:s.meta.klass,hero:s.hero,profile:s.ai?.profile?.name,wpn:weaponProfile(s),hp:s.hpMax,cloak:s.canCloak}))`);
   assert.ok(rows.every(s=>s.profile&&s.wpn.color.every(Number.isFinite)&&s.hp>0));
   for(const r of [a,c])assert.equal(rows.filter(s=>s.hero&&s.race===r).length,1);
-  if(a===22){assert.ok(rows.filter(s=>/OPTIMUS/.test(s.klass)).length>=8);assert.ok(rows.some(s=>s.hero&&/ROADSTER/.test(s.klass)));assert.ok(rows.some(s=>/STARSHIP/.test(s.klass)));}
+  if(a===22){assert.ok(rows.some(s=>/OPTIMUS/.test(s.klass)));assert.ok(rows.some(s=>/DRAGON/.test(s.klass)));/* Optimus shares the small band with Dragons and Starlinks since the variety pass */assert.ok(rows.some(s=>s.hero&&/ROADSTER/.test(s.klass)));assert.ok(rows.some(s=>/STARSHIP/.test(s.klass)));}
   if(a===18)assert.ok(rows.filter(s=>s.race===18).every(s=>s.cloak));
  }
 });
