@@ -42,3 +42,35 @@ The [Lexicanum Tyranid Fleet roster](https://wh40k.lexicanum.com/wiki/Tyranid_Fl
 Overlapping arched chitin, ventral ribs, dorsal horns and open mandibles replace the shared small-cruiser body. Seeded shell counts, girth and claw reach accompany three muted bone/chitin palettes. No mechanical engine exhaust or window lights. A dedicated vertex-shader deformation gently moves exposed tendrils while anchoring the core; weapon sockets use the same mathematical deformation. This adds no draw calls or per-frame mesh rebuilds. Ship-study previews include the new motion and stop automatically after 20 seconds. Capital steering retains the battle-flow pitch smoothing.
 
 Checks cover 60 generated hulls under 4,000 triangles at study detail, ten distinct silhouette ratios, finite meshes, native weapon sockets, no exhaust, bounded anchored movement, rigid dead hulls, subdued finishes and capital attitude stability.
+
+## Variety pass: new classes and provenance
+
+The variety pass (VARIETY.md) added classes so that no band of these navies is one shape at several sizes. Everything below is a low-poly procedural interpretation at a compressed battle length. **Canon** means the class appears on screen or in the franchise's own publications; **licensed game** means an officially licensed game; **invented** means an original design in the fleet's language with no claim to canon. No mesh was imported.
+
+| Fleet | Class | Band | Reference and status | What the model is |
+| --- | --- | --- | --- | --- |
+| Romulans | Reman Scorpion fighter | small | Canon: *Star Trek Nemesis* (2002), the Scimitar's attack fighters | Bat-like fighter, wings swept forward with drooping blade tips |
+| Romulans | Romulan drone ship | small | Canon: *Star Trek: Enterprise*, "Babel One" (2005) | Unmanned bird form, raked wings, no cockpit; compressed to a small craft |
+| Romulans | TOS bird-of-prey | escort | Canon: *Star Trek*, "Balance of Terror" (1966) | Saucer hull with two outboard nacelles on short pylons |
+| Romulans | Reman Scimitar warbird | capital | Canon: *Star Trek Nemesis* (2002) | Broad bat-wing warbird; sisters fly cruise or attack wings (the film shows the wings unfolding) |
+| Romulans | Romulan scout (reshaped) | escort | Canon class (TNG); form invented | Flat arrowhead with a single drive; it was a half-size bird-of-prey on main |
+| Romulans | Romulan shuttle (reshaped) | small | Canon class; form invented | Boxy lifting-body wedge with canted fins; it was a miniature warbird on main |
+| Dominion | Cardassian Hideki corvette | small | Canon: *Star Trek: Deep Space Nine* | Small flat broad-sterned patrol ship with a short neck and rounded head |
+| Dominion | Cardassian Galor warship, Keldon configuration | escort | Canon: DS9 (Galor; the Keldon is the uprated Galor) | Cobra neck and head over a broad flat aft wing; a quarter fly as Keldons with a dorsal module and second aft wing |
+| Dominion | Breen warship | capital | Canon: DS9 season 7; proportions interpreted | Bulbous stern, long spine, forked claw bow, down-swept wings |
+| Dominion | Jem'Hadar battleship (reshaped, now in the normal pool) | capital | Canon: DS9, "Tacking into the Wind" | Longer and heavier than the battlecruiser: three shoulder pairs and a dorsal spine |
+| Dominion | Jem'Hadar heavy escort (reshaped) | escort | Licensed game: the heavy raiders of *Star Trek Online* | Twin-pronged raider on the attack ship's line; it was the attack ship at twice the size |
+| Dominion | Jem'Hadar shuttle (reshaped, now in the pool) | small | Form invented | Blunt short pod with swept stub fins |
+| Space Marines | Stormbird gunship | escort | Games Workshop / Forge World | Heavy gunship: broad straight wings, twin engine nacelles each side, dorsal turret |
+| Space Marines | Drop pod | small | Games Workshop (canon) | Armoured cylinder, petal doors, nose cone, one storm bolter |
+| Space Marines | Boarding torpedo | small | *Battlefleet Gothic* (Games Workshop, 1999) | Squat armoured drum behind a wide melta-cutter claw crown |
+| Space Marines | Space hulk | capital | Warhammer 40,000; *Space Hulk* | Rock core with the hulls of dead ships jutting out of it at their own angles |
+| Space Marines | Hunter, Gladius, Nova, Vanguard (new body plans) | escort, capital | *Battlefleet Gothic* rosters | Hunter: slim torpedo boat with a tall tower aft. Gladius: broad battery ship. Nova: lance spear with swept stern fins. Vanguard: lean cruiser with a ram and engine outriggers. On main all four were one armoured spine |
+| Tesla | Starlink swarmsat | small | SpaceX Starlink; weapons fictional | Flat bus with one long solar array on a boom; laser links as guns |
+| Tesla | Crew Dragon | small | SpaceX Crew Dragon; weapons fictional | Capsule and nosecone over a finned trunk; SuperDraco pods as guns |
+| Tesla | Cybertruck gunship | small | Invented from the Tesla Cybertruck | Stainless wedge hover gunship, wheel wells as lift fans, bed turret |
+| Tesla | Gigafactory carrier | capital | Invented | Long faceted prism under a solar ridge, two photovoltaic wings on booms |
+| Tesla | Falcon and Starship configurations | escort, capital | SpaceX Falcon and Starship user's guides (above); HLS from the NASA Artemis lander | Falcons fly legs out or folded, with a Dragon or a fairing; a quarter of Starships are the HLS lander on four legs; stacks fly with or without the hot-staging ring |
+| Tyranids | Spore drone and boarding worm sister kits | small | As above | Tendril reach and bladder size; worm coil |
+
+Every new class above has native weapon and engine sockets on modelled barrels, apertures and drive bells (checked by `tests/tribute-new/variety.test.cjs`), stays under 4,000 triangles at study quality (the extra-fleets test), and appears in the ship study.

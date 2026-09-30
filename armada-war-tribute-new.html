@@ -2322,10 +2322,10 @@ function vyNativeGuns(ship){
 }
 /* Sister proportion amplitude per class, relative to the fleet kit above:
    just enough for each class to sit clear of the clone floor (a median sister
-   distance near 0.08), because every further percent of proportion change
-   made the fleets it borders less recognisable (VARIETY.md, "Recognition").
-   Measured on the variety run before this table (bench/variety/full3). */
-var VY_SISTER_K={"5|CARRACK-CLASS LIGHT CRUISER":0.47,"5|IMMOBILIZER 418 INTERDICTOR":0.95,"5|VICTORY-CLASS DESTROYER":0.76,"5|QUASAR FIRE-CLASS CARRIER":0.47,"5|GOZANTI-CLASS CRUISER":0.83,"5|RAIDER-CLASS CORVETTE":0.6,"5|ARQUITENS-CLASS CRUISER":0.76,"5|TIE/LN STARFIGHTER":0.37,"5|TIE/IN INTERCEPTOR":0.64,"5|LAMBDA-CLASS SHUTTLE":0.6,"5|TIE ADVANCED X1":0.9,"5|TIE/D DEFENDER":0.66,"6|CR90-CLASS CORVETTE":0.77,"6|NEBULON-B ESCORT FRIGATE":0.6,"6|PELTA-CLASS FRIGATE":0.8,"6|DP20 CORELLIAN GUNSHIP":0.5,"6|BTL-A4 Y-WING":0.68,"6|T-65 X-WING":0.71,"6|RZ-1 A-WING":0.88,"6|UT-60D U-WING":0.92,"9|POSEIDON-CLASS SUPERCARRIER":0.74,"9|SAGITTARIUS-CLASS MISSILE CRUISER":0.82,"9|OLYMPUS-CLASS CORVETTE":0.35,"9|SA-23E AURORA STARFURY":0.39,"9|EARTH ALLIANCE SHUTTLE":0.48,"9|SA-32A THUNDERBOLT STARFURY":0.44,"10|AKIRA-CLASS HEAVY CRUISER":0.74,"10|NEBULA-CLASS EXPLORER":0.87,"10|MIRANDA-CLASS CRUISER":0.35,"10|STEAMRUNNER-CLASS CRUISER":0.8,"10|OBERTH-CLASS SCIENCE VESSEL":0.68,"10|DEFIANT-CLASS ESCORT":0.94,"10|TYPE-6 SHUTTLECRAFT":0.77,"11|K'T'INGA-CLASS BATTLECRUISER":0.49,"11|F15-CLASS DESTROYER":0.46,"11|B'REL-CLASS BIRD-OF-PREY":0.37,"11|VOR'CHA-CLASS ATTACK CRUISER":0.7,"11|D6S-CLASS SCOUT CRUISER":0.53,"11|K'VORT-CLASS HEAVY BIRD-OF-PREY":0.48,"11|F5-CLASS FRIGATE":0.43,"11|D7-CLASS BATTLECRUISER":0.5,"11|HEGH'GOGH-CLASS HEAVY FIGHTER":0.78,"11|TO'DUJ-CLASS FIGHTER":0.35,"12|TACTICAL DIAMOND":0.55,"12|ASSIMILATED VESSEL (RAPTOR-PATTERN)":0.39,"12|LONG-RANGE PROBE":0.42,"12|ASSIMILATED VESSEL (RING-PATTERN)":0.53,"12|ASSIMILATED SHUTTLE":0.81,"12|BORG SCOUT SHIP":0.83,"13|EARTH FEDERAL BATTLE CRUISER":0.87,"13|FHLOSTON-CLASS PLEASURE LINER":0.94,"13|MANGALORE ASSAULT SHIP":0.84,"13|ANGEL-WING EXECUTIVE YACHT":0.4,"13|NY FLYING CAB":0.88,"13|MANGALORE RAIDER GUNSHIP":0.59,"13|ZFX200 MERCENARY FIGHTER":0.41,"14|CONESTOGA-CLASS MEDICAL FRIGATE":0.81,"14|TIENTSIN-CLASS ASSAULT SHIP":0.99,"14|HELIADES-CLASS EXPLORATION VESSEL":0.87,"14|CONESTOGA-CLASS TROOP TRANSPORT":0.86,"14|CM-88B BISON STAR FREIGHTER":0.6,"14|UD-4L CHEYENNE DROPSHIP":0.93,"14|COVENANT LANDER":0.56,"16|GOLDEN CLAN SHIP":0.69,"16|ELDER HORSESHOE TROPHY BARGE":0.46,"16|WOLF-CLASS MILITANT SCOUT":0.72,"16|LOST TRIBE SEWER-SHIP":0.67,"16|ENFORCER-CASTE CRUISER":0.92,"16|FERAL HUNTER'S SHIP":0.65,"18|REMAN SCIMITAR WARBIRD":0.58,"18|TOS BIRD-OF-PREY":0.8,"18|ROMULAN SCOUT":0.59,"18|REMAN SCORPION FIGHTER":0.38,"18|ROMULAN SHUTTLE":0.71,"18|ROMULAN DRONE SHIP":0.66,"19|BREEN WARSHIP":0.72,"19|JEM'HADAR BATTLECRUISER":0.91,"19|JEM'HADAR BATTLESHIP":0.8,"19|JEM'HADAR HEAVY ESCORT":0.73,"19|CARDASSIAN GALOR WARSHIP":0.42,"19|JEM'HADAR ATTACK SHIP":0.9,"19|CARDASSIAN HIDEKI CORVETTE":0.85,"19|JEM'HADAR SHUTTLE":0.87,"20|BATTLE BARGE":0.69,"20|VANGUARD LIGHT CRUISER":0.55,"20|STRIKE CRUISER":0.83,"20|SPACE HULK":0.7,"20|HUNTER DESTROYER":0.88,"20|GLADIUS FRIGATE":0.87,"20|NOVA FRIGATE":0.75,"20|STORMBIRD GUNSHIP":0.59,"20|STORM EAGLE":0.64,"20|CAESTUS ASSAULT RAM":0.95,"20|XIPHON INTERCEPTOR":0.69,"20|THUNDERHAWK GUNSHIP":0.64,"20|BOARDING TORPEDO":0.69,"21|HIVE SHIP":0.71,"21|RAZORFIEND CRUISER":0.57,"21|VOID PROWLER":0.69,"21|DEVOURER CRUISER":0.66,"21|VANGUARD DRONE SHIP":0.8,"21|ESCORT DRONE":0.7,"21|KRAKEN BIO-SHIP":0.54,"21|SPORE DRONE":0.36,"21|BOARDING WORM":0.37,"21|ATTACK ORGANISM":0.65,"22|STARSHIP":0.48,"22|GIGAFACTORY CARRIER":0.74,"22|STARSHIP / SUPER HEAVY":0.88,"22|FALCON 9":0.41,"22|FALCON HEAVY":0.52,"22|OPTIMUS HEAVY":0.48,"22|OPTIMUS BLASTER":0.4,"22|CYBERTRUCK GUNSHIP":0.99,"22|STARLINK SWARMSAT":0.67};
+   distance near 0.055 against a floor of 0.04), because every further percent
+   of proportion change made the fleets it borders less recognisable (VARIETY.md,
+   "Recognition"). Measured on the variety runs full3 and full4. */
+var VY_SISTER_K={"5|CARRACK-CLASS LIGHT CRUISER":0.235,"5|IMMOBILIZER 418 INTERDICTOR":0.655,"5|VICTORY-CLASS DESTROYER":0.486,"5|QUASAR FIRE-CLASS CARRIER":0.235,"5|GOZANTI-CLASS CRUISER":0.515,"5|RAIDER-CLASS CORVETTE":0.3,"5|ARQUITENS-CLASS CRUISER":0.456,"5|TIE/LN STARFIGHTER":0.185,"5|TIE/IN INTERCEPTOR":0.589,"5|LAMBDA-CLASS SHUTTLE":0.324,"5|TIE ADVANCED X1":0.612,"5|TIE/D DEFENDER":0.33,"6|CR90-CLASS CORVETTE":0.477,"6|NEBULON-B ESCORT FRIGATE":0.3,"6|PELTA-CLASS FRIGATE":0.504,"6|DP20 CORELLIAN GUNSHIP":0.25,"6|BTL-A4 Y-WING":0.415,"6|T-65 X-WING":0.461,"6|RZ-1 A-WING":0.598,"6|UT-60D U-WING":0.626,"9|POSEIDON-CLASS SUPERCARRIER":0.377,"9|SAGITTARIUS-CLASS MISSILE CRUISER":0.525,"9|OLYMPUS-CLASS CORVETTE":0.175,"9|SA-23E AURORA STARFURY":0.195,"9|EARTH ALLIANCE SHUTTLE":0.24,"9|SA-32A THUNDERBOLT STARFURY":0.22,"10|AKIRA-CLASS HEAVY CRUISER":0.466,"10|NEBULA-CLASS EXPLORER":0.548,"10|MIRANDA-CLASS CRUISER":0.175,"10|STEAMRUNNER-CLASS CRUISER":0.464,"10|OBERTH-CLASS SCIENCE VESSEL":0.415,"10|DEFIANT-CLASS ESCORT":0.63,"10|TYPE-6 SHUTTLECRAFT":0.447,"11|K'T'INGA-CLASS BATTLECRUISER":0.265,"11|F15-CLASS DESTROYER":0.23,"11|B'REL-CLASS BIRD-OF-PREY":0.185,"11|VOR'CHA-CLASS ATTACK CRUISER":0.427,"11|D6S-CLASS SCOUT CRUISER":0.323,"11|K'VORT-CLASS HEAVY BIRD-OF-PREY":0.24,"11|F5-CLASS FRIGATE":0.215,"11|D7-CLASS BATTLECRUISER":0.295,"11|HEGH'GOGH-CLASS HEAVY FIGHTER":0.53,"11|TO'DUJ-CLASS FIGHTER":0.175,"12|TACTICAL DIAMOND":0.297,"12|ASSIMILATED VESSEL (RAPTOR-PATTERN)":0.195,"12|LONG-RANGE PROBE":0.21,"12|ASSIMILATED VESSEL (RING-PATTERN)":0.265,"12|ASSIMILATED SHUTTLE":0.527,"12|BORG SCOUT SHIP":0.523,"13|EARTH FEDERAL BATTLE CRUISER":0.566,"13|FHLOSTON-CLASS PLEASURE LINER":0.63,"13|MANGALORE ASSAULT SHIP":0.529,"13|ANGEL-WING EXECUTIVE YACHT":0.208,"13|NY FLYING CAB":0.572,"13|MANGALORE RAIDER GUNSHIP":0.395,"13|ZFX200 MERCENARY FIGHTER":0.238,"14|CONESTOGA-CLASS MEDICAL FRIGATE":0.502,"14|TIENTSIN-CLASS ASSAULT SHIP":0.673,"14|HELIADES-CLASS EXPLORATION VESSEL":0.574,"14|CONESTOGA-CLASS TROOP TRANSPORT":0.55,"14|CM-88B BISON STAR FREIGHTER":0.348,"14|UD-4L CHEYENNE DROPSHIP":0.642,"14|COVENANT LANDER":0.28,"16|GOLDEN CLAN SHIP":0.386,"16|ELDER HORSESHOE TROPHY BARGE":0.23,"16|WOLF-CLASS MILITANT SCOUT":0.403,"16|LOST TRIBE SEWER-SHIP":0.402,"16|ENFORCER-CASTE CRUISER":0.607,"16|FERAL HUNTER'S SHIP":0.332,"18|REMAN SCIMITAR WARBIRD":0.319,"18|TOS BIRD-OF-PREY":0.472,"18|ROMULAN SCOUT":0.319,"18|REMAN SCORPION FIGHTER":0.19,"18|ROMULAN SHUTTLE":0.412,"18|ROMULAN DRONE SHIP":0.383,"19|BREEN WARSHIP":0.41,"19|JEM'HADAR BATTLECRUISER":0.573,"19|JEM'HADAR BATTLESHIP":0.448,"19|JEM'HADAR HEAVY ESCORT":0.416,"19|CARDASSIAN GALOR WARSHIP":0.21,"19|JEM'HADAR ATTACK SHIP":0.558,"19|CARDASSIAN HIDEKI CORVETTE":0.527,"19|JEM'HADAR SHUTTLE":0.574,"20|BATTLE BARGE":0.421,"20|VANGUARD LIGHT CRUISER":0.281,"20|STRIKE CRUISER":0.531,"20|SPACE HULK":0.385,"20|HUNTER DESTROYER":0.563,"20|GLADIUS FRIGATE":0.557,"20|NOVA FRIGATE":0.443,"20|STORMBIRD GUNSHIP":0.295,"20|STORM EAGLE":0.378,"20|CAESTUS ASSAULT RAM":0.636,"20|XIPHON INTERCEPTOR":0.469,"20|THUNDERHAWK GUNSHIP":0.429,"20|BOARDING TORPEDO":0.462,"21|HIVE SHIP":0.355,"21|RAZORFIEND CRUISER":0.285,"21|VOID PROWLER":0.345,"21|DEVOURER CRUISER":0.33,"21|VANGUARD DRONE SHIP":0.44,"21|ESCORT DRONE":0.35,"21|KRAKEN BIO-SHIP":0.27,"21|SPORE DRONE":0.187,"21|BOARDING WORM":0.185,"21|ATTACK ORGANISM":0.325,"22|STARSHIP":0.259,"22|GIGAFACTORY CARRIER":0.37,"22|STARSHIP / SUPER HEAVY":0.546,"22|FALCON 9":0.205,"22|FALCON HEAVY":0.26,"22|OPTIMUS HEAVY":0.245,"22|OPTIMUS BLASTER":0.2,"22|CYBERTRUCK GUNSHIP":0.683,"22|STARLINK SWARMSAT":0.382,"6|GR-75 MEDIUM TRANSPORT":0.8,"6|SPHYRNA-CLASS HAMMERHEAD CORVETTE":0.72,"6|A/SF-01 B-WING":0.7,"9|HYPERION-CLASS HEAVY CRUISER":0.75,"10|CONSTITUTION-CLASS HEAVY CRUISER":0.78,"10|INTREPID-CLASS EXPLORER":0.74,"10|PEREGRINE-CLASS FIGHTER":0.76,"10|DANUBE-CLASS RUNABOUT":0.85,"11|D'KTAGH-CLASS SHUTTLECRAFT":0.79,"12|TACTICAL CUBE":0.71,"12|SPHERE":0.68,"13|MONDOSHAWAN SHIP":0.77,"13|NY POLICE CRUISER":0.73,"14|TYPE 337 EEV ESCAPE POD":0.87,"14|NARCISSUS-CLASS SHUTTLE":0.89,"16|YAUTJA SCOUT SHIP":0.81,"18|VALDORE WARBIRD":0.91,"18|ROMULAN BIRD-OF-PREY":0.89,"20|DROP POD":0.87,"22|CREW DRAGON":0.8};
 /*__VARIETY_END__*/
 
 /* =====================================================================
@@ -4651,7 +4651,8 @@ var fedMiranda=function(parts,R,L){
       L*0.055,L*0.042,L*0.014);
     fedNacelle(parts,-L*0.496,L*0.15,ny,nz,nr);
   });
-  if(R()<0.75){
+  /* variety pass: the roll bar is the class's norm (it was a quarter-off coin: the two plans sat 0.36 apart) */
+  if(R()<0.9){
     const xr=-L*0.30,bz=L*0.145,by=L*0.115;
     fedMrun(parts,()=>{
       parts.push({k:"panel",pts:[[xr+L*0.045,cy+L*0.02,bz],[xr-L*0.045,cy+L*0.02,bz],
@@ -10406,11 +10407,11 @@ var enOrrery=function(parts,U,V2){
 /* Temple ship: the LV-223 pyramid (Prometheus) as a capital, a stepped
    mound with a ribbed Giger face and a mouth-gate prow. Invented. */
 var enTemple=function(parts,U,V2){
-  const steps=3+Math.floor(V2()*2),squat=.85+V2()*.3;
+  const steps=4+Math.floor(V2()*2),squat=1.35+V2()*.3;
   for(let k=0;k<steps;k++){const t=k/steps,w=(.46-.34*t),h=.07*squat,y=k*h*1.6;
     parts.push({k:"loft",sec:[-.5,-.38,.30,.44].map((x,i)=>{const s2=[.7,1,1,.72][i]*w;return {pts:Array.from({length:8},(_,j)=>{const a=j/8*Math.PI*2+Math.PI/8;return [x*U*(1-t*.35),y*U+Math.sin(a)*h*U,Math.cos(a)*s2*U];})};})});}
   for(let k=0;k<7;k++){const z=(-.30+k*.10)*U;parts.push(enChain([[-.44*U,.02*U,z],[-.1*U,(steps*.11*squat)*U,z*.6],[.3*U,.03*U,z*.9]],.012*U,.02*U,.006*U,.006*U,true));}
-  parts.push({k:"lathe",c:[-.05*U,(steps*.11*squat)*U,0],axis:[0,1,0],prof:[[0,.12*U],[.06*U,.10*U],[.10*U,.04*U],[.13*U,0]]});
+  parts.push({k:"lathe",c:[-.05*U,(steps*.11*squat)*U,0],axis:[0,1,0],prof:[[0,.12*U],[.06*U,.10*U],[.10*U,.04*U],[.30*U,.012*U],[.34*U,0]]});
   const muz=[];for(const sg of [-1,0,1]){const m={k:"disc",c:[.44*U,.02*U,sg*.12*U],n:[1,0,0],r:.05*U,ri:.035*U};parts.push(m);muz.push(m);}
   minFit(parts,U);
   return muz;
@@ -11625,8 +11626,12 @@ function buildExtraClass(race,seed,type,hero=false){
   L=[28,110,230,620,1250][type];
   if(type===0){
    // Jem'Hadar shuttle: a blunt short pod with swept stub fins (form ours).
+   // the Jem'Hadar tells in miniature: a ribbed beetle back and swept arms
+   // ending in drive pods, like the attack ship at a third of its reach
    const fin=16+V2()*6;
-   pod(0,0,0,40,11,13);for(const sign of [-1,1]){plate([[-8,0,sign*10],[-30,-2,sign*fin],[-36,-2,sign*fin],[-24,0,sign*9]],1.5);drive(-38,0,sign*5,2.5);gun([30,-2,sign*5],[42,-2,sign*5],.8);}
+   pod(6,0,0,34,10,13);pod(-26,0,0,16,5,7);
+   for(let i=0;i<3;i++)body([[4+i*8,7,0,2.5,11-i*2],[8+i*8,8,0,1.8,10-i*2]],8);
+   for(const sign of [-1,1]){body([[0,0,sign*8,3,4],[-20,-2,sign*fin,2.5,4],[-32,-1,sign*fin,2,3]]);pod(-30,-1,sign*fin,8,2.6,3);drive(-38,-1,sign*fin,2.2);gun([30,-2,sign*5],[42,-2,sign*5],.8);}
    arch=fin>19?'LONG FINS':'SHORT FINS';warp=[.94+V2()*.12,.9+V2()*.2,.9+V2()*.2];
   }else if(type===2){
    // Heavy escort: the attack ship's line stretched into a twin-pronged
@@ -11686,6 +11691,9 @@ function buildExtraClass(race,seed,type,hero=false){
     armour([[-48,0,6,w*.8],[-36,0,8,w],[20,0,7,w],[36,0,6,w*.8],[46,-1,4,w*.45]]);
     for(const sign of [-1,1]){battery(-24,2,sign*(w+2),n);battery(-20,-4,sign*(w+1),n-1);}
     roof(-30,8,0,8,6,6);driveBank(4,w*.45);gun([40,4,0],[52,4,0],1.4);
+    // the Imperial gothic tells: an armoured ram prow and a spired tower
+    armour([[40,-3,6,w*.4],[54,-6,3,w*.2],[60,-7,1,w*.08]]);tower(-18,14,5);
+    for(const sign of [-1,1])tube([-24,16,sign*4],[-24,28,sign*4],1.2,.1);
     arch=n>3?'FOUR-GUN BROADSIDE':'THREE-GUN BROADSIDE';warp=[.95+V2()*.1,.92+V2()*.16,.94+V2()*.12];
    }else if(type===3){
     // Nova frigate: a long lance spear with swept stern fins and a dorsal
@@ -11869,12 +11877,14 @@ function buildExtraClass(race,seed,type,hero=false){
   }else if(type===8){
    // Crew Dragon (SpaceX): a blunt capsule with nosecone over a finned
    // trunk. SuperDraco pods stand in as its guns (fictional adaptation).
-   const trunk=18+V2()*8;
-   parts.push({k:'lathe',c:[0,0,0],axis:[1,0,0],prof:[[-trunk-6,15],[-6,15],[-4,17],[2,16],[16,10],[24,5],[28,0]]});
+   const trunk=18+V2()*8,open=V2()<.5;
+   parts.push({k:'lathe',c:[0,0,0],axis:[1,0,0],prof:open?[[-trunk-6,15],[-6,15],[-4,17],[2,16],[16,10],[22,6.5],[23,0]]:[[-trunk-6,15],[-6,15],[-4,17],[2,16],[16,10],[24,5],[28,0]]});
+   // on orbit the nose cone hinges up and forward on its arm
+   if(open){parts.push({k:'lathe',c:[24,12,0],axis:[.5,.866,0],prof:[[0,6.5],[3,4],[5,0]]});tube([20,6,0],[24,12,0],.8,.8);}
    for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4,c=Math.cos(a),sn=Math.sin(a);parts.push({k:'panel',pts:[[-trunk-6,sn*15,c*15],[-trunk-8,sn*23,c*23],[-trunk+4,sn*15,c*15]],n:[0,-c,sn],th:1.4});
     if(i<2)gun([8,sn*15,c*15],[16,sn*12,c*12],1.1);}
    drive(-trunk-7,0,0,8);
-   arch=trunk>22?'LONG TRUNK':'SHORT TRUNK';warp=[.95+V2()*.1,.95+V2()*.1,.95+V2()*.1];
+   arch=(open?'NOSE OPEN, ':'NOSE CLOSED, ')+(trunk>22?'LONG TRUNK':'SHORT TRUNK');warp=[.95+V2()*.1,.95+V2()*.1,.95+V2()*.1];
   }else if(type===9){
    // Cybertruck gunship: the stainless wedge as a hover gunship, wheel
    // wells turned to lift fans, a turret on the bed. Invented.
@@ -11976,7 +11986,7 @@ var EXTRA_BAND_POOLS={
  18:[[[5,.40],[0,.30],[8,.30]],[[1,.35],[2,.35],[6,.30]],[[4,.35],[3,.35],[7,.30]]],
  19:[[[1,.42],[5,.33],[0,.25]],[[2,.35],[6,.65]],[[3,.35],[4,.30],[7,.35]]],
  22:[[[0,.28],[1,.12],[7,.20],[8,.20],[9,.20]],[[2,.55],[3,.45]],[[4,.40],[5,.35],[10,.25]]],
- 20:[[[0,.22],[9,.18],[7,.18],[8,.14],[12,.14],[13,.14]],[[1,.26],[2,.26],[3,.26],[11,.22]],[[4,.34],[6,.26],[5,.22],[14,.18]]]};
+ 20:[[[0,.25],[9,.20],[7,.20],[8,.17],[12,.18]],[[1,.26],[2,.26],[3,.26],[11,.22]],[[4,.34],[6,.26],[5,.22],[14,.18]]]};
 function buildExtra(race,seed,hulls=0,hero=false,band){
  const R=mulberry32((seed^0xADC73)>>>0),row=race-18;
  const pools=[[0,1,2,3,4],[1,1,1,2,3],[0,1,2,3,4,5,6,7,8,9],[0,1,2,3,4,5,6,7,8,9],[0,0,0,1,2,3,4,5]];
@@ -12114,7 +12124,7 @@ function applyFleetRefit(ship,race,seed,forced,drive){
      little long or short, broad or lean, deep or flat, on its own stream, so
      no two sisters are clones. Classes with structural kits (drive banks,
      keels, wings, payloads) vary their assemblies on top of this. */
-  if([5,6,9,10,11,12,13,14,16].includes(race)){const V2=vyStream(seed,0x5157),cls=String(ship.meta.klass).replace(/\s*\((CARGO|BATTLE|SCIENCE|COMMAND)[^)]*REFIT\)\s*$/,''),k=(race===5&&small?.5:race===10?(/MIRANDA/.test(ship.meta.klass)?0:/DANUBE/.test(ship.meta.klass)?1.3:.7):1)*(VY_SISTER_K[race+'|'+cls]||1);vyWarpShip(ship,[1+(V2()-.5)*.1*k,1+(V2()-.5)*.14*k,1+(V2()-.5)*.14*k]);}
+  if([5,6,9,10,11,12,13,14,16].includes(race)){const V2=vyStream(seed,0x5157),cls=String(ship.meta.klass).replace(/\s*\((CARGO|BATTLE|SCIENCE|COMMAND)[^)]*REFIT\)\s*$/,''),k=(race===5&&small?.5:race===10?(/MIRANDA/.test(ship.meta.klass)?.5:/DANUBE/.test(ship.meta.klass)?1.3:.7):1)*(VY_SISTER_K[race+'|'+cls]||1);vyWarpShip(ship,[1+(V2()-.5)*.1*k,1+(V2()-.5)*.14*k,1+(V2()-.5)*.14*k]);}
   bb=efBB(ship.parts);ship.bb=bb;ship.meta.length=bb[1][0]-bb[0][0];ship.meta.beam=bb[1][2]-bb[0][2];ship.meta.height=bb[1][1]-bb[0][1];
   ship.meta.mass=(ship.meta.mass||1)*scale**3;
   ship.meta.refit={role:organic?['BASE MORPH','LONG-RANGE MORPH','BROOD / TRANSPORT MORPH','SENSORY CREST','ARMORED CARAPACE','SEEDER / SUPPORT MORPH'][role]:REFIT_NAMES[role],index:role,seed:seed>>>0,scale,addedParts:ship.parts.length-originalCount,provenance:'Procedural refit'};
