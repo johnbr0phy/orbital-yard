@@ -50,6 +50,42 @@ What I measured, in order:
 
 The Yard ends within a few hulls of its floor. That is the honest cost of a pass that adds some forty classes and gives every class sisters: the Yard's recognition rests on its designs being alone, and a richer universe is less empty around it.
 
+## Flight
+
+Hull length and proportion feed turn rate, speed, mass and avoidance, so the motion pass was re-run in full on the final build (`scripts/motion-report.cjs`, all 32 scenes and the 24-war sweep, `bench/motion/variety`) and compared with main's run of the same set (`bench/motion/final`; main re-measured at 471d650 gives the same 40.2% classifier). Every MOTION.md criterion that passes on main passes here. Cohesion and individuality fail on main and still fail, both a little better (70.5% against 69.1%; 153 against 169 squadrons below 0.25).
+
+One fix came out of it. With the first final build the motion-only fleet classifier fell to 38.5%, under its 39.6% floor. Speed is the feature that tells fleets apart best, and it reads hull length; a sister's proportion line moved her length a few percent, so a class no longer flew at one speed. Sisters share their class's engines, so speed and helm now read the class's own length (`classLen()`), while bands, roles and hull strength read the hull as built. The classifier is back to 40.0%. A version that also took hull strength from the class length passed the classifier but let one Klingon hero cross its own path in 3 of 50 samples of one window (6%, limit 5%); I kept the narrower one.
+
+Flight check per fleet (main → this branch; every fleet appears in the sweep, most in scenes too; `node scripts/variety-flight.cjs`):
+
+<!-- FLIGHT-TABLE -->
+| fleet | ship-minutes | reversals, gunboats and capitals | reversals per minute, all | worst shuttle | spins (80 m+) | named from motion | flight |
+|---|---|---|---|---|---|---|---|
+| Yard | 288 → 306 | 0 → 0 | 0.000 → 0.003 | 0% → 0% | 0 → 0 | 27% → 26% | PASS |
+| Shoal | 228 → 252 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 50% → 33% | PASS |
+| Lattice | 187 → 183 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 34% → 41% | PASS |
+| Drift | 148 → 147 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 17% → 15% | PASS |
+| Choir | 217 → 204 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 20% → 24% | PASS |
+| Imperial | 2300 → 2290 | 0 → 0 | 0.000 → 0.000 | 0% → 2% | 0 → 0 | 39% → 36% | PASS |
+| Rebel | 1072 → 1100 | 0 → 0 | 0.000 → 0.000 | 4% → 0% | 0 → 0 | 16% → 21% | PASS |
+| Minbari | 208 → 214 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 52% → 63% | PASS |
+| Shadows | 114 → 112 | 0 → 0 | 0.000 → 0.009 | 0% → 0% | 0 → 0 | 61% → 60% | PASS |
+| EarthForce | 294 → 285 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 22% → 22% | PASS |
+| Federation | 286 → 300 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 24% → 29% | PASS |
+| Klingon | 272 → 249 | 0 → 0 | 0.000 → 0.000 | 0% → 2% | 0 → 0 | 29% → 25% | PASS |
+| Borg | 258 → 249 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 70% → 75% | PASS |
+| Mondoshawan | 145 → 186 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 20% → 30% | PASS |
+| USCM | 222 → 237 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 28% → 30% | PASS |
+| Engineers | 202 → 222 | 0 → 0 | 0.000 → 0.000 | 2% → 0% | 0 → 0 | 59% → 58% | PASS |
+| Yautja | 96 → 101 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 56% → 46% | PASS |
+| First Ones | 48 → 48 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 79% → 75% | PASS |
+| Romulans | 253 → 258 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 35% → 32% | PASS |
+| Dominion | 83 → 73 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 38% → 29% | PASS |
+| Space Marines | 243 → 239 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 66% → 59% | PASS |
+| Tyranids | 243 → 249 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 64% → 59% | PASS |
+| Tesla | 158 → 157 | 0 → 0 | 0.013 → 0.013 | 4% → 4% | 0 → 0 | 54% → 51% | PASS |
+<!-- /FLIGHT-TABLE -->
+
 ## What worked and what didn't
 
 Worked:
@@ -91,5 +127,7 @@ for s in v1 v2 v3 v4 v5 v6 v7 v8 v9; do node scripts/capture-clip.cjs --variety 
 node scripts/variety-watch.cjs                                                                  # design/tribute-new/review/variety/index.html
 node scripts/variety-roles.cjs --from bench/variety/final                                       # role declarations
 node scripts/variety-doc.cjs                                                                    # the tables in this file
+node scripts/motion-report.cjs --label variety --jobs 4 --compare bench/motion/baseline/summary.json   # the motion pass, in full
+node scripts/variety-flight.cjs --main bench/motion/final --after bench/motion/variety --out bench/variety/flight.json
 node --test tests/tribute-new/variety.test.cjs
 ```

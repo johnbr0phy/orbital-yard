@@ -1,0 +1,119 @@
+{
+ "rows": [
+  {
+   "race": 0,
+   "name": "Yard",
+   "ok": true
+  },
+  {
+   "race": 1,
+   "name": "Shoal",
+   "ok": true
+  },
+  {
+   "race": 2,
+   "name": "Lattice",
+   "ok": true
+  },
+  {
+   "race": 3,
+   "name": "Drift",
+   "ok": true
+  },
+  {
+   "race": 4,
+   "name": "Choir",
+   "ok": true
+  },
+  {
+   "race": 5,
+   "name": "Imperial",
+   "ok": true
+  },
+  {
+   "race": 6,
+   "name": "Rebel",
+   "ok": true
+  },
+  {
+   "race": 7,
+   "name": "Minbari",
+   "ok": true
+  },
+  {
+   "race": 8,
+   "name": "Shadows",
+   "ok": true
+  },
+  {
+   "race": 9,
+   "name": "EarthForce",
+   "ok": true
+  },
+  {
+   "race": 10,
+   "name": "Federation",
+   "ok": true
+  },
+  {
+   "race": 11,
+   "name": "Klingon",
+   "ok": true
+  },
+  {
+   "race": 12,
+   "name": "Borg",
+   "ok": true
+  },
+  {
+   "race": 13,
+   "name": "Mondoshawan",
+   "ok": true
+  },
+  {
+   "race": 14,
+   "name": "USCM",
+   "ok": true
+  },
+  {
+   "race": 15,
+   "name": "Engineers",
+   "ok": true
+  },
+  {
+   "race": 16,
+   "name": "Yautja",
+   "ok": true
+  },
+  {
+   "race": 17,
+   "name": "First Ones",
+   "ok": true
+  },
+  {
+   "race": 18,
+   "name": "Romulans",
+   "ok": true
+  },
+  {
+   "race": 19,
+   "name": "Dominion",
+   "ok": true
+  },
+  {
+   "race": 20,
+   "name": "Space Marines",
+   "ok": true
+  },
+  {
+   "race": 21,
+   "name": "Tyranids",
+   "ok": true
+  },
+  {
+   "race": 22,
+   "name": "Tesla",
+   "ok": true
+  }
+ ]
+}

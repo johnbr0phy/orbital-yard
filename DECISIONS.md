@@ -468,6 +468,8 @@ Calls I made on the flight and pilot pass (MOTION-BRIEF.md) without being able t
 - **Some classes vary one way only.** For the classes whose sisters crowded another fleet, the line's direction is chosen by measurement: I count how many of the originals' hulls a class's sisters would enter the neighbourhood of, for each direction, and keep the least. The table is `VY_SISTER_AXIS`; the tool is scripts/variety-sister-axis.cjs.
 - **Discrete variants where the canon has them.** Shadow carapace plans, Juggernaut variants, Falcon payloads, HLS Starships, Keldons, Gozanti walker carriers, tactical cubes with a docked sphere. A variant that is a third of its class or less keeps the class's median sister distance small while adding a shape to the band.
 
+- **Sisters fly as their class.** Speed and turn rate read hull length, so a sister line that moved length a few percent also blurred her fleet's speed, and the motion-only fleet classifier fell under its floor (38.5% against 39.6%). A class's sisters share her engines: speed and helm read the class's own length, and bands, roles and hull strength read the hull as built. Taking hull strength from the class length too passed the classifier but tipped one hero's shuttle over its limit by one sample; the narrower rule passes both.
+
 ## Cost
 
 - **The triangle budget is a study-quality ceiling.** "Under 6,000 triangles at study quality" first cut every round part to fewer facets at every quality, which turned the Yard's battle meshes into three-sided prisms and changed 788 of its 1,070 hulls' silhouettes. The ceiling now applies at study quality only, and takes facets from the smallest fittings first; the battle meshes are exactly main's.
