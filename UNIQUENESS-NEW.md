@@ -67,3 +67,30 @@ The battle muster and ship study now include MC30c, Assault Frigate Mk II, Dread
 Visual references: [Liberty](https://www.fantasyflightgames.com/en/news/2016/6/29/the-liberty/), [MC30](https://www.fantasyflightgames.com/en/news/2015/9/23/race-into-battle/), [Assault Frigate II](https://www.fantasyflightgames.com/edge_news.asp?eidn=5348), [Profundity](https://www.starwars.com/databank/profundity), and the user's Empire at War comparison chart. Dreadnaught, Assault Frigate I and Marauder interpretations follow the chart's Legends/game fleet mix. Nominal dimensions and crew are game model metadata.
 
 Validation: 42 new heavy-hull/refit combinations produce finite meshes below 4,500 triangles at review quality; all five new classes are reachable by battle selection. A bounded 26-ship CPU combat check passes. No large-fleet GPU frame-rate claim is made. Existing forge and rendering performance limits remain in place.
+
+## Fleet variety pass (VARIETY.md)
+
+The refits above made individual ships different; they did not make a fleet read as a navy of different jobs. A clay contact sheet of main showed most tribute fleets as one shape at several sizes, and sister ships as clones (median sister distance 0.000 to 0.011, scale jitter only). This pass works at three levels, each measured by `scripts/variety-report.cjs` and defined in VARIETY.md: which classes a band deals (pools), how sisters of one class differ (variant kits), and which lengths a class may fly at (role lock).
+
+### Band pools
+
+Every fleet with named classes deals each muster band from its own pool. The table is read from the page's pool tables by `scripts/variety-pools.cjs`, so it cannot drift from what the forge deals; `tests/tribute-new/variety.test.cjs` checks that every entry is really dealt in its band. The originals (Yard, Shoal, Lattice, Drift, Choir) forge one-off designs and have no pools; Rebel and Tyranid pools are unchanged.
+
+<!-- POOL-TABLE -->
+<!-- /POOL-TABLE -->
+
+### Variant kits
+
+A sister must differ from her sisters by something a builder would change, and stay closer to them than to any other class of her fleet (VARIETY.md, sister spread). The kits:
+
+- **Proportions, per class.** For the classes that were clones on main (Imperial, Rebel, EarthForce, Federation, Klingon, Borg, Mondoshawan, USCM, Yautja) and the tribute navies' own classes, each hull stretches its length, beam and height by a few percent from its seed. The amplitude is set per class (`VY_SISTER_K`) so the class clears the clone floor with a margin and no more: thin sail and blade classes (TIE, bird-of-prey) need far less than a compact pod does. Weapon and engine sockets move with the parts.
+- **Structure, where the canon has it.** Shadow Vessels in four plans (long-legged, swept, grasping, juvenile) and a battle scar; the Engineers' Juggernaut intact, with a broken horn, a closed ring or fused horns; the orrery's four arms; Falcons with legs out or folded and a Dragon or a fairing; a quarter of Starships as the HLS lander; super-heavy stacks with or without the hot-staging ring; Galor or Keldon; Crew Dragon with the nose open; the Miranda with or without her roll bar; the Tyranid spore drone's tendril reach and bladder, the boarding worm's coil.
+- **The Sharlin** flies with half the Minbari refit stretch, so she still reads as the Sharlin at 1.6 km and 1.2 km.
+- **Originals.** No sister classes: every hull is its own design. Their capital jobs forge the fleet's own long designs (MODELS-NEW.md).
+
+### Role lock
+
+The ship minds read length, not shape: the band cuts, the gunboat line (80 m), fighter attack runs (under 120 m), spool steps (60 m and 180 m), the Shadow crown line (180 m) and capitals (300 m). Every class declares its role and the length range its hulls fly at, measured over both musters of every fleet by `scripts/variety-roles.cjs`. `tests/tribute-new/variety.test.cjs` fails when a hull leaves its declared range or crosses a threshold its class does not declare.
+
+<!-- ROLE-TABLE -->
+<!-- /ROLE-TABLE -->

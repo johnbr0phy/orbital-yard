@@ -13471,17 +13471,18 @@ const baseRaceBuild=(f,seed,hulls,hero,band)=>{
   /* Capital band (VARIETY.md, band reach): the originals' generators rarely
      or never grow past a frigate, so a capital-band job used to fall back to
      a smaller hull. A capital job now forges the fleet's own one-off design
-     and grows it to capital length (110-240 m, from its own stream), so the
-     line keeps the fleet's language. The crown generator at a few berths was
-     tried first and dropped: those cruisers read as other navies' capitals
-     (VARIETY.md, "What didn't work"). */
+     at capital length (118-240 m, from its own stream), so the line keeps the
+     fleet's language. The crown generator at a few berths was tried first
+     and dropped: those cruisers read as other navies' capitals (VARIETY.md,
+     "What didn't work"). The Yard, the Lattice and the Drift build every type
+     at every size, so the job's own design is grown. The Shoal is grown, not
+     built: a spore mine or a medusa blown up to 200 m is nothing the Shoal
+     flies, so its capital job keeps the first of up to eight of its designs
+     (derived seeds) that is naturally capital length, else the longest. */
   if(!hulls&&!hero&&band===2&&f>=0&&f<=3){
-    // The fleet's own designs first: up to eight of them (derived seeds), the
-    // first that is naturally capital length wins; otherwise the longest one
-    // is grown. A small type grown to 200 m does not read as the fleet's line.
     const make=s2=>f===1?buildXeno(s2):f===2?buildLattice(s2):f===3?buildDrift(s2):buildShip(s2,P,NL);
     let ship=null;
-    for(let k=0;k<8;k++){const c=make(k?(seed^Math.imul(k,0x2545F491))>>>0:seed);if(!ship||c.meta.length>ship.meta.length)ship=c;if(c.meta.length>=118)break;}
+    for(let k=0;k<(f===1?8:1);k++){const c=make(k?(seed^Math.imul(k,0x2545F491))>>>0:seed);if(!ship||c.meta.length>ship.meta.length)ship=c;if(c.meta.length>=118)break;}
     const target=118+vyStream(seed,0x11CE)()*122;
     if(ship.meta.length<118){const k=target/ship.meta.length;vyWarpShip(ship,[k,k,k]);ship.meta.crew=Math.round((ship.meta.crew||1)*k*k);}
     return ship;

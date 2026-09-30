@@ -8,7 +8,7 @@
    across a threshold its hulls did not already cross.
 
    node scripts/variety-roles.cjs --from bench/variety/final
-   -> tests/tribute-new/variety-roles.json and the table in UNIQUENESS-NEW.md */
+   -> tests/tribute-new/variety-roles.json and the ROLE-TABLE in UNIQUENESS-NEW.md */
 const fs = require('node:fs');
 const path = require('node:path');
 const L = require('./variety-lib.cjs');
@@ -47,3 +47,9 @@ console.log(`${Object.keys(classes).length} classes -> ${out}`);
 // Markdown table for UNIQUENESS-NEW.md
 const rows = Object.entries(classes).filter(([k]) => +k.split('|')[0] > 4).map(([k, d]) => `| ${d.fleet} | ${k.split('|')[1]} | ${d.role} | ${d.range[0].toFixed(0)}-${d.range[1].toFixed(0)} m | ${d.crosses.join(', ') || 'none'} |`);
 fs.writeFileSync(path.join(FROM, 'roles-table.md'), '| Fleet | Class | Role | Length range | Thresholds crossed |\n| --- | --- | --- | --- | --- |\n' + rows.join('\n') + '\n');
+{
+  const table = '| Fleet | Class | Role | Length range | Thresholds crossed |\n| --- | --- | --- | --- | --- |\n' + rows.join('\n');
+  const file = path.join(__dirname, '../UNIQUENESS-NEW.md');
+  const md = fs.readFileSync(file, 'utf8');
+  if (/<!-- ROLE-TABLE -->/.test(md)) fs.writeFileSync(file, md.replace(/<!-- ROLE-TABLE -->[\s\S]*?<!-- \/ROLE-TABLE -->/, `<!-- ROLE-TABLE -->\n${table}\n<!-- /ROLE-TABLE -->`));
+}

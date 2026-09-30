@@ -63,7 +63,7 @@ The variety pass (VARIETY.md) added classes so that no band of these navies is o
 | Dominion | Jem'Hadar shuttle (reshaped, now in the pool) | small | Form invented | Blunt short pod with swept stub fins |
 | Space Marines | Stormbird gunship | escort | Games Workshop / Forge World | Heavy gunship: broad straight wings, twin engine nacelles each side, dorsal turret |
 | Space Marines | Drop pod | small | Games Workshop (canon) | Armoured cylinder, petal doors, nose cone, one storm bolter |
-| Space Marines | Boarding torpedo | small | *Battlefleet Gothic* (Games Workshop, 1999) | Squat armoured drum behind a wide melta-cutter claw crown |
+| Space Marines | Boarding torpedo | small (ship study only) | *Battlefleet Gothic* (Games Workshop, 1999) | Squat armoured drum behind a wide melta-cutter claw crown. Modelled but out of the normal pool: in clay it read as the Yard's small craft and cost that fleet recognition (VARIETY.md) |
 | Space Marines | Space hulk | capital | Warhammer 40,000; *Space Hulk* | Rock core with the hulls of dead ships jutting out of it at their own angles |
 | Space Marines | Hunter, Gladius, Nova, Vanguard (new body plans) | escort, capital | *Battlefleet Gothic* rosters | Hunter: slim torpedo boat with a tall tower aft. Gladius: broad battery ship. Nova: lance spear with swept stern fins. Vanguard: lean cruiser with a ram and engine outriggers. On main all four were one armoured spine |
 | Tesla | Starlink swarmsat | small | SpaceX Starlink; weapons fictional | Flat bus with one long solar array on a boom; laser links as guns |

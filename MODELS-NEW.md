@@ -111,4 +111,4 @@ The variety pass (VARIETY.md) replaced "one shape at several sizes" with navies 
 | USCM | CM-88B Bison star freighter in the escort line | Canon: the Nostromo's class (*Alien*, 1979) | The fleet's existing freighter model at escort length |
 | Yautja | Feral hunter's ship | Canon: *Prey* (2022), seen only briefly; interpreted | A dark lens with a dorsal spine and hooked landing claws |
 | Yautja | Elder trophy barge, golden clan ship as normal capitals | The fleet's own library | At battle length, under the crown threshold |
-| Originals (Yard, Shoal, Lattice, Drift) | Capital-band hulls | Original designs | Capital jobs forge the fleet's own one-off design grown to 110–240 m, so the line keeps the fleet's language |
+| Originals (Yard, Shoal, Lattice, Drift) | Capital-band hulls | Original designs | Capital jobs forge the fleet's own one-off designs (up to eight from derived seeds) and keep the first that is naturally capital length (118 m or more); failing that, the longest is grown to 118–240 m. The line keeps the fleet's language, and its long types rather than a small craft blown up |
