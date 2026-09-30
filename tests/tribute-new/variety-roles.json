@@ -68,6 +68,10 @@
    [
     "buildFed",
     "T6"
+   ],
+   [
+    "buildFed",
+    "T9"
    ]
   ],
   "11": [
@@ -102,12 +106,24 @@
    [
     "buildMondo",
     "ASSAULT"
+   ],
+   [
+    "buildMondo",
+    "SPACELINER"
+   ],
+   [
+    "buildMondo",
+    "WARSHIP"
    ]
   ],
   "14": [
    [
     "buildUSCM",
     "LANDER"
+   ],
+   [
+    "buildUSCM",
+    "BETTY"
    ]
   ],
   "15": [
@@ -200,6 +216,14 @@
    [
     "((s,k)=>buildExtraClass(19,s,k))",
     7
+   ],
+   [
+    "((s,k)=>buildExtraClass(19,s,k))",
+    8
+   ],
+   [
+    "((s,k)=>buildExtraClass(19,s,k))",
+    9
    ]
   ],
   "20": [
@@ -234,6 +258,10 @@
    [
     "((s,k)=>buildExtraClass(20,s,k))",
     14
+   ],
+   [
+    "((s,k)=>buildExtraClass(20,s,k))",
+    9
    ]
   ],
   "22": [

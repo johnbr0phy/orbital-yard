@@ -143,7 +143,8 @@ function analyse(all) {
    Crowns and the hero count as four more. */
 function distantGroups(hs) {
   const reps = hs.length && hs[0].budget || 3;
-  return new Set(hs.map(h => h.klass + '|' + (h.seed % reps))).size + 4;
+  // the page's distant renderer keys a group by base class (refit configurations share it) and representative
+  return new Set(hs.map(h => String(h.klass).replace(/\s*\((CARGO|BATTLE|SCIENCE|COMMAND)[^)]*REFIT\)\s*$/, '') + '|' + (h.seed % reps))).size + 4;
 }
 function classSeparation(byKey, sigOf) {
   const keys = Object.keys(byKey).sort(), pairs = [];

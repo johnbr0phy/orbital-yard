@@ -110,7 +110,6 @@ The variety pass (VARIETY.md) replaced "one shape at several sizes" with navies 
 | Mondoshawan | NY police cruiser (reshaped) | *The Fifth Element* (1997); form invented | Long and low with tail fins, side intake pods and two guns; on main it was the cab with a light bar |
 | Mondoshawan | Mangalore assault ship | Invented in the Mangalore raiders' language | A hexagonal slab with forward mandibles and dorsal spikes |
 | Mondoshawan | Fhloston spaceliner | Canon: the airline shuttle that flies Korben and Leeloo to Fhloston (*The Fifth Element*); interpreted | A stubby wide-body with an upper-deck hump, broad low delta wings, four engine pods and one tall fin |
-| Mondoshawan | Mondoshawan heavy transport in the capital line | The fleet's own library (the film's opening ship) | The Mondoshawan vessel at 200 m |
 | Mondoshawan | Mangalore warship | Invented in the Mangalore raiders' language | Two hexagonal hulls under one armoured deck, a mandible bow on each, a dorsal ridge of spikes |
 | Mondoshawan | Earth Federal battle cruiser, Fhloston-class liner as normal capitals | The fleet's own library (*The Fifth Element*) | At battle length; the liner name bank already carried sister liners |
 | USCM | Covenant lander | Canon: *Alien: Covenant* (2017); interpreted | A chamfered lifting body with swept, down-tipped wings and twin aft nacelles |
