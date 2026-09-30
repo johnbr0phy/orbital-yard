@@ -16,7 +16,7 @@ Here's the experience I want. When I look at a fleet, I see a navy, not wallpape
 
 ## Before you start
 
-Start only after the motion pass (branch claude/motion-pass, MOTION-BRIEF.md) has merged to main. Both passes edit armada-three-engine.js, and this pass must be measured against the motion pass's flight code. If it has not merged, stop and say so.
+The motion pass (MOTION-BRIEF.md, PR #13) is merged to main. Branch off current main so this pass is measured against its flight code. Both passes touch armada-three-engine.js, so read MOTION.md and the helm and gunboat code before changing any hull.
 
 ## Where it stands today. Read this before you change anything.
 
@@ -126,7 +126,7 @@ Put them at the top of VARIETY.md with baseline and final values:
 
 * The ethos: no build step, works from file:// and from GitHub Pages. No external meshes or textures. Procedural only.
 * Don't regress the motion pass: re-run scripts/motion-report.cjs. Hull size and shape feed turn radius, mass and avoidance.
-* Role lock. The ship minds read length, beam and height, not shape. On the motion branch, length alone decides the muster band (42 m, 95 m), gunboat (80 m and up: patrol lines, no dogfighting, turn capped by length), fighter attack runs (under 120 m), capital (300 m and up, Shadows over 180 m), spool time (60 m and 180 m steps) and goal dwell. Beam and height set rad, exY and exZ for avoidance and contact. Every new or changed class declares its intended role and a length range in UNIQUENESS-NEW.md. A test fails if any mustered hull, after refit scaling, crosses a flight threshold its class did not declare. Sister spread must stay inside the declared range.
+* Role lock. The ship minds read length, beam and height, not shape. On main (isGunboat and turnLimit in armada-three-engine.js and armada-battle-ai-new.js), length alone decides the muster band (42 m, 95 m), gunboat (80 m and up: patrol lines, no dogfighting, turn capped by length), fighter attack runs (under 120 m), capital (300 m and up, Shadows over 180 m), spool time (60 m and 180 m steps) and goal dwell. Beam and height set rad, exY and exZ for avoidance and contact. Every new or changed class declares its intended role and a length range in UNIQUENESS-NEW.md. A test fails if any mustered hull, after refit scaling, crosses a flight threshold its class did not declare. Sister spread must stay inside the declared range.
 * Flight check per fleet. After changing a fleet, re-run scripts/motion-report.cjs on at least one war with that fleet and record its numbers in VARIETY.md. Every MOTION.md criterion must still pass for it.
 * Don't regress the story: routs, last stands, aces, rescues, plans and objectives still happen at the rates in BEHAVIOUR.md, or better. Re-measure with scripts/story-metrics.cjs.
 * Don't touch the audio engine's behaviour.
