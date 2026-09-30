@@ -213,6 +213,7 @@ What I tried, in order, and what the numbers said. Rejected approaches stay here
 24. **Furball pirouettes.** A fighter slowed to 40 m/s in a knife fight circled on an 18 m radius, so every half-turn crossed its own path (8% shuttle). Small craft now circle no tighter than 30 m. That limit only binds at a crawl, because at combat speed it is above their turn rate. With 21 to 24, shuttle went from 17 ships over 5% to none (worst 4%).
 25. **Bank per pilot** is dealt from the golden-ratio sequence like weave and rhythm (±0.25 about the fleet's row). Individuality went from 180 to 169 of 915 squadrons below 0.25. The classifier went from 41.9% to 40.2%, still over its 39.6% floor.
 26. **Rejected for cohesion: slots dealt by position, and a lower speed floor for big hulls ahead of their slot.** Neither moved cohesion (see above).
+27. **Rejected: re-choosing the golden-ratio multipliers.** Some multiplier choices put pilots whose ids are 5 or 8 apart close together on several features at once. I searched 20,000 multiplier sets for the one that maximises the smallest hand-space distance in squads of 8 to 10 consecutive ids. That raised the worst case in hand space from 0.17 to 0.27. In the sim it made no difference: 17 against 18 failing squads on the same six wars. The measured signatures are set by the shared flight more than by the dealt hands, so spacing the hands further apart doesn't separate them.
 
 ## How to re-run
 
