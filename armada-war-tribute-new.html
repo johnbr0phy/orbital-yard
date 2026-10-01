@@ -16166,6 +16166,8 @@ let keepTitle=false;
 function startWar(fresh){
   document.getElementById("battleOptions").open=false;
   if(!keepTitle){document.getElementById("warMenu").hidden=true;document.body.classList.remove("menu-start");}
+  // A war the viewer starts opens on the battle alone: U, Esc or the corner chip bring the UI back.
+  if(fresh&&!keepTitle)setNoUi(true);
   if(fresh){
     try{
       if(!sessionStorage.getItem("oyPlayPing")){
@@ -19847,7 +19849,7 @@ function openPicker(){setNoUi(false);document.getElementById("battleOptions").op
 // "Watch this war" simply lifts the title: the war has been live behind it.
 document.getElementById("menuRandom").addEventListener("click",()=>{
   if(!ships.length){spectacleWar(false);}
-  document.getElementById("warMenu").hidden=true;document.body.classList.remove("menu-start");ui("confirm");
+  document.getElementById("warMenu").hidden=true;document.body.classList.remove("menu-start");ui("confirm");setNoUi(true);
   if(watchMode!=="broadcast"&&sel==null&&pilotId==null)setWatchView("broadcast");
   // One quiet hint, once: how to drive the broadcast without reading anything else.
   try{if(!localStorage.getItem("tributeHint")){localStorage.setItem("tributeHint","1");setTimeout(()=>toast(matchMedia("(pointer:coarse)").matches?"TAP A SHIP TO FOLLOW · ↺ REPLAY":"SPACE PAUSE · 1–5 SPEED · R REPLAY · ? KEYS"),1800);}}catch(e){}
