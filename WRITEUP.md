@@ -1,3 +1,27 @@
+# The Tribute War, as navies: a writeup
+
+The complaint behind this pass was that too many fleets were one shape at several sizes, and that sister ships were clones. The brief asked for navies of different jobs, sisters with their own history, and fleets still recognisable from their silhouettes alone, with numbers for all of it.
+
+I started by building a way to measure what "alike" means. `scripts/variety-report.cjs` forges every fleet's real musters headless through the forge worker's own handler and records three clay masks per hull; the distance between two hulls is one minus their overlap. From that come distinct shapes per band, class separation, sister spread, band reach and a recognition classifier, all defined in VARIETY.md before I changed a hull, with thresholds taken from the Yard and the First Ones.
+
+## What changed
+
+- **Every fleet deals each band from its own pool,** with a reason per row (UNIQUENESS-NEW.md). About forty new classes and variants fill the thin bands, each with provenance, native sockets and a ship-study entry.
+- **Capitals for fleets that had none.** The Yard, the Lattice, the Drift, the Mondoshawan and the Yautja used to fall back to frigates in capital slots. They now fly real capitals; the originals build their frigate designs large.
+- **Sisters differ.** Each sister's proportions move along one line from its own stream, calibrated per class, plus canon structural variants where the canon has them.
+- **The Sharlin and the Jem'Hadar shuttle fly,** as suspected.
+- **The triangle budget** is a study-quality ceiling that leaves battle meshes alone.
+
+## What didn't work
+
+The first version of every idea cost recognition. Three-draw proportion variation, crown cruisers as the originals' capitals, a flat captain's yacht, stowed Falcon legs and closed Dragon noses all read as some other fleet in clay, most often the Yard. The Yard is recognised because its designs are alone; anything new near one of them takes it. The final pass is the result of measuring each of those, one class at a time, and keeping what left the originals recognisable. The Yard ends a few hulls above its floor.
+
+## What's next
+
+- A sister kit made of structure rather than proportion for the compact classes (the Defiant, the Mondoshawan ship), which cost the most recognition per unit of spread.
+- A recognition measure over more wars, so the floors carry less sampling noise.
+- A clay review by eye of every class at battle distance, which the numbers can't replace.
+
 # The Tribute War, as flight: a writeup
 
 The owner's complaint was specific: the Rebel frigates flew like donkeys. They turned round on the spot, went back and forth, and never committed to a line. The brief behind it was bigger: make every ship look flown by someone, make squadrons breathe, give capitals weight, and make fleets recognisable from their motion alone.

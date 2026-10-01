@@ -1,0 +1,14 @@
+{
+ "scene": "v6",
+ "name": "Minbari, with a Sharlin in frame",
+ "label": "after",
+ "clip": [
+  18,
+  32
+ ],
+ "frames": 420,
+ "seconds": 14,
+ "msPerFrame": 508,
+ "ships": 542,
+ "errors": []
+}

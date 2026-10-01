@@ -71,3 +71,51 @@ These are CPU clay renders of **the actual before/after triangles**, using a com
 ![Nial, Borg, Cheyenne and Yautja before/after](design/tribute-new/additional-comparison.png)
 
 ![White Star, Sharlin and Imperial terraces before/after](design/tribute-new/capital-comparison.png)
+
+## Variety pass: new classes, variants and provenance
+
+The variety pass (VARIETY.md) replaced "one shape at several sizes" with navies of distinct jobs. The same honesty rules as above: **canon** means seen on screen or in the franchise's own publications, **licensed** means an officially licensed game or collectible, **invented** means an original design in the fleet's own language, not a claim of canon. No mesh was imported. Lengths are battle lengths. Every class below has native weapon sockets on its own modelled barrels or apertures and appears in the ship study.
+
+| Fleet | Class or variant | Reference and status | Model |
+|---|---|---|---|
+| Shadows | Shadow Fighter | Canon: small fighters carried by Shadow Vessels ([The Babylon Project, "Shadow Vessel"](https://babylon5.fandom.com/wiki/Shadow_Vessel)); the form is invented | A black dart with mandibles forward and a fan of three or five swept spines |
+| Shadows | Shadow Hybrid | Canon: prototype built by a secret Earthforce division with Shadow technology and bio-organic armour ([The Babylon Project, "Shadow hybrid"](https://babylon5.fandom.com/wiki/Shadow_hybrid); *Crusade*); form invented | A long human keel the Shadow skin has grown over, a crab's cleft and spines at the bow, drive fins aft |
+| Shadows | Drakh light raider, heavy raider, cruiser | Canon: the Drakh, the Shadows' servants, fly their masters' technology (*Babylon 5: A Call to Arms*, 1999; *Crusade*); the forms are invented | Forward-horned crescents of ribbed black hull around a swollen core; the heavy raider adds a second crescent and a keel; the cruiser is long and blade-nosed with a dorsal fin |
+| Shadows | Carapace plans (Vessel, Hunter, Scout) | Invented | The battlecrab grows its limbs differently: long-legged, swept, grasping; the Scout is a juvenile (no hanging legs, long wings, a flat spider); the Hunter is a lean swept lancer; a third of hulls carry a scar (one limb short) |
+| Engineers | Juggernaut variants: broken horn, closed ring, fused pair | Invented derivatives of the *Prometheus* (2012) Juggernaut | A horn ends in a jagged stump; the horns have met in a ring; a smaller horseshoe grown into the heart facing aft |
+| Engineers | Pilot-chair gunship | Invented from the Space Jockey chair and its telescope (*Alien*, 1979; *Prometheus*) | A ribbed seat on a curved pedestal, the long barrel forward, a short horseshoe cradle |
+| Engineers | Ampule dart, ampule carrier | Invented from the *Prometheus* ampule chamber | An armed urn with a ribbed stinger; a vaulted spine with its urns in racks |
+| Engineers | Orrery seed vessel | Invented from the *Prometheus* orrery | A seed sphere held in four curved arms carrying lesser spheres, an open ring at its waist |
+| Engineers | Temple ship | Invented from the LV-223 pyramid (*Prometheus*) | A stepped mound with a ribbed face, a crown and a mouth-gate prow |
+| Engineers | Sentinel, EVA skiff (reshaped) | Invented (as before) | The Sentinel is a deep narrow tuning fork; the skiff a bean with stub horns; on main both were the Juggernaut at two sizes |
+| Minbari | Tishat (reshaped) | Canon name; form invented | A lean body with two forward-raked sails and a low dorsal fin; on main it was a squashed Nial |
+| Minbari | Minbari Flyer | Canon: the Minbari transport seen throughout *Babylon 5*; interpreted | A smooth flat arrowhead with a raised aft fin |
+| Minbari | Leshath heavy scout | Licensed games: *Babylon 5 Wars* and *A Call to Arms* | A slim sensor hull under one tall dorsal sail and a long keel sail |
+| Minbari | Sharlin in the normal capital pool | Canon | The old roll never reached it (see VARIETY.md); its refit stretch is halved to keep its proportions |
+| Imperial | Carrack light cruiser | Canon: *The Empire Strikes Back* (1980) | Round-shouldered hull, a tall mid-ship tower, a heavy engine block |
+| Imperial | Quasar Fire carrier | Canon: *Star Wars Rebels* (2015) | A flat hull with an open flight deck along its back and a blunt bridge block |
+| Imperial | Gozanti walker carriers | Canon: *Star Wars Rebels* (2014), Gozanti cruisers carrying walkers docked under the keel | A third of the Gozantis fly with two walkers clamped beneath, legs hanging |
+| EarthForce | Earth Alliance shuttle | Canon: the utility shuttle seen throughout *Babylon 5*; interpreted | Blunt box body, forward canopy, two side drive pods, a dorsal fin |
+| EarthForce | Nova, Poseidon in the normal capital line | Existing class library | At battle length; the Warlock was tried and dropped (it reads as a Hyperion) |
+| Federation | Type-6 shuttlecraft | Canon: *Star Trek: The Next Generation* | A blunt wedge cabin with two short nacelles slung low |
+| Federation | Type-9 shuttlecraft | Canon: *Star Trek: Voyager* (the *Cochrane*); interpreted | A sleek wedge with two nacelles raised on short swept pylons. A captain's yacht (after the *Cousteau*, *Insurrection*) was built first and dropped: a flat oval in clay is the Yard's survey rings |
+| Federation | Miranda roll bar | Canon (the Reliant carries it) | Now the class's norm (90%), since a coin toss made two plans of one class |
+| Klingon | To'Duj fighter | Licensed game: *Star Trek Online* | A short-necked head over a gull wing raked back and up, cannons at the tips |
+| Klingon | Vor'cha attack cruiser | Canon: *Star Trek: The Next Generation* | The existing Vor'cha form, as a normal capital |
+| Klingon | F15 command refit | Existing (was named D7M) | The same hull with a command pod, named as a configuration like the F5 refits |
+| Borg | Borg scout ship | Canon: *Star Trek: The Next Generation*, "I, Borg" | A small faceted wedge block |
+| Borg | Assimilated shuttle | Invented, after the fleet's assimilated vessels | A donor wedge cabin half grown over |
+| Borg | Tactical cube | Canon: *Star Trek: Voyager*, "Unimatrix Zero" | A cube in thick face armour, at a battle length under the crown threshold |
+| Borg | Tactical cube with a docked sphere | Canon: *Star Trek: Voyager*, "Dark Frontier" (a sphere launched from inside a cube) | A third of the tactical cubes carry a sphere half out of the bow face |
+| Mondoshawan | NY police cruiser (reshaped) | *The Fifth Element* (1997); form invented | Long and low with tail fins, side intake pods and two guns; on main it was the cab with a light bar |
+| Mondoshawan | Mangalore assault ship | Invented in the Mangalore raiders' language | A hexagonal slab with forward mandibles and dorsal spikes |
+| Mondoshawan | Fhloston spaceliner | Canon: the airline shuttle that flies Korben and Leeloo to Fhloston (*The Fifth Element*); interpreted | A stubby wide-body with an upper-deck hump, broad low delta wings, four engine pods and one tall fin |
+| Mondoshawan | Mangalore warship | Invented in the Mangalore raiders' language | Two hexagonal hulls under one armoured deck, a mandible bow on each, a dorsal ridge of spikes; a quarter are trimarans with a deeper keel hull |
+| Mondoshawan | Earth Federal battle cruiser, Fhloston-class liner as normal capitals | The fleet's own library (*The Fifth Element*) | At battle length; the liner name bank already carried sister liners |
+| USCM | Covenant lander | Canon: *Alien: Covenant* (2017); interpreted | A chamfered lifting body with swept, down-tipped wings and twin aft nacelles |
+| USCM | Betty tramp freighter | Canon: *Alien Resurrection* (1997); interpreted, not a screen replica | A squat armoured hull with a blunt cockpit prow, a dorsal cargo spine and two big drive nacelles on short pylons |
+| USCM | Heliades in the escort line | The fleet's own library (the *Prometheus* form) | The same hull at a scout's length |
+| USCM | CM-88B Bison star freighter in the escort line | Canon: the Nostromo's class (*Alien*, 1979) | The fleet's existing freighter model at escort length |
+| Yautja | Feral hunter's ship | Canon: *Prey* (2022), seen only briefly; interpreted | A dark lens with a dorsal spine and hooked landing claws |
+| Yautja | Elder trophy barge, golden clan ship, mothership as normal capitals | The fleet's own library; the mothership is canon (*Alien vs. Predator*, 2004) | At battle length, under the crown threshold |
+| Originals (Yard, Shoal, Lattice, Drift) | Capital-band hulls | Original designs | Capital jobs forge the fleet's own one-off designs (up to eight from derived seeds) and keep the first that is naturally capital length (118 m or more); failing that, the longest is grown to 118–240 m. The line keeps the fleet's language, and its long types rather than a small craft blown up |

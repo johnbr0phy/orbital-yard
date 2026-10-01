@@ -23,7 +23,7 @@ test('named heroes and Babylon 5 retain their exact reference geometry',()=>{
  assert.ok(run(`(()=>{const s=buildEarthforceMega(42,50),before=JSON.stringify(s);applyFleetRefit(s,9,42,4);return before===JSON.stringify(s);})()`));
 });
 test('refit identity reaches the worker response and fittings cannot become harvested guns',()=>{
- assert.match(html,/raceBuild=\(f,seed,hulls,hero\)=>applyFleetRefit/);
+ assert.match(html,/raceBuild=\(f,seed,hulls,hero,band\)=>\{const ship=applyFleetRefit/);
  assert.match(html,/refit:ship.meta.refit/);
  assert.match(html.slice(html.indexOf('function armShip(')),/if\(p.refitPart\)continue;/);
 });

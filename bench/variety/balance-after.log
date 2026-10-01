@@ -1,0 +1,54 @@
+0v1 seed 20260905 lead 1 share at 150 s counts 9/14 share 0.48/0.52
+0v1 seed 20261905 lead 0 share at 150 s counts 4/9 share 0.70/0.30
+0v1 seed 20262905 lead 0 share at 150 s counts 19/17 share 0.59/0.41
+0v1 seed 20263905 lead 0 share at 150 s counts 6/9 share 0.51/0.49
+0v1 seed 20264905 lead 0 share at 150 s counts 6/11 share 0.77/0.23
+2v3 seed 20260907 lead 0 share at 150 s counts 3/12 share 0.56/0.44
+2v3 seed 20261907 lead 0 share at 150 s counts 25/2 share 0.65/0.35
+2v3 seed 20262907 lead 0 share at 150 s counts 12/4 share 0.67/0.33
+2v3 seed 20263907 lead 0 share at 150 s counts 11/1 share 0.65/0.35
+2v3 seed 20264907 lead 0 share at 150 s counts 13/1 share 0.54/0.46
+4v5 seed 20260909 lead 1 share at 150 s counts 16/20 share 0.47/0.53
+4v5 seed 20261909 lead 0 declared counts 36/0 share 1.00/0.00
+4v5 seed 20262909 lead 0 share at 150 s counts 47/19 share 0.50/0.50
+4v5 seed 20263909 lead 0 declared counts 38/0 share 1.00/0.00
+4v5 seed 20264909 lead 0 share at 150 s counts 34/20 share 0.55/0.45
+6v7 seed 20260911 lead 1 share at 150 s counts 21/26 share 0.27/0.73
+6v7 seed 20261911 lead 1 share at 150 s counts 8/19 share 0.21/0.79
+6v7 seed 20262911 lead 1 share at 150 s counts 13/28 share 0.32/0.68
+6v7 seed 20263911 lead 1 declared counts 0/23 share 0.00/1.00
+6v7 seed 20264911 lead 0 declared counts 11/0 share 1.00/0.00
+8v9 seed 20260913 lead 1 share at 150 s counts 4/18 share 0.37/0.63
+8v9 seed 20261913 lead 1 share at 150 s counts 9/20 share 0.27/0.73
+8v9 seed 20262913 lead 0 share at 150 s counts 6/15 share 0.62/0.38
+8v9 seed 20263913 lead 0 share at 150 s counts 8/13 share 0.64/0.36
+8v9 seed 20264913 lead 0 share at 150 s counts 8/16 share 0.53/0.47
+10v11 seed 20260915 lead 0 share at 150 s counts 15/34 share 0.65/0.35
+10v11 seed 20261915 lead 0 share at 150 s counts 19/42 share 0.54/0.46
+10v11 seed 20262915 lead 0 share at 150 s counts 22/8 share 0.57/0.43
+10v11 seed 20263915 lead 1 share at 150 s counts 15/24 share 0.49/0.51
+10v11 seed 20264915 lead 0 share at 150 s counts 32/16 share 0.72/0.28
+12v13 seed 20260917 lead 0 declared counts 42/0 share 1.00/0.00
+12v13 seed 20261917 lead 1 declared counts 0/49 share 0.00/1.00
+12v13 seed 20262917 lead 0 declared counts 23/0 share 1.00/0.00
+12v13 seed 20263917 lead 0 declared counts 47/0 share 1.00/0.00
+12v13 seed 20264917 lead 1 declared counts 0/40 share 0.00/1.00
+14v15 seed 20260919 lead 1 share at 150 s counts 27/22 share 0.40/0.60
+14v15 seed 20261919 lead 1 declared counts 0/21 share 0.00/1.00
+14v15 seed 20262919 lead 0 share at 150 s counts 16/10 share 0.52/0.48
+14v15 seed 20263919 lead 1 share at 150 s counts 19/21 share 0.44/0.56
+14v15 seed 20264919 lead 0 share at 150 s counts 35/9 share 0.59/0.41
+16v17 seed 20260921 lead 1 share at 150 s counts 3/8 share 0.01/0.99
+16v17 seed 20261921 lead 1 declared counts 0/8 share 0.00/1.00
+16v17 seed 20262921 lead 1 declared counts 0/8 share 0.00/1.00
+16v17 seed 20263921 lead 1 share at 150 s counts 2/8 share 0.01/0.99
+16v17 seed 20264921 lead 1 declared counts 0/8 share 0.00/1.00
+0v1 wins 4-1 of 5
+2v3 wins 5-0 of 5
+4v5 wins 4-1 of 5
+6v7 wins 1-4 of 5
+8v9 wins 3-2 of 5
+10v11 wins 4-1 of 5
+12v13 wins 3-2 of 5
+14v15 wins 2-3 of 5
+16v17 wins 0-5 of 5

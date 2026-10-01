@@ -46,7 +46,8 @@ function warSet(sizes, seedCount) {
     {name: 'Shadows vs Minbari', a: 8, b: 7},
     ...random.map(([a, b], i) => ({name: `Random ${i + 1}`, a, b}))
   ];
-  const seeds = [1101, 2202, 3303].slice(0, seedCount);
+  // 1101, 2202, 3303, then 4404 ...; --seed-list runs just those (for a run split across processes).
+  const seeds = arg('seed-list') ? arg('seed-list').split(',').map(Number) : Array.from({length: seedCount}, (_, i) => 1101 * (i + 1));
   const out = [];
   for (const m of matchups) for (const size of sizes) for (const seed of seeds) out.push({...m, size, seed, cap: size >= 200 ? 120 : 180});
   return out;

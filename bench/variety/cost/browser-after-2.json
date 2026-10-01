@@ -1,0 +1,67 @@
+{
+ "label": "after",
+ "date": "2026-10-01T03:32:59.149Z",
+ "seed": 1234,
+ "matchup": [
+  5,
+  6
+ ],
+ "seconds": 30,
+ "runs": [
+  {
+   "size": 600,
+   "ships": 572,
+   "alive": 572,
+   "frames": 162,
+   "fps": 5.3763262434413805,
+   "p50": 183.39999999999964,
+   "p95": 233.1999999999971,
+   "p99": 266.7000000000007,
+   "byPhase": {
+    "wide": {
+     "n": 46,
+     "p50": 166.70000000000073,
+     "p95": 216.60000000000036,
+     "p99": 383.3000000000002
+    },
+    "medium": {
+     "n": 51,
+     "p50": 199.89999999999782,
+     "p95": 216.70000000000073,
+     "p99": 250
+    },
+    "close": {
+     "n": 50,
+     "p50": 200,
+     "p95": 233.40000000000146,
+     "p99": 266.7000000000007
+    }
+   },
+   "simSecondsPerWallSecond": 0.24779775278412888,
+   "splitMsPerFrame": {
+    "frameJs": 22.583333333287342,
+    "sim": 16.21358024696877,
+    "collide": 1.5611111111594018,
+    "traffic": 2.722222222302707,
+    "ai": 5.353086420323378,
+    "worker": 2.3962962962801995
+   },
+   "firstShipMs": 6449.700000000373,
+   "playableMs": 4033.1000000003723,
+   "warStartMs": 4582.5999999996275,
+   "longTasks": 182,
+   "longTasksDuringArrivals": 86,
+   "maxLongTaskMs": 399,
+   "heapStartMB": 12.931507110595703,
+   "heapEndMB": 146.0005226135254,
+   "pageStats": {
+    "calls": 0,
+    "tris": 0
+   },
+   "errors": [],
+   "viewport": "1280x720"
+  }
+ ],
+ "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+ "software": true
+}

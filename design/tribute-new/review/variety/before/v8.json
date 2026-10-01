@@ -1,0 +1,17 @@
+{
+ "scene": "v8",
+ "name": "Every fleet's muster in the ship study, one band at a time",
+ "frames": 1332,
+ "seconds": 44.4,
+ "entries": 74,
+ "errors": [
+  "FO_WEAPONS is not defined",
+  "FO_WEAPONS is not defined",
+  "FO_WEAPONS is not defined",
+  "FO_WEAPONS is not defined",
+  "FO_WEAPONS is not defined",
+  "FO_WEAPONS is not defined",
+  "FO_WEAPONS is not defined",
+  "FO_WEAPONS is not defined"
+ ]
+}

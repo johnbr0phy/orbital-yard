@@ -1,0 +1,2900 @@
+{
+ "newKinds": {
+  "5": [
+   [
+    "buildImperial",
+    "CARRACK"
+   ],
+   [
+    "buildImperial",
+    "QUASAR"
+   ]
+  ],
+  "7": [
+   [
+    "((s,k)=>buildMinbariClass(s,k))",
+    1
+   ],
+   [
+    "((s,k)=>buildMinbariClass(s,k))",
+    7
+   ],
+   [
+    "((s,k)=>buildMinbariClass(s,k))",
+    8
+   ]
+  ],
+  "8": [
+   [
+    "buildShadow",
+    "FIGHTER"
+   ],
+   [
+    "buildShadow",
+    "LIGHT"
+   ],
+   [
+    "buildShadow",
+    "HEAVY"
+   ],
+   [
+    "buildShadow",
+    "HYBRID"
+   ],
+   [
+    "buildShadow",
+    "CRUISER"
+   ],
+   [
+    "buildShadow",
+    "SCOUT"
+   ],
+   [
+    "buildShadow",
+    "HUNTER"
+   ],
+   [
+    "buildShadow",
+    "VESSEL"
+   ]
+  ],
+  "9": [
+   [
+    "buildEarthforce",
+    "SHUTTLE"
+   ]
+  ],
+  "10": [
+   [
+    "buildFed",
+    "T6"
+   ],
+   [
+    "buildFed",
+    "T9"
+   ]
+  ],
+  "11": [
+   [
+    "buildKlingon",
+    "TODUJ"
+   ],
+   [
+    "buildKlingon",
+    "VORCHA"
+   ]
+  ],
+  "12": [
+   [
+    "buildBorg",
+    "SCOUT"
+   ],
+   [
+    "buildBorg",
+    "SHUTTLE"
+   ],
+   [
+    "buildBorg",
+    "TCUBE"
+   ]
+  ],
+  "13": [
+   [
+    "buildMondo",
+    "COP"
+   ],
+   [
+    "buildMondo",
+    "ASSAULT"
+   ],
+   [
+    "buildMondo",
+    "SPACELINER"
+   ],
+   [
+    "buildMondo",
+    "WARSHIP"
+   ]
+  ],
+  "14": [
+   [
+    "buildUSCM",
+    "LANDER"
+   ],
+   [
+    "buildUSCM",
+    "BETTY"
+   ]
+  ],
+  "15": [
+   [
+    "buildEngineer",
+    "CHAIR"
+   ],
+   [
+    "buildEngineer",
+    "DART"
+   ],
+   [
+    "buildEngineer",
+    "ORRERY"
+   ],
+   [
+    "buildEngineer",
+    "CARRIER"
+   ],
+   [
+    "buildEngineer",
+    "TEMPLE"
+   ],
+   [
+    "buildEngineer",
+    "JUGGERNAUT"
+   ],
+   [
+    "buildEngineer",
+    "SENTINEL"
+   ],
+   [
+    "buildEngineer",
+    "SKIFF"
+   ]
+  ],
+  "16": [
+   [
+    "buildYautja",
+    "PREY"
+   ]
+  ],
+  "18": [
+   [
+    "((s,k)=>buildExtraClass(18,s,k))",
+    0
+   ],
+   [
+    "((s,k)=>buildExtraClass(18,s,k))",
+    1
+   ],
+   [
+    "((s,k)=>buildExtraClass(18,s,k))",
+    5
+   ],
+   [
+    "((s,k)=>buildExtraClass(18,s,k))",
+    6
+   ],
+   [
+    "((s,k)=>buildExtraClass(18,s,k))",
+    7
+   ],
+   [
+    "((s,k)=>buildExtraClass(18,s,k))",
+    8
+   ]
+  ],
+  "19": [
+   [
+    "((s,k)=>buildExtraClass(19,s,k))",
+    0
+   ],
+   [
+    "((s,k)=>buildExtraClass(19,s,k))",
+    2
+   ],
+   [
+    "((s,k)=>buildExtraClass(19,s,k))",
+    4
+   ],
+   [
+    "((s,k)=>buildExtraClass(19,s,k))",
+    5
+   ],
+   [
+    "((s,k)=>buildExtraClass(19,s,k))",
+    6
+   ],
+   [
+    "((s,k)=>buildExtraClass(19,s,k))",
+    7
+   ],
+   [
+    "((s,k)=>buildExtraClass(19,s,k))",
+    8
+   ],
+   [
+    "((s,k)=>buildExtraClass(19,s,k))",
+    9
+   ]
+  ],
+  "20": [
+   [
+    "((s,k)=>buildExtraClass(20,s,k))",
+    1
+   ],
+   [
+    "((s,k)=>buildExtraClass(20,s,k))",
+    2
+   ],
+   [
+    "((s,k)=>buildExtraClass(20,s,k))",
+    3
+   ],
+   [
+    "((s,k)=>buildExtraClass(20,s,k))",
+    6
+   ],
+   [
+    "((s,k)=>buildExtraClass(20,s,k))",
+    11
+   ],
+   [
+    "((s,k)=>buildExtraClass(20,s,k))",
+    12
+   ],
+   [
+    "((s,k)=>buildExtraClass(20,s,k))",
+    13
+   ],
+   [
+    "((s,k)=>buildExtraClass(20,s,k))",
+    14
+   ],
+   [
+    "((s,k)=>buildExtraClass(20,s,k))",
+    9
+   ]
+  ],
+  "22": [
+   [
+    "((s,k)=>buildExtraClass(22,s,k))",
+    7
+   ],
+   [
+    "((s,k)=>buildExtraClass(22,s,k))",
+    8
+   ],
+   [
+    "((s,k)=>buildExtraClass(22,s,k))",
+    9
+   ],
+   [
+    "((s,k)=>buildExtraClass(22,s,k))",
+    10
+   ]
+  ]
+ },
+ "classes": {
+  "0|EDGE-ON PATROL CRAFT": {
+   "fleet": "Yard",
+   "role": "gunboat",
+   "range": [
+    10.57,
+    187.5
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 68
+  },
+  "0|SPINAL MOUNT VESSEL": {
+   "fleet": "Yard",
+   "role": "gunboat",
+   "range": [
+    33.75,
+    246.7
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 278
+  },
+  "0|ORBITAL SERVICE VEHICLE": {
+   "fleet": "Yard",
+   "role": "gunboat",
+   "range": [
+    27.68,
+    231.08
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 100
+  },
+  "0|LIGHT FREIGHTER": {
+   "fleet": "Yard",
+   "role": "gunboat",
+   "range": [
+    23.76,
+    206.28
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 89
+  },
+  "0|PATROL TENDER": {
+   "fleet": "Yard",
+   "role": "gunboat",
+   "range": [
+    23.82,
+    243.72
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 77
+  },
+  "0|CONSTRUCTION RIG": {
+   "fleet": "Yard",
+   "role": "gunboat",
+   "range": [
+    26.15,
+    191.3
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 95
+  },
+  "0|INDEPENDENT TRADER": {
+   "fleet": "Yard",
+   "role": "gunboat",
+   "range": [
+    24.47,
+    231.04
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 70
+  },
+  "0|VANED INTERCEPTOR": {
+   "fleet": "Yard",
+   "role": "gunboat",
+   "range": [
+    14.58,
+    135.29
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120
+   ],
+   "n": 80
+  },
+  "0|SURVEY RING": {
+   "fleet": "Yard",
+   "role": "gunboat",
+   "range": [
+    15.76,
+    212.89
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 86
+  },
+  "0|HEAVY SURVEY VESSEL": {
+   "fleet": "Yard",
+   "role": "gunboat",
+   "range": [
+    16.35,
+    179.99
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120
+   ],
+   "n": 82
+  },
+  "0|ORBITAL TENDER": {
+   "fleet": "Yard",
+   "role": "screen, attack runs",
+   "range": [
+    20.19,
+    39.06
+   ],
+   "crosses": [],
+   "n": 92
+  },
+  "0|AEROSPACE VEHICLE": {
+   "fleet": "Yard",
+   "role": "screen, attack runs",
+   "range": [
+    25.05,
+    36
+   ],
+   "crosses": [],
+   "n": 77
+  },
+  "1|HIVE SHIP": {
+   "fleet": "Shoal",
+   "role": "gunboat",
+   "range": [
+    35.15,
+    242.32
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 87
+  },
+  "1|JUGGERNAUT": {
+   "fleet": "Shoal",
+   "role": "gunboat",
+   "range": [
+    21.84,
+    244.91
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 142
+  },
+  "1|LAMPREY": {
+   "fleet": "Shoal",
+   "role": "gunboat",
+   "range": [
+    20.78,
+    220.45
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 150
+  },
+  "1|ANGLER": {
+   "fleet": "Shoal",
+   "role": "gunboat",
+   "range": [
+    19.63,
+    231.08
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 140
+  },
+  "1|MEDUSA": {
+   "fleet": "Shoal",
+   "role": "gunboat",
+   "range": [
+    16.1,
+    241.86
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 150
+  },
+  "1|RAZORWING": {
+   "fleet": "Shoal",
+   "role": "gunboat",
+   "range": [
+    22.93,
+    253.26
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 133
+  },
+  "1|STARFANG": {
+   "fleet": "Shoal",
+   "role": "attack runs",
+   "range": [
+    9.94,
+    57.6
+   ],
+   "crosses": [
+    42
+   ],
+   "n": 196
+  },
+  "1|SPORE MINE": {
+   "fleet": "Shoal",
+   "role": "screen, attack runs",
+   "range": [
+    6.88,
+    41.99
+   ],
+   "crosses": [],
+   "n": 240
+  },
+  "2|LANCEHEAD": {
+   "fleet": "Lattice",
+   "role": "gunboat",
+   "range": [
+    20.14,
+    246.81
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 143
+  },
+  "2|CATHEDRAL": {
+   "fleet": "Lattice",
+   "role": "gunboat",
+   "range": [
+    25.48,
+    246.7
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 137
+  },
+  "2|WITNESS": {
+   "fleet": "Lattice",
+   "role": "gunboat",
+   "range": [
+    15.92,
+    246.32
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 160
+  },
+  "2|SHARDWING": {
+   "fleet": "Lattice",
+   "role": "gunboat",
+   "range": [
+    16.75,
+    236.4
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 155
+  },
+  "2|STRAND": {
+   "fleet": "Lattice",
+   "role": "gunboat",
+   "range": [
+    20.04,
+    236.34
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 123
+  },
+  "2|SEEDBURR": {
+   "fleet": "Lattice",
+   "role": "screen, attack runs",
+   "range": [
+    4.33,
+    35.5
+   ],
+   "crosses": [],
+   "n": 153
+  },
+  "2|PENDULUM": {
+   "fleet": "Lattice",
+   "role": "screen, attack runs",
+   "range": [
+    2.71,
+    15.86
+   ],
+   "crosses": [],
+   "n": 115
+  },
+  "2|ROSETTE": {
+   "fleet": "Lattice",
+   "role": "screen, attack runs",
+   "range": [
+    4.83,
+    21.91
+   ],
+   "crosses": [],
+   "n": 148
+  },
+  "3|JUNKWING": {
+   "fleet": "Drift",
+   "role": "gunboat",
+   "range": [
+    13.22,
+    214.58
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 145
+  },
+  "3|MULE": {
+   "fleet": "Drift",
+   "role": "gunboat",
+   "range": [
+    24.78,
+    235.09
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 135
+  },
+  "3|BREAKER": {
+   "fleet": "Drift",
+   "role": "gunboat",
+   "range": [
+    22.04,
+    222.83
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 142
+  },
+  "3|GRAPPLER": {
+   "fleet": "Drift",
+   "role": "gunboat",
+   "range": [
+    21.39,
+    244.91
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 135
+  },
+  "3|CHAINHAUL": {
+   "fleet": "Drift",
+   "role": "gunboat",
+   "range": [
+    15.57,
+    246.7
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 148
+  },
+  "3|CASK": {
+   "fleet": "Drift",
+   "role": "gunboat",
+   "range": [
+    10.91,
+    242.32
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 167
+  },
+  "3|GIBBET": {
+   "fleet": "Drift",
+   "role": "gunboat",
+   "range": [
+    10.75,
+    231.04
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 170
+  },
+  "3|CLAWDOCK": {
+   "fleet": "Drift",
+   "role": "gunboat",
+   "range": [
+    8.17,
+    212.89
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120,
+    180
+   ],
+   "n": 160
+  },
+  "4|CANTOR": {
+   "fleet": "Choir",
+   "role": "gunboat",
+   "range": [
+    42.2,
+    164.87
+   ],
+   "crosses": [
+    60,
+    80,
+    95,
+    120
+   ],
+   "n": 109
+  },
+  "4|PALL": {
+   "fleet": "Choir",
+   "role": "gunboat",
+   "range": [
+    36.71,
+    132.49
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120
+   ],
+   "n": 97
+  },
+  "4|CATHEDRAL": {
+   "fleet": "Choir",
+   "role": "gunboat",
+   "range": [
+    40.63,
+    159.15
+   ],
+   "crosses": [
+    42,
+    60,
+    80,
+    95,
+    120
+   ],
+   "n": 104
+  },
+  "4|PROCESSIONAL": {
+   "fleet": "Choir",
+   "role": "gunboat",
+   "range": [
+    54.65,
+    168.78
+   ],
+   "crosses": [
+    60,
+    80,
+    95,
+    120
+   ],
+   "n": 106
+  },
+  "4|ORACLE": {
+   "fleet": "Choir",
+   "role": "attack runs",
+   "range": [
+    22.84,
+    72.09
+   ],
+   "crosses": [
+    42,
+    60
+   ],
+   "n": 128
+  },
+  "4|SERAPH": {
+   "fleet": "Choir",
+   "role": "attack runs",
+   "range": [
+    20.19,
+    59.99
+   ],
+   "crosses": [
+    42
+   ],
+   "n": 148
+  },
+  "4|CHIME": {
+   "fleet": "Choir",
+   "role": "screen, attack runs",
+   "range": [
+    7.69,
+    23.65
+   ],
+   "crosses": [],
+   "n": 169
+  },
+  "4|HALO": {
+   "fleet": "Choir",
+   "role": "screen, attack runs",
+   "range": [
+    8.96,
+    25.92
+   ],
+   "crosses": [],
+   "n": 153
+  },
+  "5|CARRACK-CLASS LIGHT CRUISER": {
+   "fleet": "Imperial",
+   "role": "gunboat, capital",
+   "range": [
+    249.22,
+    398.47
+   ],
+   "crosses": [
+    300
+   ],
+   "n": 21
+  },
+  "5|IMMOBILIZER 418 INTERDICTOR": {
+   "fleet": "Imperial",
+   "role": "gunboat, capital",
+   "range": [
+    522,
+    752.47
+   ],
+   "crosses": [],
+   "n": 14
+  },
+  "5|VICTORY-CLASS DESTROYER": {
+   "fleet": "Imperial",
+   "role": "gunboat, capital",
+   "range": [
+    765.1,
+    1188.99
+   ],
+   "crosses": [],
+   "n": 30
+  },
+  "5|QUASAR FIRE-CLASS CARRIER": {
+   "fleet": "Imperial",
+   "role": "gunboat, capital",
+   "range": [
+    317.49,
+    462.78
+   ],
+   "crosses": [],
+   "n": 15
+  },
+  "5|GOZANTI-CLASS CRUISER": {
+   "fleet": "Imperial",
+   "role": "attack runs",
+   "range": [
+    42,
+    61.91
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 31
+  },
+  "5|RAIDER-CLASS CORVETTE": {
+   "fleet": "Imperial",
+   "role": "attack runs",
+   "range": [
+    55.44,
+    79.99
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 60
+  },
+  "5|ARQUITENS-CLASS CRUISER": {
+   "fleet": "Imperial",
+   "role": "gunboat, attack runs",
+   "range": [
+    66.36,
+    94.99
+   ],
+   "crosses": [
+    80
+   ],
+   "n": 31
+  },
+  "5|TIE/LN STARFIGHTER": {
+   "fleet": "Imperial",
+   "role": "screen, attack runs",
+   "range": [
+    6.81,
+    8.21
+   ],
+   "crosses": [],
+   "n": 301
+  },
+  "5|TIE/SA BOMBER": {
+   "fleet": "Imperial",
+   "role": "screen, attack runs",
+   "range": [
+    7.04,
+    8.82
+   ],
+   "crosses": [],
+   "n": 166
+  },
+  "5|TIE/IN INTERCEPTOR": {
+   "fleet": "Imperial",
+   "role": "screen, attack runs",
+   "range": [
+    8.72,
+    10.56
+   ],
+   "crosses": [],
+   "n": 205
+  },
+  "5|LAMBDA-CLASS SHUTTLE": {
+   "fleet": "Imperial",
+   "role": "screen, attack runs",
+   "range": [
+    17.87,
+    22.12
+   ],
+   "crosses": [],
+   "n": 188
+  },
+  "5|TIE ADVANCED X1": {
+   "fleet": "Imperial",
+   "role": "screen, attack runs",
+   "range": [
+    8.37,
+    10.09
+   ],
+   "crosses": [],
+   "n": 62
+  },
+  "5|TIE/D DEFENDER": {
+   "fleet": "Imperial",
+   "role": "screen, attack runs",
+   "range": [
+    9.75,
+    11.75
+   ],
+   "crosses": [],
+   "n": 102
+  },
+  "6|CR90-CLASS CORVETTE": {
+   "fleet": "Rebel",
+   "role": "gunboat",
+   "range": [
+    122.5,
+    185.58
+   ],
+   "crosses": [
+    180
+   ],
+   "n": 27
+  },
+  "6|NEBULON-B ESCORT FRIGATE": {
+   "fleet": "Rebel",
+   "role": "gunboat, capital",
+   "range": [
+    242.65,
+    359.9
+   ],
+   "crosses": [
+    300
+   ],
+   "n": 21
+  },
+  "6|PELTA-CLASS FRIGATE": {
+   "fleet": "Rebel",
+   "role": "gunboat",
+   "range": [
+    95,
+    136.91
+   ],
+   "crosses": [
+    120
+   ],
+   "n": 18
+  },
+  "6|GR-75 MEDIUM TRANSPORT": {
+   "fleet": "Rebel",
+   "role": "gunboat, attack runs",
+   "range": [
+    73.81,
+    116.17
+   ],
+   "crosses": [
+    80,
+    95
+   ],
+   "n": 50
+  },
+  "6|DP20 CORELLIAN GUNSHIP": {
+   "fleet": "Rebel",
+   "role": "gunboat, attack runs",
+   "range": [
+    66.72,
+    104.2
+   ],
+   "crosses": [
+    80,
+    95
+   ],
+   "n": 63
+  },
+  "6|SPHYRNA-CLASS HAMMERHEAD CORVETTE": {
+   "fleet": "Rebel",
+   "role": "gunboat, attack runs",
+   "range": [
+    64.63,
+    94.99
+   ],
+   "crosses": [
+    80
+   ],
+   "n": 62
+  },
+  "6|BTL-A4 Y-WING": {
+   "fleet": "Rebel",
+   "role": "screen, attack runs",
+   "range": [
+    14.73,
+    17.84
+   ],
+   "crosses": [],
+   "n": 175
+  },
+  "6|A/SF-01 B-WING": {
+   "fleet": "Rebel",
+   "role": "screen, attack runs",
+   "range": [
+    2.59,
+    3.33
+   ],
+   "crosses": [],
+   "n": 146
+  },
+  "6|T-65 X-WING": {
+   "fleet": "Rebel",
+   "role": "screen, attack runs",
+   "range": [
+    12.12,
+    14.94
+   ],
+   "crosses": [],
+   "n": 252
+  },
+  "6|RZ-1 A-WING": {
+   "fleet": "Rebel",
+   "role": "screen, attack runs",
+   "range": [
+    6.28,
+    7.73
+   ],
+   "crosses": [],
+   "n": 143
+  },
+  "6|UT-60D U-WING": {
+   "fleet": "Rebel",
+   "role": "screen, attack runs",
+   "range": [
+    25.01,
+    31.2
+   ],
+   "crosses": [],
+   "n": 117
+  },
+  "7|TIGARA-CLASS ATTACK CRUISER": {
+   "fleet": "Minbari",
+   "role": "gunboat, capital",
+   "range": [
+    660.4,
+    1057.78
+   ],
+   "crosses": [],
+   "n": 29
+  },
+  "7|MORSHIN-CLASS CARRIER": {
+   "fleet": "Minbari",
+   "role": "gunboat, capital",
+   "range": [
+    1026.32,
+    1457.53
+   ],
+   "crosses": [],
+   "n": 31
+  },
+  "7|SHARLIN-CLASS WAR CRUISER": {
+   "fleet": "Minbari",
+   "role": "gunboat, capital",
+   "range": [
+    1296.47,
+    1998.35
+   ],
+   "crosses": [],
+   "n": 20
+  },
+  "7|LESHATH-CLASS HEAVY SCOUT": {
+   "fleet": "Minbari",
+   "role": "gunboat, capital",
+   "range": [
+    258.88,
+    415.74
+   ],
+   "crosses": [
+    300
+   ],
+   "n": 61
+  },
+  "7|TINASHI-CLASS WAR FRIGATE": {
+   "fleet": "Minbari",
+   "role": "gunboat, capital",
+   "range": [
+    438.67,
+    649.99
+   ],
+   "crosses": [],
+   "n": 95
+  },
+  "7|TOROTHA-CLASS ASSAULT FRIGATE": {
+   "fleet": "Minbari",
+   "role": "gunboat, capital",
+   "range": [
+    224.07,
+    350.79
+   ],
+   "crosses": [
+    300
+   ],
+   "n": 130
+  },
+  "7|MINBARI FLYER": {
+   "fleet": "Minbari",
+   "role": "screen, attack runs",
+   "range": [
+    22.5,
+    29.74
+   ],
+   "crosses": [],
+   "n": 178
+  },
+  "7|NIAL-CLASS HEAVY FIGHTER": {
+   "fleet": "Minbari",
+   "role": "screen, attack runs",
+   "range": [
+    19.37,
+    25.39
+   ],
+   "crosses": [],
+   "n": 323
+  },
+  "7|TISHAT-CLASS MEDIUM FIGHTER": {
+   "fleet": "Minbari",
+   "role": "screen, attack runs",
+   "range": [
+    13.76,
+    18.54
+   ],
+   "crosses": [],
+   "n": 187
+  },
+  "8|SHADOW HYBRID": {
+   "fleet": "Shadows",
+   "role": "capital",
+   "range": [
+    348.79,
+    654.5
+   ],
+   "crosses": [],
+   "n": 14
+  },
+  "8|SHADOW VESSEL": {
+   "fleet": "Shadows",
+   "role": "capital",
+   "range": [
+    1009.83,
+    2044.84
+   ],
+   "crosses": [],
+   "n": 35
+  },
+  "8|DRAKH CRUISER": {
+   "fleet": "Shadows",
+   "role": "capital",
+   "range": [
+    210.11,
+    478.11
+   ],
+   "crosses": [
+    300
+   ],
+   "n": 31
+  },
+  "8|SHADOW HUNTER": {
+   "fleet": "Shadows",
+   "role": "attack runs",
+   "range": [
+    57.23,
+    94.99
+   ],
+   "crosses": [
+    60,
+    80
+   ],
+   "n": 43
+  },
+  "8|DRAKH HEAVY RAIDER": {
+   "fleet": "Shadows",
+   "role": "attack runs",
+   "range": [
+    43.88,
+    86.46
+   ],
+   "crosses": [
+    60,
+    80
+   ],
+   "n": 37
+  },
+  "8|SHADOW FIGHTER": {
+   "fleet": "Shadows",
+   "role": "screen, attack runs",
+   "range": [
+    15.77,
+    22.68
+   ],
+   "crosses": [],
+   "n": 61
+  },
+  "8|SHADOW SCOUT": {
+   "fleet": "Shadows",
+   "role": "screen, attack runs",
+   "range": [
+    32.55,
+    41.24
+   ],
+   "crosses": [],
+   "n": 35
+  },
+  "8|DRAKH LIGHT RAIDER": {
+   "fleet": "Shadows",
+   "role": "screen, attack runs",
+   "range": [
+    26.28,
+    35.88
+   ],
+   "crosses": [],
+   "n": 32
+  },
+  "9|OMEGA-CLASS DESTROYER": {
+   "fleet": "EarthForce",
+   "role": "gunboat, capital",
+   "range": [
+    878.99,
+    1381.13
+   ],
+   "crosses": [],
+   "n": 25
+  },
+  "9|NOVA-CLASS DREADNOUGHT": {
+   "fleet": "EarthForce",
+   "role": "gunboat, capital",
+   "range": [
+    934.5,
+    1442.58
+   ],
+   "crosses": [],
+   "n": 27
+  },
+  "9|AVENGER-CLASS HEAVY CARRIER": {
+   "fleet": "EarthForce",
+   "role": "gunboat",
+   "range": [
+    106.06,
+    148.88
+   ],
+   "crosses": [
+    120
+   ],
+   "n": 13
+  },
+  "9|POSEIDON-CLASS SUPERCARRIER": {
+   "fleet": "EarthForce",
+   "role": "gunboat, capital",
+   "range": [
+    992.11,
+    1495.32
+   ],
+   "crosses": [],
+   "n": 22
+  },
+  "9|HYPERION-CLASS HEAVY CRUISER": {
+   "fleet": "EarthForce",
+   "role": "gunboat, capital",
+   "range": [
+    838.9,
+    1296.16
+   ],
+   "crosses": [],
+   "n": 27
+  },
+  "9|SAGITTARIUS-CLASS MISSILE CRUISER": {
+   "fleet": "EarthForce",
+   "role": "attack runs",
+   "range": [
+    49.09,
+    77.44
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 136
+  },
+  "9|OLYMPUS-CLASS CORVETTE": {
+   "fleet": "EarthForce",
+   "role": "attack runs",
+   "range": [
+    42,
+    57.84
+   ],
+   "crosses": [],
+   "n": 100
+  },
+  "9|SA-23E AURORA STARFURY": {
+   "fleet": "EarthForce",
+   "role": "screen, attack runs",
+   "range": [
+    8.33,
+    10.95
+   ],
+   "crosses": [],
+   "n": 311
+  },
+  "9|EARTH ALLIANCE SHUTTLE": {
+   "fleet": "EarthForce",
+   "role": "screen, attack runs",
+   "range": [
+    14.16,
+    20.64
+   ],
+   "crosses": [],
+   "n": 236
+  },
+  "9|SA-32A THUNDERBOLT STARFURY": {
+   "fleet": "EarthForce",
+   "role": "screen, attack runs",
+   "range": [
+    16.61,
+    20.74
+   ],
+   "crosses": [],
+   "n": 237
+  },
+  "10|AKIRA-CLASS HEAVY CRUISER": {
+   "fleet": "Federation",
+   "role": "gunboat",
+   "range": [
+    95,
+    145.31
+   ],
+   "crosses": [
+    120
+   ],
+   "n": 56
+  },
+  "10|CONSTITUTION-CLASS HEAVY CRUISER": {
+   "fleet": "Federation",
+   "role": "gunboat, capital",
+   "range": [
+    239.74,
+    370.76
+   ],
+   "crosses": [
+    300
+   ],
+   "n": 52
+  },
+  "10|NEBULA-CLASS EXPLORER": {
+   "fleet": "Federation",
+   "role": "gunboat",
+   "range": [
+    95,
+    133.46
+   ],
+   "crosses": [
+    120
+   ],
+   "n": 46
+  },
+  "10|EXCELSIOR-CLASS CRUISER": {
+   "fleet": "Federation",
+   "role": "gunboat, capital",
+   "range": [
+    374.04,
+    553.73
+   ],
+   "crosses": [],
+   "n": 48
+  },
+  "10|MIRANDA-CLASS CRUISER": {
+   "fleet": "Federation",
+   "role": "attack runs",
+   "range": [
+    49.06,
+    75.77
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 80
+  },
+  "10|INTREPID-CLASS EXPLORER": {
+   "fleet": "Federation",
+   "role": "gunboat, attack runs",
+   "range": [
+    67.82,
+    94.99
+   ],
+   "crosses": [
+    80
+   ],
+   "n": 52
+  },
+  "10|STEAMRUNNER-CLASS CRUISER": {
+   "fleet": "Federation",
+   "role": "gunboat, attack runs",
+   "range": [
+    76.56,
+    94.99
+   ],
+   "crosses": [
+    80
+   ],
+   "n": 27
+  },
+  "10|OBERTH-CLASS SCIENCE VESSEL": {
+   "fleet": "Federation",
+   "role": "attack runs",
+   "range": [
+    42,
+    54.43
+   ],
+   "crosses": [],
+   "n": 38
+  },
+  "10|DEFIANT-CLASS ESCORT": {
+   "fleet": "Federation",
+   "role": "attack runs",
+   "range": [
+    42,
+    63.98
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 39
+  },
+  "10|PEREGRINE-CLASS FIGHTER": {
+   "fleet": "Federation",
+   "role": "screen, attack runs",
+   "range": [
+    10.93,
+    12.95
+   ],
+   "crosses": [],
+   "n": 27
+  },
+  "10|TYPE-6 SHUTTLECRAFT": {
+   "fleet": "Federation",
+   "role": "screen, attack runs",
+   "range": [
+    9.18,
+    12.23
+   ],
+   "crosses": [],
+   "n": 25
+  },
+  "10|TYPE-9 SHUTTLECRAFT": {
+   "fleet": "Federation",
+   "role": "screen, attack runs",
+   "range": [
+    10.38,
+    13.2
+   ],
+   "crosses": [],
+   "n": 23
+  },
+  "10|DANUBE-CLASS RUNABOUT": {
+   "fleet": "Federation",
+   "role": "screen, attack runs",
+   "range": [
+    19.53,
+    23.76
+   ],
+   "crosses": [],
+   "n": 21
+  },
+  "11|K'T'INGA-CLASS BATTLECRUISER": {
+   "fleet": "Klingon",
+   "role": "gunboat",
+   "range": [
+    164.92,
+    257.85
+   ],
+   "crosses": [
+    180
+   ],
+   "n": 44
+  },
+  "11|F15-CLASS DESTROYER": {
+   "fleet": "Klingon",
+   "role": "gunboat",
+   "range": [
+    105.29,
+    153.53
+   ],
+   "crosses": [
+    120
+   ],
+   "n": 30
+  },
+  "11|B'REL-CLASS BIRD-OF-PREY": {
+   "fleet": "Klingon",
+   "role": "gunboat",
+   "range": [
+    99.04,
+    135.11
+   ],
+   "crosses": [
+    120
+   ],
+   "n": 31
+  },
+  "11|VOR'CHA-CLASS ATTACK CRUISER": {
+   "fleet": "Klingon",
+   "role": "gunboat",
+   "range": [
+    136.87,
+    233.64
+   ],
+   "crosses": [
+    180
+   ],
+   "n": 39
+  },
+  "11|D6S-CLASS SCOUT CRUISER": {
+   "fleet": "Klingon",
+   "role": "attack runs",
+   "range": [
+    51.49,
+    79.99
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 99
+  },
+  "11|K'VORT-CLASS HEAVY BIRD-OF-PREY": {
+   "fleet": "Klingon",
+   "role": "gunboat, attack runs",
+   "range": [
+    63.73,
+    94.99
+   ],
+   "crosses": [
+    80
+   ],
+   "n": 86
+  },
+  "11|F5-CLASS FRIGATE": {
+   "fleet": "Klingon",
+   "role": "attack runs",
+   "range": [
+    42,
+    62.06
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 99
+  },
+  "11|D7-CLASS BATTLECRUISER": {
+   "fleet": "Klingon",
+   "role": "gunboat, attack runs",
+   "range": [
+    84.05,
+    94.99
+   ],
+   "crosses": [],
+   "n": 14
+  },
+  "11|D'KTAGH-CLASS SHUTTLECRAFT": {
+   "fleet": "Klingon",
+   "role": "screen, attack runs",
+   "range": [
+    11.12,
+    14.08
+   ],
+   "crosses": [],
+   "n": 177
+  },
+  "11|HEGH'GOGH-CLASS HEAVY FIGHTER": {
+   "fleet": "Klingon",
+   "role": "screen, attack runs",
+   "range": [
+    19.74,
+    24.24
+   ],
+   "crosses": [],
+   "n": 186
+  },
+  "11|TO'DUJ-CLASS FIGHTER": {
+   "fleet": "Klingon",
+   "role": "screen, attack runs",
+   "range": [
+    13.34,
+    19.1
+   ],
+   "crosses": [],
+   "n": 149
+  },
+  "12|TACTICAL CUBE": {
+   "fleet": "Borg",
+   "role": "gunboat",
+   "range": [
+    172.28,
+    284.85
+   ],
+   "crosses": [
+    180
+   ],
+   "n": 32
+  },
+  "12|TACTICAL DIAMOND": {
+   "fleet": "Borg",
+   "role": "gunboat",
+   "range": [
+    70.8,
+    163.43
+   ],
+   "crosses": [
+    80,
+    95,
+    120
+   ],
+   "n": 86
+  },
+  "12|SPHERE": {
+   "fleet": "Borg",
+   "role": "gunboat, capital",
+   "range": [
+    468.29,
+    733.14
+   ],
+   "crosses": [],
+   "n": 25
+  },
+  "12|ASSIMILATED VESSEL (RAPTOR-PATTERN)": {
+   "fleet": "Borg",
+   "role": "attack runs",
+   "range": [
+    50.77,
+    77.4
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 35
+  },
+  "12|LONG-RANGE PROBE": {
+   "fleet": "Borg",
+   "role": "attack runs",
+   "range": [
+    30.92,
+    57.96
+   ],
+   "crosses": [
+    42
+   ],
+   "n": 107
+  },
+  "12|ASSIMILATED VESSEL (RING-PATTERN)": {
+   "fleet": "Borg",
+   "role": "attack runs",
+   "range": [
+    51.11,
+    78.35
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 40
+  },
+  "12|ASSIMILATED SHUTTLE": {
+   "fleet": "Borg",
+   "role": "screen, attack runs",
+   "range": [
+    16.97,
+    21.18
+   ],
+   "crosses": [],
+   "n": 20
+  },
+  "12|BORG SCOUT SHIP": {
+   "fleet": "Borg",
+   "role": "screen, attack runs",
+   "range": [
+    27.09,
+    34.2
+   ],
+   "crosses": [],
+   "n": 25
+  },
+  "13|FHLOSTON-CLASS PLEASURE LINER": {
+   "fleet": "Mondoshawan",
+   "role": "gunboat",
+   "range": [
+    183.57,
+    299.99
+   ],
+   "crosses": [],
+   "n": 54
+  },
+  "13|EARTH FEDERAL BATTLE CRUISER": {
+   "fleet": "Mondoshawan",
+   "role": "gunboat",
+   "range": [
+    180,
+    299.99
+   ],
+   "crosses": [],
+   "n": 68
+  },
+  "13|MANGALORE WARSHIP": {
+   "fleet": "Mondoshawan",
+   "role": "gunboat, capital",
+   "range": [
+    186.04,
+    313.5
+   ],
+   "crosses": [
+    300
+   ],
+   "n": 56
+  },
+  "13|FHLOSTON SPACELINER": {
+   "fleet": "Mondoshawan",
+   "role": "gunboat, attack runs",
+   "range": [
+    60,
+    94.99
+   ],
+   "crosses": [
+    80
+   ],
+   "n": 102
+  },
+  "13|MONDOSHAWAN SHIP": {
+   "fleet": "Mondoshawan",
+   "role": "attack runs",
+   "range": [
+    42,
+    63.23
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 111
+  },
+  "13|MANGALORE ASSAULT SHIP": {
+   "fleet": "Mondoshawan",
+   "role": "gunboat, attack runs",
+   "range": [
+    63.73,
+    94.99
+   ],
+   "crosses": [
+    80
+   ],
+   "n": 89
+  },
+  "13|ANGEL-WING EXECUTIVE YACHT": {
+   "fleet": "Mondoshawan",
+   "role": "attack runs",
+   "range": [
+    36.52,
+    54.65
+   ],
+   "crosses": [
+    42
+   ],
+   "n": 78
+  },
+  "13|NY FLYING CAB": {
+   "fleet": "Mondoshawan",
+   "role": "screen, attack runs",
+   "range": [
+    8.17,
+    9.76
+   ],
+   "crosses": [],
+   "n": 72
+  },
+  "13|MANGALORE RAIDER GUNSHIP": {
+   "fleet": "Mondoshawan",
+   "role": "screen, attack runs",
+   "range": [
+    33.59,
+    39.93
+   ],
+   "crosses": [],
+   "n": 96
+  },
+  "13|ZFX200 MERCENARY FIGHTER": {
+   "fleet": "Mondoshawan",
+   "role": "screen, attack runs",
+   "range": [
+    16.56,
+    19.67
+   ],
+   "crosses": [],
+   "n": 113
+  },
+  "13|NY POLICE CRUISER": {
+   "fleet": "Mondoshawan",
+   "role": "screen, attack runs",
+   "range": [
+    10.59,
+    12.39
+   ],
+   "crosses": [],
+   "n": 55
+  },
+  "14|CONESTOGA-CLASS MEDICAL FRIGATE": {
+   "fleet": "USCM",
+   "role": "gunboat",
+   "range": [
+    97.19,
+    144.12
+   ],
+   "crosses": [
+    120
+   ],
+   "n": 35
+  },
+  "14|TIENTSIN-CLASS ASSAULT SHIP": {
+   "fleet": "USCM",
+   "role": "gunboat",
+   "range": [
+    100.91,
+    158.23
+   ],
+   "crosses": [
+    120
+   ],
+   "n": 47
+  },
+  "14|HELIADES-CLASS EXPLORATION VESSEL": {
+   "fleet": "USCM",
+   "role": "gunboat",
+   "range": [
+    62.68,
+    152.46
+   ],
+   "crosses": [
+    80,
+    95,
+    120
+   ],
+   "n": 110
+  },
+  "14|CONESTOGA-CLASS TROOP TRANSPORT": {
+   "fleet": "USCM",
+   "role": "gunboat, attack runs",
+   "range": [
+    64.9,
+    94.99
+   ],
+   "crosses": [
+    80
+   ],
+   "n": 110
+  },
+  "14|BETTY-CLASS TRAMP FREIGHTER": {
+   "fleet": "USCM",
+   "role": "gunboat, attack runs",
+   "range": [
+    50.4,
+    91.21
+   ],
+   "crosses": [
+    60,
+    80
+   ],
+   "n": 58
+  },
+  "14|CM-88B BISON STAR FREIGHTER": {
+   "fleet": "USCM",
+   "role": "gunboat, attack runs",
+   "range": [
+    66.4,
+    94.99
+   ],
+   "crosses": [
+    80
+   ],
+   "n": 74
+  },
+  "14|UD-4L CHEYENNE DROPSHIP": {
+   "fleet": "USCM",
+   "role": "screen, attack runs",
+   "range": [
+    22.6,
+    27.75
+   ],
+   "crosses": [],
+   "n": 274
+  },
+  "14|NARCISSUS-CLASS SHUTTLE": {
+   "fleet": "USCM",
+   "role": "screen, attack runs",
+   "range": [
+    16.02,
+    20.06
+   ],
+   "crosses": [],
+   "n": 146
+  },
+  "14|COVENANT LANDER": {
+   "fleet": "USCM",
+   "role": "screen, attack runs",
+   "range": [
+    24.88,
+    35.1
+   ],
+   "crosses": [],
+   "n": 164
+  },
+  "14|TYPE 337 EEV ESCAPE POD": {
+   "fleet": "USCM",
+   "role": "screen, attack runs",
+   "range": [
+    11.73,
+    14.42
+   ],
+   "crosses": [],
+   "n": 56
+  },
+  "15|JUGGERNAUT-CLASS VOIDWRIGHT": {
+   "fleet": "Engineers",
+   "role": "gunboat",
+   "range": [
+    137.56,
+    212.58
+   ],
+   "crosses": [
+    180
+   ],
+   "n": 125
+  },
+  "15|TEMPLE SHIP": {
+   "fleet": "Engineers",
+   "role": "gunboat",
+   "range": [
+    164.33,
+    299.99
+   ],
+   "crosses": [
+    180
+   ],
+   "n": 65
+  },
+  "15|SENTINEL-CLASS PATROL CROISSANT": {
+   "fleet": "Engineers",
+   "role": "gunboat, attack runs",
+   "range": [
+    55.96,
+    86.48
+   ],
+   "crosses": [
+    60,
+    80
+   ],
+   "n": 133
+  },
+  "15|ORRERY SEED VESSEL": {
+   "fleet": "Engineers",
+   "role": "gunboat, attack runs",
+   "range": [
+    48.5,
+    94.99
+   ],
+   "crosses": [
+    60,
+    80
+   ],
+   "n": 107
+  },
+  "15|AMPULE CARRIER": {
+   "fleet": "Engineers",
+   "role": "gunboat, attack runs",
+   "range": [
+    54.06,
+    94.99
+   ],
+   "crosses": [
+    60,
+    80
+   ],
+   "n": 108
+  },
+  "15|PILOT-CHAIR GUNSHIP": {
+   "fleet": "Engineers",
+   "role": "screen, attack runs",
+   "range": [
+    19.17,
+    28.1
+   ],
+   "crosses": [],
+   "n": 137
+  },
+  "15|ENGINEER EVA SKIFF": {
+   "fleet": "Engineers",
+   "role": "screen, attack runs",
+   "range": [
+    14.09,
+    17.87
+   ],
+   "crosses": [],
+   "n": 154
+  },
+  "15|AMPULE DART": {
+   "fleet": "Engineers",
+   "role": "screen, attack runs",
+   "range": [
+    22.74,
+    35.02
+   ],
+   "crosses": [],
+   "n": 125
+  },
+  "16|YAUTJA MOTHERSHIP": {
+   "fleet": "Yautja",
+   "role": "gunboat, capital",
+   "range": [
+    223.77,
+    337.82
+   ],
+   "crosses": [
+    300
+   ],
+   "n": 35
+  },
+  "16|GOLDEN CLAN SHIP": {
+   "fleet": "Yautja",
+   "role": "gunboat",
+   "range": [
+    190.38,
+    299.99
+   ],
+   "crosses": [],
+   "n": 37
+  },
+  "16|ELDER HORSESHOE TROPHY BARGE": {
+   "fleet": "Yautja",
+   "role": "gunboat",
+   "range": [
+    173.08,
+    266.42
+   ],
+   "crosses": [
+    180
+   ],
+   "n": 14
+  },
+  "16|WOLF-CLASS MILITANT SCOUT": {
+   "fleet": "Yautja",
+   "role": "gunboat, attack runs",
+   "range": [
+    65.59,
+    94.99
+   ],
+   "crosses": [
+    80
+   ],
+   "n": 97
+  },
+  "16|LOST TRIBE SEWER-SHIP": {
+   "fleet": "Yautja",
+   "role": "attack runs",
+   "range": [
+    44.46,
+    70.76
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 137
+  },
+  "16|ENFORCER-CASTE CRUISER": {
+   "fleet": "Yautja",
+   "role": "attack runs",
+   "range": [
+    34.63,
+    45.68
+   ],
+   "crosses": [
+    42
+   ],
+   "n": 176
+  },
+  "16|FERAL HUNTER'S SHIP": {
+   "fleet": "Yautja",
+   "role": "screen, attack runs",
+   "range": [
+    17.99,
+    27
+   ],
+   "crosses": [],
+   "n": 163
+  },
+  "16|YAUTJA SCOUT SHIP": {
+   "fleet": "Yautja",
+   "role": "screen, attack runs",
+   "range": [
+    23.02,
+    28.94
+   ],
+   "crosses": [],
+   "n": 268
+  },
+  "16|SINGLE-PILOT DROP POD": {
+   "fleet": "Yautja",
+   "role": "screen, attack runs",
+   "range": [
+    8.62,
+    10.43
+   ],
+   "crosses": [],
+   "n": 147
+  },
+  "17|WALKERS OF SIGMA 957": {
+   "fleet": "First Ones",
+   "role": "gunboat, capital",
+   "range": [
+    2522,
+    2678
+   ],
+   "crosses": [],
+   "n": 2
+  },
+  "17|KIRISHIAC LORDSHIP": {
+   "fleet": "First Ones",
+   "role": "gunboat, capital",
+   "range": [
+    2134,
+    2266
+   ],
+   "crosses": [],
+   "n": 2
+  },
+  "17|MINDRIDER THOUGHTFORCE": {
+   "fleet": "First Ones",
+   "role": "gunboat, capital",
+   "range": [
+    1940,
+    2060
+   ],
+   "crosses": [],
+   "n": 2
+  },
+  "17|TRIAD TRIUMVIRON": {
+   "fleet": "First Ones",
+   "role": "gunboat, capital",
+   "range": [
+    2037,
+    2163
+   ],
+   "crosses": [],
+   "n": 2
+  },
+  "17|TORVALUS DARK KNIFE": {
+   "fleet": "First Ones",
+   "role": "gunboat, capital",
+   "range": [
+    3298,
+    3502
+   ],
+   "crosses": [],
+   "n": 2
+  },
+  "17|THE FIRST BORN": {
+   "fleet": "First Ones",
+   "role": "gunboat, capital",
+   "range": [
+    1552,
+    1648
+   ],
+   "crosses": [],
+   "n": 2
+  },
+  "17|VORLON TRANSPORT": {
+   "fleet": "First Ones",
+   "role": "gunboat, capital",
+   "range": [
+    1746,
+    1854
+   ],
+   "crosses": [],
+   "n": 2
+  },
+  "17|HAND SERVITOR VESSEL": {
+   "fleet": "First Ones",
+   "role": "gunboat, capital",
+   "range": [
+    1843,
+    1957
+   ],
+   "crosses": [],
+   "n": 2
+  },
+  "18|REMAN SCIMITAR WARBIRD": {
+   "fleet": "Romulans",
+   "role": "gunboat, capital",
+   "range": [
+    751.28,
+    888.3
+   ],
+   "crosses": [],
+   "n": 36
+  },
+  "18|VALDORE WARBIRD": {
+   "fleet": "Romulans",
+   "role": "gunboat, capital",
+   "range": [
+    593.73,
+    708.76
+   ],
+   "crosses": [],
+   "n": 33
+  },
+  "18|D’DERIDEX WARBIRD": {
+   "fleet": "Romulans",
+   "role": "gunboat, capital",
+   "range": [
+    1008.65,
+    1165.51
+   ],
+   "crosses": [],
+   "n": 11
+  },
+  "18|TOS BIRD-OF-PREY": {
+   "fleet": "Romulans",
+   "role": "gunboat",
+   "range": [
+    137.03,
+    163.65
+   ],
+   "crosses": [],
+   "n": 127
+  },
+  "18|ROMULAN BIRD-OF-PREY": {
+   "fleet": "Romulans",
+   "role": "gunboat",
+   "range": [
+    191.77,
+    229.25
+   ],
+   "crosses": [],
+   "n": 129
+  },
+  "18|ROMULAN SCOUT": {
+   "fleet": "Romulans",
+   "role": "gunboat, attack runs",
+   "range": [
+    91.33,
+    109.08
+   ],
+   "crosses": [],
+   "n": 124
+  },
+  "18|REMAN SCORPION FIGHTER": {
+   "fleet": "Romulans",
+   "role": "screen, attack runs",
+   "range": [
+    14.61,
+    17.43
+   ],
+   "crosses": [],
+   "n": 59
+  },
+  "18|ROMULAN SHUTTLE": {
+   "fleet": "Romulans",
+   "role": "screen, attack runs",
+   "range": [
+    21.94,
+    26.12
+   ],
+   "crosses": [],
+   "n": 34
+  },
+  "18|ROMULAN DRONE SHIP": {
+   "fleet": "Romulans",
+   "role": "screen, attack runs",
+   "range": [
+    27.47,
+    32.67
+   ],
+   "crosses": [],
+   "n": 51
+  },
+  "19|BREEN WARSHIP": {
+   "fleet": "Dominion",
+   "role": "gunboat, capital",
+   "range": [
+    438.42,
+    522.58
+   ],
+   "crosses": [],
+   "n": 23
+  },
+  "19|CARDASSIAN KELDON CRUISER": {
+   "fleet": "Dominion",
+   "role": "gunboat, capital",
+   "range": [
+    310.16,
+    371.08
+   ],
+   "crosses": [],
+   "n": 20
+  },
+  "19|JEM'HADAR BATTLECRUISER": {
+   "fleet": "Dominion",
+   "role": "gunboat, capital",
+   "range": [
+    567.68,
+    674.79
+   ],
+   "crosses": [],
+   "n": 27
+  },
+  "19|JEM'HADAR BATTLESHIP": {
+   "fleet": "Dominion",
+   "role": "gunboat, capital",
+   "range": [
+    1168.19,
+    1357.71
+   ],
+   "crosses": [],
+   "n": 10
+  },
+  "19|JEM'HADAR HEAVY ESCORT": {
+   "fleet": "Dominion",
+   "role": "gunboat",
+   "range": [
+    211.34,
+    250.38
+   ],
+   "crosses": [],
+   "n": 37
+  },
+  "19|CARDASSIAN GALOR WARSHIP": {
+   "fleet": "Dominion",
+   "role": "gunboat",
+   "range": [
+    219.05,
+    261.55
+   ],
+   "crosses": [],
+   "n": 79
+  },
+  "19|CARDASSIAN HIDEKI CORVETTE": {
+   "fleet": "Dominion",
+   "role": "screen, gunboat, attack runs",
+   "range": [
+    91.97,
+    109.16
+   ],
+   "crosses": [],
+   "n": 78
+  },
+  "19|JEM'HADAR ATTACK SHIP": {
+   "fleet": "Dominion",
+   "role": "screen, gunboat, attack runs",
+   "range": [
+    100.45,
+    119.99
+   ],
+   "crosses": [],
+   "n": 71
+  },
+  "19|BREEN RAIDER": {
+   "fleet": "Dominion",
+   "role": "screen, attack runs",
+   "range": [
+    56.53,
+    67.68
+   ],
+   "crosses": [
+    60
+   ],
+   "n": 42
+  },
+  "19|JEM'HADAR SHUTTLE": {
+   "fleet": "Dominion",
+   "role": "screen, attack runs",
+   "range": [
+    25.55,
+    30.56
+   ],
+   "crosses": [],
+   "n": 49
+  },
+  "20|BATTLE BARGE": {
+   "fleet": "Space Marines",
+   "role": "gunboat, capital",
+   "range": [
+    1367.9,
+    1632.19
+   ],
+   "crosses": [],
+   "n": 28
+  },
+  "20|VANGUARD LIGHT CRUISER": {
+   "fleet": "Space Marines",
+   "role": "gunboat, capital",
+   "range": [
+    394.34,
+    466.88
+   ],
+   "crosses": [],
+   "n": 41
+  },
+  "20|STRIKE CRUISER": {
+   "fleet": "Space Marines",
+   "role": "gunboat, capital",
+   "range": [
+    714.19,
+    847.55
+   ],
+   "crosses": [],
+   "n": 65
+  },
+  "20|SPACE HULK": {
+   "fleet": "Space Marines",
+   "role": "gunboat, capital",
+   "range": [
+    1065.53,
+    1250.7
+   ],
+   "crosses": [],
+   "n": 30
+  },
+  "20|HUNTER DESTROYER": {
+   "fleet": "Space Marines",
+   "role": "gunboat",
+   "range": [
+    120,
+    141.93
+   ],
+   "crosses": [],
+   "n": 66
+  },
+  "20|GLADIUS FRIGATE": {
+   "fleet": "Space Marines",
+   "role": "gunboat",
+   "range": [
+    173.32,
+    207.06
+   ],
+   "crosses": [
+    180
+   ],
+   "n": 78
+  },
+  "20|NOVA FRIGATE": {
+   "fleet": "Space Marines",
+   "role": "gunboat",
+   "range": [
+    219.68,
+    261.56
+   ],
+   "crosses": [],
+   "n": 55
+  },
+  "20|STORMBIRD GUNSHIP": {
+   "fleet": "Space Marines",
+   "role": "attack runs",
+   "range": [
+    65.93,
+    78.53
+   ],
+   "crosses": [],
+   "n": 51
+  },
+  "20|STORM EAGLE": {
+   "fleet": "Space Marines",
+   "role": "screen, attack runs",
+   "range": [
+    31.1,
+    37.03
+   ],
+   "crosses": [],
+   "n": 58
+  },
+  "20|CAESTUS ASSAULT RAM": {
+   "fleet": "Space Marines",
+   "role": "screen, attack runs",
+   "range": [
+    22.8,
+    27.15
+   ],
+   "crosses": [],
+   "n": 39
+  },
+  "20|XIPHON INTERCEPTOR": {
+   "fleet": "Space Marines",
+   "role": "screen, attack runs",
+   "range": [
+    19.32,
+    22.83
+   ],
+   "crosses": [],
+   "n": 48
+  },
+  "20|THUNDERHAWK GUNSHIP": {
+   "fleet": "Space Marines",
+   "role": "screen, attack runs",
+   "range": [
+    26.46,
+    31.58
+   ],
+   "crosses": [],
+   "n": 55
+  },
+  "20|DROP POD": {
+   "fleet": "Space Marines",
+   "role": "screen, attack runs",
+   "range": [
+    10.98,
+    13.06
+   ],
+   "crosses": [],
+   "n": 40
+  },
+  "21|HIVE SHIP": {
+   "fleet": "Tyranids",
+   "role": "gunboat, capital",
+   "range": [
+    1188.76,
+    1419.32
+   ],
+   "crosses": [],
+   "n": 26
+  },
+  "21|RAZORFIEND CRUISER": {
+   "fleet": "Tyranids",
+   "role": "gunboat, capital",
+   "range": [
+    592.93,
+    705.53
+   ],
+   "crosses": [],
+   "n": 27
+  },
+  "21|VOID PROWLER": {
+   "fleet": "Tyranids",
+   "role": "gunboat, capital",
+   "range": [
+    385.17,
+    456.46
+   ],
+   "crosses": [],
+   "n": 34
+  },
+  "21|DEVOURER CRUISER": {
+   "fleet": "Tyranids",
+   "role": "gunboat, capital",
+   "range": [
+    839.92,
+    1002.08
+   ],
+   "crosses": [],
+   "n": 27
+  },
+  "21|VANGUARD DRONE SHIP": {
+   "fleet": "Tyranids",
+   "role": "gunboat",
+   "range": [
+    219.3,
+    261.69
+   ],
+   "crosses": [],
+   "n": 77
+  },
+  "21|ESCORT DRONE": {
+   "fleet": "Tyranids",
+   "role": "gunboat",
+   "range": [
+    191.51,
+    229.24
+   ],
+   "crosses": [],
+   "n": 105
+  },
+  "21|KRAKEN BIO-SHIP": {
+   "fleet": "Tyranids",
+   "role": "gunboat",
+   "range": [
+    136.86,
+    163.76
+   ],
+   "crosses": [],
+   "n": 82
+  },
+  "21|SPORE DRONE": {
+   "fleet": "Tyranids",
+   "role": "screen, attack runs",
+   "range": [
+    17.33,
+    20.73
+   ],
+   "crosses": [],
+   "n": 206
+  },
+  "21|BOARDING WORM": {
+   "fleet": "Tyranids",
+   "role": "screen, attack runs",
+   "range": [
+    32.01,
+    38.15
+   ],
+   "crosses": [],
+   "n": 191
+  },
+  "21|ATTACK ORGANISM": {
+   "fleet": "Tyranids",
+   "role": "screen, attack runs",
+   "range": [
+    30.09,
+    36
+   ],
+   "crosses": [],
+   "n": 179
+  },
+  "22|STARSHIP": {
+   "fleet": "Tesla",
+   "role": "gunboat",
+   "range": [
+    110.87,
+    129.83
+   ],
+   "crosses": [
+    120
+   ],
+   "n": 32
+  },
+  "22|GIGAFACTORY CARRIER": {
+   "fleet": "Tesla",
+   "role": "gunboat",
+   "range": [
+    213.02,
+    250.27
+   ],
+   "crosses": [],
+   "n": 18
+  },
+  "22|STARSHIP / SUPER HEAVY": {
+   "fleet": "Tesla",
+   "role": "gunboat",
+   "range": [
+    191.62,
+    227.75
+   ],
+   "crosses": [],
+   "n": 36
+  },
+  "22|FALCON 9": {
+   "fleet": "Tesla",
+   "role": "attack runs",
+   "range": [
+    63.86,
+    76.38
+   ],
+   "crosses": [],
+   "n": 97
+  },
+  "22|FALCON HEAVY": {
+   "fleet": "Tesla",
+   "role": "attack runs",
+   "range": [
+    65.73,
+    78.57
+   ],
+   "crosses": [],
+   "n": 75
+  },
+  "22|OPTIMUS HEAVY": {
+   "fleet": "Tesla",
+   "role": "screen, attack runs",
+   "range": [
+    7.3,
+    8.73
+   ],
+   "crosses": [],
+   "n": 89
+  },
+  "22|OPTIMUS BLASTER": {
+   "fleet": "Tesla",
+   "role": "screen, attack runs",
+   "range": [
+    5.48,
+    6.55
+   ],
+   "crosses": [],
+   "n": 228
+  },
+  "22|CYBERTRUCK GUNSHIP": {
+   "fleet": "Tesla",
+   "role": "screen, attack runs",
+   "range": [
+    12.77,
+    15.26
+   ],
+   "crosses": [],
+   "n": 161
+  },
+  "22|STARLINK SWARMSAT": {
+   "fleet": "Tesla",
+   "role": "screen, attack runs",
+   "range": [
+    10.95,
+    13.1
+   ],
+   "crosses": [],
+   "n": 167
+  },
+  "22|CARGO DRAGON": {
+   "fleet": "Tesla",
+   "role": "screen, attack runs",
+   "range": [
+    8.21,
+    9.82
+   ],
+   "crosses": [],
+   "n": 171
+  }
+ }
+}

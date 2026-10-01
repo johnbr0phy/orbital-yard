@@ -1,0 +1,54 @@
+forged Lattice in 28 s
+forged Drift in 55 s
+forged Choir in 43 s
+forged Imperial in 34 s
+forged Shoal in 98 s
+forged Shadows in 23 s
+forged Minbari in 39 s
+forged Federation in 19 s
+forged EarthForce in 26 s
+forged Rebel in 91 s
+forged Borg in 21 s
+forged Klingon in 30 s
+forged Mondoshawan in 29 s
+forged USCM in 28 s
+forged First Ones in 1 s
+forged Romulans in 9 s
+forged Dominion in 8 s
+forged Yautja in 32 s
+forged Space Marines in 13 s
+forged Engineers in 59 s
+forged Tesla in 24 s
+forged Tyranids in 33 s
+forged Yard in 746 s
+
+39926 hulls, commit 15befb1
+fleet         small                             escort                            capital                           reach  studyMax forgeMs uniq
+Yard          n848 s755.8 dom1% sep0.53         n226 s224.6 dom1% sep0.54         n120 s118.6 dom2% sep0.47         100%   5900     102     582
+Shoal         n1040 s1034.5 dom0% sep0.57       n118 s118.0 dom1% sep0.55         n80 s80.0 dom1% sep0.59           100%   5900     30      191
+Lattice       n784 s752.8 dom0% sep0.55         n236 s233.2 dom1% sep0.56         n114 s112.6 dom2% sep0.55         100%   2118     8       204
+Drift         n944 s763.3 dom1% sep0.52         n178 s167.1 dom2% sep0.49         n80 s77.3 dom3% sep0.49           100%   5888     17      193
+Choir         n544 s466.4 dom1% sep0.60         n318 s299.5 dom1% sep0.67         n152 s146.6 dom1% sep0.67         99%    2956     18      180
+Imperial      n1024 s6.9 dom20% sep0.61         n122 s3.3 dom49% sep0.52          n80 s5.4 dom38% sep0.37           100%   2332     12      30
+Rebel         n832 s4.8 dom30% sep0.49          n156 s3.7 dom40% sep0.31          n86 s5.5 dom30% sep0.30           100%   5070     36      37
+Minbari       n688 s22.2 dom8% sep0.55          n286 s5.8 dom30% sep0.51          n80 s8.3 dom21% sep0.45           100%   4284     15      13
+Shadows       n128 s13.8 dom12% sep0.62         n80 s8.5 dom28% sep0.62           n80 s6.4 dom39% sep0.56           100%   5208     31      12
+EarthForce    n784 s4.6 dom40% sep0.48          n236 s4.2 dom46% sep0.40          n114 s6.0 dom24% sep0.22          100%   1772     8       24
+Federation    n96 s4.0 dom28% sep0.33           n236 s6.3 dom27% sep0.43          n202 s5.0 dom26% sep0.33          100%   2054     13      30
+Klingon       n512 s3.6 dom36% sep0.53          n298 s6.2 dom27% sep0.25          n144 s6.7 dom27% sep0.23          100%   1504     11      26
+Borg          n64 s4.4 dom39% sep0.33           n226 s9.6 dom28% sep0.44          n80 s3.7 dom31% sep0.21           100%   3872     18      12
+Mondoshawan   n352 s4.4 dom32% sep0.30          n364 s3.9 dom30% sep0.40          n178 s3.7 dom38% sep0.44          100%   2412     10      15
+USCM          n640 s4.4 dom43% sep0.42          n306 s5.0 dom36% sep0.25          n128 s3.4 dom37% sep0.35          100%   2010     10      24
+Engineers     n416 s13.0 dom20% sep0.63         n348 s17.7 dom25% sep0.52         n190 s5.7 dom38% sep0.72          100%   5304     20      12
+Yautja        n736 s3.9 dom36% sep0.38          n252 s3.4 dom49% sep0.21          n86 s4.0 dom40% sep0.24           100%   2496     13      13
+First Ones    unique ancients; min class sep 0.401
+Romulans      n144 s5.0 dom35% sep0.58          n380 s4.6 dom34% sep0.52          n80 s3.6 dom41% sep0.44           100%   936      7       13
+Dominion      n240 s4.3 dom33% sep0.40          n116 s3.8 dom40% sep0.49          n80 s4.5 dom34% sep0.37           100%   1264     8       14
+Space Marines n240 s4.9 dom24% sep0.31          n250 s4.4 dom31% sep0.39          n164 s4.5 dom40% sep0.37          100%   2132     8       30
+Tyranids      n576 s9.0 dom21% sep0.59          n264 s5.3 dom30% sep0.32          n114 s8.5 dom19% sep0.23          100%   3928     15      34
+Tesla         n816 s4.8 dom28% sep0.23          n172 s4.0 dom39% sep0.44          n86 s3.9 dom42% sep0.41           100%   2448     7       14
+recognition 99% (21.78x chance of 5%): Yard 94%, Shoal 93%, Lattice 93%, Drift 98%, Choir 100%, Imperial 100%, Rebel 100%, Minbari 100%, Shadows 100%, EarthForce 100%, Federation 100%, Klingon 100%, Borg 100%, Mondoshawan 100%, USCM 100%, Engineers 100%, Yautja 100%, Romulans 100%, Dominion 100%, Space Marines 100%, Tyranids 100%, Tesla 100%
+reference class pairs (Yard + First Ones): {"n":205,"min":0.40081872786521466,"p05":0.5317720723137602,"p10":0.5527054984608027,"median":0.6398727900466474}
+
+verdict: 503 pass, 0 fail
+exit 0

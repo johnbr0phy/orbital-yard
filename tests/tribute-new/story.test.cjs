@@ -60,7 +60,8 @@ test('a broken squadron routs, runs and leaves alive; the war counts it as withd
 
 test('a ram resolves through the collision solver: an impact event, damage to both, no scripted kill',()=>{
   const w=war(5,6,1101,30,30);
-  const r=w.run(`(()=>{const caps=ships.filter(s=>!s.dead&&s.arr&&!s.grace&&(s.hulls===10));const a=caps.find(s=>s.side===0),b=caps.find(s=>s.side===1);
+  const r=w.run(`(()=>{const caps=ships.filter(s=>!s.dead&&s.arr&&!s.grace&&(s.hulls===10));const a=caps.find(s=>s.side===0),b=caps.filter(s=>s.side===1).sort((p,q)=>q.slen-p.slen)[0];
+    // The largest enemy capital: a frigate can outrun a Star Destroyer, and this is about the impact, not the chase.
     // Put them a hull's length apart, nose to nose, and let the doomed one choose to ram.
     b.x=a.x+Math.cos(a.yaw)*(a.slen+b.slen)*.7;b.y=a.y;b.z=a.z+Math.sin(a.yaw)*(a.slen+b.slen)*.7;
     const hpA=a.hp,hpB=b.hp;battleAI.story.setOrder(a,'RAM',{target:b.id,until:battleTime+30});a.ramming=b.id;

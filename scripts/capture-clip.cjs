@@ -17,6 +17,9 @@ const {chromium} = require(process.env.PLAYWRIGHT_PATH || 'playwright');
    records one scene of bench/audio/scenes.json (silent WebM, 30 fps) from the same seeded war,
    stepping and camera as the scene's audio (scripts/capture-audio.cjs --scene), so the two sync. */
 if (process.argv.includes('--scene')) { require('./capture-clip-scene.cjs'); return; }
+/* Variety mode: node scripts/capture-clip.cjs --variety v1 --label after [--dir ../orbital-yard-main]
+   records one scene of scripts/variety-scenes.cjs (VARIETY.md) for the variety watch page. */
+if (process.argv.includes('--variety')) { require('./capture-clip-variety.cjs'); return; }
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), {spawn} = require('node:child_process');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const root = path.resolve(__dirname, '..');

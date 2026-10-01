@@ -19,3 +19,5 @@ bench/motion/story/quick-*.json
 bench/motion/sw3/
 bench/motion/sw4/
 bench/motion/sw5/
+bench/variety/*/hulls-*.json
+bench/variety/dev*/
