@@ -7,6 +7,25 @@ This file measures fleet variety: whether a fleet reads as a navy of different j
 I fixed these, and the thresholds the brief left to me, before changing a hull; the baseline is main at 471d650, measured with the same tools. Where a threshold needed a number, the reasoning is under "Why these thresholds".
 
 <!-- CRITERIA-TABLE -->
+| # | criterion | target | baseline (main 471d650) | final (15befb1) | result |
+|---|---|---|---|---|---|
+| 1 | Distinct shapes: effective silhouette clusters per fleet band | >= 3 in every band (or a documented canon exception) | 36 of 66 bands; worst Minbari small 1.00 | 66 of 66 bands; worst Imperial escort 3.31 | **PASS** |
+| 2 | Dominant share: the largest silhouette cluster's share of a band | <= 50.0% in every band | 39 of 66; worst Minbari small 100.0% | 66 of 66; worst Yautja escort 49.2% | **PASS** |
+| 3 | Class separation: scale-normalised median distance between two classes in one band | >= 0.2 for every pair | 49 of 59 bands; worst Shadows capital SHADOW HUNTER v SHADOW VESSEL 0.010 | 66 of 66 bands; worst Yautja escort ENFORCER-CASTE CRUISER v WOLF-CLASS MILITANT SCOUT 0.205 | **PASS** |
+| 4 | Sister spread: median distance between sisters of a class; no identical meshes in a muster | 0.04-0.25, below the distance to any other class; 0 identical | 38 of 119 classes; lowest TIE/SA BOMBER 0.000; identical meshes 0 | 172 of 172 classes; range 0.042-0.225; identical meshes 0 | **PASS** |
+| 5 | Fleet recognition from clay silhouettes (kNN, leave one war out, colour hidden) | >= 5x chance; no fleet below its baseline (less 2 standard errors) | 99.1% = 21.8x chance | 99.0% = 21.8x chance; fleets below baseline: none | **PASS** |
+| 6 | Band reach: capital-band jobs filled by a true capital-band hull | >= 95.0% in every fleet | 16 of 22; worst Yard 0.0% | 22 of 22; worst Choir 98.7% | **PASS** |
+| 7 | Every listed class can appear (Sharlin, Jem'Hadar shuttle, every pool entry) | dealt in its band in the pool test | Sharlin and Jem'Hadar shuttle never dealt (VARIETY.md, suspected bugs) | every class of every band pool dealt in its band (variety.test.cjs) | **PASS** |
+| 8 | Named heroes | byte-identical meshes (3 seeds each) | main's meshes, 23 fleets x 3 seeds (tests/tribute-new/variety-heroes.json) | byte-identical meshes, 3 seeds each (variety.test.cjs; uniqueness.test.cjs) | **PASS** |
+| 9a | Triangles per hull at study quality | < 6,000 every hull | max 31250 | max 5900 | **PASS** |
+| 9b | Distant-hull groups (unique meshes) per fleet per battle | within 10% of main | per fleet, table below | every fleet within | **PASS** |
+| 9c | Forge time per hull (interleaved, one process) | within 10% of main, every fleet | per fleet, table below | every fleet within; worst x1.10 | **PASS** |
+| 9d | Per-frame cost at 600 a side (sim-bench, bench-tribute) | within 5% of main | sim-bench 600 a side (Empire v Rebels, 38-48 s): 4095, 4348, 4256 ms CPU per sim s (median 4256); bench-tribute 600 ships, low tier, SwiftShader: 5.40, 5.47 fps, p50 183 ms | sim-bench 4290, 4285, 4255 (median 4285, +0.7%); bench-tribute 5.51, 5.38 fps, p50 183 ms (interleaved on one machine; bench/variety/cost) | **PASS** |
+| 10 | Every existing test plus the variety tests | 0 failures | main: 299 pass, 1 skipped | 308 pass, 0 fail, 1 skipped (309, incl. the 9 in variety.test.cjs); tests/three 3 pass | **PASS** |
+| 11 | Determinism (trace re-recorded; determinism-browser.cjs) | identical | trace 28cdea4f | trace 8d885841 identical twice (bench/variety/trace-after.txt); browser: same final hash abaa35118aff and story events at 1x, 2x/0.5x, slow motion and 1 vs 3 forge workers | **PASS** |
+| 12 | MOTION.md criteria that passed on main still pass | every one | 9 of 11 pass (bench/motion/final) | the same 9 pass; classifier 40.0% (floor 39.6%), shuttle 4.0%; cohesion 70.5% and individuality 153 of 915 still fail, as on main (bench/motion/variety; flight check per fleet below) | **PASS** |
+| 13 | Fleet-balance winners | unchanged or explained | main, 5 seeds per pairing (bench/variety/balance-main-5.json) | majority winner unchanged in 7 of 9; Yard v Shoal (2-3 to 4-1) and USCM v Engineers (3-2 to 2-3) follow measured muster strength from capital-length hulls (VARIETY.md, Fleet balance) | **PASS** |
+| 14 | Story moments at BEHAVIOUR.md rates or better | as main or better | main, same 90 wars (9 seeds): routs 1.51 / 9.63, last stands 1.58 / 2.10, rescues 1.10 / 1.02, aces 0.37 / 0.79, plan switches 0.60 / 0.63 per war-minute at 60 / 300 a side | routs 1.58 / 9.71, last stands 1.84 / 2.88, rescues 1.28 / 1.44, aces 0.47 / 0.96, plan switches 0.63 / 0.67; objectives identical (VARIETY.md, Story) | **PASS** |
 <!-- /CRITERIA-TABLE -->
 
 ## What each criterion measures
@@ -29,6 +48,30 @@ I fixed these, and the thresholds the brief left to me, before changing a hull; 
 - **Band reach 95%, triangles 6,000, cost 10% and 5%.** From the brief.
 
 <!-- FLEET-TABLE -->
+| fleet | small: shapes / dominant | escort | capital | capital reach | recognised | classes | distant groups | forge ms/hull |
+|---|---|---|---|---|---|---|---|---|
+| Yard | 755.8 / 0.6% → 755.8 / 0.6% | 224.6 / 0.9% → 224.6 / 0.9% | 115.9 / 1.7% → 118.6 / 1.7% | 0.0% → 100.0% | 94.9% → 94.1% | 0 → 0 | 585 → 582 | 162.2 → 178.0 |
+| Shoal | 1034.5 / 0.2% → 1034.5 / 0.2% | 118.0 / 0.8% → 118.0 / 0.8% | 80.0 / 1.3% → 80.0 / 1.3% | 76.3% → 100.0% | 93.5% → 92.6% | 0 → 0 | 185 → 191 | 42.8 → 43.9 |
+| Lattice | 752.8 / 0.3% → 752.8 / 0.3% | 233.2 / 0.8% → 233.2 / 0.8% | 111.3 / 1.8% → 112.6 / 1.8% | 3.5% → 100.0% | 93.7% → 93.1% | 0 → 0 | 186 → 204 | 11.5 → 11.8 |
+| Drift | 763.3 / 0.8% → 763.3 / 0.8% | 167.1 / 1.7% → 167.1 / 1.7% | 74.6 / 2.5% → 77.3 / 2.5% | 38.8% → 100.0% | 98.8% → 98.5% | 0 → 0 | 186 → 193 | 25.0 → 24.5 |
+| Choir | 466.4 / 1.1% → 466.4 / 1.1% | 299.5 / 0.9% → 299.5 / 0.9% | 146.6 / 1.3% → 146.6 / 1.3% | 98.7% → 98.7% | 100.0% → 100.0% | 0 → 0 | 180 → 180 | 27.8 → 29.3 |
+| Imperial | 5.2 / 33.1% → 6.9 / 20.0% | 3.0 / 35.2% → 3.3 / 49.2% | 2.3 / 56.3% → 5.4 / 37.5% | 100.0% → 100.0% | 100.0% → 100.0% | 11 → 13 | 37 → 30 | 22.8 → 18.9 |
+| Rebel | 4.8 / 30.3% → 4.8 / 30.3% | 3.6 / 38.5% → 3.7 / 39.7% | 4.9 / 30.2% → 5.5 / 30.2% | 100.0% → 100.0% | 100.0% → 100.0% | 11 → 11 | 37 → 37 | 53.0 → 56.7 |
+| Minbari | 1.0 / 100.0% → 22.2 / 7.7% | 3.5 / 41.6% → 5.8 / 30.4% | 6.5 / 25.0% → 8.3 / 21.3% | 100.0% → 100.0% | 100.0% → 100.0% | 6 → 9 | 21 → 13 | 25.7 → 20.5 |
+| Shadows | 1.0 / 100.0% → 13.8 / 11.7% | 1.0 / 100.0% → 8.5 / 27.5% | 1.2 / 95.0% → 6.4 / 38.8% | 98.8% → 100.0% | 100.0% → 100.0% | 3 → 8 | 13 → 12 | 94.3 → 34.4 |
+| EarthForce | 2.3 / 67.0% → 4.6 / 39.7% | 4.3 / 41.1% → 4.2 / 45.8% | 2.9 / 43.0% → 6.0 / 23.7% | 100.0% → 100.0% | 100.0% → 100.0% | 7 → 10 | 25 → 24 | 13.1 → 11.3 |
+| Federation | 2.8 / 47.9% → 4.0 / 28.1% | 7.2 / 27.5% → 6.3 / 26.7% | 6.0 / 24.3% → 5.0 / 25.7% | 100.0% → 100.0% | 100.0% → 100.0% | 11 → 13 | 37 → 30 | 19.8 → 18.8 |
+| Klingon | 2.3 / 52.9% → 3.6 / 36.3% | 7.4 / 28.2% → 6.2 / 26.8% | 5.4 / 44.4% → 6.7 / 27.1% | 100.0% → 100.0% | 100.0% → 100.0% | 10 → 11 | 40 → 26 | 18.5 → 16.8 |
+| Borg | 5.2 / 31.3% → 4.4 / 39.1% | 8.8 / 25.2% → 9.6 / 27.9% | 2.0 / 53.8% → 3.7 / 31.3% | 100.0% → 100.0% | 100.0% → 100.0% | 5 → 8 | 19 → 12 | 27.1 → 23.3 |
+| Mondoshawan | 3.2 / 40.3% → 4.4 / 32.1% | 1.8 / 70.9% → 3.9 / 30.5% | 4.0 / 43.8% → 3.7 / 38.2% | 0.0% → 100.0% | 100.0% → 100.0% | 6 → 11 | 22 → 15 | 30.1 → 15.0 |
+| USCM | 2.8 / 52.8% → 4.4 / 42.8% | 1.1 / 98.0% → 5.0 / 35.9% | 3.2 / 42.2% → 3.4 / 36.7% | 100.0% → 100.0% | 100.0% → 100.0% | 7 → 10 | 25 → 24 | 19.4 → 15.2 |
+| Engineers | 1.1 / 98.8% → 13.0 / 20.4% | 1.0 / 100.0% → 17.7 / 25.0% | 1.0 / 100.0% → 5.7 / 37.9% | 100.0% → 100.0% | 100.0% → 100.0% | 3 → 8 | 13 → 12 | 138.2 → 28.1 |
+| Yautja | 2.6 / 58.8% → 3.9 / 36.4% | 3.7 / 38.5% → 3.4 / 49.2% | 3.9 / 47.7% → 4.0 / 39.5% | 40.7% → 100.0% | 100.0% → 100.0% | 5 → 9 | 19 → 13 | 19.4 → 19.6 |
+| Romulans | 1.0 / 100.0% → 5.0 / 35.4% | 1.0 / 100.0% → 4.6 / 33.9% | 2.0 / 52.5% → 3.6 / 41.3% | 100.0% → 100.0% | 100.0% → 100.0% | 5 → 9 | 19 → 13 | 14.9 → 8.6 |
+| Dominion | 1.0 / 100.0% → 4.3 / 32.5% | 1.0 / 100.0% → 3.8 / 39.7% | 1.0 / 100.0% → 4.5 / 33.8% | 100.0% → 100.0% | 100.0% → 100.0% | 3 → 10 | 13 → 14 | 18.4 → 10.7 |
+| Space Marines | 2.8 / 51.7% → 4.9 / 24.2% | 1.0 / 100.0% → 4.4 / 31.2% | 1.9 / 67.1% → 4.5 / 39.6% | 100.0% → 100.0% | 100.0% → 100.0% | 10 → 13 | 34 → 30 | 14.2 → 11.6 |
+| Tyranids | 3.6 / 35.8% → 9.0 / 21.4% | 5.3 / 30.3% → 5.3 / 30.3% | 8.5 / 19.3% → 8.5 / 19.3% | 100.0% → 100.0% | 100.0% → 100.0% | 10 → 10 | 34 → 34 | 22.0 → 23.6 |
+| Tesla | 1.8 / 75.1% → 4.8 / 27.9% | 2.0 / 54.1% → 4.0 / 39.0% | 2.0 / 58.1% → 3.9 / 41.9% | 100.0% → 100.0% | 100.0% → 100.0% | 6 → 10 | 22 → 14 | 11.4 → 11.0 |
 <!-- /FLEET-TABLE -->
 
 ## The suspected bugs
