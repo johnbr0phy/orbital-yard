@@ -35,8 +35,8 @@
   "ok": true
  },
  "render": {
-  "base": "-",
-  "final": "not yet run",
-  "ok": false
+  "base": "sim-bench 600 a side (Empire v Rebels, 38-48 s): 4095, 4348, 4256 ms CPU per sim s (median 4256); bench-tribute 600 ships, low tier, SwiftShader: 5.40, 5.47 fps, p50 183 ms",
+  "final": "sim-bench 4290, 4285, 4255 (median 4285, +0.7%); bench-tribute 5.51, 5.38 fps, p50 183 ms (interleaved on one machine; bench/variety/cost)",
+  "ok": true
  }
 }
