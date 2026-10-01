@@ -1,0 +1,14 @@
+{
+ "scene": "v9",
+ "name": "A full 90-second war in Broadcast, 600 a side, Ultra",
+ "label": "after",
+ "clip": [
+  0,
+  90
+ ],
+ "frames": 2700,
+ "seconds": 90,
+ "msPerFrame": 478,
+ "ships": 1142,
+ "errors": []
+}

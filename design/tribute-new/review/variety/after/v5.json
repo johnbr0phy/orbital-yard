@@ -1,0 +1,14 @@
+{
+ "scene": "v5",
+ "name": "Imperial against Rebels, both lines wide",
+ "label": "after",
+ "clip": [
+  20,
+  34
+ ],
+ "frames": 420,
+ "seconds": 14,
+ "msPerFrame": 1155,
+ "ships": 762,
+ "errors": []
+}

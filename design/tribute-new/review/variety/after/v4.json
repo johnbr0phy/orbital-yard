@@ -1,0 +1,14 @@
+{
+ "scene": "v4",
+ "name": "Space Marines in their wall",
+ "label": "after",
+ "clip": [
+  12,
+  26
+ ],
+ "frames": 420,
+ "seconds": 14,
+ "msPerFrame": 1160,
+ "ships": 407,
+ "errors": []
+}

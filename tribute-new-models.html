@@ -16,7 +16,9 @@
  const shader=source.match(/const shipProg=compile\(`([\s\S]*?)`,`([\s\S]*?)`\);/);
  if(!shader)throw Error('Ship shader unavailable.');
  const finishSource=source.slice(source.indexOf('function hullFinish('),source.indexOf('\nfunction frame('));
- const hullFinish=Function(finishSource+';return hullFinish;')();
+ // The First Ones' accent is their weapon's colour, so the finish needs that table too.
+ const foWeapons=(source.match(/\nconst FO_WEAPONS=\[[\s\S]*?\n\];/)||[''])[0];
+ const hullFinish=Function(foWeapons+'\n'+finishSource+';return hullFinish;')();
  function compile(type,text){const s=gl.createShader(type);gl.shaderSource(s,text);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
  const prog=gl.createProgram();gl.attachShader(prog,compile(gl.VERTEX_SHADER,shader[1]));gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,shader[2]));gl.linkProgram(prog);if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(prog));gl.useProgram(prog);
  const u={};for(const name of ['VP','Pos','Yaw','Rot','Anim','T','Cloak','Eye','Ink','Bg','Fog','In','Hurt','Tone','Material','Trim','Accent','Paint','PaintOffset'])u[name]=gl.getUniformLocation(prog,'u'+name);

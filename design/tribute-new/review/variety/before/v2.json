@@ -1,0 +1,14 @@
+{
+ "scene": "v2",
+ "name": "An Engineer fleet in its crescent",
+ "label": "before",
+ "clip": [
+  14,
+  28
+ ],
+ "frames": 420,
+ "seconds": 14,
+ "msPerFrame": 1540,
+ "ships": 512,
+ "errors": []
+}

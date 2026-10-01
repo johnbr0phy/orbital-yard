@@ -1,0 +1,14 @@
+{
+ "scene": "v3",
+ "name": "Dominion against Romulans",
+ "label": "before",
+ "clip": [
+  26,
+  40
+ ],
+ "frames": 420,
+ "seconds": 14,
+ "msPerFrame": 801,
+ "ships": 242,
+ "errors": []
+}

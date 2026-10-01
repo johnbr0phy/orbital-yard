@@ -1,0 +1,14 @@
+{
+ "scene": "v1",
+ "name": "A Shadow fleet arriving",
+ "label": "after",
+ "clip": [
+  0,
+  16
+ ],
+ "frames": 480,
+ "seconds": 16,
+ "msPerFrame": 1060,
+ "ships": 350,
+ "errors": []
+}

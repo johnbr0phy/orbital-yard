@@ -1,0 +1,14 @@
+{
+ "scene": "v7",
+ "name": "Tesla against Tyranids",
+ "label": "after",
+ "clip": [
+  24,
+  38
+ ],
+ "frames": 420,
+ "seconds": 14,
+ "msPerFrame": 717,
+ "ships": 512,
+ "errors": []
+}
