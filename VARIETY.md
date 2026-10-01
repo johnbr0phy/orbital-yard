@@ -57,6 +57,8 @@ Hull length and proportion feed turn rate, speed, mass and avoidance, so the mot
 One fix came out of it. With the first final build the motion-only fleet classifier fell to 38.5%, under its 39.6% floor. Speed is the feature that tells fleets apart best, and it reads hull length; a sister's proportion line moved her length a few percent, so a class no longer flew at one speed. Sisters share their class's engines, so speed and helm now read the class's own length (`classLen()`), while bands, roles and hull strength read the hull as built. The classifier is back to 40.0%. A version that also took hull strength from the class length passed the classifier but let one Klingon hero cross its own path in 3 of 50 samples of one window (6%, limit 5%); I kept the narrower one.
 
 Flight check per fleet (main → this branch; every fleet appears in the sweep, most in scenes too; `node scripts/variety-flight.cjs`):
+for k in 1 2 3 4 5 6 7 8 9; do node scripts/story-metrics.cjs --seed-list $((1101*k)) --out bench/variety/story/after-$((1101*k)).json; done   # and the same on main; then
+node scripts/variety-story.cjs
 
 <!-- FLIGHT-TABLE -->
 | fleet | ship-minutes | reversals, gunboats and capitals | reversals per minute, all | worst shuttle | spins (80 m+) | named from motion | flight |
@@ -85,6 +87,28 @@ Flight check per fleet (main → this branch; every fleet appears in the sweep, 
 | Tyranids | 243 → 249 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 64% → 59% | PASS |
 | Tesla | 158 → 157 | 0 → 0 | 0.013 → 0.013 | 4% → 4% | 0 → 0 | 54% → 51% | PASS |
 <!-- /FLIGHT-TABLE -->
+
+## Story
+
+The brief asks that routs, last stands, aces, rescues, plans and objectives still happen at BEHAVIOUR.md's rates or better. Main itself is below some of BEHAVIOUR.md's counts since the motion pass (MOTION.md row 16), so the criterion compares this branch with main, war for war: the same matchups, sizes and seeds, run with the same script on the same machine.
+
+On story-metrics' default three seeds (30 wars a side) routs looked lower: 59 → 50 at 60 a side and 260 → 224 at 300, with everything else up. Per war the counts swing wildly (one Federation v Minbari war went from 31 routs to 2 because it was decided at 86 s instead of running to its cap), so three seeds can't tell a 7% difference from chance. I ran nine seeds on both builds instead (90 wars each; `bench/variety/story/main-9.json`, `after-9.json`) and judge rates per war-minute, since more wars are now decided early and a shorter war has less time to rout:
+
+<!-- STORY-TABLE -->
+| moment: count (per war-minute), main → branch | 60 a side | 300 a side |
+|---|---|---|
+| wars | 45 wars, 119 → 114 war-minutes, decided 13 → 18 | 45 wars, 86 → 83 war-minutes, decided 7 → 10 |
+| routs | 179 (1.51) → 179 (1.58) | 825 (9.63) → 810 (9.71) |
+| last stands | 187 (1.58) → 209 (1.84) | 180 (2.10) → 240 (2.88) |
+| rescues | 130 (1.10) → 145 (1.28) | 87 (1.02) → 120 (1.44) |
+| aces | 44 (0.37) → 53 (0.47) | 68 (0.79) → 80 (0.96) |
+| plan switches | 71 (0.60) → 72 (0.63) | 54 (0.63) → 56 (0.67) |
+| rallies (not in the brief) | 4 (0.03) → 5 (0.04) | 60 (0.70) → 65 (0.78) |
+| rams (not in the brief) | 5 (0.04) → 13 (0.11) | 6 (0.07) → 9 (0.11) |
+| vendettas (not in the brief) | 109 (0.92) → 112 (0.99) | 88 (1.03) → 78 (0.94) |
+<!-- /STORY-TABLE -->
+
+Every moment the brief names happens at main's rate or better. Objectives are dealt from the war seed and are identical on both builds (44 annihilation, 18 convoy, 16 flagship, 12 station). Vendettas, which the brief does not name, are a little rarer at 300 a side.
 
 ## What worked and what didn't
 

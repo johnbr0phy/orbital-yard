@@ -1,0 +1,42 @@
+{
+ "reachability": {
+  "base": "Sharlin and Jem'Hadar shuttle never dealt (VARIETY.md, suspected bugs)",
+  "final": "every class of every band pool dealt in its band (variety.test.cjs)",
+  "ok": true
+ },
+ "heroes": {
+  "base": "main's meshes, 23 fleets x 3 seeds (tests/tribute-new/variety-heroes.json)",
+  "final": "byte-identical meshes, 3 seeds each (variety.test.cjs; uniqueness.test.cjs)",
+  "ok": true
+ },
+ "tests": {
+  "base": "main: 299 pass, 1 skipped",
+  "final": "308 pass, 0 fail, 1 skipped (309, incl. the 9 in variety.test.cjs); tests/three 3 pass",
+  "ok": true
+ },
+ "determinism": {
+  "base": "trace 28cdea4f",
+  "final": "trace 8d885841 identical twice (bench/variety/trace-after.txt); browser: same final hash abaa35118aff and story events at 1x, 2x/0.5x, slow motion and 1 vs 3 forge workers",
+  "ok": true
+ },
+ "motion": {
+  "base": "9 of 11 pass (bench/motion/final)",
+  "final": "the same 9 pass; classifier 40.0% (floor 39.6%), shuttle 4.0%; cohesion 70.5% and individuality 153 of 915 still fail, as on main (bench/motion/variety; flight check per fleet below)",
+  "ok": true
+ },
+ "balance": {
+  "base": "-",
+  "final": "not yet run",
+  "ok": false
+ },
+ "story": {
+  "base": "main, same 90 wars (9 seeds): routs 1.51 / 9.63, last stands 1.58 / 2.10, rescues 1.10 / 1.02, aces 0.37 / 0.79, plan switches 0.60 / 0.63 per war-minute at 60 / 300 a side",
+  "final": "routs 1.58 / 9.71, last stands 1.84 / 2.88, rescues 1.28 / 1.44, aces 0.47 / 0.96, plan switches 0.63 / 0.67; objectives identical (VARIETY.md, Story)",
+  "ok": true
+ },
+ "render": {
+  "base": "-",
+  "final": "not yet run",
+  "ok": false
+ }
+}
