@@ -59,6 +59,7 @@ One fix came out of it. With the first final build the motion-only fleet classif
 Flight check per fleet (main → this branch; every fleet appears in the sweep, most in scenes too; `node scripts/variety-flight.cjs`):
 for k in 1 2 3 4 5 6 7 8 9; do node scripts/story-metrics.cjs --seed-list $((1101*k)) --out bench/variety/story/after-$((1101*k)).json; done   # and the same on main; then
 node scripts/variety-story.cjs
+node scripts/motion-balance.cjs --seeds 5 --out bench/variety/balance-after-5.json   # and with --root ../orbital-yard-main
 
 <!-- FLIGHT-TABLE -->
 | fleet | ship-minutes | reversals, gunboats and capitals | reversals per minute, all | worst shuttle | spins (80 m+) | named from motion | flight |
@@ -87,6 +88,15 @@ node scripts/variety-story.cjs
 | Tyranids | 243 → 249 | 0 → 0 | 0.000 → 0.000 | 0% → 0% | 0 → 0 | 64% → 59% | PASS |
 | Tesla | 158 → 157 | 0 → 0 | 0.013 → 0.013 | 4% → 4% | 0 → 0 | 54% → 51% | PASS |
 <!-- /FLIGHT-TABLE -->
+
+## Fleet balance
+
+The nine fleet-balance pairings (48 a side, 150 s), five seeds each, on main and on this branch (`node scripts/motion-balance.cjs --seeds 5`; `bench/variety/balance-main-5.json`, `balance-after-5.json`). Wins for the first fleet, main → branch: 0v1 2-3 → 4-1, 2v3 4-1 → 5-0, 4v5 5-0 → 4-1, 6v7 1-4 → 1-4, 8v9 4-1 → 3-2, 10v11 3-2 → 4-1, 12v13 3-2 → 3-2, 14v15 3-2 → 2-3, 16v17 0-5 → 0-5.
+
+The majority winner is unchanged in seven of nine. The two that change are explained by hull size, which is what the brief expects to move balance:
+
+- **Yard v Shoal (0v1).** The Yard's capital berths used to fall back to frigates (band reach 0%); they now fly the Yard's own designs at capital length. In the fleet-balance muster the Yard's hit points rise from 144 to 175 (+22%) and its largest hull from 75 m to 195 m; the Shoal's rise from 107 to 112. The Yard now wins four of five.
+- **USCM v Engineers (14v15).** A near-even pairing on main (3-2). The Engineers' muster rises from 277 to 296 hit points (+7%, their capitals now fill their band), the USCM's from 158 to 159, and the Engineers take three of five.
 
 ## Story
 

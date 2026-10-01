@@ -25,9 +25,9 @@
   "ok": true
  },
  "balance": {
-  "base": "-",
-  "final": "not yet run",
-  "ok": false
+  "base": "main, 5 seeds per pairing (bench/variety/balance-main-5.json)",
+  "final": "majority winner unchanged in 7 of 9; Yard v Shoal (2-3 to 4-1) and USCM v Engineers (3-2 to 2-3) follow measured muster strength from capital-length hulls (VARIETY.md, Fleet balance)",
+  "ok": true
  },
  "story": {
   "base": "main, same 90 wars (9 seeds): routs 1.51 / 9.63, last stands 1.58 / 2.10, rescues 1.10 / 1.02, aces 0.37 / 0.79, plan switches 0.60 / 0.63 per war-minute at 60 / 300 a side",
