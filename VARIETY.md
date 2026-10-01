@@ -96,7 +96,7 @@ The nine fleet-balance pairings (48 a side, 150 s), five seeds each, on main and
 The majority winner is unchanged in seven of nine. The two that change are explained by hull size, which is what the brief expects to move balance:
 
 - **Yard v Shoal (0v1).** The Yard's capital berths used to fall back to frigates (band reach 0%); they now fly the Yard's own designs at capital length. In the fleet-balance muster the Yard's hit points rise from 144 to 175 (+22%) and its largest hull from 75 m to 195 m; the Shoal's rise from 107 to 112. The Yard now wins four of five.
-- **USCM v Engineers (14v15).** A near-even pairing on main (3-2). The Engineers' muster rises from 277 to 296 hit points (+7%, their capitals now fill their band), the USCM's from 158 to 159, and the Engineers take three of five.
+- **USCM v Engineers (14v15).** A near-even pairing on main (3-2). The Engineers' muster rises from 277 to 296 hit points (+7%), the USCM's from 158 to 159, and the Engineers take three of five.
 
 ## Story
 
