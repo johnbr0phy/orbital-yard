@@ -14911,9 +14911,9 @@ function leakHullDust(s,now){
   dusts.push({x:p[0],y:p[1],z:p[2],vx:Math.cos(s.yaw)*speed,vy:(s.vy||0)+1,vz:Math.sin(s.yaw)*speed,t0:now,leak:true});
 }
 const CRAFT_MOOD={RETREAT:"FLEE",ROUT:"FLEE",PANIC:"FLEE",EVADE:"EVADE",ESCORT:"DEFEND",RESCUE:"DEFEND",RECOVER:"DEFEND",TOW:"DEFEND",FLANK:"FLANK",MANEUVER:"FLANK",REGROUP:"REGROUP",HIDE:"REGROUP",HOLD:"REGROUP",DRIFT:"REGROUP",SEARCH:"SEARCH",CONVOY:"SEARCH"};
-function craftMood(s,now){
-  const a=battleAI.think(s,now);
-  return CRAFT_MOOD[a.action]||"ATTACK";
+function craftMood(s,now,mode){
+  // Destination can override an inherited formation order while relief closes.
+  return CRAFT_MOOD[mode||battleAI.think(s,now).action]||"ATTACK";
 }
 const PACE=1.10;
 /* Sisters of a class share her engines: speed and helm read the class's own length, not the few
@@ -15007,8 +15007,8 @@ function craftWant(s,now,sq,mood,dist,boost){
    - each pilot's hand drifts the throttle a few percent, slowly.
    All inputs are simulation state: deterministic, no randomness. */
 const THROTTLE_MOODS={ATTACK:1,FLANK:1,STRIKE:1,SEARCH:1};
-function throttle(s,now,want,prefer,mood,slotted){
-  const cruise=s.spd||20,dash=s.spdMax||cruise*1.3,t=prefer>=0?ships[prefer]:null;
+function throttle(s,now,want,prefer,mood,slotted,fullBurn=0){
+  const cruise=s.spd||20,dash=Math.max(s.spdMax||cruise*1.3,fullBurn),t=prefer>=0?ships[prefer]:null;
   // A wingman holding station takes its pace from the formation, not from a target it is not chasing.
   if(!slotted&&t&&!t.dead&&THROTTLE_MOODS[mood]&&!(s.ai&&s.ai.order&&['ROUT','PANIC','RAM','TOW','RESCUE'].includes(s.ai.order.kind))){
     const gap=gapTo(s,t),pocket=s.slen<60?160:260,tv=Math.abs(t.v||0);
@@ -15034,9 +15034,9 @@ function throttle(s,now,want,prefer,mood,slotted){
 }
 /* Engines have limits: a fighter reaches full burn in about 1.5 s, a frigate
    in about 4 s, and braking is a little quicker than accelerating. */
-function approachSpeed(s,want,dt,k=1){
+function approachSpeed(s,want,dt,k=1,fullBurn=0){
   // The burn builds and eases (a jerk limit) inside the same spool and braking limits.
-  return battleAI.helmSpeed(s,want,dt,k);
+  return battleAI.helmSpeed(s,want,dt,k,fullBurn);
 }
 function enemyAxis(s){
   const st=battleAI.story&&battleAI.story.sides;if(!st)return null;
@@ -18569,7 +18569,7 @@ function simStep(now,dt){
         goal=fighterPassGoal(s,target,now);liningUp=now>=(s.passUntil||0);
       }
     }
-    const mood=craftMood(s,now);s.mood=mood;
+    const mood=craftMood(s,now,plan.mode);s.mood=mood;
     let prefer=plan.target;
     s.form=plan.mode==="REGROUP"||plan.mode==="ESCORT"||!!plan.slot;
     if(goal){
@@ -18636,8 +18636,12 @@ function simStep(now,dt){
       const wv=Math.max(-s.spd*climb,Math.min(s.spd*climb,
         wakeY!=null?dy*.9:liningUp?dy/rail*Math.max(18,Math.abs(s.v)):dy*(boat?.08:formed?.10:.18)+bob));
       battleAI.helmClimb(s,wv,dt,{fast:liningUp||aw>.05||wakeY!=null||escape,urgent:liningUp||wakeY!=null||escape||(avoiding&&(s.trafficBrake||1)<.7)});
-      const dist=Math.hypot(dx,dy,dz);
-      let want=craftWant(s,now,sq,mood,dist,boost);
+      const dist=Math.hypot(dx,dy,dz),dash=s.spdMax||s.spd*1.3;
+      // Relief has kilometres to cross before its combat engines are useful.
+      // Carry that approach drive through the throttle and spool, then brake on contact.
+      const transit=!!s.reliefGoal&&plan.mode==='SEARCH'&&!plan.slot&&dist>(s.reliefReach||650)+200;
+      const burn=transit?Math.max(dash,Math.min(180,Math.max(s.spd*3.2,(dist-(s.reliefReach||650))/25))):dash;
+      let want=transit?burn:craftWant(s,now,sq,mood,dist,boost);
       /* a station is loitered lazily; an attack orbit is flown at the pilot's own pace, carrying
          momentum round the circle, never matched down to a slow target into a pirouette */
       /* a formation leader loiters at 0.8 of cruise: a squadron needs way on to hold its shape round the circle */
@@ -18653,9 +18657,10 @@ function simStep(now,dt){
       want*=s.avBrake??1;
       if(now<(s.trafficBrakeUntil||0))want*=.65;
       if(stunned)want*=0.36;
-      want=throttle(s,now,want,prefer,mood,!!plan.slot||!!(loiter&&plan.orbit));
+      want=throttle(s,now,want,prefer,mood,!!plan.slot||!!(loiter&&plan.orbit),burn);
       s.throttleWant=want;
-      s.v=approachSpeed(s,want,dt,s.hero?1.5:1);
+      s.fullBurn=transit||s.v>dash*1.02?Math.max(burn,s.fullBurn||dash):dash;
+      s.v=approachSpeed(s,want,dt,s.hero?1.5:1,s.fullBurn);
       s.x+=Math.cos(s.yaw)*s.v*dt;s.z+=Math.sin(s.yaw)*s.v*dt;s.y+=s.vy*dt;
     }
     leakHullDust(s,now);
