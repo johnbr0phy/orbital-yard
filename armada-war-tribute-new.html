@@ -14388,7 +14388,9 @@ function trafficPilot(s,now){
     if(hit&&hit.enter<soon){soon=hit.enter;threat=other;}
   }
   if(!threat){if(now>(s.trafficUntil||0))s.trafficGoal=null;return;}
-  const other=threat.o,clear=threat.e.reduce((v,e,i)=>v+e*Math.abs(threat.axes[i][1]),0)+Math.hypot(own.e[1],own.e[2])+55;
+  // Clearance follows both hulls' actual vertical support. Treating a wide,
+  // flat ship's beam as height sent whole screens into needless vertical stacks.
+  const other=threat.o,clear=threat.e.reduce((v,e,i)=>v+e*Math.abs(threat.axes[i][1]),0)+own.e.reduce((v,e,i)=>v+e*Math.abs(own.axes[i][1]),0)+55;
   const key=other.uid!=null?'w'+other.uid:'s'+other.id;
   /* a pilot who has chosen to pass over keeps passing over for a few seconds, even when the
      next threat is a different hull: flipping sides per threat made hulls porpoise */

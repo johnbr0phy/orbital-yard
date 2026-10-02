@@ -1,0 +1,520 @@
+{
+  "baseRevision": "574b6eec0c780082b1f0848e74fb1eb100ecdba1",
+  "seed": 42,
+  "originalMatchup": [
+    6,
+    5
+  ],
+  "originalSize": 24,
+  "reliefMuster": 150,
+  "secondsAfterCall": 60,
+  "notes": [
+    "Two original Rebel survivors request the selected relief fleet at time 30.",
+    "fired means lastFire > 30, including ion charging, not individual shots.",
+    "stationary means ground speed below 1 m/s for the last 10 one-second samples. It does not count slow crawling as stopped.",
+    "No renderer or GPU is exercised; this is one controlled seed, not a fleet-balance average."
+  ],
+  "fleets": [
+    {
+      "race": 0,
+      "name": "Yard",
+      "ships": 151,
+      "before": {
+        "arrived": 151,
+        "alive": 140,
+        "fired": 65,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7387
+      },
+      "after": {
+        "arrived": 151,
+        "alive": 130,
+        "fired": 98,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 6773
+      }
+    },
+    {
+      "race": 1,
+      "name": "Shoal",
+      "ships": 151,
+      "before": {
+        "arrived": 151,
+        "alive": 136,
+        "fired": 72,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7563
+      },
+      "after": {
+        "arrived": 151,
+        "alive": 137,
+        "fired": 89,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 6912
+      }
+    },
+    {
+      "race": 2,
+      "name": "Lattice",
+      "ships": 144,
+      "before": {
+        "arrived": 144,
+        "alive": 132,
+        "fired": 45,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7358
+      },
+      "after": {
+        "arrived": 144,
+        "alive": 134,
+        "fired": 101,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 6744
+      }
+    },
+    {
+      "race": 3,
+      "name": "Drift",
+      "ships": 151,
+      "before": {
+        "arrived": 151,
+        "alive": 139,
+        "fired": 57,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7582
+      },
+      "after": {
+        "arrived": 151,
+        "alive": 134,
+        "fired": 99,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 6790
+      }
+    },
+    {
+      "race": 4,
+      "name": "Choir",
+      "ships": 129,
+      "before": {
+        "arrived": 129,
+        "alive": 120,
+        "fired": 55,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7249
+      },
+      "after": {
+        "arrived": 129,
+        "alive": 111,
+        "fired": 101,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 6696
+      }
+    },
+    {
+      "race": 5,
+      "name": "Empire",
+      "ships": 151,
+      "before": {
+        "arrived": 151,
+        "alive": 143,
+        "fired": 66,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7650
+      },
+      "after": {
+        "arrived": 151,
+        "alive": 130,
+        "fired": 99,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7176
+      }
+    },
+    {
+      "race": 6,
+      "name": "Rebels",
+      "ships": 136,
+      "before": {
+        "arrived": 136,
+        "alive": 124,
+        "fired": 76,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 8178
+      },
+      "after": {
+        "arrived": 136,
+        "alive": 117,
+        "fired": 99,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7706
+      }
+    },
+    {
+      "race": 7,
+      "name": "Minbari",
+      "ships": 129,
+      "before": {
+        "arrived": 129,
+        "alive": 122,
+        "fired": 56,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7412
+      },
+      "after": {
+        "arrived": 129,
+        "alive": 125,
+        "fired": 72,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7091
+      }
+    },
+    {
+      "race": 8,
+      "name": "Shadows",
+      "ships": 33,
+      "before": {
+        "arrived": 33,
+        "alive": 29,
+        "fired": 28,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 9695
+      },
+      "after": {
+        "arrived": 33,
+        "alive": 28,
+        "fired": 29,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 9307
+      }
+    },
+    {
+      "race": 9,
+      "name": "EarthForce",
+      "ships": 144,
+      "before": {
+        "arrived": 144,
+        "alive": 132,
+        "fired": 63,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7553
+      },
+      "after": {
+        "arrived": 144,
+        "alive": 141,
+        "fired": 83,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 6641
+      }
+    },
+    {
+      "race": 10,
+      "name": "Federation",
+      "ships": 69,
+      "before": {
+        "arrived": 69,
+        "alive": 67,
+        "fired": 46,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 5622
+      },
+      "after": {
+        "arrived": 69,
+        "alive": 61,
+        "fired": 57,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 5480
+      }
+    },
+    {
+      "race": 11,
+      "name": "Klingons",
+      "ships": 121,
+      "before": {
+        "arrived": 121,
+        "alive": 115,
+        "fired": 61,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7646
+      },
+      "after": {
+        "arrived": 121,
+        "alive": 118,
+        "fired": 85,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 6744
+      }
+    },
+    {
+      "race": 12,
+      "name": "Borg",
+      "ships": 49,
+      "before": {
+        "arrived": 49,
+        "alive": 47,
+        "fired": 34,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 9193
+      },
+      "after": {
+        "arrived": 49,
+        "alive": 46,
+        "fired": 30,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 8390
+      }
+    },
+    {
+      "race": 13,
+      "name": "Mondoshawan",
+      "ships": 114,
+      "before": {
+        "arrived": 114,
+        "alive": 113,
+        "fired": 10,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 5104
+      },
+      "after": {
+        "arrived": 114,
+        "alive": 112,
+        "fired": 56,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 5209
+      }
+    },
+    {
+      "race": 14,
+      "name": "USCM",
+      "ships": 136,
+      "before": {
+        "arrived": 136,
+        "alive": 123,
+        "fired": 80,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 6597
+      },
+      "after": {
+        "arrived": 136,
+        "alive": 135,
+        "fired": 92,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 5701
+      }
+    },
+    {
+      "race": 15,
+      "name": "Engineers",
+      "ships": 121,
+      "before": {
+        "arrived": 121,
+        "alive": 118,
+        "fired": 52,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 5410
+      },
+      "after": {
+        "arrived": 121,
+        "alive": 111,
+        "fired": 84,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 5495
+      }
+    },
+    {
+      "race": 16,
+      "name": "Yautja",
+      "ships": 136,
+      "before": {
+        "arrived": 136,
+        "alive": 133,
+        "fired": 62,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 7220
+      },
+      "after": {
+        "arrived": 136,
+        "alive": 129,
+        "fired": 83,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 6976
+      }
+    },
+    {
+      "race": 17,
+      "name": "First Ones",
+      "ships": 8,
+      "before": {
+        "arrived": 8,
+        "alive": 8,
+        "fired": 4,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 2347
+      },
+      "after": {
+        "arrived": 8,
+        "alive": 8,
+        "fired": 4,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 2561
+      }
+    },
+    {
+      "race": 18,
+      "name": "Romulans",
+      "ships": 73,
+      "before": {
+        "arrived": 73,
+        "alive": 69,
+        "fired": 34,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 4253
+      },
+      "after": {
+        "arrived": 73,
+        "alive": 69,
+        "fired": 43,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 4249
+      }
+    },
+    {
+      "race": 19,
+      "name": "Dominion",
+      "ships": 49,
+      "before": {
+        "arrived": 49,
+        "alive": 47,
+        "fired": 25,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 4442
+      },
+      "after": {
+        "arrived": 49,
+        "alive": 45,
+        "fired": 23,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 4173
+      }
+    },
+    {
+      "race": 20,
+      "name": "Space Marines",
+      "ships": 84,
+      "before": {
+        "arrived": 84,
+        "alive": 83,
+        "fired": 14,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 4408
+      },
+      "after": {
+        "arrived": 84,
+        "alive": 81,
+        "fired": 29,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 4384
+      }
+    },
+    {
+      "race": 21,
+      "name": "Tyranids",
+      "ships": 121,
+      "before": {
+        "arrived": 121,
+        "alive": 119,
+        "fired": 47,
+        "stationary": 0,
+        "delayed": 1,
+        "medianPath": 7398
+      },
+      "after": {
+        "arrived": 121,
+        "alive": 113,
+        "fired": 50,
+        "stationary": 0,
+        "delayed": 1,
+        "medianPath": 6605
+      }
+    },
+    {
+      "race": 22,
+      "name": "Tesla",
+      "ships": 136,
+      "before": {
+        "arrived": 136,
+        "alive": 128,
+        "fired": 92,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 10117
+      },
+      "after": {
+        "arrived": 136,
+        "alive": 106,
+        "fired": 107,
+        "stationary": 0,
+        "delayed": 0,
+        "medianPath": 9535
+      }
+    }
+  ],
+  "executorOpeningMuster": {
+    "before": {
+      "path": 542,
+      "net": 532,
+      "v": 12.02,
+      "gap": 4341,
+      "cruise": 3.92,
+      "dash": 4.23
+    },
+    "after": {
+      "path": 3283,
+      "net": 3280,
+      "v": 46.76,
+      "gap": 2152,
+      "cruise": 3.92,
+      "dash": 4.23
+    }
+  }
+}

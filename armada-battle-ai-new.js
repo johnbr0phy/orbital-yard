@@ -614,7 +614,9 @@
       // The muster parks a 19 km ship well behind its screen. A sustained transit burn
       // gets it into the fight; it builds over the spool like any burn, and sheds on contact.
       const transit=p.mode==='SEARCH'&&dist>1600&&!p.slot;
-      const transitV=Math.min(180,s.spd*(2.4+a.budget[2]/40));
+      // Combat cruise is deliberately slow for large hulls. Multiplying it alone
+      // still left a distant destroyer minutes away; size belongs in the spool.
+      const transitV=Math.max(dash,Math.min(180,Math.max(s.spd*(2.4+a.budget[2]/40),(dist-1600)/25)));
       if(transit){velocity=transitV;a.reason='Transit burn. Closing to sensor contact';}
       // An emergency burn: a doomed hull spends everything it has left on the ram.
       if(p.mode==='RAM'&&s.v!==0){velocity=Math.max(dash*1.25,Math.min(90,Math.max(40,(s.slen||300)*.06)));}
@@ -635,7 +637,7 @@
       const spool=p.mode==='RAM'?4:Math.min(30,8+(s.slen||300)/200);
       // The drive in use: the transit drive while burning or still above top speed after one.
       const onTransit=transit||(s.v||0)>Math.max(dash,s.spd)*1.02;
-      const burn=onTransit?Math.max(transitV,dash):p.mode==='RAM'?Math.max(velocity,dash):Math.max(dash,s.spd);
+      const burn=onTransit?Math.max(transitV,dash,s.fullBurn||0):p.mode==='RAM'?Math.max(velocity,dash):Math.max(dash,s.spd);
       const acc=burn/spool,dec=burn/spool*1.5;
       if(holding)velocity=Math.min(velocity,Math.sqrt(2*dec*.55*Math.max(0,dist-(s.slen||300)*.2)));
       s.fullBurn=burn;
