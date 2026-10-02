@@ -385,10 +385,26 @@
       const sq=this.squads[s.squad];
       const speed=s.spdMax||s.spd||40;
       let goal,boost=1,mode=a.action,orbit=null;
-      const order=a.order&&now<a.order.until?a.order:null,st=this.story&&this.story.ready?this.story:null;
+      let order=a.order&&now<a.order.until?a.order:null;
+      const st=this.story&&this.story.ready?this.story:null;
+      // Relief has a job before it has a formation: reach the fight. The old
+      // fleet's HOLD order and a slow squadron leader must not park new arrivals.
+      if(s.reliefGoal&&!warning&&!s.routing&&!(order&&SOLO_ORDERS.has(order.kind))){
+        if(c&&now-c.seen<3&&surface(s,c)<(s.reliefReach||700)){
+          s.reliefGoal=null;s.reliefEngaged=now;
+          if(a.order&&FORMATION_ORDERS.has(a.order.kind)){a.order=null;order=null;}
+          a.nextThink=0;a.until=0;
+        }else{
+          const sector=this.searchPoint(s),point=c&&now-c.seen<5?[c.x,c.y,c.z]:sector?[sector.x,sector.y,sector.z]:s.reliefGoal;
+          const dx=point[0]-s.x,dz=point[2]-s.z,n=Math.hypot(dx,dz)||1;
+          const goal=[point[0]-dz/n*a.lane*120,point[1]+a.vertical*60,point[2]+dx/n*a.lane*120];
+          a.reason='Relief inbound. Closing to weapons range';
+          return a.plan={goal:this.avoidField(s,goal),boost:1.3,mode:'SEARCH',target:a.target,reason:a.reason,slot:null,orbit:null,station:false};
+        }
+      }
       if(order&&a.orderKind===order.kind&&!warning){
         const kind=order.kind,dir=s.side?-1:1;
-        if(kind==='ROUT'){goal=[-dir*9500,s.y+a.vertical*260,s.z*1.15+a.lane*500];boost=1.3;mode='ROUT';}
+        if(kind==='ROUT'){goal=order.point?order.point.slice():[s.x-dir*600,s.y,s.z];boost=1.3;mode='ROUT';}
         else if(kind==='PANIC'){const t=order.dir||0;goal=[s.x+Math.cos(t)*900,s.y+a.vertical*300,s.z+Math.sin(t)*900];boost=1.3;mode='PANIC';}
         else if(kind==='DRIFT'){goal=[s.x+Math.cos(s.yaw)*200,s.y,s.z+Math.sin(s.yaw)*200];boost=.1;mode='DRIFT';}
         else if(kind==='RAM'){const t=this.byId.get(order.target);if(t&&alive(t)){const lead=Math.min(8,distance(s,t)/Math.max(20,speed*1.3));goal=[t.x+Math.cos(t.yaw)*(t.v||0)*lead,t.y+(t.vy||0)*lead,t.z+Math.sin(t.yaw)*(t.v||0)*lead];}else goal=[s.x+Math.cos(s.yaw)*500,s.y,s.z+Math.sin(s.yaw)*500];boost=1.6;mode='RAM';}
@@ -945,7 +961,7 @@
       const lost=Math.max(0,(sq.size0||n)-sq.mem.filter(id=>{const s=this.ship(id);return s&&!s.dead;}).length);
       sq.lost=lost;
       if(sq.state==='steady'){
-        if(d.rout==null||sq.hero||sq.role==='ambush'&&st.plan&&st.plan.state==='forming')return;
+        if(d.rout==null||sq.hero||now<(sq.rallyUntil||0)||sq.role==='ambush'&&st.plan&&st.plan.state==='forming')return;
         // A squadron remembers. Each loss adds stress at once, sustained fear adds
         // more, calm and a living flagship bleed it off. It breaks on stress, so
         // it breaks on losses actually taken, not on first sight of the enemy.
@@ -956,7 +972,9 @@
         const threshold=d.rout*1.9-(st.leaderless?.2:0);
         if(sq.stress>threshold&&n>=1){
           sq.state='routing';sq.routAt=now;sq.escapeAt=now+8+this.rng()*6;
-          for(const s of members){this.setOrder(s,'ROUT',{until:now+40});s.routing=true;}
+          const foe=this.sides[1-sq.side].center;
+          let dx=foe?sq.cx-foe.x:(sq.side?1:-1),dz=foe?sq.cz-foe.z:0;const distance=Math.hypot(dx,dz)||1;dx/=distance;dz/=distance;
+          for(const s of members){this.setOrder(s,'ROUT',{point:[sq.cx+dx*650-dz*s.ai.lane*180,s.y,sq.cz+dz*650+dx*s.ai.lane*180],until:sq.escapeAt+1});s.routing=true;}
           this.emit({type:'rout',side:sq.side,squad:sq.id,ship:lead.id,name:sq.name,n,x:sq.cx,y:sq.cy,z:sq.cz,size:lead.slen});
           // A rout is contagious: neighbouring squadrons watched it happen.
           for(const q of this.minds.squads)if(q!==sq&&q.side===sq.side&&q.state==='steady'&&q.cx!=null&&length(q.cx-sq.cx,q.cy-sq.cy,q.cz-sq.cz)<1800)q.stress=(q.stress||0)+.18*(DOCTRINE[st.race]||DOCTRINE[0]).spread;
@@ -970,16 +988,17 @@
         if(clear&&flagAlive&&sq.fear<.34&&now-sq.routAt>7&&!sq.rallyTried){
           sq.rallyTried=true;
           if(this.rng()<d.rally){
-            sq.state='steady';for(const s of members){if(s.ai.order&&s.ai.order.kind==='ROUT')s.ai.order=null;s.routing=false;s.ai.fear*=.5;}
+            sq.state='steady';sq.stress=0;sq.rallyUntil=now+18;for(const s of members){if(s.ai.order&&s.ai.order.kind==='ROUT')s.ai.order=null;s.routing=false;s.ai.fear*=.5;}
             this.emit({type:'rally',side:sq.side,squad:sq.id,ship:lead.id,name:sq.name,anchor:st.flag,n,x:sq.cx,y:sq.cy,z:sq.cz,size:lead.slen});
             return;
           }
         }
         if(now>=sq.escapeAt){
-          const h=this.host;let gone=0;
-          for(const s of members){if(h&&h.leave&&h.leave(s,now,d.escape))gone++;}
-          if(gone&&!sq.escapeSaid){sq.escapeSaid=true;this.emit({type:'escape',side:sq.side,squad:sq.id,ship:lead.id,name:sq.name,n:gone,how:d.escape,x:sq.cx,y:sq.cy,z:sq.cz,size:lead.slen});}
-          if(gone===members.length)sq.state='gone';
+          // A broken wing falls back, catches its breath and returns. It never
+          // removes the losing fleet from the battle through a timed jump.
+          sq.state='steady';sq.stress=0;sq.rallyUntil=now+18;sq.rallyTried=false;
+          for(const s of members){if(s.ai.order?.kind==='ROUT')s.ai.order=null;s.routing=false;s.ai.fear*=.5;s.ai.until=0;s.ai.nextThink=0;}
+          this.emit({type:'rally',side:sq.side,squad:sq.id,ship:lead.id,name:sq.name,anchor:st.flag,n,x:sq.cx,y:sq.cy,z:sq.cz,size:lead.slen});
         }
       }
     }
@@ -1160,7 +1179,7 @@
         const dir=side?-1:1;
         for(const q of squads){
           if(q.side!==side||q.state!=='steady')continue;
-          const members=q.mem.map(id=>this.ship(id)).filter(m=>this.live(m)&&m.arr&&m.ai&&!(m.ai.breakUntil>now)&&!(m.ai.order&&['RESCUE','RAM','PANIC','BERSERK','RECOVER','TOW'].includes(m.ai.order.kind)&&now<m.ai.order.until));
+          const members=q.mem.map(id=>this.ship(id)).filter(m=>this.live(m)&&m.arr&&m.ai&&!m.reliefGoal&&!(m.ai.breakUntil>now)&&!(m.ai.order&&['RESCUE','RAM','PANIC','BERSERK','RECOVER','TOW'].includes(m.ai.order.kind)&&now<m.ai.order.until));
           if(!members.length)continue;
           if(p.state==='forming'&&(q.role==='left'||q.role==='right')){
             const lat=q.role==='left'?-1:1,point=[foe.x-dir*500,foe.y,foe.z+lat*3400];
@@ -1184,7 +1203,7 @@
         const holdLine=(p.kind==='HOLD')&&p.state!=='done';
         if(holdLine&&!p.line)p.line=[own.x+dir*900,own.y,own.z];
         for(const c of this.ships()){
-          if(c.side!==side||!this.live(c)||!c.arr||!c.ai||!(c.hulls||c.slen>=180)||(c.ai.order&&['RAM','DRIFT'].includes(c.ai.order.kind))||this.doctrine(c).hunts)continue;
+          if(c.side!==side||!this.live(c)||!c.arr||!c.ai||c.reliefGoal||!(c.hulls||c.slen>=180)||(c.ai.order&&['RAM','DRIFT'].includes(c.ai.order.kind))||this.doctrine(c).hunts)continue;
           if(o&&o.kind==='STATION'&&!o.done&&(c.hulls||0)<50)this.setOrder(c,'HOLD',{point:o.point,until,spread:400});
           else if(holdLine&&(c.hulls||0)<50)this.setOrder(c,'HOLD',{point:p.line,until,spread:500});
         }
@@ -1440,6 +1459,7 @@
       }
     },
     formed(s,now){
+      if(s.reliefGoal)return false;
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
       return !!(fm&&fm.phase!=='BREAK'&&fm.d&&fm.lead>=0&&fm.lead!==s.id&&fm.rank&&fm.rank.has(s.id)&&this.byId.get(fm.lead)&&alive(this.byId.get(fm.lead)));
     },
@@ -1684,6 +1704,7 @@
     },
     // The formation this ship leads, if it is formed: its span for a loiter the wingmen can follow.
     leadsFormation(s){
+      if(s.reliefGoal)return null;
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return null;
       let n=0,L=0;for(const id of sq.mem){const m=this.byId.get(id);if(m&&alive(m)&&m.arr){n++;L=Math.max(L,m.slen||20);}}
@@ -1692,6 +1713,7 @@
     },
     // A formation leader flies slow enough for the slowest wingman to hold station.
     leadCap(s,now){
+      if(s.reliefGoal)return Infinity;
       const sq=this.squads[s.squad],fm=sq&&sq.fm;
       if(!fm||fm.phase==='BREAK'||fm.lead!==s.id)return Infinity;
       // Formed, it flies at its slowest wingman's cruise (5% over at most, never past 0.8 of that wingman's

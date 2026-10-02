@@ -14116,7 +14116,7 @@ function fractureMesh(fr,target=DEBRIS_BREAKUP){
 function wreckRecord(s,f,now,catastrophic){
   const local=[f.ox,f.oy,f.oz],world=gunWorld({...s,roll:0,pitch:0,brUntil:0,debris:{bax:s.dax||[0,1,0],bang:s.dang||0,ax:[0,1,0],ang:0}},local,now);
   const delta=V.sub(world,[s.x,s.y,s.z]),r=f.r||8,n=V.len(delta)>1?V.norm(delta):V.norm([debrisRandom()-.5,debrisRandom()-.5,debrisRandom()-.5]);
-  const outward=(catastrophic?22:8)*( .65+debrisRandom()*.7)/Math.max(1,Math.sqrt(r/90));
+  const outward=(catastrophic?55:8)*( .65+debrisRandom()*.7)/Math.max(1,Math.sqrt(r/90));
   const e=f.extents||[r,r,r],limit=debrisSpinLimit({rad:r}),omega=Math.max(-limit,Math.min(limit,s.yawV||0));
   return {paint:s.paint||hullFinish(s),paintLength:s.paintLength||s.slen,paintAspect:s.paintAspect||[(s.meta?.beam||s.exZ*2||s.slen*.35)/s.slen,(s.meta?.height||s.exY*2||s.slen*.2)/s.slen],paintOffset:[f.ox,f.oy,f.oz],v:f.v,i:f.i,icount:f.i.length,rad:r,extents:e,x:world[0],y:world[1],z:world[2],yaw:s.yaw,
     bax:s.dax||[0,1,0],bang:s.dang||0,ax:V.norm([debrisRandom()-.5,debrisRandom()-.5,debrisRandom()-.5]),ang:0,
@@ -16959,16 +16959,13 @@ function shieldEffect(t,hit,now){
   if([10,11,18,19].includes(t.race)){t.shieldT=now;flash(hit[0],hit[1],hit[2],now,Math.max(18,Math.min(260,(t.slen||20)*.55)),35);}
   else if(t.race===12){t.shieldT=now;flash(hit[0],hit[1],hit[2],now,Math.max(14,Math.min(120,(t.slen||20)*.12)),13);}
 }
-// Destruction tiers: fighters pop with a shockwave, frigates add secondary
-// blasts, capitals a second ring and a core flash that lights nearby hulls,
-// First Ones the end of an age.
+// Small thermal ruptures reveal the breaking hull instead of hiding it in a ring.
 function deathFlourish(t,now){
-  const tier=(RACE_DEFS[t.race]||{}).unique?3:(t.hulls||0)>=10||t.slen>=180?2:t.slen>=60?1:0;
-  const L=t.slen||20,c=Math.cos(t.yaw||0),n=Math.sin(t.yaw||0);
-  flash(t.x,t.y,t.z,now,Math.max(34,L*(tier>=2?1.1:2.2)),30);
-  if(tier>=1)for(let i=0;i<(tier===1?3:6);i++){const u=(Math.random()-.5)*L*.8;flash(t.x+c*u,t.y+(Math.random()-.5)*L*.1,t.z+n*u,now+.2+Math.random()*(tier===1?.9:1.8),Math.max(20,L*.18),2);}
-  if(tier>=2){flash(t.x,t.y,t.z,now+.35,Math.max(120,L*.9),30);flash(t.x,t.y,t.z,now+.12,Math.min(600,Math.max(90,L*.3)),2);}
-  if(tier===3){flash(t.x,t.y,t.z,now+.6,Math.max(400,L*1.6),30);flash(t.x,t.y,t.z,now+.1,Math.min(1200,L*.7),4);}
+  const L=t.slen||20,n=L>=180?5:2;
+  for(let i=0;i<n;i++){
+    const p=gunWorld(t,[(i/(n-1)-.5)*L*.7,0,0],now);
+    flash(...p,now+i*.035,Math.max(8,Math.min(65,L*.09)),10);
+  }
 }
 // A capital below 35% hull starts to die before it dies: internal blasts
 // march along the keel and it vents; the rate rises as the hull fails.
@@ -16991,143 +16988,6 @@ function dustBurst(x,y,z,vx,vy,vz,n,t0){
     dusts.push({x:x+(Math.random()-0.5)*10,y:y+(Math.random()-0.5)*10,z:z+(Math.random()-0.5)*10,
       vx:vx*0.5+(Math.random()-0.5)*8,vy:vy*0.5+(Math.random()-0.5)*8,
       vz:vz*0.5+(Math.random()-0.5)*8,t0});
-}
-function boom(t,now){
-  /* each navy dies as she lived. The recipe is the race's; a little
-     luck still chooses which verse of it you hear. */
-  const R2=Math.max(10,t.slen*0.5);
-  const big=Math.max(46,t.slen*(t.hulls?3.0:2.0));
-  const cy=Math.cos(t.yaw),sy=Math.sin(t.yaw);
-  const st=(RACE_DEFS[t.race]||{}).boom||"fireball";
-  const deathFlash=(x,y,z,time,size,c)=>flash(x,y,z,time,Math.min(size,Math.max(30,t.slen*1.1)),c===2?deathEffectKind(t.race):c);
-  const verse=(Math.random()*3)|0;
-  const sparks=(n,x,y,z,t0,len)=>{
-    for(let i=0;i<Math.min(n,8)&&beams.length<400;i++){
-      const az=Math.random()*6.283,el=(Math.random()-0.5)*2;
-      const dv=[Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az)];
-      const L2=len*(0.6+Math.random()*0.9);
-      beams.push({a:[x,y,z],b:[x+dv[0]*L2,y+dv[1]*L2,z+dv[2]*L2],t0,spark:true,ejecta:true});
-    }
-  };
-  const cluster=(n,spread,t0a,t0b,s0,s1)=>{
-    for(let i=0;i<n;i++)
-      deathFlash(t.x+(Math.random()-0.5)*spread,t.y+(Math.random()-0.5)*spread*0.7,
-            t.z+(Math.random()-0.5)*spread,now+t0a+Math.random()*(t0b-t0a),
-            s0+Math.random()*(s1-s0),2);
-  };
-  const ring=()=>{
-    const [u2,v2]=basis(V.norm([Math.random()-0.5,Math.random()-0.5,Math.random()-0.5]));
-    for(let i=0;i<14;i++){
-      const a2=i/14*6.283;
-      const dv=V.add(V.mul(u2,Math.cos(a2)),V.mul(v2,Math.sin(a2)));
-      const L2=R2*2.6;
-      beams.push({a:[t.x,t.y,t.z],
-        b:[t.x+dv[0]*L2,t.y+dv[1]*L2,t.z+dv[2]*L2],t0:now,spark:true,ejecta:true});
-      deathFlash(t.x+dv[0]*L2*0.7,t.y+dv[1]*L2*0.7,t.z+dv[2]*L2*0.7,now+0.12,R2*0.5,2);
-    }
-  };
-  if(st==="dissolve"){
-    /* Shadows: no fire, only the scream going out — dust and a dark bloom */
-    deathFlash(t.x,t.y,t.z,now,big*0.55,2);
-    dustBurst(t.x,t.y,t.z,0,0,0,28,now);
-    dustBurst(t.x,t.y,t.z,cy*6,2,sy*6,18,now);
-    cluster(4,R2,0,0.4,R2*0.2,R2*0.5);
-    return;
-  }
-  if(st==="cleave"){
-    /* Borg: she comes apart on the lattice, cubes of fire */
-    deathFlash(t.x,t.y,t.z,now,big*0.8,2);
-    for(const ax of [[1,0,0],[0,1,0],[0,0,1],[-1,0.4,0.3]]){
-      const n=V.norm(ax),L2=R2*2.2;
-      beams.push({a:[t.x-n[0]*L2*0.4,t.y-n[1]*L2*0.4,t.z-n[2]*L2*0.4],
-        b:[t.x+n[0]*L2,t.y+n[1]*L2,t.z+n[2]*L2],t0:now,spark:true,ejecta:true});
-      deathFlash(t.x+n[0]*R2,t.y+n[1]*R2,t.z+n[2]*R2,now+0.08,R2*0.6,2);
-    }
-    cluster(3,R2,0,0.2,R2*0.4,R2*0.8);
-    return;
-  }
-  if(st==="warp"){
-    /* Federation: the core goes first — a white ring, then the hull */
-    ring();
-    deathFlash(t.x,t.y,t.z,now,big*0.5,2);
-    deathFlash(t.x,t.y,t.z,now+0.28,big*1.6,2);
-    sparks(12,t.x,t.y,t.z,now+0.28,R2*2.8);
-    return;
-  }
-  if(st==="crystal"){
-    /* Minbari: one clean annihilation, then bone-shards */
-    deathFlash(t.x,t.y,t.z,now,big*1.8,2);
-    sparks(18,t.x,t.y,t.z,now,R2*3.4);
-    dustBurst(t.x,t.y,t.z,0,0,0,8,now);
-    return;
-  }
-  if(st==="tie"){
-    /* Imperial: the cockpit blooms; the sails just fall off */
-    deathFlash(t.x+cy*t.slen*0.15,t.y,t.z+sy*t.slen*0.15,now,big*0.9,2);
-    sparks(6,t.x,t.y,t.z,now,R2*1.6);
-    if(verse){cluster(3,R2*1.2,0.05,0.2,R2*0.5,R2*1.1);}
-    return;
-  }
-  if(st==="burst"){
-    /* Shoal: a living thing ruptures — mist, not magazines */
-    deathFlash(t.x,t.y,t.z,now,big*0.7,2);
-    dustBurst(t.x,t.y,t.z,0,4,0,24,now);
-    dustBurst(t.x,t.y,t.z,cy*8,0,sy*8,14,now);
-    cluster(6,R2*1.4,0,0.35,R2*0.3,R2*0.8);
-    return;
-  }
-  if(st==="shatter"){
-    /* Lattice: a crystal failing along its grain */
-    deathFlash(t.x,t.y,t.z,now,big*0.7,2);
-    sparks(22,t.x,t.y,t.z,now,R2*4.2);
-    ring();
-    return;
-  }
-  if(st==="flash"){
-    /* Choir: she simply becomes light */
-    deathFlash(t.x,t.y,t.z,now,big*1.9,2);
-    cluster(4,R2*0.8,0,0.15,R2*0.4,R2*0.9);
-    return;
-  }
-  if(st==="cloakpop"){
-    /* Yautja: the shimmer fails, then the hunter burns */
-    sparks(16,t.x,t.y,t.z,now,R2*2.0);
-    deathFlash(t.x,t.y,t.z,now+0.12,big*1.1,2);
-    cluster(5,R2,0.12,0.35,R2*0.5,R2*1.2);
-    return;
-  }
-  if(st==="fossil"){
-    /* Engineers: she calcifies, then cracks */
-    cluster(8,R2*1.6,0,0.9,R2*0.3,R2*0.7);
-    deathFlash(t.x,t.y,t.z,now+0.85,big*1.15,2);
-    sparks(8,t.x,t.y,t.z,now+0.85,R2*1.8);
-    return;
-  }
-  if(st==="bronze"){
-    /* Mondoshawan: a muted gold bloom, no shrapnel */
-    deathFlash(t.x,t.y,t.z,now,big*1.2,2);
-    cluster(3,R2,0,0.2,R2*0.5,R2*0.9);
-    return;
-  }
-  /* cookoff / fireball — Yard, Rebels, EarthForce, Klingons, USCM */
-  if(verse===0){
-    for(let i=0;i<7;i++){
-      const u=i/6-0.5;
-      const bx=t.x+cy*u*t.slen*0.9,bz=t.z+sy*u*t.slen*0.9;
-      deathFlash(bx,t.y,bz,now+i*0.09,R2*(0.8+Math.random()*0.9),2);
-      sparks(3,bx,t.y,bz,now+i*0.09,R2*1.4);
-    }
-    deathFlash(t.x,t.y,t.z,now+0.62,big*1.1,2);
-  }else if(verse===1){
-    deathFlash(t.x,t.y,t.z,now,big,2);
-    cluster(5,R2*1.6,0,0.28,R2*0.9,R2*1.8);
-    sparks(8,t.x,t.y,t.z,now,R2*2.2);
-  }else{
-    deathFlash(t.x,t.y,t.z,now,big*0.6,2);
-    sparks(5,t.x,t.y,t.z,now,R2*1.5);
-    deathFlash(t.x,t.y,t.z,now+0.34,big*1.5,2);
-    sparks(14,t.x,t.y,t.z,now+0.34,R2*2.8);
-  }
 }
 // CPU counterpart of the Shadow vertex pose, also used by live beam origins.
 function shadowFlex(g,L,phase,now){
@@ -17591,7 +17451,7 @@ function drawCoherentWeapons(now){
 function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
   if(!battleAI.fireable(s,t,now))return false;
   const shot=weaponSolution(s,t,now,muz);if(!shot)return false;
-  dmg=(dmg||1)*.60; // More discharges without multiplying sustained lethality.
+  dmg=(dmg||1)*.42; // More discharges without multiplying sustained lethality.
   const {o,profile}=shot;s.lastFire=now;s.weaponShot=(s.weaponShot||0)+1;
   const dist=V.len(V.sub(shot.aim,o));
   if(profile.mode==='bolt'){
@@ -17966,26 +17826,33 @@ function markFractureEdges(parts){
 function spawnBreakup(s,now){
   const fr=s.fragData;if(!fr||!fr.length)return;
   s.fragData=null;
+  // Give every new death visible hull pieces, even when the debris budget is
+  // full. Recycle the oldest debris instead of substituting a dust-only pop.
+  while(debrisQueue.length>62||wrecks.length+debrisQueue.length>DEBRIS_LIMIT-2){
+    const w=debrisQueue.length>62||!wrecks.length?debrisQueue.shift():wrecks.shift();
+    if(w.vao){gl.deleteVertexArray(w.vao);gl.deleteBuffer(w.vbo);gl.deleteBuffer(w.ibo);if(w.ebo)gl.deleteBuffer(w.ebo);}
+    w.gone=true;dustBurst(w.x,w.y,w.z,w.vx||0,w.vy||0,w.vz||0,3,now);
+  }
   const room=Math.max(0,Math.min(64-debrisQueue.length,DEBRIS_LIMIT-wrecks.length-debrisQueue.length));
   const cat=s.destruction==='catastrophic',target=Math.min(room,cat&&s.slen>=180?DEBRIS_BREAKUP:6);
-  if(target<1){dustBurst(s.x,s.y,s.z,s.dvx||0,s.dvy||0,s.dvz||0,12,now);return;}
-  const parts=s.fragReady?fr.slice(0,target):fractureMesh(fr,target);
+  // Repartition the complete hull when fewer pieces fit; never discard panels.
+  const parts=s.fragReady&&fr.length<=target?fr:fractureMesh(fr,target);
   markFractureEdges(parts);
   for(const f of parts){const w=wreckRecord(s,f,now,cat);w.e=f.e||null;debrisQueue.push(w);}
 }
 function kill(t,now){
   if(t.dead)return;      /* a tracer already in flight cannot kill her twice */
   t.dead=true;
-  if(t.lastHit!=null&&ships[t.lastHit]&&!ships[t.lastHit].dead)
+  if(t.lastHit!=null&&ships[t.lastHit]&&!ships[t.lastHit].dead&&ships[t.lastHit].side!==t.side)
     ships[t.lastHit].kills=(ships[t.lastHit].kills||0)+1;
   const killer=t.lastHit!=null?ships[t.lastHit]:null;
   const dv=t.v??((t.spd||0)*.5);
   t.dvx=Math.cos(t.yaw)*dv;t.dvy=t.vy||0;t.dvz=Math.sin(t.yaw)*dv;
   const dp=xPose(t,now);t.dax=dp.ax;t.dang=dp.ang;
   t.deadT=now;
-  const catastrophic=t.destroyMode==='catastrophic'||(t.destroyMode!=='disabled'&&(t.slen<180||-t.hp/Math.max(1,t.hpMax)>.18||debrisRandom()<.6));
+  const catastrophic=t.destroyMode!=='disabled';
   if(catastrophic||!disableHull(t,now)){
-    t.destruction='catastrophic';boom(t,now);deathFlourish(t,now);spawnBreakup(t,now);
+    t.destruction='catastrophic';deathFlourish(t,now);spawnBreakup(t,now);
   }
   t.hullMesh=null;
   if(t.disabled)storyTowFor(t,now);
@@ -18018,13 +17885,12 @@ function declareWinner(side,reason,now){
     " \u00b7 "+Math.max(0,(now-warT0)|0)+" SECONDS \u00b7 N FOR THE NEXT WAR</div>";
   w.style.display="block";
   toast(SIDE_NAME[winner]+" "+(VICTORY_LINE[reason]||VICTORY_LINE.annihilation));bcVictory(winner,reason);
-  // An objective decides the war before the guns do: the losers' survivors withdraw.
-  if(reason!=="annihilation"&&reason!=="withdrawal")
-    for(const s of ships)if(s.side!==side&&!s.dead&&s.ai&&s.arr){battleAI.story.setOrder(s,"ROUT",{until:now+60});s.routing=true;s.leaveAt=now+6+storyRandom()*8;}
+  // Objective results do not evacuate the surviving combatants.
 }
 // Leave the battle alive: the fleet's arrival effect in reverse, or off the edge.
 function leaveBattle(s,now,how){
-  if(!s||s.dead||!s.vao||s.id===pilotId)return false;
+  if(!s||s.dead||!s.vao||s.id===pilotId||!s.convoyHome)return false;
+  // Only a convoy completing its explicit delivery objective may depart.
   // Fleets without a jump drive have to actually reach the edge of the field.
   if(how==="edge"&&Math.hypot(s.x,s.z)<6500)return false;
   departureEffect(s,now,how);
@@ -18050,13 +17916,10 @@ function departureEffect(s,now,how){
   else if(style==="rocket"){streak([1,.62,.28]);flash(s.x-c*s.slen*.5,s.y,s.z-n*s.slen*.5,now,Math.max(24,s.slen*.9),2);}
   else flash(s.x,s.y,s.z,now,Math.max(20,s.slen*.6),4);
 }
-// A raid: out through hyperspace, back in behind them a few seconds later.
-function rejumpShip(s,now,point,gap){
+// Raiders reposition by flying the flank, so combatants stay visible in the war.
+function flankRaid(s,now,point,gap){
   if(!s||s.dead||!s.vao||!s.arr||s.id===pilotId||s.hulls)return false;
-  departureEffect(s,now,"jump");
-  const T=now-warT0;s.arr=false;s.delay=T+gap;s.shed=.6;
-  s.x=point[0]+(storyRandom()-.5)*260;s.y=point[1]+(storyRandom()-.5)*160;s.z=point[2]+(storyRandom()-.5)*260;
-  s.yaw=Math.atan2(-(point[2]),-(point[0]))+(storyRandom()-.5)*.3;s.v=0;s.vy=0;s.pitch=0;s.roll=0;
+  battleAI.story.setOrder(s,"MANEUVER",{point:point.slice(),until:now+gap+8});
   return true;
 }
 function storyVolley(s,now,target){
@@ -18149,7 +18012,7 @@ function towStep(now,dt){
     }else if(now-q.attached>60)end("lost"); // the line parted
   }
 }
-const STORY_HOST={leave:leaveBattle,rejump:rejumpShip,volley:storyVolley,abandon:storyAbandon,declare:declareWinner};
+const STORY_HOST={leave:leaveBattle,rejump:flankRaid,volley:storyVolley,abandon:storyAbandon,declare:declareWinner};
 function storyStep(now,dt){
   const story=battleAI.story;if(!story.ready)return;
   for(const q of squads)if(!q.name)storyNameSquad(q);
@@ -18158,8 +18021,7 @@ function storyStep(now,dt){
   for(const s of ships){
     if(s.dead)continue;
     if(s.volleyUntil&&now>=s.volleyUntil){s.damageK=s.damageK0??s.damageK;s.volleyUntil=0;}
-    if(s.abandoned&&now>=s.abandonAt){s.destroyMode="disabled";kill(s,now);continue;}
-    if(s.leaveAt&&now>=s.leaveAt){leaveBattle(s,now,ArmadaBattleAI.DOCTRINE[s.race]?.escape||"jump");continue;}
+    if(s.abandoned&&now>=s.abandonAt){s.destroyMode="catastrophic";kill(s,now);continue;}
     if(s.ramming!=null&&(!ships[s.ramming]||ships[s.ramming].dead)){s.ramming=null;if(s.ai&&s.ai.order&&s.ai.order.kind==="RAM")s.ai.order=null;}
   }
   for(const ev of story.drain())storyEvent(ev);
@@ -18175,23 +18037,45 @@ function ionBarrel(lock,g,now){
   const muz=lock.muz||(lock.muz=weaponMount(g,target,now)||fireLocal(g));
   return mountFaces(g,target,muz,now)&&turretTrack(g,muz,lock.point,now,-1);
 }
+// Use the same finite, oriented-hull intersection as the visible beam. No
+// allegiance filter: anything inside the ion column is torn apart.
+function strikeIonPath(beam,now){
+  const g=ships[beam.from];if(!g||g.dead||!g.vao)return;
+  beam.a=weaponMuzzle(g,beam.muz,now);
+  for(const t of ships){
+    if(t===g||t.dead||!t.vao||!t.arr||t.grace)continue;
+    const u=weaponSegmentHit(beam.a,beam.b,t,now,beam.wid);
+    if(u===null)continue;
+    t.lastHit=g.id;t.hp=-Math.max(1,t.hpMax);t.hurtT=now;t.destroyMode='catastrophic';
+    flash(...lerp3(beam.a,beam.b,u),now,Math.max(12,Math.min(85,t.slen*.12)),10);
+    kill(t,now);
+  }
+}
+function stepIonLances(now){
+  for(const b of beams){
+    if(!b.ion||b.fo||now<b.t0||now-b.t0>=1.55)continue;
+    const g=ships[b.from];
+    if(!g||g.dead||!g.vao){b.t0=-Infinity;continue;}
+    strikeIonPath(b,now);
+  }
+}
 function fireIonFrom(g,side,now,lock){
   if(!g||g.dead||!lock||!lock.point)return;
   const p=lock.point,muz=lock.muz||fireLocal(g),m=weaponMuzzle(g,muz,now),blast=lock.radius;
   g.lastFire=now;
   const track=g.weaponTracks&&g.weaponTracks.get(muz.join(','));
   if(track){track.holdPoint=p.slice();track.holdUntil=now+1.55;track.target=-1;}
-  beams.push({a:m,b:p.slice(),t0:now,side,race:g.race,ion:true,wid:Math.max(18,Math.min(64,g.slen*.009)),from:g.id,muz});
-  bcIonStrike(g,lock);
-  flash(m[0],m[1],m[2],now,150,4);flash(p[0],p[1],p[2],now,blast*1.5,4);
+  const beam={a:m,b:p.slice(),t0:now,side,race:g.race,ion:true,wid:Math.max(18,Math.min(64,g.slen*.009)),from:g.id,muz};
+  beams.push(beam);bcIonStrike(g,lock);
+  flash(...m,now,100,4);
+  strikeIonPath(beam,now);
   for(const t of ships){
-    if(t.side===side||t.dead||!t.vao||t.grace)continue;
+    if(t===g||t.dead||!t.vao||!t.arr||t.grace)continue;
     const d=Math.max(0,Math.hypot(t.x-p[0],t.y-p[1],t.z-p[2])-Math.min(t.rad||0,blast*.5));
     if(d>blast)continue;
     const fall=1-d/blast;
-    const raw=t.hulls?Math.min(12,t.hpMax*(.045+.035*fall)):Math.min(5,t.hpMax*(.26+.24*fall));
-    wound(t,raw,g,now);t.stunT=now+1.2+fall*1.8;
-    flash(t.x,t.y,t.z,now,Math.min(150,Math.max(20,t.slen*.4)),3);
+    wound(t,t.hpMax*(t.hulls?.25+.4*fall:.5+.6*fall),g,now);
+    if(!t.dead){t.stunT=now+1.2+fall*1.8;flash(t.x,t.y,t.z,now,Math.min(70,Math.max(12,t.slen*.12)),10);}
   }
   kickCam(15);
 }
@@ -18232,6 +18116,15 @@ function appendIonCharges(now,offset){
     flPool[i]=m[0];flPool[i+1]=m[1];flPool[i+2]=m[2];flPool[i+3]=now;
     flPool[i+4]=size;flPool[i+5]=21;flPool[i+6]=progress;
   }
+  // Keep the firing muzzle lit for the whole discharge, so the source remains
+  // readable even after the target has become fragments.
+  for(const b of beams){
+    if(!b.ion||b.fo||now<b.t0||now-b.t0>=1.55||offset>=flPool.length/7)continue;
+    const g=ships[b.from];if(!g||g.dead||!g.vao)continue;
+    const m=weaponMuzzle(g,b.muz,now),i=offset++*7;
+    flPool[i]=m[0];flPool[i+1]=m[1];flPool[i+2]=m[2];flPool[i+3]=now;
+    flPool[i+4]=Math.max(24,Math.min(110,g.slen*.035));flPool[i+5]=21;flPool[i+6]=1;
+  }
   return offset;
 }
 function megaStep(s,now,dt){
@@ -18245,7 +18138,7 @@ function megaStep(s,now,dt){
      bombardment while the fleets are still closing, and each one hunts
      the biggest thing she can see */
   for(const la of (s.lances||[])){
-    la.cool-=dt/(s.cycleK||1);
+    la.cool-=dt/(.7*(s.cycleK||1));
     if(la.cool>0)continue;
     const rng=borgGun?Math.max(1800,s.slen*0.85)
       :slicer?Math.max(1600,s.slen*1.05)
@@ -18284,7 +18177,7 @@ function megaStep(s,now,dt){
   /* the battery never speaks as one thunderclap: every turret keeps her
      own clock, so fire rolls up and down the ship as stations come ready */
   let ready=false;
-  for(const tu of (s.turrets||[])){tu.cool-=dt/(s.cycleK||1);if(tu.cool<=0)ready=true;}
+  for(const tu of (s.turrets||[])){tu.cool-=dt/(.7*(s.cycleK||1));if(tu.cool<=0)ready=true;}
   if(ready){
     const rng=borgGun?Math.max(1400,s.slen*0.72):slicer?Math.max(900,s.slen*0.55):Math.max(650,Math.min(1400,s.slen*.50));
     const tgts=[];
@@ -18458,8 +18351,10 @@ function reliefFindBerth(s,batch,now,obstacles){
   const step=Math.max(110,Math.hypot(s.exY||5,s.exZ||5)*2.7+60),rank=s.reliefSlot||0;
   const blocked=box=>!reliefBeyondFrontier(box,order)||!reliefWorldClear(box)||obstacles.some(o=>o.o.id!==s.id&&reliefOverlap(box,o))||batch.reserved.some(o=>o.o.id!==s.id&&reliefOverlap(box,o));
   for(let attempt=0;attempt<96;attempt++){
-    const slot=rank+attempt,angle=slot*2.399963229728653,reach=step*Math.sqrt(slot);
-    const p=V.add(base,V.mul(r,Math.cos(angle)*reach));p[1]+=Math.sin(angle)*reach*.8;
+    // Flights arrive in shallow rows with depth between waves, not a disc.
+    const slot=rank+attempt,lane=slot%6-2.5,row=Math.floor(slot/6)%3-1,wave=Math.floor(slot/18);
+    const p=V.add(V.add(base,V.mul(r,lane*step)),V.mul(f,-wave*(SLIDE+(s.exL||10)*2+240)));
+    p[1]+=row*step*.5;
     const box=reliefEnvelope(s,now,p,true);
     if(!blocked(box))return {p,box};
   }
@@ -18494,6 +18389,8 @@ function launchRelief(batch,now){
     s.delay=now-warT0+1.2+offsets[s.reliefRole]+Math.floor(s.reliefSlot/12)*.65+(s.reliefSlot%12)*.12+(s.race===17?s.reliefSlot*2.5:0);
     s.reliefPlanned=[s.x,s.y,s.z];s.reliefYaw=s.yaw;s.stn=[s.x,s.y,s.z];
     s.mark=order.target;s.ai.target=order.target;s.ai.nextThink=0;
+    s.reliefGoal=order.goal.slice();s.reliefReach=s.hulls||s.steadyCapital?1000:weaponProfile(s).fixed?750:650;
+    s.ai.order=null;
     // Carry the caller's actual reports, not invented sightings at jump-out.
     for(const c of batch.picture.foes.slice().sort((a,b)=>b.seen-a.seen).slice(0,24))s.ai.contacts.set(c.id,{...c,direct:false,reported:now});
     const key=s.reliefRole+':'+(s.slen<180?'screen':'line');let ids=groups.get(key);if(!ids)groups.set(key,ids=[]);ids.push(id);
@@ -18654,7 +18551,7 @@ function simStep(now,dt){
       continue;
     }
     if(s.id===pilotId){pilotStep(s,now,dt);continue;}
-    s.cool-=dt;   /* cooldowns use simulation seconds; damage balances the denser cadence */
+    s.cool-=dt/0.7;   /* denser fire, with energy damage scaled by the same factor */
     if(s.err){
       s.err[0]=Math.max(-10,Math.min(10,s.err[0]+Math.sin(now*0.11+(s.wf||0))*dt*1.6));
       s.err[1]=Math.max(-7,Math.min(7,s.err[1]+Math.sin(now*0.08+(s.wf2||0))*dt*1.1));
@@ -18771,7 +18668,7 @@ function simStep(now,dt){
     /* fire at the squadron's mark first, else whatever crosses the sights.
        Range is to the skin, so a White Star on a First One can actually shoot. */
     if(s.cool<=0&&now>=(s.clearingUntil||0)&&!s.abandoned){
-      let rng=s.hero?Math.max(250,Math.min(400,(s.slen||40)*.7+210)):isGunboat(s)?340:s.slen>90?280:210;
+      let rng=s.hero?650:isGunboat(s)?950:s.slen>90?800:500;
       if(weaponProfile(s).fixed)rng=Math.max(rng,850);
       const fx0=(RACE_DEFS[s.race]||{}).fire;
       if(fx0==="slicer"||fx0==="cutter")rng=Math.max(rng,cutRange(s));
@@ -18930,6 +18827,7 @@ function simStep(now,dt){
     }
   }
   mines=mines.filter(mi=>!mi.dead);
+  stepIonLances(now);
   stepBattleWrecks(now,dt);
   collide(now);planetContacts();
   if(showSensors&&sel!=null&&ships[sel]&&!ships[sel].dead)drawBattleSensors(ships[sel],now);
@@ -20104,7 +20002,7 @@ function tickerText(ev){
     case "capitalKill":case "heroKill":case "firstOneKill":return SIDE_SHAPE[ev.side]+" "+ev.name+" destroyed"+(ev.byName?" by "+ev.byName:"");
     case "ionCharge":return SIDE_SHAPE[ev.side]+" Ion cannon charging · "+ev.name;
     case "ancientStrike":return SIDE_SHAPE[ev.side]+" "+ev.weapon+" · "+ev.name+(ev.unmade?" · "+ev.unmade+" unmade":"");
-    case "ionStrike":return SIDE_SHAPE[ev.side]+" Ion strike · "+ev.name;
+    case "ionStrike":return SIDE_SHAPE[ev.side]+" "+ev.name+" fires ion cannon"+(ev.targetName?" at "+ev.targetName:"");
     case "reinforcements":return SIDE_SHAPE[ev.side]+" Reinforcements · "+ev.name;
     case "cloakReveal":return SIDE_SHAPE[ev.side]+" Cloak broken · "+ev.name;
     case "heroDuel":return "Hero duel · "+ev.name+" vs "+ev.byName;
@@ -20145,7 +20043,7 @@ function ionScreenFlash(g,p){
   el.style.background="radial-gradient(circle at 50% 50%,rgba("+c+",.9),rgba("+c+",.35) 55%,rgba("+c+",0) 100%)";
   el.animate([{opacity:a},{opacity:0}],{duration:520,easing:"cubic-bezier(.2,.7,.3,1)"});
 }
-function bcIonStrike(g,lock){if(g)ionScreenFlash(g,lock.point);if(g)bcEvent("ionStrike",{side:g.side,ship:g.id,name:shipName(g),by:g.id,byName:shipName(g),x:lock.point[0],y:lock.point[1],z:lock.point[2],size:g.slen});}
+function bcIonStrike(g,lock){if(g)ionScreenFlash(g,lock.point);if(g)bcEvent("ionStrike",{side:g.side,ship:g.id,name:shipName(g),by:g.id,byName:shipName(g),partner:lock.target,targetName:ships[lock.target]?shipLabel(ships[lock.target]):null,x:lock.point[0],y:lock.point[1],z:lock.point[2],size:g.slen});}
 // An ancient's strike: the screen flashes in its weapon's colour, the end-of-an-age
 // sound plays, and the ticker names the weapon and the toll. Observation only.
 function bcAncientStrike(s,c,weapon,hit,unmade){

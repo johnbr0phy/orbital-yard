@@ -54,7 +54,7 @@ test('fear responds to wounds, can overrule an ace and recovers with safety',()=
   assert.ok(s.ai.fear<before*.25);
 });
 
-test('ion lock commits to a place, warns defenders and never erases a full hull',()=>{
+test('ion lock commits to a place, warns defenders and destroys a hull caught in its path',()=>{
   const b=loadBattle();b.start(0,1,71);
   b.run(`endIntro();for(const s of ships){s.arr=true;s.grace=false;s.x=20000+s.id*1000;}
     var gun=ships.find(s=>s.side===0&&s.hulls===50),victim=ships.find(s=>s.side===1&&!s.hulls);
@@ -66,9 +66,7 @@ test('ion lock commits to a place, warns defenders and never erases a full hull'
   b.run('victim.x=3000;fireIonFrom(gun,0,lock.fire,lock);');
   assert.equal(b.run('JSON.stringify(lock.point)'),point);assert.ok(b.run('victim.hp===victim.hpMax'));
   b.run('victim.x=lock.point[0];victim.y=lock.point[1];victim.z=lock.point[2];fireIonFrom(gun,0,lock.fire,lock);');
-  assert.ok(b.run('victim.hp>0&&victim.hp<victim.hpMax'));
-  b.run('victim.hp=victim.hpMax=300;victim.hulls=50;fireIonFrom(gun,0,lock.fire,lock);');
-  assert.ok(b.run('victim.hp>280'));
+  assert.ok(b.run('victim.dead&&victim.destruction==="catastrophic"'));
 });
 
 test('hero damage advantages are bounded and use the same armour calculation',()=>{
