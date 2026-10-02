@@ -118,7 +118,7 @@ test('ion barrel retains its discharge direction until the visible shot ends',()
 test('Imperial and Rebel fighters launch their red and green physical bolts',()=>{
  const b=scene();
  b.run('raceFire(fighter,enemy,2,0,0,0)');
- assert.ok(b.run('tracers[0].col[0]>tracers[0].col[1]&&Math.abs(tracers[0].damage-.084)<1e-10'));
+ assert.ok(b.run('tracers[0].col[0]>tracers[0].col[1]&&Math.abs(tracers[0].damage-.0588)<1e-10'));
  b.run('fighter.race=6;fighter.meta.klass="T-65 X-WING";raceFire(fighter,enemy,2.5,0,0,0)');
  assert.ok(b.run('tracers[1].col[1]>tracers[1].col[0]&&tracers[1].vx===800'));
 });

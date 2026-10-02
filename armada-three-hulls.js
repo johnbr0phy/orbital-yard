@@ -5,8 +5,8 @@ export function createHulls(THREE,scene,runtime){
   const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),scale=new THREE.Vector3(),axis=new THREE.Vector3(),quat=new THREE.Quaternion(),yawQ=new THREE.Quaternion(),direction=new THREE.Vector3(),color=new THREE.Color();
   const frustum=new THREE.Frustum(),viewProjection=new THREE.Matrix4(),bounds=new THREE.Sphere();
   let generation=null,counts={ships:0,individual:0,instanced:0,turrets:0,wrecks:0};
-  const vertex=`uniform vec4 uAnim;uniform float uT;varying vec3 vLocal;varying vec3 vWorld;
-void main(){vec3 p=position;vLocal=position;
+  const vertex=`attribute float fractureEdge;varying float vEdge;uniform vec4 uAnim;uniform float uT;varying vec3 vLocal;varying vec3 vWorld;
+void main(){vec3 p=position;vLocal=position;vEdge=fractureEdge;
   if(uAnim.x>4.5){
     float S=max(4.0,uAnim.z),t=uT*uAnim.w+uAnim.y;
     float w=max(smoothstep(.20,.48,-p.x/S),smoothstep(.14,.32,abs(p.z)/S));
@@ -56,7 +56,7 @@ void main(){vec3 p=position;vLocal=position;
   }
 
 vec4 world=modelMatrix*vec4(p,1.);vWorld=world.xyz;gl_Position=projectionMatrix*viewMatrix*world;}`;
-  const fragment=`precision highp float;uniform vec3 uInk,uTrim;uniform vec4 uPaint;uniform float uPattern,uLength,uOpacity,uHurt,uDead;uniform vec3 uOffset;varying vec3 vLocal;varying vec3 vWorld;
+  const fragment=`precision highp float;uniform vec3 uInk,uTrim;uniform vec4 uPaint;uniform float uPattern,uLength,uOpacity,uHurt,uDead,uHeat;varying float vEdge;uniform vec3 uOffset;varying vec3 vLocal;varying vec3 vWorld;
 void main(){vec3 N=normalize(cross(dFdx(vWorld),dFdy(vWorld)));float shade=.40+.58*abs(dot(N,normalize(vec3(.45,.8,.35))));vec3 p=(vLocal+uOffset)/max(1.,uLength);
     vec3 q=p*vec3(19.0,29.0,23.0),cell=floor(q);
     float hash=fract(sin(dot(cell,vec3(17.13,31.7,73.9))+uPaint.y*19.0)*43758.5);
@@ -94,7 +94,10 @@ void main(){vec3 N=normalize(cross(dFdx(vWorld),dFdy(vWorld)));float shade=.40+.
     if(style>10.5&&style<11.5&&p.y>.075&&abs(p.z)<.135&&p.x<.04) pigment=vec3(.82,.85,.86);
 
 float grain=fract(sin(dot(floor(vLocal*1.4),vec3(12.9898,78.233,43.21)))*43758.5453);if(grain>uOpacity)discard;
-vec3 lit=pigment*shade*(1.-uDead*.36);lit+=vec3(.9,.25,.07)*uHurt*.35;gl_FragColor=vec4(lit,1.);
+vec3 lit=pigment*shade*(1.-uDead*.36);lit+=vec3(.9,.25,.07)*uHurt*.35;
+float glow=max(smoothstep(.2,1.,vEdge),step(.93,grain)*.45)*uHeat;
+lit+=mix(vec3(.42,.05,.01),vec3(1.35,.60,.16),uHeat*uHeat)*glow;
+gl_FragColor=vec4(lit,1.);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`;
@@ -107,7 +110,7 @@ vec3 lit=pigment*shade*(1.-uDead*.36);lit+=vec3(.9,.25,.07)*uHurt*.35;gl_FragCol
     if(lit)geo.computeVertexNormals();geo.computeBoundingSphere();
     geometryCache.set(vao,{geo,version:src.version});return geo;
   }
-  function material(){return new THREE.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,side:THREE.DoubleSide,uniforms:{uAnim:{value:new THREE.Vector4()},uT:{value:0},uInk:{value:new THREE.Color()},uTrim:{value:new THREE.Color()},uPaint:{value:new THREE.Vector4()},uPattern:{value:0},uLength:{value:1},uOpacity:{value:1},uHurt:{value:0},uDead:{value:0},uOffset:{value:new THREE.Vector3()}}});}
+  function material(){return new THREE.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,side:THREE.DoubleSide,defaultAttributeValues:{fractureEdge:[0]},uniforms:{uAnim:{value:new THREE.Vector4()},uT:{value:0},uInk:{value:new THREE.Color()},uTrim:{value:new THREE.Color()},uPaint:{value:new THREE.Vector4()},uPattern:{value:0},uLength:{value:1},uOpacity:{value:1},uHurt:{value:0},uDead:{value:0},uHeat:{value:0},uOffset:{value:new THREE.Vector3()}}});}
   function finishMaterial(mat,s,state,dead=false){
     const f=s.paint||s.finish||(s.finish=runtime.hullFinish(s)),u=mat.uniforms,gain=[1,.72,1,.72,.68][state.palI||0];
     u.uInk.value.setRGB(...f.color).convertSRGBToLinear().multiplyScalar(gain);u.uTrim.value.setRGB(...f.trim).convertSRGBToLinear().multiplyScalar(gain);
@@ -116,6 +119,7 @@ vec3 lit=pigment*shade*(1.-uDead*.36);lit+=vec3(.9,.25,.07)*uHurt*.35;gl_FragCol
     u.uOffset.value.fromArray(s.paintOffset||[0,0,0]);u.uT.value=state.now;
     u.uOpacity.value=Math.min(s.dustT?Math.max(0,1-(state.now-s.dustT)/(s.dustDur||4)):1,1-(s.cloakAmt||0)*.96);
     u.uHurt.value=Math.exp(-Math.max(0,state.now-(s.hurtT||-100))*7);u.uDead.value=dead?1:0;
+    u.uHeat.value=dead&&!s.pending?Math.exp(-Math.max(0,state.now-(s.t0??s.deadT??state.now))/(s.disabled?6:3.2)):0;
     const am=dead?0:runtime.raceDefs?.[s.race]?.anim||0;
     u.uAnim.value.set(am,am===3?s.ringX||0:s.wf||0,am===3?s.ringW||0:Math.max(4,(s.slen||20)*(am>3?1:.35)),am===5?.65:am===4?.85:am===3?.55:Math.min(6,1.3+30/(s.slen||20)));
   }
@@ -130,6 +134,7 @@ vec3 lit=pigment*shade*(1.-uDead*.36);lit+=vec3(.9,.25,.07)*uHurt*.35;gl_FragCol
   }
   function individual(map,key,s,state,age,kind='ship'){
     const geo=geometry(s.vao);if(!geo)return;
+    if(s.e&&s.e.length===geo.getAttribute('position').count&&!geo.getAttribute('fractureEdge'))geo.setAttribute('fractureEdge',new THREE.BufferAttribute(s.e,1));
     let mesh=map.get(key);if(!mesh){mesh=new THREE.Mesh(geo,material());mesh.matrixAutoUpdate=false;mesh.name=kind;mesh.userData.shipId=s.id;root.add(mesh);map.set(key,mesh);}
     mesh.geometry=geo;mesh.visible=true;mesh.userData.seen=true;
     mesh.matrix.copy(transform(s,state.now,age,1,kind));mesh.matrixWorldNeedsUpdate=true;finishMaterial(mesh.material,s,state,kind!=='ship'||s.dead);

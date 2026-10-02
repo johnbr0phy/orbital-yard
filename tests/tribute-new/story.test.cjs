@@ -45,7 +45,7 @@ test('the flagship falls, command goes silent, a successor takes over and the HU
   assert.match(s.text,/takes command/);
 });
 
-test('a broken squadron routs, runs and leaves alive; the war counts it as withdrawn, not killed',()=>{
+test('a broken squadron falls back and rallies without warping out',()=>{
   const w=war(6,5,2202,30,34);
   const r=w.run(`(()=>{const q=squads.find(q=>q.side===0&&q.state==='steady'&&q.mem.filter(id=>!ships[id].dead&&ships[id].arr).length>=3&&!q.hero);q.engagedAt=0;q.stress=9;
     for(let i=0;i<30;i++){battleTime+=1/30;simStep(battleTime,1/30);}
@@ -54,7 +54,9 @@ test('a broken squadron routs, runs and leaves alive; the war counts it as withd
   const before=w.run('({counts:counts.slice(),escaped:escaped.slice()})');
   w.step(20);
   const after=w.run(`({escaped:escaped.slice(),jumped:ships.filter(s=>s.jumped).length,killsLogged:bc.log.events.filter(e=>/kill|Kill/.test(e.type)&&ships[e.ship].jumped).length})`);
-  assert.ok(after.escaped[0]>before.escaped[0]||after.jumped>0,JSON.stringify({before,after}));
+  assert.equal(after.escaped[0],before.escaped[0],JSON.stringify({before,after}));
+  assert.equal(after.jumped,0);
+  assert.ok(w.run(`bc.log.events.some(e=>e.type==='rally'&&e.squad===${r.id})`));
   assert.equal(after.killsLogged,0,'a ship that jumped out is never logged as a kill');
 });
 

@@ -118,6 +118,7 @@ export function createEffects(THREE, scene, runtime = {}) {
       }else{
         const decay=b.ion||b.fo?Math.max(.03,1-age/(b.fo?2.15:1.55)):1;
         beam(b.a,b.b,(b.wid||(b.ion?36:b.heavy||b.turbo?8:b.cut?8:2.2))*decay,b.rail?WHITE:col,decay);
+        if(b.ion&&!b.fo){const g=state.ships[b.from];if(g&&!g.dead)point(...b.a,clamp((g.slen||20)*.035,24,110),col,1,21,1);}
       }
     }
     for(const tr of state.tracers||[]){
