@@ -81,3 +81,50 @@ behaviour and render data, not cinematic quality or sustained 600-a-side FPS.
 Expect different battle outcomes from lethal ion paths, longer engagement ranges,
 faster special cooldowns and the removal of combat withdrawals. Under heavy
 destruction, older debris is recycled sooner to keep new deaths visible.
+
+## Tyranid relief follow-up (October 2)
+
+John reported a Tyranid wave arriving and appearing to stay parked. Two movement
+problems remained after the original pass:
+
+- Escort approach demand was still clamped to combat dash by the throttle, and
+  acceleration still used the combat drive. Relief now carries its approach drive
+  through both layers, using the destination's effective mode instead of an old
+  HOLD action. The added burn is capped at 180 m/s (or the class's existing dash,
+  if faster), decreases with the remaining approach, and uses the normal spool
+  and jerk limits. Contact ends the approach and brakes back to combat pace.
+- A capital touching a rock could be braked every tick until its speed-dependent
+  turning limit prevented it from escaping. Capitals now use the existing bounded
+  escape helm and steer out along the surface. Terrain contact still blocks entry,
+  and capital pitch remains limited.
+
+The native and Three engines share the escort fix. Class cruise/dash values are
+unchanged; the extra escort drive is restricted to inbound relief.
+
+The full-wave fixture uses Rebels versus Empire, seed 42, 24 original ships per
+side and a 150-ship Tyranid relief muster. At time 30 it reduces the requesting
+side to two survivors. All 121 generated relief ships arrive in both versions.
+
+| Measurement after 60 seconds | Main at 86ca47b | Follow-up |
+| --- | ---: | ---: |
+| Relief ships that have fired | 25 | 47 |
+| Non-hero escorts over 100 m that have fired | 0 of 31 | 15 of 31 |
+
+By 90 seconds, 82 of 121 relief ships have fired, including 25 of 31 escorts.
+The isolated escort approach covers 2,457 metres in 20 seconds in both engines,
+up from 466 metres, then returns smoothly to its original combat pace.
+
+An isolated bio-cruiser pressed against a rock moves 0.3 metres in 35 seconds on
+the old code, versus 255 metres with the fix. By 45 seconds it has 110 metres of
+clearance and is moving at 35 m/s. These are deterministic simulation fixtures,
+not an exact replay of the reported image or an average fleet-balance result.
+
+`tests/tribute-new/relief-motion.test.cjs` covers the escort approach in both
+engines, smooth return to combat pace, capital terrain escape, and a real relief
+wave continuing into firing range. Browser/GPU visual review is still needed.
+
+Follow-up verification passes 68 tests across relief motion, reinforcements,
+traffic, motion, throttle feedback, Tyranid fleet behaviour, battle spectacle,
+battle AI and Three parity. This includes 600-ship arrival clearance, repeatable
+battles, 30/120 render-rate parity and the existing capital motion limits.
+Changed JavaScript parses and `git diff --check` passes.

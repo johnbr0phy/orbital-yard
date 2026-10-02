@@ -595,12 +595,20 @@
         const d=distance(s,other),safe=radius(s)+radius(other)+90;
         if(d>1&&d<safe){const k=(safe-d)/d;dx+=(s.x-other.x)*k*1.8;dy+=(s.y-other.y)*k;dz+=(s.z-other.z)*k*1.8;}
       }
+      // A terrain contact can brake a large hull below its normal turning speed.
+      // Give the escape helm an outward course so it can clear the surface again.
+      let escape=false;
+      if(now<(s.rockUntil||0)&&s.rockN){
+        const n=s.rockN,fx=Math.cos(s.yaw),fz=Math.sin(s.yaw),fn=fx*n[0]+fz*n[2];
+        if(fn<.3){const tx=fx-n[0]*fn,tz=fz-n[2]*fn,tn=Math.hypot(tx,tz)||1;
+          dx=tx/tn*250+n[0]*250;dz=tz/tn*250+n[2]*250;dy=n[1]*250;escape=true;}
+      }
       const dist=length(dx,dy,dz),turn=(s.turn||.07)*(p.mode==='RAM'?1.5:1);
       // Holding a point: a capital runs its way in, brakes, and stops. It does not circle or pivot.
-      const holding=p.station&&(p.mode==='HOLD'||p.mode==='HIDE'||p.mode==='GUARD'||p.mode==='MANEUVER');
+      const holding=!escape&&p.station&&(p.mode==='HOLD'||p.mode==='HIDE'||p.mode==='GUARD'||p.mode==='MANEUVER');
       const close=holding&&dist<Math.max(250,(s.slen||300)*.6);
       const err=close?0:angle(Math.atan2(dz,dx)-s.yaw);
-      this.helmTurn(s,err,dt,now,{max:turn,clean:true,capital:true});
+      this.helmTurn(s,err,dt,now,{max:turn,clean:true,capital:true,escape});
       const dash=s.spdMax||s.spd*1.3;
       let velocity=clamp(s.spd*p.boost,s.spd*.65,dash);
       // The muster parks a 19 km ship well behind its screen. A sustained transit burn
@@ -1692,8 +1700,8 @@
       return 1+h.rhythm*.5*Math.sin(now*f+h.ph[2])+Math.max(.08,h.rhythm*.6)*.5*Math.sin(now*g+h.ph[4]);
     },
     // Engines: spool by size, braking a little quicker, and a burn that builds rather than snaps.
-    helmSpeed(s,want,dt,k=1){
-      const L=s.slen||20,dash=s.spdMax||(s.spd||20)*1.3,spool=L<60?1.5:L<180?4:Math.min(30,8+L/200);
+    helmSpeed(s,want,dt,k=1,fullBurn=0){
+      const L=s.slen||20,dash=Math.max(s.spdMax||(s.spd||20)*1.3,fullBurn),spool=L<60?1.5:L<180?4:Math.min(30,8+L/200);
       const acc=dash/spool*k,dec=acc*1.5,v=s.v||0;
       const wantA=clamp((want-v)*3,-dec,acc),jerk=(acc+dec)/Math.max(.2,spool*.3);
       s.vA=clamp((s.vA||0)+clamp(wantA-(s.vA||0),-jerk*dt,jerk*dt),-dec,acc);
