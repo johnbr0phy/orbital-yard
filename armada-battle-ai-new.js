@@ -1234,8 +1234,10 @@
       const release=why=>{p.released=why;return null;};
       // Ships are dying: whatever the plan said about waiting, the fight is here.
       if(this.sides[side].lossAt!=null&&now-this.sides[side].lossAt<20)return release('under fire');
-      if(p.kind==='HOLD'){if(d<3200)return release('contact');if(age>55)return release('waited');return [home.x+dir*1400,home.y,home.z];}
-      if(p.kind==='SIEGE'){if(d<3600)return release('contact');if(age>60)return release('waited');return [home.x+dir*500,home.y,home.z];}
+      // Release passive plans sooner when enemy formations enter tactical range. Retain a bounded
+      // waiting period so defensive fleets still have time to establish their positions.
+      if(p.kind==='HOLD'){if(d<4400)return release('contact');if(age>35)return release('waited');return [home.x+dir*1400,home.y,home.z];}
+      if(p.kind==='SIEGE'){if(d<4800)return release('contact');if(age>40)return release('waited');return [home.x+dir*500,home.y,home.z];}
       if(p.kind==='PINCER'){if(p.state!=='forming'||d<2400)return release('closed');return [home.x+dir*1800,home.y,home.z];}
       if(p.kind==='RAID'){if(p.cycles>=1||d<2600||age>70)return release('raided');return [home.x+dir*900,home.y,home.z];}
       return null;
