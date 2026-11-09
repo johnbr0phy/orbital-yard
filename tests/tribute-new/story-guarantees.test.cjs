@@ -69,11 +69,11 @@ test('fracture edges glow where fragments were joined, and the glow cools',()=>{
 });
 
 test('objectives win wars: a convoy run and a held station decide them',()=>{
-  const c=war(5,6,1101,30,0,{plans:null,objective:'CONVOY'});
+  const c=war(5,6,1102,30,0,{plans:null,objective:'CONVOY'});
   while(c.run('battleTime-warT0')<180&&c.run('winner==null'))c.step(1);
   assert.deepEqual(c.run('[winner,winReason]'),[1,'convoy']);
   assert.match(c.run(`document.getElementById('win').innerHTML`),/WINS THE CONVOY RUN/);
-  const s=war(5,6,3303,30,0,{plans:null,objective:'STATION'});
+  const s=war(5,6,1101,30,0,{plans:null,objective:'STATION'});
   while(s.run('battleTime-warT0')<180&&s.run('winner==null'))s.step(1);
   assert.deepEqual(s.run('[winner,winReason]'),[1,'station']);
   assert.match(s.run(`document.getElementById('win').innerHTML`),/HOLDS THE STATION/);

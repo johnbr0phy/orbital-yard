@@ -22,7 +22,7 @@ export function createEffects(THREE, scene, runtime = {}) {
     uniforms: {pixelScale: {value: 900}},
     vertexShader: `attribute vec4 params;attribute vec3 color;attribute float seed;uniform float pixelScale;
       varying vec4 p;varying vec3 c;varying float vSeed;void main(){p=params;c=color;vSeed=seed;vec4 v=modelViewMatrix*vec4(position,1.);
-      gl_Position=projectionMatrix*v;gl_PointSize=clamp(params.x*pixelScale/max(1.,-v.z),1.,240.);
+      gl_Position=projectionMatrix*v;gl_PointSize=clamp(params.x*pixelScale/max(1.,-v.z),1.,760.);
       if(v.z>0.)gl_PointSize=0.;}`,
     fragmentShader: `varying vec4 p;varying vec3 c;varying float vSeed;
       void main(){vec2 d=gl_PointCoord-.5;float r=length(d)*2.;float ang=atan(d.y,d.x);
@@ -38,7 +38,7 @@ export function createEffects(THREE, scene, runtime = {}) {
         a*=exp(-r*r*6.);
       }else if(k>1.5){
         r/=.8+.15*sin(ang*(3.+floor(vSeed*4.))+vSeed*43.);
-        col=mix(vec3(1.,.97,.88),c,min(1.,age*1.4));a*=exp(-r*r*5.);
+        col=mix(vec3(1.,.97,.88),c,min(1.,age*3.));a*=(1.-smoothstep(.3,1.,r))*.82+exp(-r*r*5.)*.45;
       }else a*=exp(-r*r*7.);
       if(r>1.||a<.005)discard;gl_FragColor=vec4(col,a);}`
   });
@@ -48,9 +48,9 @@ export function createEffects(THREE, scene, runtime = {}) {
   scene.add(beamMesh, pointMesh);
   let n = 0, pn = 0, dropped = 0, camera = null, viewport = 900;
   const scratchA = [0, 0, 0], scratchB = [0, 0, 0], scratchC = [0, 0, 0];
-  const WHITE = [1, .97, .91], CYAN = [.23, .62, 1], EMBER = [1, .42, .12], DUST = [.32, .35, .39];
+  const TRAIL = [.62, .80, 1], WHITE = [1, .97, .91], CYAN = [.23, .62, 1], EMBER = [1, .42, .12], DUST = [.32, .35, .39];
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  const life = kind => kind >= 10 ? 1.35 : kind > 2.5 ? 2.15 : .8;
+  const life = kind => kind >= 10 ? 1.35 : kind > 2.5 ? 2.15 : kind > 1.5 ? 1.25 : .8;
   function point(x, y, z, size, color, opacity = 1, kind = 0, age = 0, seed = 0) {
     if (pn >= MAX_POINTS) { dropped++; return; }
     if (!(Number.isFinite(x + y + z + size + opacity)) || size <= 0 || opacity <= .003) return;
@@ -85,8 +85,8 @@ export function createEffects(THREE, scene, runtime = {}) {
   function beam(a, b, width, color, opacity = 1) {
     if (!a || !b || !Number.isFinite(a[0]+a[1]+a[2]+b[0]+b[1]+b[2])) return;
     const distance = Math.hypot(camera.ex-(a[0]+b[0])*.5,camera.ey-(a[1]+b[1])*.5,camera.ez-(a[2]+b[2])*.5);
-    width = Math.max(width || 1, Math.min(24, distance / viewport * .7));
-    ribbon(a,b,width,color,.35*opacity); ribbon(a,b,width*.28,WHITE,.95*opacity);
+    width = Math.max(width || 1, Math.min(24, distance / viewport * 1.25));
+    ribbon(a,b,width,color,.5*opacity); ribbon(a,b,width*.28,WHITE,.95*opacity);
   }
   function finish(g, count) {
     g.setDrawRange(0,count);
@@ -123,10 +123,23 @@ export function createEffects(THREE, scene, runtime = {}) {
     }
     for(const tr of state.tracers||[]){
       if(tr.dead||tr.launch||now<tr.t0)continue;
-      const tail=Math.min(Math.max(0,now-tr.t0),tr.energy?.075:.035);
+      const tail=Math.min(Math.max(0,now-tr.t0),tr.energy?(tr.battery?.06:.095):.035);
       scratchA[0]=tr.x-tr.vx*tail;scratchA[1]=tr.y-tr.vy*tail;scratchA[2]=tr.z-tr.vz*tail;
       scratchB[0]=tr.x;scratchB[1]=tr.y;scratchB[2]=tr.z;
       beam(scratchA,scratchB,tr.width||1.1,tr.col||color(tr.race));
+    }
+    // Drive trails: about a second of each small craft's own track, fading astern.
+    for(const s of state.ships||[]){
+      const tr=s.trail;if(!tr||tr.length<6||s.dead||s.id===state.pilotId)continue;
+      const d=Math.hypot(s.x-camera.ex,s.y-camera.ey,s.z-camera.ez);if(d>4200)continue;
+      const m=tr.length/3,width=Math.max(Math.min(.45,(s.slen||20)*.012),d/viewport*.8),back=(s.slen||20)*.42;
+      scratchA[0]=s.x-Math.cos(s.yaw)*back;scratchA[1]=s.y;scratchA[2]=s.z-Math.sin(s.yaw)*back;
+      for(let i=m-1;i>=0;i--){
+        scratchB[0]=tr[i*3];scratchB[1]=tr[i*3+1];scratchB[2]=tr[i*3+2];
+        const age=(m-1-i)/10;
+        if(Math.abs(scratchB[0]-scratchA[0])+Math.abs(scratchB[2]-scratchA[2])<120)ribbon(scratchA,scratchB,width*(1-age*.6),TRAIL,age<.3?.34:age<.62?.17:.07);
+        scratchA[0]=scratchB[0];scratchA[1]=scratchB[1];scratchA[2]=scratchB[2];
+      }
     }
     for(const ms of state.missiles||[]){
       if(ms.dead||now<(ms.t0||0))continue;
@@ -144,9 +157,9 @@ export function createEffects(THREE, scene, runtime = {}) {
       state.flashes[kept++]=f;
       if(age<0)continue;
       const q=age/lifeSpan;
-      const opacity=Math.exp(-age*(f.c>=10?3:f.c>2.5?1.8:5))*(1-clamp((q-.7)/.3,0,1));
+      const opacity=Math.exp(-age*(f.c>=10?3:f.c>2.5?1.8:f.c>1.5?2.3:5))*(1-clamp((q-.7)/.3,0,1)),drift=f.vx!==undefined?age:0;
       const col=f.c===13?[.18,.78,.22]:f.c===12?[.32,.10,.46]:f.c===11?CYAN:f.c>=14?[.28,.62,.9]:f.c>=10?EMBER:f.c===0?(state.BEAMCOL?.[0]||CYAN):f.c===1?(state.BEAMCOL?.[1]||EMBER):f.c===4?CYAN:EMBER;
-      point(f.x,f.y,f.z,f.size*(f.c===12?1.1-.7*q:.25+2.6*q),col,opacity,f.c,q,f.seed||0);
+      point(f.x+(drift?f.vx*drift:0),f.y+(drift?f.vy*drift:0),f.z+(drift?f.vz*drift:0),f.size*(f.c===12?1.1-.7*q:f.c===2?.45+2.4*Math.sqrt(q):.25+2.6*q),col,opacity,f.c,q,f.seed||0);
     }
     if(state.flashes)state.flashes.length=kept;
     for(const lock of state.ionState||[]){

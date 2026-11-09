@@ -128,3 +128,51 @@ traffic, motion, throttle feedback, Tyranid fleet behaviour, battle spectacle,
 battle AI and Three parity. This includes 600-ship arrival clearance, repeatable
 battles, 30/120 render-rate parity and the existing capital motion limits.
 Changed JavaScript parses and `git diff --check` passes.
+
+## Make it a war (November 9)
+
+John's ask: the ships do not act like ships and the battle is boring; it
+should feel like a real war, with speed, explosions and tension. A headless
+probe of Empire v Rebels (seed 77, 50 a side) showed why: 35 seconds before
+the first shot, 5 to 25 bolts in the air across 100 ships, and a Star
+Destroyer firing about one bolt a second.
+
+- **Fleets start in gun range.** `MUSTER_GAP` is 2,400 m nose to nose (was
+  4,800 m, and 5,400 m or more whenever a super-capital was present, because
+  the gap scaled with the longest hull). First shots land at about 15 s
+  instead of 35 s.
+- **Secondary batteries.** Every hull of 60 m or more fires a rolling stream
+  of light bolts from the mounts facing the enemy (`batteryFire`): 1.2 a
+  second for a corvette up to 14 a second for a destroyer. Bolts are real
+  projectiles with 0.04 damage and loose aim, so flak mostly misses fighters
+  and capitals wear each other down faster. A shared 900-bolt budget bounds
+  cost. Named main guns, turrets and lances are unchanged. Bolts in flight in
+  the fixture went from about 20 to 60 to 85.
+- **Linked fighter guns.** A fixed-gun fighter fires its barrel pair together
+  and the two bolts share the old single bolt's damage.
+- **Explosions.** Deaths get a hot lobed fireball sized to the hull, ember
+  streaks, and for anything over 60 m a chain of secondary blasts along the
+  keel for up to 2.6 s. The fire travels with the wreck. Hull breakup is
+  unchanged and there is still no clean shockwave ring. Fireballs (flash
+  kind 2) are brighter, last 1.25 s and may fill the frame.
+- **Camera shake.** A blast shakes the view by how large it looks from the
+  camera, in every mode including Action. It is applied to the view for the
+  frame only and is off under reduced motion and in replays.
+- **Brighter bolts, drive trails.** Bolts are wider and longer on screen.
+  Small craft (60 m or less) drag about a second of pale exhaust ribbon.
+- **Faster director.** Shots hold 5 to 8 s (were 8 to 13 s), a quiet shot is
+  dropped after 3.5 s, wide resets come every 40 s and captain cutaways
+  about once a minute.
+
+The Three.js page was regenerated and its effects carry the same fireball,
+bolt and trail changes.
+
+Expect different outcomes for every seed: wars start sooner and finish
+sooner (objective wars in the sample ended in 46 to 100 s, down from 70 to
+180 s). Four fixtures were repinned for that: two objective seeds in
+story-guarantees, the wreck-strike fixture (the wreck now stands clear of the
+melee), the replay pin count (at least one) and the linked-bolt counts in
+weapons. `massacre.test.cjs` test 3 already fails on main and still does.
+Not rerun: `fleet-balance.cjs`, the MOTION.md acceptance sweep and the story
+metrics. No real GPU was available; frames were checked in software-rendered
+Chromium.
