@@ -1187,6 +1187,8 @@
       for(const side of [0,1]){
         const st=this.sides[side],p=st.plan,foe=this.sides[1-side].center,own=st.center;if(!p||!foe||!own)continue;
         const dir=side?-1:1;
+        // One posture decision per side and tick, not once (or twice) per squadron.
+        const posturePoint=this.posture(side,p,now,foe,own);
         for(const q of squads){
           if(q.side!==side||q.state!=='steady')continue;
           const members=q.mem.map(id=>this.ship(id)).filter(m=>this.live(m)&&m.arr&&m.ai&&!m.reliefGoal&&!(m.ai.breakUntil>now)&&!(m.ai.order&&['RESCUE','RAM','PANIC','BERSERK','RECOVER','TOW'].includes(m.ai.order.kind)&&now<m.ai.order.until));
@@ -1200,9 +1202,9 @@
           }else if((p.kind==='HOLD'||p.kind==='SIEGE')&&p.state!=='done'&&q.role==='screen'){
             let best=null,bd=Infinity;for(const c of this.ships())if(c.side===side&&this.live(c)&&(c.hulls||c.slen>=180)){const d=q.cx!=null?length(c.x-q.cx,c.z-q.cz):0;if(d<bd){bd=d;best=c;}}
             if(best)for(const m of members)this.setOrder(m,'GUARD',{anchor:best.id,until});
-          }else if(q.role==='main'&&this.posture(side,p,now,foe,own)){
+          }else if(q.role==='main'&&posturePoint){
             // The rest of the fleet keeps the plan's posture: on the line, in reserve, or waiting for the wings.
-            const point=this.posture(side,p,now,foe,own);
+            const point=posturePoint;
             for(const m of members)this.setOrder(m,'HOLD',{point,until,spread:420});
           }else if(p.kind==='DECAPITATE'&&p.state!=='done'&&q.role==='strike'){
             const flag=this.ship(this.sides[1-side].flag);
@@ -1210,7 +1212,7 @@
           }
         }
         // Capitals: hold the line, or hold the station.
-        const holdLine=(p.kind==='HOLD')&&p.state!=='done';
+        const holdLine=(p.kind==='HOLD')&&p.state!=='done'&&!p.released;
         if(holdLine&&!p.line)p.line=[own.x+dir*900,own.y,own.z];
         for(const c of this.ships()){
           if(c.side!==side||!this.live(c)||!c.arr||!c.ai||c.reliefGoal||!(c.hulls||c.slen>=180)||(c.ai.order&&['RAM','DRIFT'].includes(c.ai.order.kind))||this.doctrine(c).hunts)continue;
