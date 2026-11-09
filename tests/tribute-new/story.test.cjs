@@ -75,7 +75,8 @@ test('a ram resolves through the collision solver: an impact event, damage to bo
 test('wrecks stay dangerous: a fighter that clips a disabled hull dies, the same way every time',()=>{
   const once=()=>{const w=war(5,6,1101,30,30);return w.run(`(()=>{const cap=ships.find(s=>!s.dead&&s.arr&&s.hulls===10&&s.hullMesh);cap.destroyMode='disabled';kill(cap,battleTime);
     const wr=wrecks.find(q=>q.disabled&&q.src===cap.id);const f=ships.find(s=>!s.dead&&s.arr&&!s.grace&&!s.hero&&s.slen<60&&s.side===1);
-    wr.t0=battleTime-5;const box=trafficBox(wr,battleTime);let ax=0;for(let i=1;i<3;i++)if(box.e[i]<box.e[ax])ax=i;
+    // Stand the wreck clear of the melee: nothing else may sweep it away before the fighter arrives.
+    wr.y+=30000;wr.t0=battleTime-5;const box=trafficBox(wr,battleTime);let ax=0;for(let i=1;i<3;i++)if(box.e[i]<box.e[ax])ax=i;
     // Come in across the hull's thinnest side, level, at fighter speed.
     const n=box.axes[ax],flat=Math.hypot(n[0],n[2])>.3?n:box.axes[(ax+1)%3],k=Math.hypot(flat[0],flat[2]),dx=flat[0]/k,dz=flat[2]/k;
     const reach=box.e.reduce((v,e,i)=>v+e*Math.abs(box.axes[i][0]*dx+box.axes[i][2]*dz),0)+30;

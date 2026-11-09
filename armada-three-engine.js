@@ -12576,13 +12576,13 @@ out float vA;out float vC;out float vO;out float vSeed;
 void main(){
   float age=uT-aF.w;
   float kind=aS.y;
-  float life=kind>=29.5&&kind<35.5?(kind<30.5?.7:kind<34.5?1.8:.55):kind>=10.0?1.35:kind>2.5?2.15:0.8;
+  float life=kind>=29.5&&kind<35.5?(kind<30.5?.7:kind<34.5?1.8:.55):kind>=10.0?1.35:kind>2.5?2.15:kind>1.5?1.25:0.8;
   if(age<0.0||age>life){gl_Position=vec4(2.0,2.0,2.0,1.0);gl_PointSize=0.0;vA=0.0;vC=0.0;vO=0.0;vSeed=0.0;return;}
   gl_Position=uVP*vec4(aF.xyz,1.0);
   float o2=age/life;
-  vA=exp(-age*(kind>=10.0?3.0:kind>2.5?1.8:5.0))*(1.0-smoothstep(0.70,1.0,o2));
+  vA=exp(-age*(kind>=10.0?3.0:kind>2.5?1.8:kind>1.5?2.3:5.0))*(1.0-smoothstep(0.70,1.0,o2));
   vC=kind;vO=o2;vSeed=aS.z;
-  gl_PointSize=clamp(aS.x*(0.25+2.6*o2)*uPx/max(gl_Position.w,1.0),1.0,kind>=10.0?240.0:kind>2.5?640.0:320.0);
+  gl_PointSize=clamp(aS.x*(kind>1.5&&kind<2.5?.45+2.4*sqrt(o2):0.25+2.6*o2)*uPx/max(gl_Position.w,1.0),1.0,kind>=10.0?420.0:kind>2.5?640.0:kind>1.5?760.0:320.0);
   if(kind>11.5&&kind<12.5)gl_PointSize=clamp(aS.x*(1.1-.7*o2)*uPx/max(gl_Position.w,1.0),1.0,240.0);
   if(kind>29.5&&kind<35.5){vA=1.0;gl_PointSize=clamp(aS.x*(kind<30.5?.35+1.65*o2:kind<34.5?.9+.2*o2:.6+.5*o2)*uPx/max(gl_Position.w,1.0),1.0,720.0);}
   if(kind>=20.0&&kind<29.5){vA=1.0;gl_PointSize=clamp(aS.x*uPx/max(gl_Position.w,1.0),1.0,72.0);}
@@ -12686,13 +12686,16 @@ void main(){
     float spike=0.72+0.28*sin(a*(3.0+floor(vSeed*4.0))+vSeed*43.0)
                     +0.14*sin(a*(7.0+floor(vSeed*5.0))-vSeed*17.0);
     r/=max(spike,0.2);
-    // Flame from the first frame (slow motion stretches any white phase),
-    // cooling to ember and broken up by seeded grain, so a big death reads
-    // as fire, not a lamp. Edges feather out below (no flat disc rim).
-    col=mix(vec3(1.0,0.80,0.56),vec3(0.95,0.36,0.10),clamp(vO*4.0,0.0,1.0));
-    float fire=.58+.42*sin(d.x*23.0+vSeed*41.0)*sin(d.y*19.0-vSeed*29.0+vO*4.0);
-    col*=mix(.8,fire,clamp(vO*5.0,0.0,1.0))*mix(1.0,.55,smoothstep(.2,.9,vO));
-    rw=0.3;
+    // White-hot at birth, fire within a tenth of a second, ember and broken
+    // grain as it thins. A lobed, feathered body: no flat disc, no clean ring.
+    if(r>1.0)discard;
+    float heat=exp(-vO*6.0);
+    vec3 fire=mix(vec3(.86,.22,.05),vec3(1.0,.70,.28),heat);
+    fire=mix(fire,vec3(1.0,.97,.90),exp(-r*r*5.0)*heat);
+    float grain=.60+.40*sin(d.x*23.0+vSeed*41.0)*sin(d.y*19.0-vSeed*29.0+vO*4.0);
+    float body=(1.0-smoothstep(.30,1.0,r))*mix(1.0,grain,clamp(vO*3.0,0.0,1.0));
+    float hot=exp(-r*r*5.0);
+    o=vec4(fire*(1.0+uHdr*2.2*hot*heat),(body*.82+hot*.45)*vA);return;
   }else col=mix(uC0,uC1,vC);
   if(r>1.0)discard;
   float core=exp(-r*r*7.0);
@@ -14980,6 +14983,7 @@ function scatterBorg(){
     for(const s of pack)if(s.stn){s.stn[0]=s.x;s.stn[1]=s.y;s.stn[2]=s.z;}
   }
 }
+const MUSTER_GAP=2400;
 function spaceTheFleets(){
   /* megas are kilometres long: after the parade is laid, push each
      side back until the noses have a clear lane between them */
@@ -14991,9 +14995,12 @@ function spaceTheFleets(){
     if(s.side===0){const nose=s.x+h;if(nose>n0)n0=nose;}
     else{const nose=s.x-h;if(nose<n1)n1=nose;}
   }
-  const need=Math.max(4800,maxH*0.55);
+  /* the fleets jump in on top of each other: the fighters merge in seconds,
+     the lines are trading fire before the first caption fades */
+  const need=MUSTER_GAP;
   const room=n1-n0;
-  if(!(room<need))return;
+  if(!Number.isFinite(room)||Math.abs(room-need)<1)return;
+  // too close: push apart. Too far: close up, so nobody spends the first half minute commuting.
   const push=(need-room)*0.5;
   for(const s of ships){
     if(s.dead)continue;
@@ -16348,8 +16355,9 @@ function craftThought(s,now){
   return line;
 }
 const MAX_FLASHES=320,MAX_ENGINE_SPRITES=192;
-function flash(x,y,z,t0,size,c){
+function flash(x,y,z,t0,size,c,vel){
   const f={x,y,z,t0,size,c,seed:Math.random()};
+  if(vel){f.vx=vel[0];f.vy=vel[1];f.vz=vel[2];}
   if(flashes.length<MAX_FLASHES)flashes.push(f);
   else if(size>=60||(c>=10&&c<20)||c>=30){
     // A full budget must not swallow a death: evict the smallest queued flash.
@@ -16359,7 +16367,7 @@ function flash(x,y,z,t0,size,c){
   if(bc.ring&&bc.flashLog.length<6000)bc.flashLog.push(f);
 }
 function deathEffectKind(race){return race===8||race===1||race===21?12:race===12?13:race===10?11:race===7||race===15?14:10;}
-function effectLife(kind){return kind>=30&&kind<36?(kind<31?.7:kind<35?1.8:.55):kind>=10?1.35:kind>2.5?2.15:.8;}
+function effectLife(kind){return kind>=30&&kind<36?(kind<31?.7:kind<35?1.8:.55):kind>=10?1.35:kind>2.5?2.15:kind>1.5?1.25:.8;}
 // Three nested glow samples per outlet; shared flash buffer and draw call, no particles.
 function appendEngineBurns(now,planes,offset){
   let count=0;
@@ -16442,13 +16450,52 @@ function shieldEffect(t,hit,now){
   if([10,11,18,19].includes(t.race)){t.shieldT=now;flash(hit[0],hit[1],hit[2],now,Math.max(18,Math.min(260,(t.slen||20)*.55)),35);}
   else if(t.race===12){t.shieldT=now;flash(hit[0],hit[1],hit[2],now,Math.max(14,Math.min(120,(t.slen||20)*.12)),13);}
 }
-// Small thermal ruptures reveal the breaking hull instead of hiding it in a ring.
+/* A ship dies loudly. The hull still breaks up into real pieces (spawnBreakup);
+   this is the fire around it: a hard lobed fireball sized to the hull, embers
+   thrown outward, and for anything bigger than a fighter a chain of secondary
+   blasts that walks the keel while the pieces come apart. Lobed fire and
+   streaks only: no clean ring to hide the wreck behind. */
 function deathFlourish(t,now){
-  const L=t.slen||20,n=L>=180?5:2;
-  for(let i=0;i<n;i++){
-    const p=gunWorld(t,[(i/(n-1)-.5)*L*.7,0,0],now);
-    flash(...p,now+i*.035,Math.max(8,Math.min(65,L*.09)),10);
+  const L=t.slen||20,big=L>=180,mid=L>=60;
+  const R=Math.max(26,Math.min(900,big?L*.55:L*1.9));
+  const way=[t.dvx||0,t.dvy||0,t.dvz||0];
+  flash(t.x,t.y,t.z,now,R,2,way);
+  flash(t.x,t.y,t.z,now,R*.6,10,way);
+  if(mid)flash(t.x,t.y,t.z,now+.06,R*.5,2,way);
+  // embers: streaks thrown off the blast, carrying some of the hull's own way
+  const v=t.v||0,vx=Math.cos(t.yaw||0)*v*.4,vz=Math.sin(t.yaw||0)*v*.4,n=big?22:mid?12:7,reach=R*(big?1.6:2.6);
+  for(let i=0;i<n&&beams.length<2400;i++){
+    const az=Math.random()*6.283,el=(Math.random()-.5)*2.2,k=reach*(.45+Math.random()*.75);
+    beams.push({a:[t.x,t.y,t.z],b:[t.x+Math.cos(el)*Math.cos(az)*k+vx,t.y+Math.sin(el)*k,t.z+Math.cos(el)*Math.sin(az)*k+vz],t0:now+Math.random()*.08,spark:true,ejecta:true});
   }
+  dustBurst(t.x,t.y,t.z,vx,t.vy||0,vz,big?14:mid?7:4,now);
+  if(mid){
+    // secondaries: magazines and reactors letting go along the keel
+    const m=big?Math.min(16,6+Math.round(L/220)):3,span=big?2.6:.8;
+    for(let i=0;i<m;i++){
+      const local=[(Math.random()-.5)*L*.85,(Math.random()-.5)*L*.1,(Math.random()-.5)*L*.2],p=gunWorld(t,local,now),at=now+.12+Math.random()*span;
+      flash(p[0],p[1],p[2],at,R*(.28+Math.random()*.4),2,way);
+      if(i%2===0)flash(p[0],p[1],p[2],at,R*.2,10,way);
+      if(i%3===0&&beams.length<2400)for(let j=0;j<4;j++){const az=Math.random()*6.283,el=(Math.random()-.5)*2,k=R*(.5+Math.random()*.6);
+        beams.push({a:p,b:[p[0]+Math.cos(el)*Math.cos(az)*k,p[1]+Math.sin(el)*k,p[2]+Math.cos(el)*Math.sin(az)*k],t0:at,spark:true,ejecta:true});}
+    }
+  }
+  shakeFrom(t.x,t.y,t.z,R*(big?1.5:1));
+}
+/* The camera feels a blast by how big it looks from where it stands: an
+   angular shake, laid on the view only for the frame and never on the
+   camera's own state, so it cannot drift a shot or fight the director. */
+let camShake=0,shakeYaw=0,shakePitch=0;
+// The shake is added after the camera has moved and taken back before it moves again.
+function unshakeView(){cam.yaw-=shakeYaw;cam.pitch-=shakePitch;shakeYaw=shakePitch=0;}
+function shakeView(elapsed){
+  if(camShake>.0004&&!reducedMotion&&!replayState){shakeYaw=(Math.random()-.5)*2*camShake;shakePitch=(Math.random()-.5)*1.4*camShake;camShake*=Math.exp(-elapsed*5.5);}
+  else camShake=0;
+  cam.yaw+=shakeYaw;cam.pitch+=shakePitch;
+}
+function shakeFrom(x,y,z,R){
+  const d=Math.hypot(x-cam.ex,y-cam.ey,z-cam.ez);
+  camShake=Math.max(camShake,Math.min(.03,R/Math.max(40,d)*.05));
 }
 // A capital below 35% hull starts to die before it dies: internal blasts
 // march along the keel and it vents; the rate rises as the hull fails.
@@ -16460,7 +16507,7 @@ function dyingCapitals(now){
     s.blastAt=now+(.35+frac*3)*(.6+Math.random()*.8);
     s.blastU=((s.blastU??(Math.random()-.5))+.17+Math.random()*.1)%1; // marches toward the bow
     const local=[(s.blastU-.5)*s.slen*.8,(Math.random()-.4)*s.slen*.08,(Math.random()-.5)*s.slen*.12],p=gunWorld(s,local,now);
-    flash(p[0],p[1],p[2],now,Math.max(16,s.slen*(.04+Math.random()*.05)),2);audioBlast(s,p);
+    flash(p[0],p[1],p[2],now,Math.max(22,s.slen*(.06+Math.random()*.08)),2);audioBlast(s,p);shakeFrom(p[0],p[1],p[2],s.slen*.05);
     const v=s.v||0;dustBurst(p[0],p[1],p[2],Math.cos(s.yaw)*v,s.vy||0,Math.sin(s.yaw)*v,3,now);
   }
 }
@@ -16905,13 +16952,51 @@ function writeWeaponRibbon(out,at,a,b,width){
   out[at++]=a[0]-x;out[at++]=a[1]-y;out[at++]=a[2]-z;
   out[at++]=b[0]-x;out[at++]=b[1]-y;out[at++]=b[2]-z;
 }
+/* ---------- drive trails: speed you can see ----------
+   Every small craft drags a short ribbon of its own exhaust: about a second
+   of where it has just been. A banking fighter draws its turn on the sky and
+   a squadron crossing the frame reads as motion, not as dots. Cosmetic only:
+   the samples are positions the simulation already produced. */
+const TRAIL={points:10,every:3,maxLen:60};
+function stepTrails(now){
+  if(simFrame%TRAIL.every)return;
+  for(const s of ships){
+    if(s.dead||!s.vao||!s.arr||s.hulls||(s.slen||20)>TRAIL.maxLen||s.cloaked){if(s.trail)s.trail=null;continue;}
+    const back=(s.slen||20)*.42,t=s.trail||(s.trail=[]);
+    t.push(s.x-Math.cos(s.yaw)*back,s.y,s.z-Math.sin(s.yaw)*back);
+    if(t.length>TRAIL.points*3)t.splice(0,3);
+  }
+}
+const trailBands=[new Float32Array(18*1200),new Float32Array(18*1200),new Float32Array(18*1200)];
+function drawTrails(now){
+  if(replayState)return;
+  const count=[0,0,0],reach=4200,pixelScale=2*Math.tan(.44)/Math.max(1,rtH);
+  for(const s of ships){
+    const t=s.trail;if(!t||t.length<6||s.dead||s.id===pilotId)continue;
+    const dx=s.x-cam.ex,dy=s.y-cam.ey,dz=s.z-cam.ez,d=Math.hypot(dx,dy,dz);if(d>reach)continue;
+    const n=t.length/3,width=Math.max(Math.min(.45,(s.slen||20)*.012),d*pixelScale*.8),back=(s.slen||20)*.42;
+    let prev=[s.x-Math.cos(s.yaw)*back,s.y,s.z-Math.sin(s.yaw)*back];
+    for(let i=n-1;i>=0;i--){
+      const p=[t[i*3],t[i*3+1],t[i*3+2]],age=(n-1-i)/TRAIL.points,band=age<.3?0:age<.62?1:2;
+      if(count[band]+18<=trailBands[band].length&&(p[0]!==prev[0]||p[2]!==prev[2])&&Math.abs(p[0]-prev[0])+Math.abs(p[2]-prev[2])<120){writeWeaponRibbon(trailBands[band],count[band],prev,p,width*(1-age*.6));count[band]+=18;}
+      prev=p;
+    }
+  }
+  const cull=gl.isEnabled(gl.CULL_FACE);gl.disable(gl.CULL_FACE);
+  gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);
+  for(let band=0;band<3;band++)if(count[band]){
+    gl.bufferData(gl.ARRAY_BUFFER,trailBands[band].subarray(0,count[band]),gl.STREAM_DRAW);
+    gl.uniform4f(BU.col,.62,.80,1.0,[.30,.15,.06][band]);gl.drawArrays(gl.TRIANGLES,0,count[band]/3);
+  }
+  if(cull)gl.enable(gl.CULL_FACE);
+}
 function drawCoherentWeapons(now){
   const cull=gl.isEnabled(gl.CULL_FACE);gl.disable(gl.CULL_FACE);
   for(const g of coherentGroups.values())g.count=0;
   const pixelScale=2*Math.tan(.44)/Math.max(1,rtH);
   function add(a,b,width,col){
     const distance=Math.hypot(cam.ex-(a[0]+b[0])*.5,cam.ey-(a[1]+b[1])*.5,cam.ez-(a[2]+b[2])*.5);
-    width=Math.max(width,Math.min(24,distance*pixelScale*.85));
+    width=Math.max(width,Math.min(24,distance*pixelScale*1.5));
     const key=col.join(',');let g=coherentGroups.get(key);
     if(!g){g={col,count:0,outer:new Float32Array(1152),core:new Float32Array(1152)};coherentGroups.set(key,g);}
     if(g.count+18>g.outer.length){const size=g.outer.length*2,outer=new Float32Array(size),core=new Float32Array(size);outer.set(g.outer);core.set(g.core);g.outer=outer;g.core=core;}
@@ -16919,13 +17004,13 @@ function drawCoherentWeapons(now){
   }
   for(const b of beams)if(b.coherent&&now>=b.t0&&now-b.t0<(b.life||.5))add(b.a,b.b,b.wid||2,b.col||RACE_DEFS[b.race].beam);
   for(const tr of tracers)if(tr.energy&&!tr.dead&&now>=tr.t0){
-    const tail=Math.min(Math.max(0,now-tr.t0),.075);
+    const tail=Math.min(Math.max(0,now-tr.t0),tr.battery?.06:.095);
     add([tr.x-tr.vx*tail,tr.y-tr.vy*tail,tr.z-tr.vz*tail],[tr.x,tr.y,tr.z],tr.width,tr.col);
   }
   for(const g of coherentGroups.values())if(g.count)for(let core=0;core<2;core++){
     const vertices=core?g.core:g.outer;
     gl.bindBuffer(gl.ARRAY_BUFFER,beamVbo);gl.bufferData(gl.ARRAY_BUFFER,vertices.subarray(0,g.count),gl.STREAM_DRAW);
-    const c=g.col;gl.uniform4f(BU.col,core?(c[0]+2)/3:c[0],core?(c[1]+2)/3:c[1],core?(c[2]+2)/3:c[2],core?.95:.35);
+    const c=g.col;gl.uniform4f(BU.col,core?(c[0]+2)/3:c[0],core?(c[1]+2)/3:c[1],core?(c[2]+2)/3:c[2],core?.95:.5);
     gl.drawArrays(gl.TRIANGLES,0,g.count/3);
   }
   if(cull)gl.enable(gl.CULL_FACE);
@@ -16942,6 +17027,11 @@ function fireBeam(s,t,now,ox,oy,oz,dmg,heavy,muz){
     tracers.push({x:o[0],y:o[1],z:o[2],vx:dir[0]*speed,vy:dir[1]*speed,vz:dir[2]*speed,
       t0:now,life:Math.min(10,Math.max(.6,dist/speed+.35)),side:s.side,race:s.race,from:s.id,
       dead:false,energy:true,damage:dmg||1,heavy:!!heavy,width:profile.width,col:profile.color});
+    if(profile.fixed&&s.guns&&s.guns.length>1){
+      // linked fire: the next barrel speaks with this one and the charge is shared between the two bolts
+      const g2=s.guns[((s.weaponShot||0))%s.guns.length],o2=weaponMuzzle(s,g2,now),first=tracers[tracers.length-1];
+      if(Math.hypot(o2[0]-o[0],o2[1]-o[1],o2[2]-o[2])>.2){first.damage*=.5;tracers.push({...first,x:o2[0],y:o2[1],z:o2[2],quiet:true});}
+    }
     return true;
   }
   const obstacle=firstDebrisHit(o,shot.aim,now,profile.width,s.id),victim=weaponSegmentHit(o,shot.aim,t,now,profile.width);
@@ -17699,6 +17789,51 @@ function megaStep(s,now,dt){
   }
   cutHold(s,now,dt);
 }
+/* ---------- batteries: the volume of fire ----------
+   A ship of the line is not one gun on one clock. Every hull of 60 m or more
+   also works its secondary batteries: a rolling stream of light bolts from
+   the mounts that face the enemy, thrown at whatever is in reach. The rate
+   grows with the hull (a corvette spits, a destroyer pours), each bolt is a
+   real projectile with light damage and loose aim, and a shared budget keeps
+   a 600-a-side sky affordable. Named main guns keep their own clocks. */
+const BATTERY={budget:900,speed:1150,damage:.04};
+function batteryRate(s){return Math.max(1.2,Math.min(14,(s.slen||20)/55));}
+function batteryFire(s,now,dt){
+  const L=s.slen||20;
+  if(L<60||s.cloaked||s.abandoned||s.grace||winner!=null)return;
+  if((RACE_DEFS[s.race]||{}).unique||(s.stunT&&now<s.stunT))return;
+  if(!(now<s.batScan)){
+    s.batScan=now+.4+(s.id%10)*.012;
+    const rng=Math.max(700,Math.min(1600,620+L*.7)),list=s.batFoes||(s.batFoes=[]);list.length=0;
+    // every gun crew uses its own eyes: anything uncloaked inside reach, wherever the bridge is looking
+    const foes=foeCache[1-s.side],reach=rng+L*.5,step=foes.length>160?3:1,start=step>1?s.id%step:0;
+    for(let i=start;i<foes.length&&list.length<10;i+=step){const t=foes[i];
+      const dx=t.x-s.x;if(dx>reach+t.slen||dx<-reach-t.slen)continue;
+      if(!t.dead&&!t.grace&&gapTo(s,t)<rng)list.push(t);}
+  }
+  const list=s.batFoes;if(!list||!list.length)return;
+  s.batAcc=Math.min(4,(s.batAcc||0)+dt*batteryRate(s)*Math.max(.12,1-tracers.length/BATTERY.budget));
+  const ports=s.mountSites&&s.mountSites.length>3?s.mountSites:s.guns&&s.guns.length?s.guns:null;
+  const profile=weaponProfile(s);
+  while(s.batAcc>=1){
+    s.batAcc-=1;
+    const t=list[(combatRandom()*list.length)|0];if(!t||t.dead)continue;
+    let o=null;
+    for(let k=0;k<3&&!o;k++){
+      const g=ports?ports[(combatRandom()*ports.length)|0]:fireLocal(s),q=gunWorld(s,g,now);
+      // only a port on the side that faces the mark may speak
+      if((q[0]-s.x)*(t.x-q[0])+(q[1]-s.y)*(t.y-q[1])+(q[2]-s.z)*(t.z-q[2])>0||!ports)o=q;
+    }
+    if(!o)continue;
+    const aim=interceptPoint(s,t,BATTERY.speed,o),d=V.sub(aim,o),dist=V.len(d)||1;
+    // loose aim: flak against small craft mostly misses, a capital is hard to miss
+    const err=(t.slen||20)<60?.05:.014,[u,v]=basis(V.mul(d,1/dist));
+    const dir=V.norm(V.add(V.mul(d,1/dist),V.add(V.mul(u,(combatRandom()-.5)*err*2),V.mul(v,(combatRandom()-.5)*err*2))));
+    tracers.push({x:o[0],y:o[1],z:o[2],vx:dir[0]*BATTERY.speed,vy:dir[1]*BATTERY.speed,vz:dir[2]*BATTERY.speed,
+      t0:now,life:Math.min(2.2,dist/BATTERY.speed+.5),side:s.side,race:s.race,from:s.id,dead:false,energy:true,battery:true,
+      quiet:(s.batN=(s.batN||0)+1)%5!==0,damage:BATTERY.damage,heavy:false,width:Math.max(.8,profile.width*.45),col:profile.color});
+  }
+}
 /* ===================== tactical reinforcements =====================
    A call reserves ships, not positions. Geometry must finish before berths
    can be measured. Placement and jump clearance never move the existing fleet. */
@@ -18041,6 +18176,7 @@ function simStep(now,dt){
       s.err[2]=Math.max(-10,Math.min(10,s.err[2]+Math.cos(now*0.10+(s.wf||1))*dt*1.6));
     }
     leakHullDust(s,now);debrisPilot(s,now);trafficPilot(s,now);fireAtDebris(s,now);
+    batteryFire(s,now,dt);
     if(fightsAsCrown(s)){megaStep(s,now,dt);continue;}
     const sq=s.squad>=0?squads[s.squad]:null;
     const plan=battleAI.destination(s,now,false);
@@ -18246,7 +18382,13 @@ function simStep(now,dt){
     const point=hit?lerp3(a,b,u):b;[tr.x,tr.y,tr.z]=point;
     if(hit){
       const source=ships[tr.from];
-      if(tr.energy&&source)weaponImpact(source,hit,now,point,tr.damage,tr.heavy);
+      if(tr.battery){
+        // battery hits pepper the hull: a small spark each, a voice now and then
+        if(!tr.quiet)audioHit(hit,point,false);
+        flash(point[0],point[1],point[2],now,Math.max(9,Math.min(30,hit.slen*.02)),tr.side);
+        if(!tr.quiet)shieldEffect(hit,point,now);
+        wound(hit,tr.damage,source||tr.from,now);
+      }else if(tr.energy&&source)weaponImpact(source,hit,now,point,tr.damage,tr.heavy);
       else{audioHit(hit,point,false);wound(hit,.3,tr.from,now);flash(...point,now,8,tr.side);}
       tr.dead=true;
     }
@@ -18318,6 +18460,7 @@ function simStep(now,dt){
   stepIonLances(now);
   stepBattleWrecks(now,dt);
   collide(now);planetContacts();
+  stepTrails(now);
   if(showSensors&&sel!=null&&ships[sel]&&!ships[sel].dead)drawBattleSensors(ships[sel],now);
   beams=beams.filter(b2=>now-b2.t0<(b2.coherent?b2.life:b2.ion?(b2.fo?2.15:1.55):b2.fo?(b2.arc?1.4:1.8):b2.rail?0.38:b2.arc?0.22:b2.stun?0.45:b2.spark?0.42:b2.phaser?0.5:b2.cut?0.55:b2.turbo?0.38:b2.pulse?0.18:b2.heavy?0.62:0.16));
   if(flashes.length>MAX_FLASHES)flashes.length=MAX_FLASHES;
@@ -18660,7 +18803,7 @@ function cinemaChoose(a,live,now){
   // helm, then return to the fighting; interiors never seize manual control.
   if(window.ArmadaCrew?.drawInterior&&aboard){
     if(a.kind==='captain'&&!partner?.dead)return {kind:'cockpit',subject:previous.id,partner:partner&&!partner.dead?partner.id:null};
-    if(['chase','duel','capital'].includes(a.kind)&&a.clock-(a.lastInterior??0)>28&&cinemaHeat(previous,now)>0){a.lastInterior=a.clock;return {kind:'captain',subject:previous.id,partner:partner&&!partner.dead?partner.id:null};}
+    if(['chase','duel','capital'].includes(a.kind)&&a.clock-(a.lastInterior??0)>55&&cinemaHeat(previous,now)>0){a.lastInterior=a.clock;return {kind:'captain',subject:previous.id,partner:partner&&!partner.dead?partner.id:null};}
   }
   const active=live.filter(s=>s.arr&&!s.grace&&!s.cloaked),pool=active.length?active:live;
   const noise=s=>((Math.imul((s.seed??s.id)^warSeed,1664525)+Math.imul(a.index+1,1013904223))>>>0)/4294967296;
@@ -18702,7 +18845,7 @@ function cinemaChoose(a,live,now){
   const best=candidates.sort((x,y)=>y.score-x.score)[0];
   // A short geographical reset between runs of close shots. Stragglers do not
   // pull this view away from the fighting; the manual All ships view still fits everyone.
-  if(a.clock-a.lastWide>25&&best)return {...best,kind:a.kindAt.top==null||a.kindAt.top<(a.kindAt.all??-1)?'top':'all'};
+  if(a.clock-a.lastWide>40&&best)return {...best,kind:a.kindAt.top==null||a.kindAt.top<(a.kindAt.all??-1)?'top':'all'};
   if(best)return best;
   const s=ranked.find(r=>r.s.slen>=30&&r.s.slen<2400)?.s||ranked[0].s;
   return {kind:'formation',subject:s.id,partner:null};
@@ -18761,7 +18904,7 @@ function cinemaStart(a,shot,live,now){
   Object.assign(a,shot);a.index++;a.started=a.clock;a.payoff=null;a.blocked=0;
   const s=ships[a.subject];a.lastSide=s.side;a.heading=s.yaw||0;
   // Ride with a subject long enough to see what it is doing.
-  a.duration={captain:4,cockpit:5,arrival:2.8,formation:8,chase:9,duel:10,capital:11,all:8,top:8,squad:13}[a.kind];
+  a.duration={captain:4,cockpit:3.5,arrival:2.8,formation:6,chase:6.5,duel:6.5,capital:7.5,all:5,top:5,squad:8}[a.kind];
   a.until=a.clock+a.duration;a.kindAt[a.kind]=a.clock;
   if(['arrival','all','top'].includes(a.kind))a.lastWide=a.clock;
   a.members=cinemaMembers(a.kind,s,ships[a.partner],live,now);cinemaGroup(a,now);
@@ -18825,7 +18968,7 @@ function updateActionCamera(now,dt){
       a.blocked=occluded?a.blocked+.65:0;
       const held=a.clock-a.started,quiet=cinemaHeat(s,now)+(partner?cinemaHeat(partner,now):0)<.1;
       const separated=partner&&Math.hypot(s.x-partner.x,s.y-partner.y,s.z-partner.z)>Math.max(2800,(s.slen+partner.slen)*5);
-      if(!opening&&!a.payoff&&held>6&&(a.blocked>1.2||(['chase','duel'].includes(a.kind)&&quiet&&separated)))cut=true;
+      if(!opening&&!a.payoff&&held>3.5&&(a.blocked>1.2||(['chase','duel'].includes(a.kind)&&quiet&&separated)))cut=true;
     }
     a.scanAt=a.clock+.65;
   }
@@ -20262,7 +20405,7 @@ function audioShots(now){
     const d=Math.hypot(x-bc.ear[0],y-bc.ear[1],z-bc.ear[2]);if(!mine&&d>=A.range(style==="beam"||style==="phaser"?"beam":"gun",size)){far++;return;}
     if(A.hasSamples)A.shot(style,x,y,z,race,size,g,{own:mine});else A.weapon(style,x,y,z,g,race,size);};
   for(const b of beams){if(b.t0!==now||b.spark||b.ion||!b.a||b.coherent&&A.hasSamples)continue;offer(b.coherent?AUDIO_STYLE[b.race]==="phaser"?"phaser":"beam":b.arc?"arc":b.rail?"rail":AUDIO_STYLE[b.race]||"laser",b.a[0],b.a[1],b.a[2],.8,b.race,b.from);}
-  for(const t of tracers){if(audioVoiced.has(t)||now<t.t0||t.dead)continue;audioVoiced.add(t);offer(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7,t.race,t.from);}
+  for(const t of tracers){if(t.quiet||audioVoiced.has(t)||now<t.t0||t.dead)continue;audioVoiced.add(t);offer(AUDIO_STYLE[t.race]||"laser",t.x,t.y,t.z,.7,t.race,t.from);}
   bc.combat=bc.combat*.97+Math.min(n,10)*.03;
   if(n)bc.far=(bc.far||0)*.95+far/n*.05;// share of the fighting that is out of earshot
 }
@@ -20584,6 +20727,7 @@ function frame(nowMs){
   try{
   if(replayState)replayApply();
   else if(Number.isFinite(warT0))interpolateIn(Math.max(0,Math.min(1,battleAccumulator*30)));
+  unshakeView();
   const cameraStart=[cam.ex,cam.ey,cam.ez];
   /* camera: chase is the default hold — behind her, looking down her
      nose. Drag breaks into an orbit. Empty sky is free flight. */
@@ -20641,6 +20785,7 @@ function frame(nowMs){
     camKick*=Math.max(0,1-dt*4.2);
   }else camKick=0;
   if(worldBodies.length){const end=[cam.ex,cam.ey,cam.ez],move=worldMove(watchMode==='free'?cameraStart:end,end,3);[cam.ex,cam.ey,cam.ez]=move.position;}
+  shakeView(elapsed);
   let alive=0;
   for(const s of ships){
     if(!s.vao)continue;

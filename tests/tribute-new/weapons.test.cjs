@@ -49,7 +49,8 @@ test('one sustained emitter stays coherent and follows both hulls without multip
 test('laser bolts detach and deal no instantaneous hitscan damage',()=>{
  const b=scene();const hp=b.run('enemy.hp');
  assert.ok(b.run('fireBeam(fighter,enemy,2,0,0,0,1,false)'));
- assert.equal(b.run('enemy.hp'),hp);assert.equal(b.run('tracers.length'),1);
+ // Linked fire: a fixed-gun fighter's pair of barrels speaks together and shares the charge.
+ assert.equal(b.run('enemy.hp'),hp);assert.equal(b.run('tracers.length'),2);
  assert.equal(b.run('beams.length'),0);
  b.run('var before=JSON.stringify(tracers[0]);fighter.x=100;fighter.yaw=1;pinBeams(2.1)');
  assert.ok(b.run('before===JSON.stringify(tracers[0])'));
@@ -118,9 +119,9 @@ test('ion barrel retains its discharge direction until the visible shot ends',()
 test('Imperial and Rebel fighters launch their red and green physical bolts',()=>{
  const b=scene();
  b.run('raceFire(fighter,enemy,2,0,0,0)');
- assert.ok(b.run('tracers[0].col[0]>tracers[0].col[1]&&Math.abs(tracers[0].damage-.0588)<1e-10'));
+ assert.ok(b.run('tracers[0].col[0]>tracers[0].col[1]&&tracers.length===2&&Math.abs(tracers[0].damage+tracers[1].damage-.0588)<1e-10'));
  b.run('fighter.race=6;fighter.meta.klass="T-65 X-WING";raceFire(fighter,enemy,2.5,0,0,0)');
- assert.ok(b.run('tracers[1].col[1]>tracers[1].col[0]&&tracers[1].vx===800'));
+ assert.ok(b.run('tracers[2].col[1]>tracers[2].col[0]&&tracers[2].vx===800'));
 });
 test('a close fighter pass extends then reacquires without an instantaneous turn',()=>{
  const b=scene();b.run('enemy.x=40;var yawBefore=fighter.yaw;var exitGoal=fighterPassGoal(fighter,enemy,2);enemy.x=200;enemy.z=100;');
