@@ -22,7 +22,8 @@ for (const [name, harness] of [['native', native], ['Three', three]]) {
     const approach = b.run(`({travel:V.len(V.sub([escort.x,escort.y,escort.z],start)),speed:escort.v,dash:combatDash,mood:escort.mood})`);
     t.diagnostic(JSON.stringify(approach));
     assert.ok(approach.travel > 1500, JSON.stringify(approach));
-    assert.ok(approach.speed > approach.dash * 2, JSON.stringify(approach));
+    // Brawlers now have a faster combat dash, so the transit burn is a smaller multiple of it.
+    assert.ok(approach.speed > approach.dash * 1.5, JSON.stringify(approach));
     assert.equal(approach.mood, 'SEARCH');
     // Bringing a real contact into range ends the approach and sheds the burn
     // through the normal helm, without changing the class's combat engines.

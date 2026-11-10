@@ -14466,9 +14466,11 @@ function setShipPace(s){
      other and nothing has to be re-balanced against anything else. */
   // Interceptors cover ground quickly; capital pace and helm stay unchanged.
   const fast=!s.hulls&&!s.steadyCapital&&(L<=95||(s.hero&&L<=300));
-  const sprint=fast?(L<=42?1.45:1.25):1;
+  // Frigates and corvettes need the legs to run a pass and come about for another.
+  const brawler=!fast&&!s.hulls&&!s.steadyCapital&&L<=320;
+  const sprint=fast?(L<=42?1.45:1.25):brawler?1.8:1;
   s.spd=cruise*PACE*sprint;
-  s.spdMax=Math.max(dash,cruise*1.06)*PACE*(fast?sprint*1.12:1);
+  s.spdMax=Math.max(dash,cruise*1.06)*PACE*(fast?sprint*1.12:brawler?sprint:1);
 }
 function craftWant(s,now,sq,mood,dist,boost){
   const cruise=s.spd,dash=s.spdMax||cruise*1.3;
@@ -16102,8 +16104,8 @@ function nearestFoeInRange(s,rng){
   return pickFoe(s,rng);
 }
 function isGunboat(s){
-  /* frigates, corvettes, transports: they patrol and cover the screen,
-     they do not dogfight and they do not nod on the spot */
+  /* frigates, corvettes, transports: brawlers. They run broadside passes through
+     the enemy (battleAI.brawlPass); they do not dogfight and they do not nod on the spot */
   const fx=(RACE_DEFS[s.race]||{}).fire;
   return !s.hulls&&!s.hero&&(s.slen||0)>=80&&fx!=="slicer"&&fx!=="cutter";
 }
@@ -18270,13 +18272,15 @@ function simStep(now,dt){
         /* holding station: match the leader, close the gap along the heading */
         want=plan.slot.want;
       }
+      /* a broadside pass is flown with the taps open: in fast, through, and out the far side */
+      if(plan.brawl)want=Math.max(want,dash*.92);
       const lead=battleAI.leadCap(s,now);if(lead<want)want=lead;
       if(hurt)want=Math.min(s.spdMax||s.spd*1.3,want*1.22+5);
       if(debris)want*=s.debrisBrake;
       want*=s.avBrake??1;
       if(now<(s.trafficBrakeUntil||0))want*=.65;
       if(stunned)want*=0.36;
-      want=throttle(s,now,want,prefer,mood,!!plan.slot||!!(loiter&&plan.orbit),burn);
+      want=throttle(s,now,want,prefer,mood,!!plan.slot||!!(loiter&&plan.orbit)||!!plan.brawl,burn);
       s.throttleWant=want;
       s.fullBurn=transit||s.v>dash*1.02?Math.max(burn,s.fullBurn||dash):dash;
       s.v=approachSpeed(s,want,dt,s.hero?1.5:1,s.fullBurn);

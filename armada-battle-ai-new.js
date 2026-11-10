@@ -296,7 +296,8 @@
       let target=null,best=-Infinity;
       for(const c of known){
         let score=2.2/(1+surface(s,c)/650)+(1-c.hp/Math.max(1,c.hpMax))*.48+c.confidence*.35;
-        if(c.hulls)score+=s.hulls?.52:-.25;
+        if(c.hulls)score+=s.hulls?.52:s.gunboat||s.midcraft?.30:-.25;
+        if((s.gunboat||s.midcraft)&&!c.hulls&&c.slen>=60)score+=.55;
         if(!capital(s)&&(s.slen||0)<120&&!c.hulls&&c.slen<120)score+=.65;
         const sq=this.squads[s.squad];if(sq&&sq.tgt===c.id)score+=a.traits.cooperation*.28;
         score+=((Math.imul(s.seed^c.id,2654435761)>>>0)%100)/500;
@@ -356,6 +357,9 @@
         const sq=this.squads[s.squad],tac=sq&&sq.tac;
         const order={CHARGE:'ATTACK',SWARM:'ATTACK',HUNT:'FLANK',FLANK:'FLANK',ENVELOP:'FLANK',SCREEN:'ESCORT',FEIGN:'REGROUP',MINE:'FLANK'}[tac];
         if(order)scores[order]+=.28*tr.cooperation;
+        // Frigates and corvettes are brawlers: they wade in and trade broadsides. Covering a
+        // friend or re-forming has to be clearly the better call before one leaves the fight.
+        if(s.gunboat||s.midcraft){scores.ATTACK+=.42;scores.FLANK+=.08;scores.ESCORT-=.22;scores.REGROUP-=.22;}
         let value=-Infinity;const vals={};
         for(const name of Object.keys(scores)){
           const v=scores[name]+(a.actionBias[name]||0)+(a.rng()-.5)*tr.creativity*.38;
@@ -384,7 +388,7 @@
       const a=this.think(s,now),c=a.contacts.get(a.target),warning=this.threat(s,now);
       const sq=this.squads[s.squad];
       const speed=s.spdMax||s.spd||40;
-      let goal,boost=1,mode=a.action,orbit=null;
+      let goal,boost=1,mode=a.action,orbit=null,hunting=false;
       let order=a.order&&now<a.order.until?a.order:null;
       const st=this.story&&this.story.ready?this.story:null;
       // Relief has a job before it has a formation: reach the fight. The old
@@ -473,7 +477,9 @@
         }
         if(mode==='EVADE'){goal[0]+=-dz/n*speed*3*a.orbit;goal[1]+=speed*1.8*a.vertical;goal[2]+=dx/n*speed*3*a.orbit;boost=1.30;}
         else boost=a.response==='CHARGE'?1.35:capital?1.10:1.12;
-        if(!capital&&mode!=='EVADE'){
+        const brawl=!capital&&(s.gunboat||s.midcraft)&&(mode==='ATTACK'||mode==='FLANK')?this.brawlPass(s,a,c,tx,ty,tz,now):null;
+        if(brawl){goal=brawl;boost=a.response==='CHARGE'?1.4:1.28;}
+        else if(!capital&&mode!=='EVADE'){
           // The pilot's attack geometry: how it comes in, and the circle it works the target on.
           const h=this.hand(s),g=GEOMETRY[h.geometry]||GEOMETRY.slash,far=surface(s,c)>range*3;
           if(far&&g.climb)goal[1]+=g.climb*Math.min(600,surface(s,c)*.3);
@@ -490,14 +496,24 @@
         if(capital){goal[1]+=a.vertical*330;goal[2]+=a.lane*500;}
         if(distance(s,{x:goal[0],y:goal[1],z:goal[2]})<100)goal=[s.x+Math.cos(bearing+phase)*500,s.y+a.vertical*180,s.z+Math.sin(bearing+phase)*500];
         boost=.98;
+        // A brawler with nothing on its own scope does not wait for one: the fleet's picture
+        // gives it the nearest enemy hull and it goes there at speed.
+        if(!capital&&(s.gunboat||s.midcraft)&&!(a.order&&now<a.order.until)){
+          if(!(now<a.huntAt)){
+            a.huntAt=now+1.2;a.hunt=-1;let best=Infinity;
+            for(const t of this.nearby(s,3600)){if(!alive(t)||t.side===s.side||t.cloaked)continue;const d=distance(s,t)-(t.slen>=60?400:0);if(d<best){best=d;a.hunt=t.id;}}
+          }
+          const prey=a.hunt>=0?this.byId.get(a.hunt):null;
+          if(prey&&alive(prey)){goal=[prey.x+a.lane*120,prey.y+a.vertical*90,prey.z+a.depth*120];boost=1.3;hunting=true;a.reason='No contact of its own. Running down the nearest enemy hull';}
+        }
       }
       // A formed squadron flies as one: wingmen hold their slots while the leader flies the squadron's
       // intent, until contact breaks it. A pilot with its own emergency, or one whose nature is to
       // break off for a friend, is free.
       let slot=null;
       // A fighter whose mark is inside gun-pass range flies its own pass: fixed guns cannot aim from a slot.
-      const run=(mode==='ATTACK'||mode==='FLANK')&&!capital&&!s.gunboat&&(s.slen||20)<120&&c&&surface(s,c)<1250;
-      if((!capital||sq)&&!warning&&!a.response&&!run&&this.formed(s,now)&&!(s.vendetta)&&!(a.order&&now<a.order.until&&SOLO_ORDERS.has(a.order.kind))&&!(mode==='ESCORT'&&a.weak&&this.hand(s).breakaway>.55)&&mode!=='EVADE'
+      const run=(mode==='ATTACK'||mode==='FLANK')&&!capital&&c&&(s.gunboat||s.midcraft?surface(s,c)<900:(s.slen||20)<120&&surface(s,c)<1250);
+      if((!capital||sq)&&!warning&&!a.response&&!run&&!hunting&&this.formed(s,now)&&!(s.vendetta)&&!(a.order&&now<a.order.until&&SOLO_ORDERS.has(a.order.kind))&&!(mode==='ESCORT'&&a.weak&&this.hand(s).breakaway>.55)&&mode!=='EVADE'
         &&!(mode==='RETREAT'&&(s.hp/Math.max(1,s.hpMax)<.45||a.fear>.7))){
         slot=this.slotFor(s,sq,now);if(slot){goal=slot.goal;boost=1;orbit=null;}
       }
@@ -509,9 +525,34 @@
           if(d>260){const k=Math.min(.35,(d-260)/1400);goal=[goal[0]+(sq.cx-goal[0])*k,goal[1]+(sq.cy-goal[1])*k,goal[2]+(sq.cz-goal[2])*k];}
         }
       }
-      a.plan={goal:slot?this.slotAround(s,slot,goal):this.avoidField(s,goal),boost,mode,target:a.target,reason:a.reason,slot,orbit,
-        station:!slot&&!orbit&&(mode==='REGROUP'||mode==='ESCORT'||mode==='SEARCH')};
+      const brawling=!slot&&!!a.brawl&&a.brawl.live===now;
+      if(brawling)a.reason=a.brawl.out?'Through their line. Coming about for another pass':'Closing for a broadside pass';
+      a.plan={goal:slot?this.slotAround(s,slot,goal):this.avoidField(s,goal),boost,mode,target:a.target,reason:a.reason,slot,orbit:brawling?null:orbit,brawl:brawling,
+        station:!slot&&!orbit&&!brawling&&!hunting&&(mode==='REGROUP'||mode==='ESCORT'||mode==='SEARCH')};
       return a.plan;
+    }
+    /* The brawl pass. A frigate or corvette does not stand off and circle: it runs
+       in close down its mark's flank, over or under the hull, guns working the whole
+       way, carries on through to open the range, then comes about on the helm's own
+       turning circle and runs in again from the other side. The line of a pass is
+       fixed when it starts, so the ship commits to it and never dithers abeam. */
+    brawlPass(s,a,c,tx,ty,tz,now){
+      const R=radius(s),far=Math.max(420,(s.slen||80)*4);
+      let b=a.brawl;
+      const dxs=s.x-tx,dzs=s.z-tz;
+      if(b&&b.id===c.id){
+        const along=dxs*b.ux+dzs*b.uz;          // metres past the mark along the pass line
+        if(!b.out&&along>R*.5)b.out=true;        // abeam and through
+        if((b.out&&along>far*.75)||now-b.t0>40)b=null;   // range opened: the next pass starts
+      }else b=null;
+      if(!b){
+        const n=Math.hypot(dxs,dzs)||1,side=a.brawl&&a.brawl.id===c.id?-a.brawl.side:a.orbit;
+        b=a.brawl={id:c.id,ux:-dxs/n,uz:-dzs/n,side,t0:now,out:false};
+      }
+      b.live=now;
+      // Down the flank at a ship-length or so off the hull, and over or under it by the pilot's own habit.
+      const off=c.rad*.55+R*.6+80,lift=(a.vertical<0?-1:1)*(Math.min(c.rad*.22,160)+R*.25+35);
+      return [tx+b.ux*far-b.uz*off*b.side,ty+lift,tz+b.uz*far+b.ux*off*b.side];
     }
     // A wingman's slot goal: a point ahead of the slot along the squadron's heading, so a pilot in
     // station flies parallel to the leader instead of chasing a dot, plus what the throttle needs.

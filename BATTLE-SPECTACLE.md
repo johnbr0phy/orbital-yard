@@ -176,3 +176,30 @@ weapons. `massacre.test.cjs` test 3 already fails on main and still does.
 Not rerun: `fleet-balance.cjs`, the MOTION.md acceptance sweep and the story
 metrics. No real GPU was available; frames were checked in software-rendered
 Chromium.
+
+## Frigates and corvettes brawl (November 9, follow-up)
+
+Mid-size ships (80 m and up, single hull: frigates, corvettes, gunships,
+transports) used to patrol behind the fighters and hold a stand-off orbit.
+They now fight in the melee.
+
+- **Temper.** Their pilots weight ATTACK up and ESCORT / REGROUP down, and
+  prefer marks of 60 m or more, capitals included.
+- **The brawl pass** (`brawlPass` in `armada-battle-ai-new.js`). Instead of
+  orbiting, the ship runs down its mark's flank, over or under the hull,
+  carries through to open the range (at least 420 m or four hull lengths),
+  then comes about on the helm's own turning circle and runs in from the
+  other side. The line is fixed when the pass starts.
+- **No waiting for a contact.** A brawler with nothing on its own sensors
+  heads for the nearest enemy hull within 3.6 km instead of loitering on a
+  search point. Posture and convoy orders still hold.
+- **Columns break.** Inside 900 m of its mark a frigate leaves its column and
+  fights its own fight.
+- **Pace.** Single hulls between 95 m and 320 m cruise and dash 1.8 times
+  faster, and a pass is flown at 92% of dash rather than matched to the
+  mark's speed. Median speed on a pass in the fixture is 44 m/s.
+
+In the Empire v Rebels fixture (seed 77, 50 a side) the share of mid-size
+ships within 900 m of an enemy at 60 s went from 5 of 18 on the old patrol
+to 14 of 16. Sampled at 2 Hz over 14.5 ship-minutes, no brawler swung more
+than 120 degrees and back within 12 s.
