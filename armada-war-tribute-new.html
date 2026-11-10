@@ -481,7 +481,7 @@ body:not(.menu-start) #brand{display:none}
 <div id="bcReplayBar" hidden><b>Replay</b><div><i></i></div></div>
 <div id="bcHover" hidden></div>
 <section id="bcEnd" hidden aria-label="Battle result"></section>
-<section id="bcHelp" hidden aria-label="Keyboard shortcuts"><div class="panel"><h2>SHORTCUTS</h2><div class="cols"><div><kbd>B</kbd>Broadcast camera<br><kbd>U</kbd>Hide / show all UI<br><kbd>Space</kbd>Pause / resume<br><kbd>1</kbd>–<kbd>5</kbd>¼× ½× 1× 2× 4×<br><kbd>R</kbd>Instant replay<br><kbd>H</kbd>Follow a hero<br><kbd>M</kbd>Sound on / off</div><div><kbd>N</kbd>Choose fleets<br><kbd>G</kbd>New random war<br><kbd>P</kbd>Ink palette<br><kbd>Esc</kbd>Close / back<br>Click a ship to follow<br>Drag to orbit · wheel or pinch to zoom</div></div><p style="opacity:.7;margin:10px 0 0">Press <kbd>?</kbd> or Esc to close</p></div></section>
+<section id="bcHelp" hidden aria-label="Keyboard shortcuts"><div class="panel"><h2>SHORTCUTS</h2><div class="cols"><div><kbd>B</kbd>Broadcast camera<br><kbd>U</kbd>Hide / show all UI<br><kbd>Space</kbd>Pause / resume<br><kbd>1</kbd>–<kbd>5</kbd>¼× ½× 1× 2× 4×<br><kbd>R</kbd>Instant replay<br><kbd>H</kbd>Follow a hero<br><kbd>M</kbd>Sound on / off<br><kbd>Tab</kbd>The whole galaxy<br><kbd>,</kbd> <kbd>.</kbd>Jump to the next homeworld<br><kbd>L</kbd>Fly down to the capital</div><div><kbd>N</kbd>Choose fleets<br><kbd>G</kbd>New random war<br><kbd>P</kbd>Ink palette<br><kbd>Esc</kbd>Close / back<br>Click a ship to follow<br>Drag to orbit · wheel or pinch to zoom</div></div><p style="opacity:.7;margin:10px 0 0">Press <kbd>?</kbd> or Esc to close</p></div></section>
 <div id="win"></div>
 <div id="toast"></div>
 <section id="warMenu" aria-labelledby="warMenuTitle"><div class="warMenuPanel">
@@ -490,6 +490,7 @@ body:not(.menu-start) #brand{display:none}
   <div class="warMenuChoices">
     <button id="menuRandom" type="button"><strong>Watch this war</strong><span>Sit back. The director calls the shots.</span></button>
     <button id="menuCurate" type="button"><strong>Choose fleets</strong><span>Pick the navies, call the winner.</span></button>
+    <button id="menuCosmos" type="button"><strong>Explore the galaxy</strong><span>23 homeworlds. Fly down to the cities. Send a fleet.</span></button>
   </div>
 </div></section>
 <div id="pick"><div class="panel">
@@ -510,12 +511,14 @@ body:not(.menu-start) #brand{display:none}
   <div class="go"><button id="pickGo">BEGIN THE WAR</button><button id="pickFate" class="ghost">FATE DECIDES ALL</button></div>
 </div></div>
 <script src="armada-systems-new.js?v=muted-worlds-1"></script>
+<script src="armada-universe-new.js?v=cosmos-1"></script>
 <script src="armada-crew-new.js?v=action-interiors-1"></script>
 <script src="armada-battle-ai-new.js?v=active-search-1"></script>
 <script src="armada-post-new.js?v=tribute-polish-1"></script>
 <script src="armada-broadcast-new.js?v=tribute-polish-1"></script>
 <script src="armada-replay-new.js?v=tribute-polish-1"></script>
 <script src="armada-audio-new.js?v=tribute-sfx-6"></script>
+<script src="armada-cosmos-new.js?v=cosmos-1"></script>
 <script>
 "use strict";
 /* ===================== vector ===================== */
@@ -12842,6 +12845,7 @@ const PAL=[
   {id:"sulphur",bg:"#E5C132",ink:"#161310",foe:"#2E1E66"}
 ];
 let palI=2, sceneR=36000;
+let COSMOS=null; // the galaxy (armada-cosmos-new.js), set at boot when it is loaded
 const BSTAND=680, SLIDE=320;
 const cvs=document.getElementById("gl");
 const gl=cvs.getContext("webgl2",{antialias:true,powerPreference:"high-performance"});
@@ -13408,11 +13412,15 @@ function celRing(r0,r1,t1,t2,Rr){
 }
 function makeCelestial(Rr){
   disposeCeles();
-  starSystem=window.ArmadaSystems?window.ArmadaSystems.generate((warSeed^0xC0FFEE)>>>0):null;
-  worldBodies=starSystem?window.ArmadaSystems.worlds(starSystem,sceneR):[];
+  // With the galaxy loaded, every war is fought over a homeworld: the galaxy
+  // draws that sky, and the engine keeps the bodies only to collide with and be lit by.
+  const cosmosSky=COSMOS?COSMOS.siteFor(sideRace[0],sideRace[1]):null;
+  starSystem=cosmosSky||(window.ArmadaSystems?window.ArmadaSystems.generate((warSeed^0xC0FFEE)>>>0):null);
+  worldBodies=cosmosSky?cosmosSky.worlds:starSystem?window.ArmadaSystems.worlds(starSystem,sceneR):[];
   fieldBodies=[];nebulaPuffs=[];sceneBodies=worldBodies;
   if(!starSystem)return;
   for(const b of worldBodies){
+    if(b.cosmos)continue;
     const p=b.center,radius=b.radius;
     addCel(celSphere(radius,b.kind===0?0:1,Rr),...p,.002+Rr()*.003,1,.025,Rr,b);
     if(b.kind===5)addCel(celSphere(radius*1.11,0,Rr),...p,0,.3,0,Rr,{...b,kind:6});
@@ -17979,6 +17987,7 @@ function declareWinner(side,reason,now){
     " \u00b7 "+Math.max(0,(now-warT0)|0)+" SECONDS \u00b7 N FOR THE NEXT WAR</div>";
   w.style.display="block";
   toast(SIDE_NAME[winner]+" "+(VICTORY_LINE[reason]||VICTORY_LINE.annihilation));bcVictory(winner,reason);
+  if(COSMOS)COSMOS.onWinner(winner);
   // Objective results do not evacuate the surviving combatants.
 }
 // Leave the battle alive: the fleet's arrival effect in reverse, or off the edge.
@@ -19070,15 +19079,24 @@ function resize(){
   gl.viewport(0,0,cvs.width,cvs.height);
 }
 addEventListener("resize",resize);
+// Near a world the free camera's "up" leans to the local vertical (set by the
+// galaxy), so the horizon stays level anywhere on the globe. Null elsewhere.
+let camFrame=null;
 function camBasis(){
   const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);
   const f=[cy*cp,sp,sy*cp],r=[-sy,0,cy];
+  if(camFrame){
+    const F=camFrame,ap=v=>[F[0]*v[0]+F[1]*v[1]+F[2]*v[2],F[3]*v[0]+F[4]*v[1]+F[5]*v[2],F[6]*v[0]+F[7]*v[1]+F[8]*v[2]],f2=ap(f),r2=ap(r);
+    return [f2,r2,V.cross(r2,f2)];
+  }
   return [f,r,V.cross(r,f)];
 }
-function mat(into){
+// rel: the same view with the camera at the origin, for things drawn relative to it.
+function mat(into,rel=false){
   const [f,r,u]=camBasis();
-  const e=[cam.ex,cam.ey,cam.ez];
-  const zn=0.6,zf=Math.max(sceneR*9,watchGoal?.far||0,Math.hypot(...e)+sceneR*10),t=1/Math.tan(0.44),ar=cvs.width/cvs.height;
+  const e=rel?[0,0,0]:[cam.ex,cam.ey,cam.ez];
+  // The galaxy has no far plane: suns and worlds sit at any distance.
+  const zn=0.6,zf=COSMOS?1e13:Math.max(sceneR*9,watchGoal?.far||0,Math.hypot(...e)+sceneR*10),t=1/Math.tan(0.44),ar=cvs.width/cvs.height;
   const vx=r,vy=u,vz=[-f[0],-f[1],-f[2]];
   const tx=-V.dot(vx,e),ty=-V.dot(vy,e),tz=-V.dot(vz,e);
   const A=t/ar,Bq=t,C=(zf+zn)/(zn-zf),D=2*zf*zn/(zn-zf);
@@ -19090,7 +19108,7 @@ function mat(into){
     A*tx,Bq*ty,C*tz+D,-tz]);
   return out;
 }
-const frameVP=new Float32Array(16);
+const frameVP=new Float32Array(16),frameRel=new Float32Array(16);
 function frustumPlanes(m){
   const row=i=>[m[i],m[4+i],m[8+i],m[12+i]];
   const r0=row(0),r1=row(1),r2=row(2),r3=row(3),P=[];
@@ -19575,7 +19593,7 @@ function pilotStep(s,now,dt){
   s.pilotBoost??=1;if(s.pilotBoost<=.02)s.pilotBoostLock=true;if(!keys.has('shift')&&s.pilotBoost>.2)s.pilotBoostLock=false;const boost=keys.has('shift')&&!s.pilotBoostLock&&s.pilotBoost>.02&&s.pilotThrottle>.05;
   s.pilotBoost=limit(s.pilotBoost+dt*(boost?-.26:.12),0,1);s.pilotBoosting=boost;
   if(keys.has(' ')||keys.has('x')||keys.has('s'))s.pilotCruise=false;
-  const near=worldClearance([s.x,s.y,s.z]),normalCap=s.spdMax||s.spd||20,cap=s.pilotCruise?Math.min(Math.max(normalCap*30,2400),Math.max(normalCap,(near?.distance??1e6)*.25)):normalCap,accel=keys.has('x')?3:1.5;s.v=(s.v||0)+(cap*s.pilotThrottle*(boost?1.65:1)-(s.v||0))*(1-Math.exp(-dt*accel));s.vy=Math.sin(s.pitch)*s.v;s.roll+=( -steer*.22-(s.roll||0))*response;
+  const near=worldClearance([s.x,s.y,s.z]),normalCap=s.spdMax||s.spd||20,cap=s.pilotCruise?(COSMOS?COSMOS.cruiseCap(s,normalCap,near?.distance??1e9):Math.min(Math.max(normalCap*30,2400),Math.max(normalCap,(near?.distance??1e6)*.25))):normalCap,accel=keys.has('x')?3:1.5;s.v=(s.v||0)+(cap*s.pilotThrottle*(boost?1.65:1)-(s.v||0))*(1-Math.exp(-dt*accel));s.vy=Math.sin(s.pitch)*s.v;s.roll+=( -steer*.22-(s.roll||0))*response;
   const from=[s.x,s.y,s.z],to=[s.x+Math.cos(s.yaw)*Math.cos(s.pitch)*s.v*dt,s.y+s.vy*dt,s.z+Math.sin(s.yaw)*Math.cos(s.pitch)*s.v*dt],contact=worldMove(from,to,Math.max(s.nose||0,s.slen*.6)+4);[s.x,s.y,s.z]=contact.position;if(contact.hit){s.v=0;s.vy=0;s.pilotThrottle=0;s.pilotCruise=false;}s.mood='PLAYER';
   if(keys.has(' '))pilotFire(s,now);else s.pilotWeapon=now<(s.pilotShot||0)?'RECHARGING':'READY';
 
@@ -19671,7 +19689,7 @@ cvs.addEventListener("wheel",e=>{
   if(intro&&!intro.done)endIntro();
   if(sel!=null&&orb)orb.dist=Math.max(12,Math.min(sceneR*2,orb.dist*Math.exp(e.deltaY*0.0012*camLook)));
   else{
-    const [f]=camBasis(),k=-e.deltaY*0.6*camLook;
+    const [f]=camBasis(),k=-e.deltaY*0.6*camLook*(COSMOS?COSMOS.wheelScale():1);
     cam.ex+=f[0]*k;cam.ey+=f[1]*k;cam.ez+=f[2]*k;
   }
 },{passive:false});
@@ -19679,6 +19697,7 @@ addEventListener("keydown",e=>{
   if(e.target&&/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
   const k=e.code==='Space'?' ':e.key.toLowerCase();
   if(pilotId!=null&&[' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
+  if(COSMOS&&!e.repeat&&COSMOS.key(k,e))return;
   keys.add(k);
   if(pilotId!=null&&k==='c'&&!e.repeat){const s=ships[pilotId];s.pilotCruise=!s.pilotCruise;s.pilotThrottle=1;}
   if(pilotId!=null&&k==='t'&&!e.repeat)pilotTarget(ships[pilotId],true);
@@ -19903,6 +19922,13 @@ document.getElementById("menuRandom").addEventListener("click",()=>{
   try{if(!localStorage.getItem("tributeHint")){localStorage.setItem("tributeHint","1");setTimeout(()=>toast(matchMedia("(pointer:coarse)").matches?"TAP A SHIP TO FOLLOW · ↺ REPLAY":"SPACE PAUSE · 1–5 SPEED · R REPLAY · ? KEYS"),1800);}}catch(e){}
 });
 document.getElementById("menuCurate").addEventListener("click",()=>openPicker());
+document.getElementById("menuCosmos").addEventListener("click",()=>{
+  if(!COSMOS){toast("THE GALAXY DID NOT LOAD");return;}
+  if(!ships.length)spectacleWar(false);
+  document.getElementById("warMenu").hidden=true;document.body.classList.remove("menu-start");ui("confirm");setNoUi(false);
+  COSMOS.showGalaxy();
+  setTimeout(()=>toast(matchMedia("(pointer:coarse)").matches?"TAP A WORLD TO JUMP THERE":"CLICK A WORLD TO JUMP · WASD TO DRIVE · SHIFT FASTER"),2400);
+});
 
 document.getElementById("pickBack").addEventListener("click",()=>closePicker());
 let pickCall=-1;
@@ -21250,9 +21276,12 @@ function frame(nowMs){
   else if(Number.isFinite(warT0))interpolateIn(Math.max(0,Math.min(1,battleAccumulator*30)));
   unshakeView();
   const cameraStart=[cam.ex,cam.ey,cam.ez];
+  // The galaxy may be flying the camera: a jump between worlds, a descent to a city.
+  const cosmosDriving=COSMOS&&!replayState?COSMOS.update(wall,elapsed):false;
   /* camera: chase is the default hold — behind her, looking down her
      nose. Drag breaks into an orbit. Empty sky is free flight. */
-  if(replayState){replayCamera(elapsed);}
+  if(cosmosDriving){}
+  else if(replayState){replayCamera(elapsed);}
   else if(pilotId!=null){updateWatchCamera(now,dt);}
   else if(sel!=null&&ships[sel]&&!ships[sel].dead){
     const s=ships[sel];
@@ -21291,40 +21320,46 @@ function frame(nowMs){
     }
   }else if(!(intro&&!intro.done)){
     const [f,r]=camBasis();
-    const sp=(keys.has("shift")?sceneR*0.28:sceneR*0.09)*dt*camLook;
+    // In the galaxy, free flight is slow among ships and near the ground and
+    // runs away with itself in open space; wall time, so it flies while paused.
+    const sp=COSMOS?COSMOS.flyStep(elapsed,keys.has("shift"))*(Math.hypot(cam.ex,cam.ey,cam.ez)<12000?camLook*.5:1):(keys.has("shift")?sceneR*0.28:sceneR*0.09)*dt*camLook;
+    const up=camFrame?[camFrame[1],camFrame[4],camFrame[7]]:[0,1,0];
     if(keys.has("w")){cam.ex+=f[0]*sp;cam.ey+=f[1]*sp;cam.ez+=f[2]*sp;}
     if(keys.has("s")){cam.ex-=f[0]*sp;cam.ey-=f[1]*sp;cam.ez-=f[2]*sp;}
-    if(keys.has("a")){cam.ex-=r[0]*sp;cam.ez-=r[2]*sp;}
-    if(keys.has("d")){cam.ex+=r[0]*sp;cam.ez+=r[2]*sp;}
-    if(keys.has("q"))cam.ey-=sp;
-    if(keys.has("e"))cam.ey+=sp;
+    if(keys.has("a")){cam.ex-=r[0]*sp;cam.ey-=r[1]*sp;cam.ez-=r[2]*sp;}
+    if(keys.has("d")){cam.ex+=r[0]*sp;cam.ey+=r[1]*sp;cam.ez+=r[2]*sp;}
+    if(keys.has("q")){cam.ex-=up[0]*sp;cam.ey-=up[1]*sp;cam.ez-=up[2]*sp;}
+    if(keys.has("e")){cam.ex+=up[0]*sp;cam.ey+=up[1]*sp;cam.ez+=up[2]*sp;}
   }
-  if(pilotId==null&&!replayState)updateWatchCamera(now,elapsed);
+  if(pilotId==null&&!replayState&&!cosmosDriving)updateWatchCamera(now,elapsed);
   if(camKick>0.4&&pilotId==null&&watchMode!=="action"){
     const k=camKick;
     cam.ex+=(Math.random()-0.5)*k;cam.ey+=(Math.random()-0.5)*k*0.55;cam.ez+=(Math.random()-0.5)*k;
     camKick*=Math.max(0,1-dt*4.2);
   }else camKick=0;
-  if(worldBodies.length){const end=[cam.ex,cam.ey,cam.ez],move=worldMove(watchMode==='free'?cameraStart:end,end,3);[cam.ex,cam.ey,cam.ez]=move.position;}
+  if(worldBodies.length){const end=[cam.ex,cam.ey,cam.ez],move=worldMove(watchMode==='free'&&!cosmosDriving?cameraStart:end,end,3);[cam.ex,cam.ey,cam.ez]=move.position;}
   shakeView(elapsed);
   const m=mat(frameVP),eye=[cam.ex,cam.ey,cam.ez];
+  // The sky is drawn around the camera, wherever in the galaxy the camera is.
+  const mSky=COSMOS?mat(frameRel,true):m;
   const FRP=frustumPlanes(m);
   const submitStarted=performance.now();perfFrameStart();
   const post=imagePipeline();
   if(post){post.resize(renderScale,qualityTier);post.begin();rtH=post.height;}else rtH=cvs.height;
   gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   gl.enable(gl.DEPTH_TEST);
-  if(post&&palI===2)post.drawSky(invert4(m));
+  if(post&&palI===2)post.drawSky(invert4(mSky));
   /* stars and occasional faint galactic dust */
   gl.useProgram(starProg);
   gl.uniform1f(USpx,rtH);
-  gl.uniformMatrix4fv(USvp,false,m);
-  gl.uniform3fv(USink,starSystem?.starTint||inkc);gl.uniform3f(USorigin,cam.ex,cam.ey,cam.ez);
+  gl.uniformMatrix4fv(USvp,false,mSky);
+  gl.uniform3fv(USink,starSystem?.starTint||inkc);if(COSMOS)gl.uniform3f(USorigin,0,0,0);else gl.uniform3f(USorigin,cam.ex,cam.ey,cam.ez);
   gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
   gl.bindVertexArray(starVao);
   if(skyDustN){gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.drawArrays(gl.POINTS,starN,skyDustN);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}
   gl.drawArrays(gl.POINTS,0,starN);gl.uniform3f(USorigin,0,0,0);
   gl.depthMask(true);gl.disable(gl.BLEND);
+  if(COSMOS){COSMOS.drawSky(mSky,wall);COSMOS.drawOpaque(mSky,wall);}
   drawWorlds(m,now,false);
 
   /* the combatants */
@@ -21469,6 +21504,7 @@ function frame(nowMs){
   gl.uniform1f(SU.tone,0.42);
 
   drawWorlds(m,now,true);
+  if(COSMOS)COSMOS.drawTransparent(mSky);
   drawNebula(m);
   /* beams */
   if(beams.length||tracers.length||missiles.length){
@@ -21868,6 +21904,16 @@ document.getElementById("audioSpace")?.addEventListener("change",e=>{const A=aud
 document.addEventListener?.("click",e=>{if(e.target.closest&&e.target.closest("button,summary"))ui("click");},{capture:true});
 // Default battle size: 600 a side. ?size= still overrides it.
 {const f=measureSimSpeed(),n=/[?&]size=\d+/.test(location.search)?+location.search.match(/[?&]size=(\d+)/)[1]:600;setFleetSize(n,false);describeSizes(f);}
+// The galaxy: every war gets a homeworld under it. ?cosmos=0 turns it off.
+if(window.ArmadaCosmos&&!/[?&]cosmos=0/.test(location.search))COSMOS=window.ArmadaCosmos.init({
+  gl,compile,cvs,cam,keys,sceneR,RACE_DEFS,camBasis,fleetEmblem,fleetTitle,toast,
+  state:()=>({ships,counts,spawned,sideRace,winner,warT0,pilotId,sel,watchMode,rtH,rtW:image?image.width:cvs.width,quality:qualityTier}),
+  setFrame:F=>{camFrame=F;},
+  skySun:(dir,col)=>{if(image&&palI===2){image.sky.sun=dir;image.sky.sunCol=col;}},
+  freeCam:()=>{if(replayState)endReplay();if(pilotId!=null)leaveHelm();hideEndCard();select(null);watchMode="free";updateWatchDock();},
+  watchBattle:()=>{if(ships.length)setWatchView("broadcast");},
+  invade:(a,b)=>{pickMain=[a,b];pickAlly=[-2,-2];buildPicker();document.getElementById("pick").classList.remove("on");hideEndCard();startWar(true);setNoUi(false);}
+});
 applyPal();resize();makeStars();
 buildPicker();
 showWarMenu();
