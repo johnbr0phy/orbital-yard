@@ -98,6 +98,18 @@ each frame goes, and `?quality=low|medium|high|ultra` overrides the automatic
 tier. See [DECISIONS.md](DECISIONS.md), [PERFORMANCE.md](PERFORMANCE.md) and
 [WRITEUP.md](WRITEUP.md).
 
+Every war is now fought somewhere. The page holds one spiral galaxy with a
+homeworld for each of the 23 fleets: Coruscant, Qo'noS, Minbar, Z'ha'dum, Earth,
+the Unicomplex and the rest, each with its own sun, air, weather and named
+cities. A battle happens in low orbit over the defender's capital, so the planet
+fills the sky under the ships and its cities burn as the defence fails. The strip
+along the bottom jumps the camera from homeworld to homeworld; `Tab` shows the
+whole galaxy; or just drive there with `W` (`Shift` is faster), because free
+flight speeds up the further you are from anything. At a world you can fly
+down to any city and through its skyline, or send any fleet to attack it. If
+the attackers win, they hold that world until somebody takes it back. See
+[UNIVERSE-NEW.md](UNIVERSE-NEW.md). `?cosmos=0` turns the galaxy off.
+
 The First Ones are not a navy. Eight unique giants — the Traveller, the
 Lordship, Thoughtforce, the Triumviron, Dark Knife, Lorien's vessel, Kosh's
 ship, a Hand servitor — each a different ancient, each kilometres long.
