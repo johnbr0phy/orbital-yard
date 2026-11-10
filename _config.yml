@@ -1,0 +1,9 @@
+# GitHub Pages publishes this repository as the live site. The review media
+# below is about 450 MB of before/after videos and screenshots; with it the
+# deploy step times out. It stays in the repository and is left off the site.
+# No page of the site links to it. bench/audio stays: audio/scenes.html uses it.
+exclude:
+  - design/tribute-new/review
+  - bench/motion
+  - tests
+  - scripts
