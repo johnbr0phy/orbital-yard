@@ -1187,6 +1187,8 @@
       for(const side of [0,1]){
         const st=this.sides[side],p=st.plan,foe=this.sides[1-side].center,own=st.center;if(!p||!foe||!own)continue;
         const dir=side?-1:1;
+        // One posture decision per side and tick, not once (or twice) per squadron.
+        const posturePoint=this.posture(side,p,now,foe,own);
         for(const q of squads){
           if(q.side!==side||q.state!=='steady')continue;
           const members=q.mem.map(id=>this.ship(id)).filter(m=>this.live(m)&&m.arr&&m.ai&&!m.reliefGoal&&!(m.ai.breakUntil>now)&&!(m.ai.order&&['RESCUE','RAM','PANIC','BERSERK','RECOVER','TOW'].includes(m.ai.order.kind)&&now<m.ai.order.until));
@@ -1200,9 +1202,9 @@
           }else if((p.kind==='HOLD'||p.kind==='SIEGE')&&p.state!=='done'&&q.role==='screen'){
             let best=null,bd=Infinity;for(const c of this.ships())if(c.side===side&&this.live(c)&&(c.hulls||c.slen>=180)){const d=q.cx!=null?length(c.x-q.cx,c.z-q.cz):0;if(d<bd){bd=d;best=c;}}
             if(best)for(const m of members)this.setOrder(m,'GUARD',{anchor:best.id,until});
-          }else if(q.role==='main'&&this.posture(side,p,now,foe,own)){
+          }else if(q.role==='main'&&posturePoint){
             // The rest of the fleet keeps the plan's posture: on the line, in reserve, or waiting for the wings.
-            const point=this.posture(side,p,now,foe,own);
+            const point=posturePoint;
             for(const m of members)this.setOrder(m,'HOLD',{point,until,spread:420});
           }else if(p.kind==='DECAPITATE'&&p.state!=='done'&&q.role==='strike'){
             const flag=this.ship(this.sides[1-side].flag);
@@ -1210,7 +1212,7 @@
           }
         }
         // Capitals: hold the line, or hold the station.
-        const holdLine=(p.kind==='HOLD')&&p.state!=='done';
+        const holdLine=(p.kind==='HOLD')&&p.state!=='done'&&!p.released;
         if(holdLine&&!p.line)p.line=[own.x+dir*900,own.y,own.z];
         for(const c of this.ships()){
           if(c.side!==side||!this.live(c)||!c.arr||!c.ai||c.reliefGoal||!(c.hulls||c.slen>=180)||(c.ai.order&&['RAM','DRIFT'].includes(c.ai.order.kind))||this.doctrine(c).hunts)continue;
@@ -1234,8 +1236,10 @@
       const release=why=>{p.released=why;return null;};
       // Ships are dying: whatever the plan said about waiting, the fight is here.
       if(this.sides[side].lossAt!=null&&now-this.sides[side].lossAt<20)return release('under fire');
-      if(p.kind==='HOLD'){if(d<3200)return release('contact');if(age>55)return release('waited');return [home.x+dir*1400,home.y,home.z];}
-      if(p.kind==='SIEGE'){if(d<3600)return release('contact');if(age>60)return release('waited');return [home.x+dir*500,home.y,home.z];}
+      // Release passive plans sooner when enemy formations enter tactical range. Retain a bounded
+      // waiting period so defensive fleets still have time to establish their positions.
+      if(p.kind==='HOLD'){if(d<4400)return release('contact');if(age>35)return release('waited');return [home.x+dir*1400,home.y,home.z];}
+      if(p.kind==='SIEGE'){if(d<4800)return release('contact');if(age>40)return release('waited');return [home.x+dir*500,home.y,home.z];}
       if(p.kind==='PINCER'){if(p.state!=='forming'||d<2400)return release('closed');return [home.x+dir*1800,home.y,home.z];}
       if(p.kind==='RAID'){if(p.cycles>=1||d<2600||age>70)return release('raided');return [home.x+dir*900,home.y,home.z];}
       return null;
@@ -1444,8 +1448,10 @@
         // Frigates and cruisers fly a line-ahead column (a battle line); everyone else their fleet's shape.
         fm.shape=lead.gunboat||capital(lead)?'column':h.shape;
         fm.rank=new Map();let n=0;for(const m of ranked)if(m.id!==fm.lead)fm.rank.set(m.id,n++);fm.n=n;
+        // Slot geometry is static for this formation. Reuse it across every pilot update.
+        fm.offsets=Array.from({length:n},(_,i)=>slotOffset(fm.shape,i,n));
         fm.d=formationSpacing(fm.shape,n,L,ranked.reduce((a,m)=>a+(m.slen||20),0)/ranked.length,capital(lead),h.tight);
-        let lat=0,back=0;for(let i=0;i<n;i++){const o=slotOffset(fm.shape,i,n);lat=Math.max(lat,Math.abs(o[2])*fm.d);back=Math.max(back,-o[0]*fm.d);}
+        let lat=0,back=0;for(let i=0;i<n;i++){const o=fm.offsets[i];lat=Math.max(lat,Math.abs(o[2])*fm.d);back=Math.max(back,-o[0]*fm.d);}
         fm.back=back;
         // How fast the formation may turn: the outside lane never needs more than 35% more speed.
         fm.turnCap=clamp(.35*slow*.9/Math.max(40,lat),.05,.35);
@@ -1493,7 +1499,7 @@
       const h=this.hand(s),lh=this.hand(lead),d=fm.d*(1.08-.16*h.tight);
       if(fm.hdg==null)fm.hdg=lead.yaw;
       if(fm.hdgAt!==now){const dt=clamp(now-(fm.hdgAt??now),0,.1),cap=fm.turnCap||.35,turn=clamp(angle(lead.yaw-fm.hdg),-cap*dt,cap*dt);fm.hdg+=turn;fm.hdgAt=now;}
-      const o=slotOffset(fm.shape,fm.rank.get(s.id),fm.n),loose=1.25-lh.tight;
+      const o=fm.offsets?.[fm.rank.get(s.id)]||slotOffset(fm.shape,fm.rank.get(s.id),fm.n),loose=1.25-lh.tight;
       // A living slot: each pilot's own offset, breathing slowly.
       const br=Math.sin(now*(.21+.1*h.breath)+h.ph[3])*h.breath*loose;
       const back=Math.max(0,(-o[0]+h.slot[0]*.18*loose+br)*d),up=(o[1]+h.slot[1]*.16)*d,side=(o[2]+h.slot[2]*.22*loose-br*.5)*d;
